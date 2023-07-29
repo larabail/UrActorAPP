@@ -1,3 +1,5 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/calendar.dart';
@@ -76,10 +78,10 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    int _selectedIndex = 0;
+    int selectedIndex = 0;
 
-    final List<Widget> _pages = [
-      MyApp(),
+    final List<Widget> pages = [
+      const MyApp(),
       Search(),
       Playlists(),
       Profile(),
@@ -87,16 +89,15 @@ class _MyHomePageState extends State<MyHomePage> {
     ];
 
     void _onItemTapped(int index) {
-      _selectedIndex = index;
+      selectedIndex = index;
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => _pages[_selectedIndex]),
+        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
       );
     }
 
     FirebaseAuth.instance.authStateChanges().listen((User? user) async {
       if (user == null) {
-        print('User is currently signed out!');
         // Redirect to login page
         Navigator.pushReplacement(
           context,
@@ -109,7 +110,7 @@ class _MyHomePageState extends State<MyHomePage> {
             .collection(uid)
             .get()
             .then((QuerySnapshot querySnapshot) {
-          querySnapshot.docs.forEach((doc) {
+          for (var doc in querySnapshot.docs) {
             if (doc.id == "Country") {
               country = (doc['Country']);
             } else if (doc.id == "Calendar") {
@@ -179,33 +180,32 @@ class _MyHomePageState extends State<MyHomePage> {
                 });
               });
             }
-          });
+          }
         });
         await FirebaseFirestore.instance
             .collection("Watchlists")
             .get()
             .then((QuerySnapshot querySnapshot) {
-          querySnapshot.docs.forEach((doc) {
+          for (var doc in querySnapshot.docs) {
             Map keysOfDoc = doc.data() as Map;
             List users = keysOfDoc['Users'] as List;
-            users.forEach((element) {
+            for (var element in users) {
               Map el = element as Map;
               if (el.keys.contains(uid)) {
                 playlists[doc.id] = doc.data();
               }
-            });
-          });
+            }
+          }
         });
         await FirebaseFirestore.instance
             .collection("Oscars")
             .get()
             .then((QuerySnapshot querySnapshot) {
-          querySnapshot.docs.forEach((doc) {
+          for (var doc in querySnapshot.docs) {
             Map d = doc.data() as Map;
             oscars[d["tmdb_id"]] = doc.data();
-          });
+          }
         });
-        print('User is signed in!');
       }
     });
 
@@ -284,7 +284,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: Color(0xFF121212),
+        backgroundColor: const Color(0xFF121212),
         title: Center(
             child: Image.asset(
           'assets/logo.png',
@@ -476,7 +476,7 @@ class _MyHomePageState extends State<MyHomePage> {
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Color(0xFF121212),
+        backgroundColor: const Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -496,7 +496,7 @@ class _MyHomePageState extends State<MyHomePage> {
             icon: Icon(Icons.person),
           ),
         ],
-        currentIndex: _selectedIndex,
+        currentIndex: selectedIndex,
         onTap: _onItemTapped,
       ),
     );
