@@ -1,7 +1,6 @@
 // ignore_for_file: non_constant_identifier_names
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/profile.dart';
 import 'package:uractor/search.dart';
@@ -9,6 +8,7 @@ import 'package:uractor/main.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:uractor/playlists.dart';
+import 'package:uractor/rating_popup.dart';
 import 'package:uractor/person_result.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'dart:async';
@@ -21,6 +21,7 @@ bool _isTappedSeen = false;
 bool _isTappedWatchlist = false;
 bool _isTappedFav = false;
 bool _isTappedList = false;
+String reviewId = "";
 
 // Assuming the "context" object is available, e.g., from a Flutter widget.
 
@@ -83,6 +84,51 @@ Future<void> deleteFromWatchedConfirmation(
   } else {
     _imageProviderSeen = 'assets/seen_after.png';
   }
+}
+
+void writeReview(id, context) {
+  reviewId = id.toString();
+  // Show the dialog like this
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return RatingDialog();
+    },
+  );
+}
+
+void editReview() {}
+
+Future<void> deleteReview(id, context) async {
+  await FirebaseFirestore.instance
+      .collection(uid)
+      .get()
+      .then((QuerySnapshot querySnapshot) async {
+    reviews = {};
+    for (var doc in querySnapshot.docs) {
+      if (doc.id == "Reviews") {
+        Map allreviews = doc.data() as Map;
+        List reviewsInList = allreviews["Seen"] as List;
+        List tempReviewsInList = [];
+        for (var element in reviewsInList) {
+          element = element as Map;
+          if (element.keys.toList()[0].toString() != id.toString()) {
+            tempReviewsInList.add(element);
+          }
+        }
+        final userDoc =
+            FirebaseFirestore.instance.collection(uid).doc("Reviews");
+        await userDoc.update({'Seen': tempReviewsInList});
+        for (var element in tempReviewsInList) {
+          reviews[element.keys.toList()[0]] = element[element.keys.toList()[0]];
+        }
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MovieResult()),
+        );
+      }
+    }
+  });
 }
 
 void markWatched(String id, String title, BuildContext context) async {
@@ -384,7 +430,6 @@ class _MovieResultState extends State<MovieResult> {
   String watch_providers =
       "/watch/providers?api_key=700cd4fab994df56eb41b34d38c4762a";
   String video = "/videos?api_key=700cd4fab994df56eb41b34d38c4762a";
-
   Future<Map> getMovieData() async {
     List movieData = movieResult;
     if (rewatchedMovies.keys.toList().contains(movieData[0])) {
@@ -393,6 +438,10 @@ class _MovieResultState extends State<MovieResult> {
       movieData.add(1);
     } else {
       movieData.add(0);
+    }
+    movieData.add(null);
+    if (reviews.keys.toList().contains(movieData[0].toString())) {
+      movieData[4] = (reviews[movieData[0].toString()] as Map);
     }
     myController.text = movieData[3].toString();
     String name = movieData[1]
@@ -404,6 +453,7 @@ class _MovieResultState extends State<MovieResult> {
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       json["times_seen"] = movieData[3];
+      json["review"] = movieData[4];
       if (json["backdrop_path"] == null) {
         json["backdrop_path"] = "";
       }
@@ -765,7 +815,6 @@ class _MovieResultState extends State<MovieResult> {
                       setState(() {
                         _imageProviderList = 'assets/playlists_before.png';
                         _isTappedList = !_isTappedList;
-                        print(playlists);
                       })
                     });
               } else {
@@ -1043,6 +1092,90 @@ class _MovieResultState extends State<MovieResult> {
                       ),
                     ],
                   ),
+                  if (snapshot.data!["review"] != null)
+                    ExpansionTile(
+                        title: const Text(
+                          "Your Review",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontSize: 15,
+                            wordSpacing: 2,
+                            height: 1.5,
+                          ),
+                        ),
+                        children: <Widget>[
+                          Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Align(
+                              child: Container(
+                                width: MediaQuery.of(context).size.width * 0.8,
+                                decoration: BoxDecoration(
+                                  color: const Color.fromARGB(
+                                      255, 26, 25, 25), // dark grey background
+                                  borderRadius: BorderRadius.circular(
+                                      27), // border radius
+                                ),
+                                padding: const EdgeInsets.all(
+                                    15), // optional padding
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'Opinion: ${snapshot.data!["review"]["Opinion"]}',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                        wordSpacing: 2,
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Rating: ${snapshot.data!["review"]["Rating"]}',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                        wordSpacing: 2,
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                    // Row(
+                                    //   mainAxisAlignment:
+                                    //       MainAxisAlignment.spaceEvenly,
+                                    //   children: [
+                                    //     ElevatedButton(
+                                    //         onPressed: () {
+                                    //           editReview();
+                                    //         },
+                                    //         child: const Text('Edit Review')),
+                                    //     ElevatedButton(
+                                    //         onPressed: () {
+                                    //           deleteReview(snapshot.data!["id"],
+                                    //               context);
+                                    //         },
+                                    //         child: const Text('Delete Review')),
+                                    //   ],
+                                    // ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ]),
+                  if (snapshot.data!["review"] == null &&
+                      containsMap(seenMovies,
+                          ['Movies', snapshot.data!["id"].toString()]))
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton(
+                            onPressed: () {
+                              writeReview(snapshot.data!["id"], context);
+                            },
+                            child: const Text('Write A Review')),
+                      ],
+                    ),
                   Container(
                     margin: const EdgeInsets.all(10.0), // set margin here
                     child: const Text(

@@ -152,7 +152,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 });
               });
             } else if (doc.id == "Reviews" && reviews.keys.isEmpty) {
-              reviews = doc.data() as Map;
+              Map reviewsMap = doc.data() as Map;
+              List reviewsList = reviewsMap["Seen"];
+              reviewsList.forEach((element) {
+                element = element as Map;
+                reviews[element.keys.toList()[0]] =
+                    element[element.keys.toList()[0]];
+              });
             } else if (doc.id == "Rewatched" && rewatchedMovies.keys.isEmpty) {
               rewatchedMovies = doc.data() as Map;
             } else if (doc.id == "TVShows" && seenTVShows.isEmpty) {

@@ -54,11 +54,11 @@ class _SearchResultState extends State<Search> {
           .replaceAll(" ", "+");
       String searchLink = "";
       if (_selectedItem == "actor") {
-        searchLink = '${search_by_name}${name}';
+        searchLink = '$search_by_name$name';
       } else if (_selectedItem == "movie") {
-        searchLink = '${search_by_nameMovie}${name}';
+        searchLink = '$search_by_nameMovie$name';
       } else if (_selectedItem == "tvshow") {
-        searchLink = '${search_by_nameTVSHOW}${name}';
+        searchLink = '$search_by_nameTVSHOW$name';
       }
       final response = await http.get(Uri.parse(searchLink));
       if (response.statusCode == 200) {
@@ -68,13 +68,13 @@ class _SearchResultState extends State<Search> {
           String resultSearchLink = '';
           if (_selectedItem == "actor") {
             resultSearchLink =
-                '${link}${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}${api_key_actor}';
+                '$link${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$api_key_actor';
           } else if (_selectedItem == "movie") {
             resultSearchLink =
-                '${linkMovie}${result["id"]}-${result["title"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}${api_key_actor}';
+                '$linkMovie${result["id"]}-${result["title"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$api_key_actor';
           } else if (_selectedItem == "tvshow") {
             resultSearchLink =
-                '${linkTVSHOW}${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}${api_key_actor}';
+                '$linkTVSHOW${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$api_key_actor';
           }
           final response2 = await http.get(Uri.parse(resultSearchLink));
           if (response2.statusCode == 200) {
