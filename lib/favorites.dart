@@ -75,6 +75,9 @@ class Favorites extends StatelessWidget {
       );
     }
 
+    favMovies = favMovies.reversed.toList();
+    favTVShows = favTVShows.reversed.toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
