@@ -77,6 +77,9 @@ class Seen extends StatelessWidget {
       );
     }
 
+    seenMovies = seenMovies.reversed.toList();
+    seenTVShows = seenTVShows.reversed.toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
