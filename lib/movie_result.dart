@@ -1,3 +1,6 @@
+// ignore_for_file: non_constant_identifier_names
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/profile.dart';
 import 'package:uractor/search.dart';
@@ -7,6 +10,7 @@ import 'dart:convert';
 import 'package:uractor/playlists.dart';
 import 'package:uractor/person_result.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'dart:async';
 
 String _imageProviderSeen = 'assets/seen_before.png';
 String _imageProviderWatchlist = 'assets/watchlist_before.png';
@@ -17,6 +21,166 @@ bool _isTappedWatchlist = false;
 bool _isTappedFav = false;
 bool _isTappedList = false;
 
+// Assuming the "context" object is available, e.g., from a Flutter widget.
+
+Future<void> deleteFromWatchedConfirmation(
+    String id, BuildContext context) async {
+  // Display a dialog box for confirmation. You will have to create a custom dialog for this.
+  bool confirmed = await showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Confirmation'),
+        content: const Text('Delete from watched?'),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('No'),
+            onPressed: () {
+              Navigator.of(context).pop(false);
+            },
+          ),
+          TextButton(
+            child: const Text('Yes'),
+            onPressed: () {
+              Navigator.of(context).pop(true);
+            },
+          ),
+        ],
+      );
+    },
+  );
+
+  if (confirmed) {
+    List w;
+    await FirebaseFirestore.instance
+        .collection(uid)
+        .get()
+        .then((QuerySnapshot querySnapshot) {
+      querySnapshot.docs.forEach((doc) async {
+        if (doc.id == "Movies") {
+          Map movies_result = doc.data() as Map;
+          w = movies_result["Seen"];
+          int index = w.indexOf(id);
+
+          if (index > -1) {
+            w.removeAt(index);
+          }
+          var userDoc =
+              FirebaseFirestore.instance.collection(uid).doc("Movies");
+          await userDoc.update({'Seen': w});
+          seenMovies = [];
+          for (var element in w) {
+            seenMovies += [
+              ["Movies", element]
+            ];
+          }
+          Timer(const Duration(seconds: 1), () {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (context) => MovieResult()));
+          });
+        }
+      });
+    });
+  } else {
+    _imageProviderSeen = 'assets/seen_after.png';
+  }
+}
+
+void markWatched(String id, String title, BuildContext context) async {
+  final userDoc = FirebaseFirestore.instance.collection(uid).doc('Movies');
+  id = id.toString();
+  await userDoc.update({
+    'Seen': FieldValue.arrayUnion([id])
+  });
+  // store id in shared preferences or another way
+  List w;
+  await FirebaseFirestore.instance
+      .collection(uid)
+      .get()
+      .then((QuerySnapshot querySnapshot) {
+    querySnapshot.docs.forEach((doc) async {
+      if (doc.id == "Movies") {
+        Map movies_result = doc.data() as Map;
+        w = movies_result["Seen"];
+        seenMovies = [];
+        for (var element in w) {
+          seenMovies += [
+            ["Movies", element]
+          ];
+        }
+      }
+    });
+  });
+
+  final today = DateTime.now();
+
+  final snapshot = await FirebaseFirestore.instance.collection(uid).get();
+  for (var doc in snapshot.docs) {
+    if (doc.id == 'Calendar') {
+      final events = doc.data();
+      addtoCalendar(id, title, today, context);
+    }
+  }
+}
+
+void addtoCalendar(
+    String id, String title, DateTime today, BuildContext context) async {
+  final confirmed = await showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Confirm'),
+        content: const Text('Did you watch this movie today?'),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () {
+              Navigator.of(context).pop(false);
+            },
+          ),
+          TextButton(
+            child: const Text('Yes'),
+            onPressed: () {
+              Navigator.of(context).pop(true);
+            },
+          ),
+        ],
+      );
+    },
+  );
+
+  if (confirmed) {
+    final myObject = {
+      today.toString().split(" ")[0]: FieldValue.arrayUnion([
+        {'id': id, 'title': title}
+      ])
+    };
+
+    final userDoc = FirebaseFirestore.instance.collection(uid).doc('Calendar');
+    await userDoc.update(myObject);
+    calendar = {};
+    await FirebaseFirestore.instance
+        .collection(uid)
+        .get()
+        .then((QuerySnapshot querySnapshot) {
+      querySnapshot.docs.forEach((doc) async {
+        if (doc.id == "Calendar") {
+          calendar = doc.data() as Map;
+        }
+      });
+    });
+    Timer(const Duration(seconds: 1), () {
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => MovieResult()));
+    });
+  } else {
+    Timer(const Duration(seconds: 1), () {
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => MovieResult()));
+    });
+  }
+}
+
 class MovieResult extends StatefulWidget {
   MovieResult();
 
@@ -26,7 +190,7 @@ class MovieResult extends StatefulWidget {
 
 bool containsMap(List list, List map) {
   for (int i = 0; i < list.length; i++) {
-    if ((list[i][1]) as String == map[1].toString() &&
+    if ((list[i][1]).toString() == map[1].toString() &&
         (list[i][0]) as String == "Movies") {
       return true;
     }
@@ -59,6 +223,7 @@ void check() {
 }
 
 class _MovieResultState extends State<MovieResult> {
+  final myController = TextEditingController();
   final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
   String credits = "/credits?api_key=700cd4fab994df56eb41b34d38c4762a";
   final String imgLink = 'https://image.tmdb.org/t/p/w500';
@@ -69,22 +234,31 @@ class _MovieResultState extends State<MovieResult> {
 
   Future<Map> getMovieData() async {
     List movieData = movieResult;
+    if (rewatchedMovies.keys.toList().contains(movieData[0])) {
+      movieData.add(rewatchedMovies[movieData[0]]);
+    } else if (containsMap(seenMovies, ['Movies', movieResult[0]])) {
+      movieData.add(1);
+    } else {
+      movieData.add(0);
+    }
+    myController.text = movieData[3].toString();
     String name = movieData[1]
         .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
         .replaceAll(" ", "-");
-    final response = await http
-        .get(Uri.parse('${link}${movieData[0]}-${name}${api_key_actor}'));
+    final response =
+        await http.get(Uri.parse('$link${movieData[0]}-$name$api_key_actor'));
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
-      String imdb_id = json['imdb_id'];
-      String link2 = 'https://www.omdbapi.com/?i=$imdb_id&apikey=***REMOVED***';
+      json["times_seen"] = movieData[3];
+      String imdbId = json['imdb_id'];
+      String link2 = 'https://www.omdbapi.com/?i=$imdbId&apikey=***REMOVED***';
       final r = await http.get(Uri.parse(link2));
       if (r.statusCode == 200) {
         json['imdb_rating'] = jsonDecode(r.body)['imdbRating'];
         json['year'] = jsonDecode(r.body)['Year'];
         final r2 = await http
-            .get(Uri.parse('${link}${movieData[0]}-${name}${watch_providers}'));
+            .get(Uri.parse('$link${movieData[0]}-$name$watch_providers'));
         if (r2.statusCode == 200) {
           json['providers'] = [];
           if (jsonDecode(r2.body)["results"].keys.contains(country)) {
@@ -97,12 +271,12 @@ class _MovieResultState extends State<MovieResult> {
                 },
               );
               final r3 = await http
-                  .get(Uri.parse('${link}${movieData[0]}-${name}${credits}'));
+                  .get(Uri.parse('$link${movieData[0]}-$name$credits'));
               if (r3.statusCode == 200) {
                 json['cast'] = jsonDecode(r3.body)["cast"];
                 json['crew'] = jsonDecode(r3.body)["crew"];
                 final r4 = await http
-                    .get(Uri.parse('${link}${movieData[0]}-${name}${video}'));
+                    .get(Uri.parse('$link${movieData[0]}-$name$video'));
                 if (r4.statusCode == 200) {
                   bool got = false;
                   jsonDecode(r4.body)['results'].forEach((element) {
@@ -121,12 +295,12 @@ class _MovieResultState extends State<MovieResult> {
             } else {
               json['providers'] = [];
               final r3 = await http
-                  .get(Uri.parse('${link}${movieData[0]}-${name}${credits}'));
+                  .get(Uri.parse('$link${movieData[0]}-$name$credits'));
               if (r3.statusCode == 200) {
                 json['cast'] = jsonDecode(r3.body)["cast"];
                 json['crew'] = jsonDecode(r3.body)["crew"];
                 final r4 = await http
-                    .get(Uri.parse('${link}${movieData[0]}-${name}${video}'));
+                    .get(Uri.parse('$link${movieData[0]}-$name$video'));
                 if (r4.statusCode == 200) {
                   bool got = false;
                   jsonDecode(r4.body)['results'].forEach((element) {
@@ -145,13 +319,13 @@ class _MovieResultState extends State<MovieResult> {
             }
           } else {
             json['providers'] = [];
-            final r3 = await http
-                .get(Uri.parse('${link}${movieData[0]}-${name}${credits}'));
+            final r3 =
+                await http.get(Uri.parse('$link${movieData[0]}-$name$credits'));
             if (r3.statusCode == 200) {
               json['cast'] = jsonDecode(r3.body)["cast"];
               json['crew'] = jsonDecode(r3.body)["crew"];
-              final r4 = await http
-                  .get(Uri.parse('${link}${movieData[0]}-${name}${video}'));
+              final r4 =
+                  await http.get(Uri.parse('$link${movieData[0]}-$name$video'));
               if (r4.statusCode == 200) {
                 bool got = false;
                 jsonDecode(r4.body)['results'].forEach((element) {
@@ -183,17 +357,20 @@ class _MovieResultState extends State<MovieResult> {
   Widget build(BuildContext context) {
     check();
 
-    int _selectedIndex = 0;
+    int selectedIndex = 0;
 
-    void _onTap(String type) {
+    // ignore: no_leading_underscores_for_local_identifiers
+    void _onTap(String type, String id, String title) {
       setState(
         () {
           switch (type) {
             case 'seen':
               _isTappedSeen = !_isTappedSeen;
-              _imageProviderSeen = _isTappedSeen
-                  ? 'assets/seen_after.png'
-                  : 'assets/seen_before.png';
+              if (_isTappedSeen) {
+                markWatched(id, title, context);
+              } else {
+                deleteFromWatchedConfirmation(id, context);
+              }
               break;
             case 'watchlist':
               _isTappedWatchlist = !_isTappedWatchlist;
@@ -222,29 +399,39 @@ class _MovieResultState extends State<MovieResult> {
                         itemBuilder: (context, index) {
                           final leftMovieIndex = index * 2;
                           final rightMovieIndex = index * 2 + 1;
-                          String key_left =
-                              playlists.keys.elementAt(leftMovieIndex);
-                          dynamic value_left = playlists[key_left]['Name'];
-                          dynamic image_left =
-                              playlists[key_left]['CoverPhoto'];
-                          dynamic movies_left = playlists[key_left]['Movies'];
-                          dynamic tvshows_left =
-                              playlists[key_left]['TV Shows'];
-                          dynamic accessCode_left =
-                              playlists[key_left]['AccessCode'];
-                          String key_right =
-                              playlists.keys.elementAt(rightMovieIndex);
-                          dynamic value_right = playlists[key_right]['Name'];
-                          dynamic image_right =
-                              playlists[key_right]['CoverPhoto'];
-                          dynamic movies_right = playlists[key_right]['Movies'];
-                          dynamic tvshows_right =
-                              playlists[key_right]['TV Shows'];
-                          dynamic accessCode_right =
-                              playlists[key_right]['AccessCode'];
+                          final keyLeft = (leftMovieIndex < playlists.length)
+                              ? playlists.keys.elementAt(leftMovieIndex)
+                              : null;
+                          final keyRight = (rightMovieIndex < playlists.length)
+                              ? playlists.keys.elementAt(rightMovieIndex)
+                              : null;
+                          dynamic valueLeft,
+                              imageLeft,
+                              moviesLeft,
+                              tvshowsLeft,
+                              accesscodeLeft,
+                              valueRight,
+                              imageRight,
+                              moviesRight,
+                              tvshowsRight,
+                              accesscodeRight;
+                          if (keyLeft != null) {
+                            valueLeft = playlists[keyLeft]['Name'];
+                            imageLeft = playlists[keyLeft]['CoverPhoto'];
+                            moviesLeft = playlists[keyLeft]['Movies'];
+                            tvshowsLeft = playlists[keyLeft]['TV Shows'];
+                            accesscodeLeft = playlists[keyLeft]['AccessCode'];
+                          }
+                          if (keyRight != null) {
+                            valueRight = playlists[keyRight]['Name'];
+                            imageRight = playlists[keyRight]['CoverPhoto'];
+                            moviesRight = playlists[keyRight]['Movies'];
+                            tvshowsRight = playlists[keyRight]['TV Shows'];
+                            accesscodeRight = playlists[keyRight]['AccessCode'];
+                          }
                           return Row(
                             children: [
-                              if (key_left != null)
+                              if (keyLeft != null)
                                 GestureDetector(
                                   onTap: () {
                                     // Handle the click event here
@@ -275,7 +462,7 @@ class _MovieResultState extends State<MovieResult> {
                                                 BorderRadius.circular(10),
                                             image: DecorationImage(
                                               image: NetworkImage(
-                                                image_left,
+                                                imageLeft,
                                               ),
                                               fit: BoxFit.cover,
                                             ),
@@ -308,7 +495,7 @@ class _MovieResultState extends State<MovieResult> {
                                           child: Align(
                                             alignment: Alignment.bottomLeft,
                                             child: Text(
-                                              value_left,
+                                              valueLeft,
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 10,
@@ -324,7 +511,7 @@ class _MovieResultState extends State<MovieResult> {
                                     ),
                                   ),
                                 ),
-                              if (key_right != null)
+                              if (keyRight != null)
                                 GestureDetector(
                                   onTap: () {
                                     // Handle the click event here
@@ -355,7 +542,7 @@ class _MovieResultState extends State<MovieResult> {
                                                 BorderRadius.circular(10),
                                             image: DecorationImage(
                                               image: NetworkImage(
-                                                image_right,
+                                                imageRight,
                                               ),
                                               fit: BoxFit.cover,
                                             ),
@@ -388,7 +575,7 @@ class _MovieResultState extends State<MovieResult> {
                                           child: Align(
                                             alignment: Alignment.bottomLeft,
                                             child: Text(
-                                              value_right,
+                                              valueRight,
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 10,
@@ -427,8 +614,8 @@ class _MovieResultState extends State<MovieResult> {
       );
     }
 
-    final List<Widget> _pages = [
-      MyApp(),
+    final List<Widget> pages = [
+      const MyApp(),
       Search(),
       Playlists(),
       Profile(),
@@ -436,17 +623,17 @@ class _MovieResultState extends State<MovieResult> {
     ];
 
     void _onItemTapped(int index) {
-      _selectedIndex = index;
+      selectedIndex = index;
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => _pages[_selectedIndex]),
+        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
       );
     }
 
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: Color(0xFF121212),
+        backgroundColor: const Color(0xFF121212),
         title: Center(
             child: Image.asset(
           'assets/logo.png',
@@ -493,7 +680,7 @@ class _MovieResultState extends State<MovieResult> {
                           ),
                         ),
                         Padding(
-                          padding: EdgeInsets.all(16.0),
+                          padding: const EdgeInsets.all(16.0),
                           child: Align(
                             alignment: Alignment.bottomRight,
                             child: Text(
@@ -513,12 +700,12 @@ class _MovieResultState extends State<MovieResult> {
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(16.0),
                     child: Align(
                       alignment: Alignment.bottomRight,
                       child: Container(
                         height: 85, // fixed height
-                        padding: EdgeInsets.all(8), // optional padding
+                        padding: const EdgeInsets.all(8), // optional padding
                         child: ListView(
                           children: [
                             Text(
@@ -619,7 +806,10 @@ class _MovieResultState extends State<MovieResult> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       GestureDetector(
-                        onTap: () => _onTap('seen'),
+                        onTap: () => _onTap(
+                            'seen',
+                            snapshot.data!["id"].toString(),
+                            snapshot.data!["title"]),
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -630,7 +820,10 @@ class _MovieResultState extends State<MovieResult> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => _onTap('watchlist'),
+                        onTap: () => _onTap(
+                            'watchlist',
+                            snapshot.data!["id"].toString(),
+                            snapshot.data!["title"]),
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -641,7 +834,10 @@ class _MovieResultState extends State<MovieResult> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => _onTap('fav'),
+                        onTap: () => _onTap(
+                            'fav',
+                            snapshot.data!["id"].toString(),
+                            snapshot.data!["title"]),
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -652,7 +848,10 @@ class _MovieResultState extends State<MovieResult> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => _onTap('list'),
+                        onTap: () => _onTap(
+                            'list',
+                            snapshot.data!["id"].toString(),
+                            snapshot.data!["title"]),
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -665,7 +864,7 @@ class _MovieResultState extends State<MovieResult> {
                     ],
                   ),
                   Container(
-                    margin: EdgeInsets.all(10.0), // set margin here
+                    margin: const EdgeInsets.all(10.0), // set margin here
                     child: const Text(
                       "Where to Watch?",
                       style: TextStyle(color: Colors.white, fontSize: 18),
@@ -699,18 +898,18 @@ class _MovieResultState extends State<MovieResult> {
                     ),
                   if (snapshot.data!['providers'].length == 0)
                     Container(
-                      margin: EdgeInsets.all(10.0), // set margin here
+                      margin: const EdgeInsets.all(10.0), // set margin here
                       child: const Text(
                         "Nowhere at the moment",
                         style: TextStyle(color: Colors.white, fontSize: 18),
                       ),
                     ),
-                  Container(
+                  SizedBox(
                     width: 200,
                     child: TextField(
-                      controller: TextEditingController(),
-                      decoration: InputDecoration(
-                        labelText: 'Times Seen',
+                      controller: myController,
+                      decoration: const InputDecoration(
+                        labelText: "Times seen",
                         hintStyle: TextStyle(color: Colors.grey),
                         enabledBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: Colors.grey),
@@ -718,12 +917,12 @@ class _MovieResultState extends State<MovieResult> {
                         labelStyle: TextStyle(color: Colors.grey),
                         border: OutlineInputBorder(),
                       ),
-                      style: TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.white),
                       keyboardType: TextInputType.number,
                     ),
                   ),
                   Row(
-                    children: [],
+                    children: const [],
                   ),
                   Column(
                     children: [
@@ -737,7 +936,7 @@ class _MovieResultState extends State<MovieResult> {
                       ),
                       Container(
                         width: MediaQuery.of(context).size.width,
-                        height: 100,
+                        height: 190,
                         margin: const EdgeInsets.fromLTRB(30.0, 5.0, 30.0, 5.0),
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
@@ -753,32 +952,45 @@ class _MovieResultState extends State<MovieResult> {
                               person['profile_path'] =
                                   imgLink + person['profile_path'];
                             }
-                            String link_person =
+                            String linkPerson =
                                 "https://api.themoviedb.org/3/person/";
                             return GestureDetector(
-                              onTap: () {
-                                personResult = person;
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => PersonResult()),
-                                );
-                              },
-                              child: Container(
-                                margin: const EdgeInsets.fromLTRB(
-                                    10.0, 10.0, 5.0, 0),
-                                width: MediaQuery.of(context).size.width * 0.18,
-                                height:
-                                    MediaQuery.of(context).size.height * 0.18,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(27),
-                                  image: DecorationImage(
-                                    image: NetworkImage(person['profile_path']),
-                                    fit: BoxFit.fitWidth,
-                                  ),
-                                ),
-                              ),
-                            );
+                                onTap: () {
+                                  personResult = person;
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => PersonResult()),
+                                  );
+                                },
+                                child: Column(
+                                  children: <Widget>[
+                                    Container(
+                                      margin: const EdgeInsets.fromLTRB(
+                                          10.0, 10.0, 5.0, 0),
+                                      width: MediaQuery.of(context).size.width *
+                                          0.18,
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              0.18,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(27),
+                                        child: Image.network(
+                                          person['profile_path'],
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(
+                                        height:
+                                            10), // optional: to give some space between image and text
+                                    Text(
+                                      person["name"],
+                                      style: const TextStyle(
+                                          color: Colors.white, fontSize: 10),
+                                    ),
+                                  ],
+                                ));
                           },
                         ),
                       ),
@@ -803,8 +1015,8 @@ class _MovieResultState extends State<MovieResult> {
                             Map person = snapshot.data!['crew'][index];
                             return Text(
                               "${person['job']}: ${person['name']}",
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 15),
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 15),
                             );
                           },
                         ),
@@ -857,7 +1069,7 @@ class _MovieResultState extends State<MovieResult> {
         selectedItemColor: Colors.grey,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Color(0xFF121212),
+        backgroundColor: const Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -881,7 +1093,7 @@ class _MovieResultState extends State<MovieResult> {
         onTap: (int index) {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => _pages[index]),
+            MaterialPageRoute(builder: (context) => pages[index]),
           );
         },
       ),
