@@ -301,65 +301,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   // Handle the click event here
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => Recommendations()),
-                  );
-                },
-                child: Container(
-                  margin: const EdgeInsets.all(10.0),
-                  width: MediaQuery.of(context).size.width * 0.4,
-                  height: MediaQuery.of(context).size.width * 0.5,
-                  decoration: myDecoration,
-                  child: Column(
-                    children: [
-                      Image.asset('assets/main_recommendation.png'),
-                      const Text(
-                        'Your Reviews',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  // Handle the click event here
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => Favorites()),
-                  );
-                },
-                child: Container(
-                  margin: const EdgeInsets.all(10.0),
-                  width: MediaQuery.of(context).size.width * 0.4,
-                  height: MediaQuery.of(context).size.width * 0.5,
-                  decoration: myDecoration2,
-                  child: Column(
-                    children: [
-                      Image.asset('assets/main_favorites.png'),
-                      const Text(
-                        'Your Favorites',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  // Handle the click event here
-                  Navigator.push(
-                    context,
                     MaterialPageRoute(builder: (context) => Watchlist()),
                   );
                 },
@@ -387,19 +328,19 @@ class _MyHomePageState extends State<MyHomePage> {
                   // Handle the click event here
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => Oscars()),
+                    MaterialPageRoute(builder: (context) => Favorites()),
                   );
                 },
                 child: Container(
                   margin: const EdgeInsets.all(10.0),
                   width: MediaQuery.of(context).size.width * 0.4,
                   height: MediaQuery.of(context).size.width * 0.5,
-                  decoration: myDecoration4,
+                  decoration: myDecoration2,
                   child: Column(
                     children: [
-                      Image.asset('assets/main_oscars.png'),
+                      Image.asset('assets/main_favorites.png'),
                       const Text(
-                        'Oscar Winners',
+                        'Your Favorites',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
@@ -469,7 +410,66 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
             ],
-          )
+          ),
+          //   Row(
+          //     mainAxisAlignment: MainAxisAlignment.center,
+          //     children: [
+          //       GestureDetector(
+          //         onTap: () {
+          //           // Handle the click event here
+          //           Navigator.push(
+          //             context,
+          //             MaterialPageRoute(builder: (context) => Recommendations()),
+          //           );
+          //         },
+          //         child: Container(
+          //           margin: const EdgeInsets.all(10.0),
+          //           width: MediaQuery.of(context).size.width * 0.4,
+          //           height: MediaQuery.of(context).size.width * 0.5,
+          //           decoration: myDecoration,
+          //           child: Column(
+          //             children: [
+          //               Image.asset('assets/main_recommendation.png'),
+          //               const Text(
+          //                 'Your Reviews',
+          //                 style: TextStyle(
+          //                   fontSize: 15,
+          //                   fontWeight: FontWeight.bold,
+          //                 ),
+          //               ),
+          //             ],
+          //           ),
+          //         ),
+          //       ),
+          //       GestureDetector(
+          //         onTap: () {
+          //           // Handle the click event here
+          //           Navigator.push(
+          //             context,
+          //             MaterialPageRoute(builder: (context) => Oscars()),
+          //           );
+          //         },
+          //         child: Container(
+          //           margin: const EdgeInsets.all(10.0),
+          //           width: MediaQuery.of(context).size.width * 0.4,
+          //           height: MediaQuery.of(context).size.width * 0.5,
+          //           decoration: myDecoration4,
+          //           child: Column(
+          //             children: [
+          //               Image.asset('assets/main_oscars.png'),
+          //               const Text(
+          //                 'Oscar Winners',
+          //                 style: TextStyle(
+          //                   fontSize: 15,
+          //                   fontWeight: FontWeight.bold,
+          //                 ),
+          //               ),
+          //             ],
+          //           ),
+          //         ),
+          //       ),
+          //     ],
+          //   ),
         ]),
       ),
       bottomNavigationBar: BottomNavigationBar(
