@@ -77,9 +77,6 @@ class Seen extends StatelessWidget {
       );
     }
 
-    seenMovies = seenMovies.reversed.toList();
-    seenTVShows = seenTVShows.reversed.toList();
-
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
@@ -119,22 +116,24 @@ class Seen extends StatelessWidget {
                   child: TabBarView(
                     children: [
                       ListView.builder(
-                        itemCount: (seenMovies.length / 3).ceil(),
+                        itemCount:
+                            (seenMovies.reversed.toList().length / 3).ceil(),
                         itemBuilder: (context, index) {
                           final leftMovieIndex = index * 3;
                           final middleMovieIndex = index * 3 + 1;
                           final rightMovieIndex = index * 3 + 2;
-                          final leftMovie = (leftMovieIndex < seenMovies.length)
-                              ? seenMovies[leftMovieIndex]
+                          final leftMovie = (leftMovieIndex <
+                                  seenMovies.reversed.toList().length)
+                              ? seenMovies.reversed.toList()[leftMovieIndex]
                               : null;
-                          final middleMovie =
-                              (middleMovieIndex < seenMovies.length)
-                                  ? seenMovies[middleMovieIndex]
-                                  : null;
-                          final rightMovie =
-                              (rightMovieIndex < seenMovies.length)
-                                  ? seenMovies[rightMovieIndex]
-                                  : null;
+                          final middleMovie = (middleMovieIndex <
+                                  seenMovies.reversed.toList().length)
+                              ? seenMovies.reversed.toList()[middleMovieIndex]
+                              : null;
+                          final rightMovie = (rightMovieIndex <
+                                  seenMovies.reversed.toList().length)
+                              ? seenMovies.reversed.toList()[rightMovieIndex]
+                              : null;
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
@@ -349,23 +348,24 @@ class Seen extends StatelessWidget {
                         },
                       ),
                       ListView.builder(
-                        itemCount: (seenTVShows.length / 3).ceil(),
+                        itemCount:
+                            (seenTVShows.reversed.toList().length / 3).ceil(),
                         itemBuilder: (context, index) {
                           final leftTVShowIndex = index * 3;
                           final middleTVShowIndex = index * 3 + 1;
                           final rightTVShowIndex = index * 3 + 2;
-                          final leftTVShow =
-                              (leftTVShowIndex < seenTVShows.length)
-                                  ? seenTVShows[leftTVShowIndex]
-                                  : null;
-                          final middleTVShow =
-                              (middleTVShowIndex < seenTVShows.length)
-                                  ? seenTVShows[middleTVShowIndex]
-                                  : null;
-                          final rightTVShow =
-                              (rightTVShowIndex < seenTVShows.length)
-                                  ? seenTVShows[rightTVShowIndex]
-                                  : null;
+                          final leftTVShow = (leftTVShowIndex <
+                                  seenTVShows.reversed.toList().length)
+                              ? seenTVShows.reversed.toList()[leftTVShowIndex]
+                              : null;
+                          final middleTVShow = (middleTVShowIndex <
+                                  seenTVShows.reversed.toList().length)
+                              ? seenTVShows.reversed.toList()[middleTVShowIndex]
+                              : null;
+                          final rightTVShow = (rightTVShowIndex <
+                                  seenTVShows.reversed.toList().length)
+                              ? seenTVShows.reversed.toList()[rightTVShowIndex]
+                              : null;
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
