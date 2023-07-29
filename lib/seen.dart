@@ -112,7 +112,7 @@ class Seen extends StatelessWidget {
                   ],
                 ),
                 Container(
-                  height: MediaQuery.of(context).size.height * 0.65,
+                  height: MediaQuery.of(context).size.height * 0.7,
                   child: TabBarView(
                     children: [
                       ListView.builder(
