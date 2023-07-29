@@ -77,6 +77,9 @@ class Watchlist extends StatelessWidget {
       );
     }
 
+    watchlist = watchlist.reversed.toList();
+    watchlistTVShows = watchlistTVShows.reversed.toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
