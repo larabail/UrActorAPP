@@ -20,36 +20,36 @@ Future<String> _loadJSONFile() async {
   return await rootBundle.loadString('assets/oscars_api.json');
 }
 
-Future<Map> parseJSONFile() async {
-  if (oscars.length == 0) {
-    Map people = {};
-    String jsonString = await _loadJSONFile();
-    Map items = jsonDecode(jsonString);
-    for (String person_id in items.keys) {
-      Map<String, dynamic> person = {};
-      Map person_to_add = {};
-      link = 'https://api.themoviedb.org/3/person/';
-      final response = await http.get(
-          Uri.parse('${link}${items[person_id]['tmdb_id']}${api_key_actor}'));
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        if (json['profile_path'] != null) {
-          items[person_id]['profile_path'] = imgLink + json['profile_path'];
-        } else {
-          items[person_id]['profile_path'] =
-              "https://cdn-icons-png.flaticon.com/512/3088/3088765.png";
-        }
-        people[items[person_id]['tmdb_id']] = items[person_id];
-      } else {
-        throw Exception('Failed to load movie details');
-      }
-    }
-    oscars = people;
-    return people;
-  } else {
-    return oscars;
-  }
-}
+// Future<Map> parseJSONFile() async {
+//   if (oscars.length == 0) {
+//     Map people = {};
+//     String jsonString = await _loadJSONFile();
+//     Map items = jsonDecode(jsonString);
+//     for (String person_id in items.keys) {
+//       Map<String, dynamic> person = {};
+//       Map person_to_add = {};
+//       link = 'https://api.themoviedb.org/3/person/';
+//       final response = await http.get(
+//           Uri.parse('${link}${items[person_id]['tmdb_id']}${api_key_actor}'));
+//       if (response.statusCode == 200) {
+//         final json = jsonDecode(response.body);
+//         if (json['profile_path'] != null) {
+//           items[person_id]['profile_path'] = imgLink + json['profile_path'];
+//         } else {
+//           items[person_id]['profile_path'] =
+//               "https://cdn-icons-png.flaticon.com/512/3088/3088765.png";
+//         }
+//         people[items[person_id]['tmdb_id']] = items[person_id];
+//       } else {
+//         throw Exception('Failed to load movie details');
+//       }
+//     }
+//     oscars = people;
+//     return people;
+//   } else {
+//     return oscars;
+//   }
+// }
 
 bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
   String jsonString = json.encode(map);
@@ -72,7 +72,6 @@ class _PersonResultState extends State<PersonResult> {
   Map presult = personResult;
 
   Future<Map> getPersonData() async {
-    print(presult);
     Map json = {};
     String name = presult['name']
         .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
@@ -97,9 +96,10 @@ class _PersonResultState extends State<PersonResult> {
             .get(Uri.parse('${link}${presult["id"]}-${name}${api_key_tv}'));
         if (r4.statusCode == 200) {
           json['tv_credits_crew'] = jsonDecode(r4.body)['crew'];
-          Map oscars = await parseJSONFile();
+          // Map oscars = await parseJSONFile();
           if (oscars.keys.contains(presult["id"])) {
             json['num_oscars'] = oscars[presult["id"]]['num_oscars'];
+            print(json['num_oscars']);
           } else {
             json['num_oscars'] = 0;
           }
@@ -155,18 +155,18 @@ class _PersonResultState extends State<PersonResult> {
                     Center(
                       child: Container(
                         height: MediaQuery.of(context).size.height * 0.075,
-                        child: ListView.builder(
-                          itemCount: snapshot.data!['num_oscars'],
-                          itemBuilder: (BuildContext context, int index) {
-                            return Center(
-                                child: Container(
-                              height:
-                                  MediaQuery.of(context).size.height * 0.075,
-                              child: Image.asset(
-                                "assets/oscar2.png",
+                        child: Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(
+                              snapshot.data!['num_oscars'],
+                              (index) => Container(
+                                height:
+                                    MediaQuery.of(context).size.height * 0.075,
+                                child: Image.asset("assets/oscar2.png"),
                               ),
-                            ));
-                          },
+                            ),
+                          ),
                         ),
                       ),
                     ),

@@ -196,6 +196,15 @@ class _MyHomePageState extends State<MyHomePage> {
             });
           });
         });
+        await FirebaseFirestore.instance
+            .collection("Oscars")
+            .get()
+            .then((QuerySnapshot querySnapshot) {
+          querySnapshot.docs.forEach((doc) {
+            Map d = doc.data() as Map;
+            oscars[d["tmdb_id"]] = doc.data();
+          });
+        });
         print('User is signed in!');
       }
     });
