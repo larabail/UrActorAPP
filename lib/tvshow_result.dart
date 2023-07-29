@@ -748,17 +748,30 @@ class _TVShowResultState extends State<TVShowResult> {
                     ),
                     child: Stack(
                       children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            image: DecorationImage(
-                              image: NetworkImage(
-                                imgLink + snapshot.data!['backdrop_path'],
+                        if (snapshot.data!['backdrop_path'] != "")
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              image: DecorationImage(
+                                image: NetworkImage(
+                                  imgLink + snapshot.data!['backdrop_path'],
+                                ),
+                                fit: BoxFit.cover,
                               ),
-                              fit: BoxFit.cover,
                             ),
                           ),
-                        ),
+                        if (snapshot.data!['backdrop_path'] == "")
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              image: const DecorationImage(
+                                image: AssetImage(
+                                  "assets/logo.png",
+                                ),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
                         Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
@@ -792,30 +805,32 @@ class _TVShowResultState extends State<TVShowResult> {
                       ],
                     ),
                   ),
-                  Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Align(
-                      alignment: Alignment.bottomRight,
-                      child: Container(
-                        height: 85, // fixed height
-                        padding: EdgeInsets.all(8), // optional padding
-                        child: ListView(
-                          children: [
-                            Text(
-                              snapshot.data!['overview'],
-                              textAlign: TextAlign.justify,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                wordSpacing: 2,
-                                height: 1.5,
+                  if (snapshot.data!['overview'] != null &&
+                      snapshot.data!['overview'] != "")
+                    Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Align(
+                        alignment: Alignment.bottomRight,
+                        child: Container(
+                          height: 85, // fixed height
+                          padding: EdgeInsets.all(8), // optional padding
+                          child: ListView(
+                            children: [
+                              Text(
+                                snapshot.data!['overview'],
+                                textAlign: TextAlign.justify,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  wordSpacing: 2,
+                                  height: 1.5,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   Container(
                     height: 30, // fixed height
                     margin: const EdgeInsets.fromLTRB(20.0, 5.0, 0, 5.0),
