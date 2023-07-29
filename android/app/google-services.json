@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "805906181872",
+    "firebase_url": "https://actordb-cf981-default-rtdb.firebaseio.com",
+    "project_id": "actordb-cf981",
+    "storage_bucket": "actordb-cf981.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:805906181872:android:eeec8ee078b0e4630d9c35",
+        "android_client_info": {
+          "package_name": "com.example.uractor"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "805906181872-tunbj0cigosflahai4p530p4ep1fu265.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD49SNiBnkHCxGoUZ0GrXEKMv0WoTanOqo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "805906181872-tunbj0cigosflahai4p530p4ep1fu265.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "805906181872-ai2a1k4rqe3n4ab5fr0pb5ujig4uad2k.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.uractor"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
