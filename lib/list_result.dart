@@ -168,147 +168,141 @@ class ListResult extends StatelessWidget {
                 ],
               ),
             ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: 425,
-                child: FutureBuilder<List<Map<String, dynamic>>>(
-                  future: movieData(),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      final movies = snapshot.data!;
-                      return ListView.builder(
-                        itemCount: (movies.length / 3).ceil(),
-                        itemBuilder: (context, index) {
-                          final leftMovieIndex = index * 3;
-                          final middleMovieIndex = index * 3 + 1;
-                          final rightMovieIndex = index * 3 + 2;
-                          final leftMovie = (leftMovieIndex < movies.length)
-                              ? movies[leftMovieIndex]
-                              : null;
-                          final middleMovie = (middleMovieIndex < movies.length)
-                              ? movies[middleMovieIndex]
-                              : null;
-                          final rightMovie = (rightMovieIndex < movies.length)
-                              ? movies[rightMovieIndex]
-                              : null;
-                          return Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              if (leftMovie != null)
-                                GestureDetector(
-                                  onTap: () {
-                                    // Handle the click event here
-                                    movieResult = [
-                                      leftMovie['id'],
-                                      leftMovie['title'],
-                                      leftMovie['type'],
-                                    ];
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => MovieResult()),
-                                    );
-                                  },
-                                  child: Container(
-                                    margin: const EdgeInsets.fromLTRB(
-                                        10.0, 10.0, 5.0, 0),
-                                    width: MediaQuery.of(context).size.width *
-                                        0.28,
-                                    height: MediaQuery.of(context).size.height *
-                                        0.18,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(27),
-                                      image: DecorationImage(
-                                        image:
-                                            NetworkImage(leftMovie['poster']),
-                                        fit: BoxFit.fitWidth,
-                                      ),
+            Container(
+              height: 425,
+              child: FutureBuilder<List<Map<String, dynamic>>>(
+                future: movieData(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    final movies = snapshot.data!;
+                    return ListView.builder(
+                      itemCount: (movies.length / 3).ceil(),
+                      itemBuilder: (context, index) {
+                        final leftMovieIndex = index * 3;
+                        final middleMovieIndex = index * 3 + 1;
+                        final rightMovieIndex = index * 3 + 2;
+                        final leftMovie = (leftMovieIndex < movies.length)
+                            ? movies[leftMovieIndex]
+                            : null;
+                        final middleMovie = (middleMovieIndex < movies.length)
+                            ? movies[middleMovieIndex]
+                            : null;
+                        final rightMovie = (rightMovieIndex < movies.length)
+                            ? movies[rightMovieIndex]
+                            : null;
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            if (leftMovie != null)
+                              GestureDetector(
+                                onTap: () {
+                                  // Handle the click event here
+                                  movieResult = [
+                                    leftMovie['id'],
+                                    leftMovie['title'],
+                                    leftMovie['type'],
+                                  ];
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => MovieResult()),
+                                  );
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.fromLTRB(
+                                      10.0, 10.0, 5.0, 0),
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.28,
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.18,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(27),
+                                    image: DecorationImage(
+                                      image: NetworkImage(leftMovie['poster']),
+                                      fit: BoxFit.fitWidth,
                                     ),
                                   ),
                                 ),
-                              if (middleMovie != null)
-                                GestureDetector(
-                                  onTap: () {
-                                    // Handle the click event here
-                                    movieResult = [
-                                      middleMovie['id'],
-                                      middleMovie['title'],
-                                      middleMovie['type'],
-                                    ];
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => MovieResult()),
-                                    );
-                                  },
-                                  child: Container(
-                                    margin: const EdgeInsets.symmetric(
-                                        horizontal: 5.0, vertical: 10.0),
-                                    width: MediaQuery.of(context).size.width *
-                                        0.28,
-                                    height: MediaQuery.of(context).size.height *
-                                        0.18,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(27),
-                                      image: DecorationImage(
-                                        image:
-                                            NetworkImage(middleMovie['poster']),
-                                        fit: BoxFit.fitWidth,
-                                      ),
+                              ),
+                            if (middleMovie != null)
+                              GestureDetector(
+                                onTap: () {
+                                  // Handle the click event here
+                                  movieResult = [
+                                    middleMovie['id'],
+                                    middleMovie['title'],
+                                    middleMovie['type'],
+                                  ];
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => MovieResult()),
+                                  );
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 5.0, vertical: 10.0),
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.28,
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.18,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(27),
+                                    image: DecorationImage(
+                                      image:
+                                          NetworkImage(middleMovie['poster']),
+                                      fit: BoxFit.fitWidth,
                                     ),
                                   ),
                                 ),
-                              if (rightMovie != null)
-                                GestureDetector(
-                                  onTap: () {
-                                    // Handle the click event here
-                                    movieResult = [
-                                      rightMovie['id'],
-                                      rightMovie['title'],
-                                      rightMovie['type'],
-                                    ];
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => MovieResult()),
-                                    );
-                                  },
-                                  child: Container(
-                                    margin: const EdgeInsets.fromLTRB(
-                                        5.0, 10.0, 10.0, 0),
-                                    width: MediaQuery.of(context).size.width *
-                                        0.28,
-                                    height: MediaQuery.of(context).size.height *
-                                        0.18,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(27),
-                                      image: DecorationImage(
-                                        image: NetworkImage(
-                                          rightMovie['poster'],
-                                        ),
-                                        fit: BoxFit.fitWidth,
+                              ),
+                            if (rightMovie != null)
+                              GestureDetector(
+                                onTap: () {
+                                  // Handle the click event here
+                                  movieResult = [
+                                    rightMovie['id'],
+                                    rightMovie['title'],
+                                    rightMovie['type'],
+                                  ];
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => MovieResult()),
+                                  );
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.fromLTRB(
+                                      5.0, 10.0, 10.0, 0),
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.28,
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.18,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(27),
+                                    image: DecorationImage(
+                                      image: NetworkImage(
+                                        rightMovie['poster'],
                                       ),
+                                      fit: BoxFit.fitWidth,
                                     ),
                                   ),
                                 ),
-                            ],
-                          );
-                        },
-                      );
-                    } else if (snapshot.hasError) {
-                      return const Center(
-                        child: Text("Failed to load movie details"),
-                      );
-                    } else {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }
-                  },
-                ),
+                              ),
+                          ],
+                        );
+                      },
+                    );
+                  } else if (snapshot.hasError) {
+                    return const Center(
+                      child: Text("Failed to load movie details"),
+                    );
+                  } else {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+                },
               ),
             ),
           ],
