@@ -3,6 +3,7 @@ import 'package:uractor/playlists.dart';
 import 'package:uractor/profile.dart';
 import 'package:uractor/main.dart';
 import 'package:uractor/movie_result.dart';
+import 'package:uractor/tvshow_result.dart';
 import 'package:uractor/search.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -19,52 +20,40 @@ bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
 
 class ListResult extends StatelessWidget {
   Map list = list_result;
-  List moviesList = [];
+  List<Map<String, dynamic>> moviesList = [];
   final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
   final String imgLink = 'https://image.tmdb.org/t/p/w500/';
   String link = "https://api.themoviedb.org/3/movie/";
 
-  Future<List<Map<String, dynamic>>> movieData() async {
-    for (var element in list['Movies']) {
-      moviesList += [
-        ["Movies", element]
-      ];
+  Future<Map<String, dynamic>> getData(id, type) async {
+    Map<String, dynamic> data = {};
+    if (type == "TVShows") {
+      link = 'https://api.themoviedb.org/3/tv/';
+    } else {
+      link = 'https://api.themoviedb.org/3/movie/';
     }
-    for (var element in list['TVShows']) {
-      moviesList += [
-        ["TVShows", element]
-      ];
-    }
-    List<Map<String, dynamic>> movies = [];
-    for (var element in moviesList) {
-      String type = element[0];
-      String id = element[1];
-      Map<String, dynamic> data = {};
+    final response = await http.get(Uri.parse('$link$id$api_key_actor'));
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
       if (type == "TVShows") {
-        link = "https://api.themoviedb.org/3/tv/";
+        data['title'] = json['name'];
       } else {
-        link = "https://api.themoviedb.org/3/movie/";
+        data['title'] = json['title'];
       }
-      final response =
-          await http.get(Uri.parse('${link}${id}${api_key_actor}'));
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        if (type == "TVShows") {
-          data['title'] = data['name'];
-        } else {
-          data['title'] = json['title'];
-        }
+      if (json['poster_path'] == null) {
+        data['poster'] = 'assets/question_mark.png';
+      } else {
         data['poster'] = imgLink + json['poster_path'];
-        data['id'] = json['id'];
-        if (!containsMap(movies, data)) {
-          movies.add(data);
-        }
-      } else {
-        throw Exception('Failed to load movie details');
       }
+      data['id'] = json['id'];
+      data['type'] = type;
+      if (!containsMap(moviesList, data)) {
+        moviesList.add(data);
+      }
+    } else {
+      throw Exception('Failed to load movie details');
     }
-
-    return movies;
+    return data;
   }
 
   @override
@@ -168,143 +157,929 @@ class ListResult extends StatelessWidget {
                 ],
               ),
             ),
-            Container(
-              height: 425,
-              child: FutureBuilder<List<Map<String, dynamic>>>(
-                future: movieData(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    final movies = snapshot.data!;
-                    return ListView.builder(
-                      itemCount: (movies.length / 3).ceil(),
-                      itemBuilder: (context, index) {
-                        final leftMovieIndex = index * 3;
-                        final middleMovieIndex = index * 3 + 1;
-                        final rightMovieIndex = index * 3 + 2;
-                        final leftMovie = (leftMovieIndex < movies.length)
-                            ? movies[leftMovieIndex]
-                            : null;
-                        final middleMovie = (middleMovieIndex < movies.length)
-                            ? movies[middleMovieIndex]
-                            : null;
-                        final rightMovie = (rightMovieIndex < movies.length)
-                            ? movies[rightMovieIndex]
-                            : null;
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            if (leftMovie != null)
-                              GestureDetector(
-                                onTap: () {
-                                  // Handle the click event here
-                                  movieResult = [
-                                    leftMovie['id'],
-                                    leftMovie['title'],
-                                    leftMovie['type'],
-                                  ];
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => MovieResult()),
-                                  );
-                                },
-                                child: Container(
-                                  margin: const EdgeInsets.fromLTRB(
-                                      10.0, 10.0, 5.0, 0),
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.28,
-                                  height:
-                                      MediaQuery.of(context).size.height * 0.18,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(27),
-                                    image: DecorationImage(
-                                      image: NetworkImage(leftMovie['poster']),
-                                      fit: BoxFit.fitWidth,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            if (middleMovie != null)
-                              GestureDetector(
-                                onTap: () {
-                                  // Handle the click event here
-                                  movieResult = [
-                                    middleMovie['id'],
-                                    middleMovie['title'],
-                                    middleMovie['type'],
-                                  ];
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => MovieResult()),
-                                  );
-                                },
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 5.0, vertical: 10.0),
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.28,
-                                  height:
-                                      MediaQuery.of(context).size.height * 0.18,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(27),
-                                    image: DecorationImage(
-                                      image:
-                                          NetworkImage(middleMovie['poster']),
-                                      fit: BoxFit.fitWidth,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            if (rightMovie != null)
-                              GestureDetector(
-                                onTap: () {
-                                  // Handle the click event here
-                                  movieResult = [
-                                    rightMovie['id'],
-                                    rightMovie['title'],
-                                    rightMovie['type'],
-                                  ];
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => MovieResult()),
-                                  );
-                                },
-                                child: Container(
-                                  margin: const EdgeInsets.fromLTRB(
-                                      5.0, 10.0, 10.0, 0),
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.28,
-                                  height:
-                                      MediaQuery.of(context).size.height * 0.18,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(27),
-                                    image: DecorationImage(
-                                      image: NetworkImage(
-                                        rightMovie['poster'],
+            if (list["Movies"].length > 0 && list["TVShows"].length > 0)
+              DefaultTabController(
+                length: 2,
+                child: Column(
+                  children: [
+                    const TabBar(
+                      tabs: [
+                        Tab(text: 'Movies'),
+                        Tab(text: 'TV Shows'),
+                      ],
+                    ),
+                    Container(
+                      height: MediaQuery.of(context).size.height * 0.475,
+                      child: TabBarView(
+                        children: [
+                          if (list["Movies"].length != 0)
+                            ListView.builder(
+                              itemCount: (list["Movies"].length / 3).ceil(),
+                              itemBuilder: (context, index) {
+                                final leftMovieIndex = index * 3;
+                                final middleMovieIndex = index * 3 + 1;
+                                final rightMovieIndex = index * 3 + 2;
+                                final leftMovie =
+                                    (leftMovieIndex < list["Movies"].length)
+                                        ? list["Movies"][leftMovieIndex]
+                                        : null;
+                                final middleMovie =
+                                    (middleMovieIndex < list["Movies"].length)
+                                        ? list["Movies"][middleMovieIndex]
+                                        : null;
+                                final rightMovie =
+                                    (rightMovieIndex < list["Movies"].length)
+                                        ? list["Movies"][rightMovieIndex]
+                                        : null;
+                                return Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: [
+                                    if (leftMovie != null)
+                                      FutureBuilder<Map<String, dynamic>>(
+                                        future: getData(leftMovie, "Movies"),
+                                        builder: (BuildContext context,
+                                            AsyncSnapshot<Map> snapshot) {
+                                          if (snapshot.hasData) {
+                                            return GestureDetector(
+                                              onTap: () {
+                                                // Handle the click event here
+                                                if (snapshot.data!['type'] ==
+                                                    "Movies") {
+                                                  movieResult = [
+                                                    snapshot.data!['id'],
+                                                    snapshot.data!['title'],
+                                                    snapshot.data!['type'],
+                                                  ];
+                                                } else {
+                                                  tvShowResult = [
+                                                    snapshot.data!['id'],
+                                                    snapshot.data!['title'],
+                                                    snapshot.data!['type'],
+                                                  ];
+                                                }
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          snapshot.data![
+                                                                      'type'] ==
+                                                                  "Movies"
+                                                              ? MovieResult()
+                                                              : TVShowResult()),
+                                                );
+                                              },
+                                              child: Container(
+                                                margin:
+                                                    const EdgeInsets.fromLTRB(
+                                                        5.0, 10.0, 10.0, 0),
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.28,
+                                                height: MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                    0.18,
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(27),
+                                                  image: DecorationImage(
+                                                    image: NetworkImage(
+                                                      snapshot.data!['poster'],
+                                                    ),
+                                                    fit: BoxFit.fitWidth,
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          } else if (snapshot.hasError) {
+                                            return const Center(
+                                              child: Text(
+                                                  "Failed to load movie details"),
+                                            );
+                                          } else {
+                                            return const Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            );
+                                          }
+                                        },
                                       ),
-                                      fit: BoxFit.fitWidth,
+                                    if (middleMovie != null)
+                                      FutureBuilder<Map<String, dynamic>>(
+                                        future: getData(middleMovie, "Movies"),
+                                        builder: (BuildContext context,
+                                            AsyncSnapshot<Map> snapshot) {
+                                          if (snapshot.hasData) {
+                                            return GestureDetector(
+                                              onTap: () {
+                                                // Handle the click event here
+                                                if (snapshot.data!['type'] ==
+                                                    "Movies") {
+                                                  movieResult = [
+                                                    snapshot.data!['id'],
+                                                    snapshot.data!['title'],
+                                                    snapshot.data!['type'],
+                                                  ];
+                                                } else {
+                                                  tvShowResult = [
+                                                    snapshot.data!['id'],
+                                                    snapshot.data!['title'],
+                                                    snapshot.data!['type'],
+                                                  ];
+                                                }
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          snapshot.data![
+                                                                      'type'] ==
+                                                                  "Movies"
+                                                              ? MovieResult()
+                                                              : TVShowResult()),
+                                                );
+                                              },
+                                              child: Container(
+                                                margin:
+                                                    const EdgeInsets.fromLTRB(
+                                                        5.0, 10.0, 10.0, 0),
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.28,
+                                                height: MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                    0.18,
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(27),
+                                                  image: DecorationImage(
+                                                    image: NetworkImage(
+                                                      snapshot.data!['poster'],
+                                                    ),
+                                                    fit: BoxFit.fitWidth,
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          } else if (snapshot.hasError) {
+                                            return const Center(
+                                              child: Text(
+                                                  "Failed to load movie details"),
+                                            );
+                                          } else {
+                                            return const Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    if (rightMovie != null)
+                                      FutureBuilder<Map<String, dynamic>>(
+                                        future: getData(rightMovie, "Movies"),
+                                        builder: (BuildContext context,
+                                            AsyncSnapshot<Map> snapshot) {
+                                          if (snapshot.hasData) {
+                                            return GestureDetector(
+                                              onTap: () {
+                                                // Handle the click event here
+                                                if (snapshot.data!['type'] ==
+                                                    "Movies") {
+                                                  movieResult = [
+                                                    snapshot.data!['id'],
+                                                    snapshot.data!['title'],
+                                                    snapshot.data!['type'],
+                                                  ];
+                                                } else {
+                                                  tvShowResult = [
+                                                    snapshot.data!['id'],
+                                                    snapshot.data!['title'],
+                                                    snapshot.data!['type'],
+                                                  ];
+                                                }
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          snapshot.data![
+                                                                      'type'] ==
+                                                                  "Movies"
+                                                              ? MovieResult()
+                                                              : TVShowResult()),
+                                                );
+                                              },
+                                              child: Container(
+                                                margin:
+                                                    const EdgeInsets.fromLTRB(
+                                                        5.0, 10.0, 10.0, 0),
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.28,
+                                                height: MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                    0.18,
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(27),
+                                                  image: DecorationImage(
+                                                    image: NetworkImage(
+                                                      snapshot.data!['poster'],
+                                                    ),
+                                                    fit: BoxFit.fitWidth,
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          } else if (snapshot.hasError) {
+                                            return const Center(
+                                              child: Text(
+                                                  "Failed to load movie details"),
+                                            );
+                                          } else {
+                                            return const Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            );
+                                          }
+                                        },
+                                      )
+                                  ],
+                                );
+                              },
+                            ),
+                          if (list["TVShows"].length != 0)
+                            ListView.builder(
+                              itemCount: (list["TVShows"].length / 3).ceil(),
+                              itemBuilder: (context, index) {
+                                final leftTVShowIndex = index * 3;
+                                final middleTVShowIndex = index * 3 + 1;
+                                final rightTVShowIndex = index * 3 + 2;
+                                final leftTVShow =
+                                    (leftTVShowIndex < list["TVShows"].length)
+                                        ? list["TVShows"][leftTVShowIndex]
+                                        : null;
+                                final middleTVShow =
+                                    (middleTVShowIndex < list["TVShows"].length)
+                                        ? list["TVShows"][middleTVShowIndex]
+                                        : null;
+                                final rightTVShow =
+                                    (rightTVShowIndex < list["TVShows"].length)
+                                        ? list["TVShows"][rightTVShowIndex]
+                                        : null;
+                                return Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: [
+                                    if (leftTVShow != null)
+                                      FutureBuilder<Map<String, dynamic>>(
+                                        future: getData(leftTVShow, "TVShows"),
+                                        builder: (BuildContext context,
+                                            AsyncSnapshot<Map> snapshot) {
+                                          if (snapshot.hasData) {
+                                            return GestureDetector(
+                                              onTap: () {
+                                                // Handle the click event here
+                                                if (snapshot.data!['type'] ==
+                                                    "Movies") {
+                                                  movieResult = [
+                                                    snapshot.data!['id'],
+                                                    snapshot.data!['title'],
+                                                    snapshot.data!['type'],
+                                                  ];
+                                                } else {
+                                                  tvShowResult = [
+                                                    snapshot.data!['id'],
+                                                    snapshot.data!['title'],
+                                                    snapshot.data!['type'],
+                                                  ];
+                                                }
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          snapshot.data![
+                                                                      'type'] ==
+                                                                  "Movies"
+                                                              ? MovieResult()
+                                                              : TVShowResult()),
+                                                );
+                                              },
+                                              child: Container(
+                                                margin:
+                                                    const EdgeInsets.fromLTRB(
+                                                        5.0, 10.0, 10.0, 0),
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.28,
+                                                height: MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                    0.18,
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(27),
+                                                  image: DecorationImage(
+                                                    image: NetworkImage(
+                                                      snapshot.data!['poster'],
+                                                    ),
+                                                    fit: BoxFit.fitWidth,
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          } else if (snapshot.hasError) {
+                                            return const Center(
+                                              child: Text(
+                                                  "Failed to load movie details"),
+                                            );
+                                          } else {
+                                            return const Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    if (middleTVShow != null)
+                                      FutureBuilder<Map<String, dynamic>>(
+                                        future:
+                                            getData(middleTVShow, "TVShows"),
+                                        builder: (BuildContext context,
+                                            AsyncSnapshot<Map> snapshot) {
+                                          if (snapshot.hasData) {
+                                            return GestureDetector(
+                                              onTap: () {
+                                                // Handle the click event here
+                                                if (snapshot.data!['type'] ==
+                                                    "Movies") {
+                                                  movieResult = [
+                                                    snapshot.data!['id'],
+                                                    snapshot.data!['title'],
+                                                    snapshot.data!['type'],
+                                                  ];
+                                                } else {
+                                                  tvShowResult = [
+                                                    snapshot.data!['id'],
+                                                    snapshot.data!['title'],
+                                                    snapshot.data!['type'],
+                                                  ];
+                                                }
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          snapshot.data![
+                                                                      'type'] ==
+                                                                  "Movies"
+                                                              ? MovieResult()
+                                                              : TVShowResult()),
+                                                );
+                                              },
+                                              child: Container(
+                                                margin:
+                                                    const EdgeInsets.fromLTRB(
+                                                        5.0, 10.0, 10.0, 0),
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.28,
+                                                height: MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                    0.18,
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(27),
+                                                  image: DecorationImage(
+                                                    image: NetworkImage(
+                                                      snapshot.data!['poster'],
+                                                    ),
+                                                    fit: BoxFit.fitWidth,
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          } else if (snapshot.hasError) {
+                                            return const Center(
+                                              child: Text(
+                                                  "Failed to load movie details"),
+                                            );
+                                          } else {
+                                            return const Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    if (rightTVShow != null)
+                                      FutureBuilder<Map<String, dynamic>>(
+                                        future: getData(rightTVShow, "TVShows"),
+                                        builder: (BuildContext context,
+                                            AsyncSnapshot<Map> snapshot) {
+                                          if (snapshot.hasData) {
+                                            return GestureDetector(
+                                              onTap: () {
+                                                // Handle the click event here
+                                                if (snapshot.data!['type'] ==
+                                                    "Movies") {
+                                                  movieResult = [
+                                                    snapshot.data!['id'],
+                                                    snapshot.data!['title'],
+                                                    snapshot.data!['type'],
+                                                  ];
+                                                } else {
+                                                  tvShowResult = [
+                                                    snapshot.data!['id'],
+                                                    snapshot.data!['title'],
+                                                    snapshot.data!['type'],
+                                                  ];
+                                                }
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          snapshot.data![
+                                                                      'type'] ==
+                                                                  "Movies"
+                                                              ? MovieResult()
+                                                              : TVShowResult()),
+                                                );
+                                              },
+                                              child: Container(
+                                                margin:
+                                                    const EdgeInsets.fromLTRB(
+                                                        5.0, 10.0, 10.0, 0),
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.28,
+                                                height: MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                    0.18,
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(27),
+                                                  image: DecorationImage(
+                                                    image: NetworkImage(
+                                                      snapshot.data!['poster'],
+                                                    ),
+                                                    fit: BoxFit.fitWidth,
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          } else if (snapshot.hasError) {
+                                            return const Center(
+                                              child: Text(
+                                                  "Failed to load movie details"),
+                                            );
+                                          } else {
+                                            return const Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            );
+                                          }
+                                        },
+                                      )
+                                  ],
+                                );
+                              },
+                            )
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (list["Movies"].length > 0 && list["TVShows"].length == 0)
+              Container(
+                height: MediaQuery.of(context).size.height * 0.55,
+                child: ListView.builder(
+                  itemCount: (list["Movies"].length / 3).ceil(),
+                  itemBuilder: (context, index) {
+                    final leftMovieIndex = index * 3;
+                    final middleMovieIndex = index * 3 + 1;
+                    final rightMovieIndex = index * 3 + 2;
+                    final leftMovie = (leftMovieIndex < list["Movies"].length)
+                        ? list["Movies"][leftMovieIndex]
+                        : null;
+                    final middleMovie =
+                        (middleMovieIndex < list["Movies"].length)
+                            ? list["Movies"][middleMovieIndex]
+                            : null;
+                    final rightMovie = (rightMovieIndex < list["Movies"].length)
+                        ? list["Movies"][rightMovieIndex]
+                        : null;
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        if (leftMovie != null)
+                          FutureBuilder<Map<String, dynamic>>(
+                            future: getData(leftMovie, "Movies"),
+                            builder: (BuildContext context,
+                                AsyncSnapshot<Map> snapshot) {
+                              if (snapshot.hasData) {
+                                return GestureDetector(
+                                  onTap: () {
+                                    // Handle the click event here
+                                    if (snapshot.data!['type'] == "Movies") {
+                                      movieResult = [
+                                        snapshot.data!['id'],
+                                        snapshot.data!['title'],
+                                        snapshot.data!['type'],
+                                      ];
+                                    } else {
+                                      tvShowResult = [
+                                        snapshot.data!['id'],
+                                        snapshot.data!['title'],
+                                        snapshot.data!['type'],
+                                      ];
+                                    }
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              snapshot.data!['type'] == "Movies"
+                                                  ? MovieResult()
+                                                  : TVShowResult()),
+                                    );
+                                  },
+                                  child: Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        5.0, 10.0, 10.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.28,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.18,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(27),
+                                      image: DecorationImage(
+                                        image: NetworkImage(
+                                          snapshot.data!['poster'],
+                                        ),
+                                        fit: BoxFit.fitWidth,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                          ],
-                        );
-                      },
+                                );
+                              } else if (snapshot.hasError) {
+                                return const Center(
+                                  child: Text("Failed to load movie details"),
+                                );
+                              } else {
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              }
+                            },
+                          ),
+                        if (middleMovie != null)
+                          FutureBuilder<Map<String, dynamic>>(
+                            future: getData(middleMovie, "Movies"),
+                            builder: (BuildContext context,
+                                AsyncSnapshot<Map> snapshot) {
+                              if (snapshot.hasData) {
+                                return GestureDetector(
+                                  onTap: () {
+                                    // Handle the click event here
+                                    if (snapshot.data!['type'] == "Movies") {
+                                      movieResult = [
+                                        snapshot.data!['id'],
+                                        snapshot.data!['title'],
+                                        snapshot.data!['type'],
+                                      ];
+                                    } else {
+                                      tvShowResult = [
+                                        snapshot.data!['id'],
+                                        snapshot.data!['title'],
+                                        snapshot.data!['type'],
+                                      ];
+                                    }
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              snapshot.data!['type'] == "Movies"
+                                                  ? MovieResult()
+                                                  : TVShowResult()),
+                                    );
+                                  },
+                                  child: Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        5.0, 10.0, 10.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.28,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.18,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(27),
+                                      image: DecorationImage(
+                                        image: NetworkImage(
+                                          snapshot.data!['poster'],
+                                        ),
+                                        fit: BoxFit.fitWidth,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              } else if (snapshot.hasError) {
+                                return const Center(
+                                  child: Text("Failed to load movie details"),
+                                );
+                              } else {
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              }
+                            },
+                          ),
+                        if (rightMovie != null)
+                          FutureBuilder<Map<String, dynamic>>(
+                            future: getData(rightMovie, "Movies"),
+                            builder: (BuildContext context,
+                                AsyncSnapshot<Map> snapshot) {
+                              if (snapshot.hasData) {
+                                return GestureDetector(
+                                  onTap: () {
+                                    // Handle the click event here
+                                    if (snapshot.data!['type'] == "Movies") {
+                                      movieResult = [
+                                        snapshot.data!['id'],
+                                        snapshot.data!['title'],
+                                        snapshot.data!['type'],
+                                      ];
+                                    } else {
+                                      tvShowResult = [
+                                        snapshot.data!['id'],
+                                        snapshot.data!['title'],
+                                        snapshot.data!['type'],
+                                      ];
+                                    }
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              snapshot.data!['type'] == "Movies"
+                                                  ? MovieResult()
+                                                  : TVShowResult()),
+                                    );
+                                  },
+                                  child: Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        5.0, 10.0, 10.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.28,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.18,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(27),
+                                      image: DecorationImage(
+                                        image: NetworkImage(
+                                          snapshot.data!['poster'],
+                                        ),
+                                        fit: BoxFit.fitWidth,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              } else if (snapshot.hasError) {
+                                return const Center(
+                                  child: Text("Failed to load movie details"),
+                                );
+                              } else {
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              }
+                            },
+                          )
+                      ],
                     );
-                  } else if (snapshot.hasError) {
-                    return const Center(
-                      child: Text("Failed to load movie details"),
-                    );
-                  } else {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-                },
+                  },
+                ),
               ),
-            ),
+            if (list["TVShows"].length > 0 && list["Movies"].length == 0)
+              Container(
+                  height: MediaQuery.of(context).size.height * 0.55,
+                  child: ListView.builder(
+                    itemCount: (list["TVShows"].length / 3).ceil(),
+                    itemBuilder: (context, index) {
+                      final leftTVShowIndex = index * 3;
+                      final middleTVShowIndex = index * 3 + 1;
+                      final rightTVShowIndex = index * 3 + 2;
+                      final leftTVShow =
+                          (leftTVShowIndex < list["TVShows"].length)
+                              ? list["TVShows"][leftTVShowIndex]
+                              : null;
+                      final middleTVShow =
+                          (middleTVShowIndex < list["TVShows"].length)
+                              ? list["TVShows"][middleTVShowIndex]
+                              : null;
+                      final rightTVShow =
+                          (rightTVShowIndex < list["TVShows"].length)
+                              ? list["TVShows"][rightTVShowIndex]
+                              : null;
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          if (leftTVShow != null)
+                            FutureBuilder<Map<String, dynamic>>(
+                              future: getData(leftTVShow, "TVShows"),
+                              builder: (BuildContext context,
+                                  AsyncSnapshot<Map> snapshot) {
+                                if (snapshot.hasData) {
+                                  return GestureDetector(
+                                    onTap: () {
+                                      // Handle the click event here
+                                      if (snapshot.data!['type'] == "Movies") {
+                                        movieResult = [
+                                          snapshot.data!['id'],
+                                          snapshot.data!['title'],
+                                          snapshot.data!['type'],
+                                        ];
+                                      } else {
+                                        tvShowResult = [
+                                          snapshot.data!['id'],
+                                          snapshot.data!['title'],
+                                          snapshot.data!['type'],
+                                        ];
+                                      }
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                snapshot.data!['type'] ==
+                                                        "Movies"
+                                                    ? MovieResult()
+                                                    : TVShowResult()),
+                                      );
+                                    },
+                                    child: Container(
+                                      margin: const EdgeInsets.fromLTRB(
+                                          5.0, 10.0, 10.0, 0),
+                                      width: MediaQuery.of(context).size.width *
+                                          0.28,
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              0.18,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(27),
+                                        image: DecorationImage(
+                                          image: NetworkImage(
+                                            snapshot.data!['poster'],
+                                          ),
+                                          fit: BoxFit.fitWidth,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                } else if (snapshot.hasError) {
+                                  return const Center(
+                                    child: Text("Failed to load movie details"),
+                                  );
+                                } else {
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
+                              },
+                            ),
+                          if (middleTVShow != null)
+                            FutureBuilder<Map<String, dynamic>>(
+                              future: getData(middleTVShow, "TVShows"),
+                              builder: (BuildContext context,
+                                  AsyncSnapshot<Map> snapshot) {
+                                if (snapshot.hasData) {
+                                  return GestureDetector(
+                                    onTap: () {
+                                      // Handle the click event here
+                                      if (snapshot.data!['type'] == "Movies") {
+                                        movieResult = [
+                                          snapshot.data!['id'],
+                                          snapshot.data!['title'],
+                                          snapshot.data!['type'],
+                                        ];
+                                      } else {
+                                        tvShowResult = [
+                                          snapshot.data!['id'],
+                                          snapshot.data!['title'],
+                                          snapshot.data!['type'],
+                                        ];
+                                      }
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                snapshot.data!['type'] ==
+                                                        "Movies"
+                                                    ? MovieResult()
+                                                    : TVShowResult()),
+                                      );
+                                    },
+                                    child: Container(
+                                      margin: const EdgeInsets.fromLTRB(
+                                          5.0, 10.0, 10.0, 0),
+                                      width: MediaQuery.of(context).size.width *
+                                          0.28,
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              0.18,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(27),
+                                        image: DecorationImage(
+                                          image: NetworkImage(
+                                            snapshot.data!['poster'],
+                                          ),
+                                          fit: BoxFit.fitWidth,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                } else if (snapshot.hasError) {
+                                  return const Center(
+                                    child: Text("Failed to load movie details"),
+                                  );
+                                } else {
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
+                              },
+                            ),
+                          if (rightTVShow != null)
+                            FutureBuilder<Map<String, dynamic>>(
+                              future: getData(rightTVShow, "TVShows"),
+                              builder: (BuildContext context,
+                                  AsyncSnapshot<Map> snapshot) {
+                                if (snapshot.hasData) {
+                                  return GestureDetector(
+                                    onTap: () {
+                                      // Handle the click event here
+                                      if (snapshot.data!['type'] == "Movies") {
+                                        movieResult = [
+                                          snapshot.data!['id'],
+                                          snapshot.data!['title'],
+                                          snapshot.data!['type'],
+                                        ];
+                                      } else {
+                                        tvShowResult = [
+                                          snapshot.data!['id'],
+                                          snapshot.data!['title'],
+                                          snapshot.data!['type'],
+                                        ];
+                                      }
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                snapshot.data!['type'] ==
+                                                        "Movies"
+                                                    ? MovieResult()
+                                                    : TVShowResult()),
+                                      );
+                                    },
+                                    child: Container(
+                                      margin: const EdgeInsets.fromLTRB(
+                                          5.0, 10.0, 10.0, 0),
+                                      width: MediaQuery.of(context).size.width *
+                                          0.28,
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              0.18,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(27),
+                                        image: DecorationImage(
+                                          image: NetworkImage(
+                                            snapshot.data!['poster'],
+                                          ),
+                                          fit: BoxFit.fitWidth,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                } else if (snapshot.hasError) {
+                                  return const Center(
+                                    child: Text("Failed to load movie details"),
+                                  );
+                                } else {
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
+                              },
+                            )
+                        ],
+                      );
+                    },
+                  )),
           ],
         ),
         bottomNavigationBar: BottomNavigationBar(
