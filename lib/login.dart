@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:uractor/playlists.dart';
 import 'package:uractor/profile.dart';
@@ -13,7 +15,7 @@ class Login extends StatelessWidget {
     final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
     late String _email, _password;
     final List<Widget> _pages = [
-      MyApp(),
+      const MyApp(),
       Search(),
       Playlists(),
       Profile(),
@@ -28,9 +30,73 @@ class Login extends StatelessWidget {
       );
     }
 
+    void resetPassword(String email) async {
+      if (email == "" || email == null) {
+        await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Email Address Needed'),
+              content: const Text('Please type an email address'),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('Okay'),
+                  onPressed: () {
+                    Navigator.of(context).pop(true);
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      } else {
+        try {
+          await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+          // Show a confirmation message to the user
+          await showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Password'),
+                content: const Text('Rest Password Email has been sent'),
+                actions: <Widget>[
+                  TextButton(
+                    child: const Text('Okay'),
+                    onPressed: () {
+                      Navigator.of(context).pop(true);
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        } catch (e) {
+          // An error happened.
+          await showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Password'),
+                content: Text("Failed to send password reset email: $e"),
+                actions: <Widget>[
+                  TextButton(
+                    child: const Text('Okay'),
+                    onPressed: () {
+                      Navigator.of(context).pop(true);
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      }
+    }
+
     return Scaffold(
+      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: Color(0xFF121212),
+        backgroundColor: const Color(0xFF121212),
         title: Center(
             child: Image.asset(
           'assets/logo.png',
@@ -49,9 +115,19 @@ class Login extends StatelessWidget {
                 children: <Widget>[
                   TextFormField(
                     keyboardType: TextInputType.emailAddress,
+                    style: const TextStyle(color: Colors.white),
                     decoration: const InputDecoration(
                       labelText: 'Email',
-                      border: OutlineInputBorder(),
+                      labelStyle: TextStyle(color: Colors.white),
+                      hintText: 'Your Email',
+                      hintStyle:
+                          TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white, width: 1.0),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white, width: 2.0),
+                      ),
                     ),
                     validator: (String? value) {
                       if (value == null || value.isEmpty) {
@@ -65,10 +141,20 @@ class Login extends StatelessWidget {
                   ),
                   const SizedBox(height: 16.0),
                   TextFormField(
+                    style: const TextStyle(color: Colors.white),
                     obscureText: true,
                     decoration: const InputDecoration(
                       labelText: 'Password',
-                      border: OutlineInputBorder(),
+                      labelStyle: TextStyle(color: Colors.white),
+                      hintText: 'Your Password',
+                      hintStyle:
+                          TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white, width: 1.0),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white, width: 2.0),
+                      ),
                     ),
                     validator: (String? value) {
                       if (value == null || value.isEmpty) {
@@ -95,7 +181,8 @@ class Login extends StatelessWidget {
                             print(_password);
                             Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(builder: (context) => MyApp()),
+                              MaterialPageRoute(
+                                  builder: (context) => const MyApp()),
                             );
                           });
                         } on FirebaseAuthException catch (e) {
@@ -110,9 +197,22 @@ class Login extends StatelessWidget {
                   ),
                   const SizedBox(height: 16.0),
                   GestureDetector(
-                    child: const Text('Don\'t have an account? Sign up'),
+                    child: const Text(
+                      'Don\'t have an account? Sign up',
+                      style: TextStyle(color: Colors.white),
+                    ),
                     onTap: () {
                       Navigator.of(context).pushNamed('/signup');
+                    },
+                  ),
+                  SizedBox(height: 20),
+                  GestureDetector(
+                    child: const Text(
+                      'Forgot Password?',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onTap: () {
+                      resetPassword(email);
                     },
                   ),
                 ],
@@ -121,33 +221,33 @@ class Login extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.grey,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF121212),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.library_books_rounded),
-            label: 'Library',
-          ),
-          BottomNavigationBarItem(
-            label: 'Profile',
-            backgroundColor: Color(0xFF121212),
-            icon: Icon(Icons.person),
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-      ),
+      //   bottomNavigationBar: BottomNavigationBar(
+      //     selectedItemColor: Colors.grey,
+      //     unselectedItemColor: Colors.grey,
+      //     type: BottomNavigationBarType.fixed,
+      //     backgroundColor: const Color(0xFF121212),
+      //     items: const [
+      //       BottomNavigationBarItem(
+      //         icon: Icon(Icons.home),
+      //         label: 'Home',
+      //       ),
+      //       BottomNavigationBarItem(
+      //         icon: Icon(Icons.search),
+      //         label: 'Search',
+      //       ),
+      //       BottomNavigationBarItem(
+      //         icon: Icon(Icons.library_books_rounded),
+      //         label: 'Library',
+      //       ),
+      //       BottomNavigationBarItem(
+      //         label: 'Profile',
+      //         backgroundColor: Color(0xFF121212),
+      //         icon: Icon(Icons.person),
+      //       ),
+      //     ],
+      //     currentIndex: _selectedIndex,
+      //     onTap: _onItemTapped,
+      //   ),
     );
   }
 }

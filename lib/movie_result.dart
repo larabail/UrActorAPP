@@ -186,18 +186,10 @@ void favorite(String id, context) async {
     for (var doc in querySnapshot.docs) {
       if (doc.id == "Favorites") {
         Map allFavs = doc.data() as Map;
-        allFavs.forEach((key, el) {
-          allFavs[key].forEach((element) {
-            if (key == "Movies") {
-              favMovies += [
-                [key, element]
-              ];
-            } else {
-              favTVShows += [
-                [key, element]
-              ];
-            }
-          });
+        allFavs["Movies"].forEach((element) {
+          favMovies += [
+            ["Movies", element]
+          ];
         });
       }
     }
@@ -223,18 +215,10 @@ void unfavorite(String id, context) async {
             FirebaseFirestore.instance.collection(uid).doc("Favorites");
         await userDoc.update({'Movies': movieInFavs});
         favMovies = [];
-        allFavs.forEach((key, el) {
-          allFavs[key].forEach((element) {
-            if (key == "Movies") {
-              favMovies += [
-                [key, element]
-              ];
-            } else {
-              favTVShows += [
-                [key, element]
-              ];
-            }
-          });
+        allFavs["Movies"].forEach((element) {
+          favMovies += [
+            ["Movies", element]
+          ];
         });
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (context) => MovieResult()));
@@ -255,19 +239,11 @@ void bookmark(String id, context) async {
       .then((QuerySnapshot querySnapshot) {
     for (var doc in querySnapshot.docs) {
       if (doc.id == "Watchlist") {
-        Map allFavs = doc.data() as Map;
-        allFavs.forEach((key, el) {
-          allFavs[key].forEach((element) {
-            if (key == "Movies") {
-              watchlist += [
-                [key, element]
-              ];
-            } else {
-              watchlistTVShows += [
-                [key, element]
-              ];
-            }
-          });
+        Map watchlistAll = doc.data() as Map;
+        watchlistAll["Movies"].forEach((element) {
+          watchlist += [
+            ["Movies", element]
+          ];
         });
       }
     }
@@ -283,8 +259,8 @@ void unbookmark(String id, context) async {
       .then((QuerySnapshot querySnapshot) async {
     for (var doc in querySnapshot.docs) {
       if (doc.id == "Watchlist") {
-        Map allWatch = doc.data() as Map;
-        List movieInWatchlist = allWatch["Movies"];
+        Map watchlistAll = doc.data() as Map;
+        List movieInWatchlist = watchlistAll["Movies"];
         int index = movieInWatchlist.indexOf(id);
         if (index > -1) {
           movieInWatchlist.removeAt(index);
@@ -293,18 +269,10 @@ void unbookmark(String id, context) async {
             FirebaseFirestore.instance.collection(uid).doc("Watchlist");
         await userDoc.update({'Movies': movieInWatchlist});
         watchlist = [];
-        allWatch.forEach((key, el) {
-          allWatch[key].forEach((element) {
-            if (key == "Movies") {
-              watchlist += [
-                [key, element]
-              ];
-            } else {
-              watchlistTVShows += [
-                [key, element]
-              ];
-            }
-          });
+        watchlistAll["Movies"].forEach((element) {
+          watchlist += [
+            ["Movies", element]
+          ];
         });
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (context) => MovieResult()));

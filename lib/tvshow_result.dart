@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/profile.dart';
 import 'package:uractor/search.dart';
 import 'package:uractor/main.dart';
@@ -16,6 +17,258 @@ bool _isTappedSeen = false;
 bool _isTappedWatchlist = false;
 bool _isTappedFav = false;
 bool _isTappedList = false;
+
+Future<void> deleteFromWatchedConfirmation(
+    String id, BuildContext context) async {
+  // Display a dialog box for confirmation. You will have to create a custom dialog for this.
+  bool confirmed = await showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Confirmation'),
+        content: const Text('Delete from watched?'),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('No'),
+            onPressed: () {
+              Navigator.of(context).pop(false);
+            },
+          ),
+          TextButton(
+            child: const Text('Yes'),
+            onPressed: () {
+              Navigator.of(context).pop(true);
+            },
+          ),
+        ],
+      );
+    },
+  );
+
+  if (confirmed) {
+    List w;
+    await FirebaseFirestore.instance
+        .collection(uid)
+        .get()
+        .then((QuerySnapshot querySnapshot) {
+      querySnapshot.docs.forEach((doc) async {
+        if (doc.id == "TVShows") {
+          Map tvshowResults = doc.data() as Map;
+          w = tvshowResults["Seen"];
+          int index = w.indexOf(id);
+
+          if (index > -1) {
+            w.removeAt(index);
+          }
+          var userDoc =
+              FirebaseFirestore.instance.collection(uid).doc("TVShows");
+          await userDoc.update({'Seen': w});
+          seenTVShows = [];
+          for (var element in w) {
+            seenTVShows += [
+              ["TVShows", element]
+            ];
+          }
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (context) => TVShowResult()));
+        }
+      });
+    });
+  } else {
+    _imageProviderSeen = 'assets/seen_after.png';
+  }
+}
+
+void markWatched(String id, String title, BuildContext context) async {
+  final userDoc = FirebaseFirestore.instance.collection(uid).doc('TVShows');
+  id = id.toString();
+  await userDoc.update({
+    'Seen': FieldValue.arrayUnion([id])
+  });
+  // store id in shared preferences or another way
+  List w;
+  await FirebaseFirestore.instance
+      .collection(uid)
+      .get()
+      .then((QuerySnapshot querySnapshot) {
+    querySnapshot.docs.forEach((doc) async {
+      if (doc.id == "TVShows") {
+        Map tvshowResult = doc.data() as Map;
+        w = tvshowResult["Seen"];
+        seenTVShows = [];
+        for (var element in w) {
+          seenTVShows += [
+            ["TVShows", element]
+          ];
+        }
+      }
+    });
+  });
+
+  Navigator.pushReplacement(
+      context, MaterialPageRoute(builder: (context) => TVShowResult()));
+}
+
+void favorite(String id, context) async {
+  final userDoc = FirebaseFirestore.instance.collection(uid).doc("Favorites");
+  await userDoc.update({
+    'TVShows': FieldValue.arrayUnion([id])
+  });
+  favTVShows = [];
+  await FirebaseFirestore.instance
+      .collection(uid)
+      .get()
+      .then((QuerySnapshot querySnapshot) {
+    for (var doc in querySnapshot.docs) {
+      if (doc.id == "Favorites") {
+        Map allFavs = doc.data() as Map;
+        allFavs["TVShows"].forEach((element) {
+          favTVShows += [
+            ["TVShows", element]
+          ];
+        });
+      }
+    }
+  });
+  Navigator.pushReplacement(
+      context, MaterialPageRoute(builder: (context) => TVShowResult()));
+}
+
+void unfavorite(String id, context) async {
+  await FirebaseFirestore.instance
+      .collection(uid)
+      .get()
+      .then((QuerySnapshot querySnapshot) async {
+    for (var doc in querySnapshot.docs) {
+      if (doc.id == "Favorites") {
+        Map allFavs = doc.data() as Map;
+        List tvshowsInFavs = allFavs["TVShows"];
+        int index = tvshowsInFavs.indexOf(id);
+        if (index > -1) {
+          tvshowsInFavs.removeAt(index);
+        }
+        final userDoc =
+            FirebaseFirestore.instance.collection(uid).doc("Favorites");
+        await userDoc.update({'TVShows': tvshowsInFavs});
+        favTVShows = [];
+        allFavs["TVShows"].forEach((element) {
+          favTVShows += [
+            ["TVShows", element]
+          ];
+        });
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => TVShowResult()));
+      }
+    }
+  });
+}
+
+void bookmark(String id, context) async {
+  final userDoc = FirebaseFirestore.instance.collection(uid).doc("Watchlist");
+  await userDoc.update({
+    'TVShows': FieldValue.arrayUnion([id])
+  });
+  watchlistTVShows = [];
+  await FirebaseFirestore.instance
+      .collection(uid)
+      .get()
+      .then((QuerySnapshot querySnapshot) {
+    for (var doc in querySnapshot.docs) {
+      if (doc.id == "Watchlist") {
+        Map watchlistAll = doc.data() as Map;
+        watchlistAll["TVShows"].forEach((element) {
+          watchlistTVShows += [
+            ["TVShows", element]
+          ];
+        });
+      }
+    }
+  });
+  Navigator.pushReplacement(
+      context, MaterialPageRoute(builder: (context) => TVShowResult()));
+}
+
+void unbookmark(String id, context) async {
+  await FirebaseFirestore.instance
+      .collection(uid)
+      .get()
+      .then((QuerySnapshot querySnapshot) async {
+    for (var doc in querySnapshot.docs) {
+      if (doc.id == "Watchlist") {
+        Map allWatch = doc.data() as Map;
+        List tvShowinWatchlist = allWatch["TVShows"];
+        int index = tvShowinWatchlist.indexOf(id);
+        if (index > -1) {
+          tvShowinWatchlist.removeAt(index);
+        }
+        final userDoc =
+            FirebaseFirestore.instance.collection(uid).doc("Watchlist");
+        await userDoc.update({'TVShows': tvShowinWatchlist});
+        watchlistTVShows = [];
+        tvShowinWatchlist.forEach((element) {
+          watchlistTVShows += [
+            ["TVShows", element]
+          ];
+        });
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => TVShowResult()));
+      }
+    }
+  });
+}
+
+void addToList(String id, String listId, List tvshowsInList, context) async {
+  tvshowsInList.add(id);
+  final userDoc = FirebaseFirestore.instance
+      .collection("Watchlists")
+      .doc(listId.toString());
+  await userDoc.update({'TV Shows': tvshowsInList});
+  playlists = {};
+  await FirebaseFirestore.instance
+      .collection("Watchlists")
+      .get()
+      .then((QuerySnapshot querySnapshot) {
+    for (var doc in querySnapshot.docs) {
+      Map keysOfDoc = doc.data() as Map;
+      List users = keysOfDoc['Users'] as List;
+      for (var element in users) {
+        Map el = element as Map;
+        if (el.keys.contains(uid)) {
+          playlists[doc.id] = doc.data();
+        }
+      }
+    }
+  });
+  Navigator.pushReplacement(
+      context, MaterialPageRoute(builder: (context) => TVShowResult()));
+}
+
+void deleteFromList(
+    String id, String listId, List tvshowsInList, context) async {
+  tvshowsInList.remove(id);
+  final userDoc = FirebaseFirestore.instance
+      .collection("Watchlists")
+      .doc(listId.toString());
+  await userDoc.update({'TV Shows': tvshowsInList});
+  playlists = {};
+  await FirebaseFirestore.instance
+      .collection("Watchlists")
+      .get()
+      .then((QuerySnapshot querySnapshot) {
+    for (var doc in querySnapshot.docs) {
+      Map keysOfDoc = doc.data() as Map;
+      List users = keysOfDoc['Users'] as List;
+      for (var element in users) {
+        Map el = element as Map;
+        if (el.keys.contains(uid)) {
+          playlists[doc.id] = doc.data();
+        }
+      }
+    }
+  });
+  Navigator.pushReplacement(
+      context, MaterialPageRoute(builder: (context) => TVShowResult()));
+}
 
 class TVShowResult extends StatefulWidget {
   TVShowResult();
@@ -38,14 +291,23 @@ void check() {
   if (containsMap(seenTVShows, ['TVShows', tvShowResult[0]])) {
     _isTappedSeen = true;
     _imageProviderSeen = 'assets/seen_after.png';
+  } else {
+    _isTappedSeen = false;
+    _imageProviderSeen = 'assets/seen_before.png';
   }
   if (containsMap(watchlistTVShows, ['TVShows', tvShowResult[0]])) {
     _isTappedWatchlist = true;
     _imageProviderWatchlist = 'assets/watchlist_after.png';
+  } else {
+    _isTappedWatchlist = false;
+    _imageProviderWatchlist = 'assets/watchlist_before.png';
   }
   if (containsMap(favTVShows, ['TVShows', tvShowResult[0]])) {
     _isTappedFav = true;
     _imageProviderFav = 'assets/fav_after.png';
+  } else {
+    _isTappedFav = false;
+    _imageProviderFav = 'assets/fav_before.png';
   }
 }
 
@@ -64,23 +326,22 @@ class _TVShowResultState extends State<TVShowResult> {
     String name = movieData[1]
         .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
         .replaceAll(" ", "-");
-    final response = await http
-        .get(Uri.parse('${link}${movieData[0]}-${name}${api_key_actor}'));
+    final response =
+        await http.get(Uri.parse('$link${movieData[0]}-$name$api_key_actor'));
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       final response2 =
-          await http.get(Uri.parse('${link}${movieData[0]}-${name}${id}'));
+          await http.get(Uri.parse('$link${movieData[0]}-$name$id'));
       if (response2.statusCode == 200) {
-        print(jsonDecode(response2.body));
-        String imdb_id = jsonDecode(response2.body)['imdb_id'];
-        String link2 = 'https://www.omdbapi.com/?i=$imdb_id&apikey=***REMOVED***';
+        String imdbId = jsonDecode(response2.body)['imdb_id'];
+        String link2 = 'https://www.omdbapi.com/?i=$imdbId&apikey=***REMOVED***';
         final r = await http.get(Uri.parse(link2));
         if (r.statusCode == 200) {
           json['imdb_rating'] = jsonDecode(r.body)['imdbRating'];
           json['year'] = jsonDecode(r.body)['Year'];
-          final r2 = await http.get(
-              Uri.parse('${link}${movieData[0]}-${name}${watch_providers}'));
+          final r2 = await http
+              .get(Uri.parse('$link${movieData[0]}-$name$watch_providers'));
           if (r2.statusCode == 200) {
             json['providers'] = [];
             if (jsonDecode(r2.body)["results"].keys.contains(country)) {
@@ -93,12 +354,12 @@ class _TVShowResultState extends State<TVShowResult> {
                   },
                 );
                 final r3 = await http
-                    .get(Uri.parse('${link}${movieData[0]}-${name}${credits}'));
+                    .get(Uri.parse('$link${movieData[0]}-$name$credits'));
                 if (r3.statusCode == 200) {
                   json['cast'] = jsonDecode(r3.body)["cast"];
                   json['crew'] = jsonDecode(r3.body)["crew"];
                   final r4 = await http
-                      .get(Uri.parse('${link}${movieData[0]}-${name}${video}'));
+                      .get(Uri.parse('$link${movieData[0]}-$name$video'));
                   if (r4.statusCode == 200) {
                     bool got = false;
                     jsonDecode(r4.body)['results'].forEach((element) {
@@ -117,12 +378,12 @@ class _TVShowResultState extends State<TVShowResult> {
               } else {
                 json['providers'] = [];
                 final r3 = await http
-                    .get(Uri.parse('${link}${movieData[0]}-${name}${credits}'));
+                    .get(Uri.parse('$link${movieData[0]}-$name$credits'));
                 if (r3.statusCode == 200) {
                   json['cast'] = jsonDecode(r3.body)["cast"];
                   json['crew'] = jsonDecode(r3.body)["crew"];
                   final r4 = await http
-                      .get(Uri.parse('${link}${movieData[0]}-${name}${video}'));
+                      .get(Uri.parse('$link${movieData[0]}-$name$video'));
                   if (r4.statusCode == 200) {
                     bool got = false;
                     jsonDecode(r4.body)['results'].forEach((element) {
@@ -142,12 +403,12 @@ class _TVShowResultState extends State<TVShowResult> {
             } else {
               json['providers'] = [];
               final r3 = await http
-                  .get(Uri.parse('${link}${movieData[0]}-${name}${credits}'));
+                  .get(Uri.parse('$link${movieData[0]}-$name$credits'));
               if (r3.statusCode == 200) {
                 json['cast'] = jsonDecode(r3.body)["cast"];
                 json['crew'] = jsonDecode(r3.body)["crew"];
                 final r4 = await http
-                    .get(Uri.parse('${link}${movieData[0]}-${name}${video}'));
+                    .get(Uri.parse('$link${movieData[0]}-$name$video'));
                 if (r4.statusCode == 200) {
                   bool got = false;
                   jsonDecode(r4.body)['results'].forEach((element) {
@@ -184,27 +445,33 @@ class _TVShowResultState extends State<TVShowResult> {
 
     int _selectedIndex = 0;
 
-    void _onTap(String type) {
+    void _onTap(String type, String id, String title) {
       setState(
         () {
           switch (type) {
             case 'seen':
               _isTappedSeen = !_isTappedSeen;
-              _imageProviderSeen = _isTappedSeen
-                  ? 'assets/seen_after.png'
-                  : 'assets/seen_before.png';
+              if (_isTappedSeen) {
+                markWatched(id, title, context);
+              } else {
+                deleteFromWatchedConfirmation(id, context);
+              }
               break;
             case 'watchlist':
               _isTappedWatchlist = !_isTappedWatchlist;
-              _imageProviderWatchlist = _isTappedWatchlist
-                  ? 'assets/watchlist_after.png'
-                  : 'assets/watchlist_before.png';
+              if (_isTappedWatchlist) {
+                bookmark(id, context);
+              } else {
+                unbookmark(id, context);
+              }
               break;
             case 'fav':
               _isTappedFav = !_isTappedFav;
-              _imageProviderFav = _isTappedFav
-                  ? 'assets/fav_after.png'
-                  : 'assets/fav_before.png';
+              if (_isTappedFav) {
+                favorite(id, context);
+              } else {
+                unfavorite(id, context);
+              }
               break;
             case 'list':
               _isTappedList = !_isTappedList;
@@ -221,32 +488,40 @@ class _TVShowResultState extends State<TVShowResult> {
                         itemBuilder: (context, index) {
                           final leftMovieIndex = index * 2;
                           final rightMovieIndex = index * 2 + 1;
-                          String key_left =
-                              playlists.keys.elementAt(leftMovieIndex);
-                          dynamic value_left = playlists[key_left]['Name'];
-                          dynamic image_left =
-                              playlists[key_left]['CoverPhoto'];
-                          dynamic movies_left = playlists[key_left]['Movies'];
-                          dynamic tvshows_left =
-                              playlists[key_left]['TV Shows'];
-                          dynamic accessCode_left =
-                              playlists[key_left]['AccessCode'];
-                          String key_right =
-                              playlists.keys.elementAt(rightMovieIndex);
-                          dynamic value_right = playlists[key_right]['Name'];
-                          dynamic image_right =
-                              playlists[key_right]['CoverPhoto'];
-                          dynamic movies_right = playlists[key_right]['Movies'];
-                          dynamic tvshows_right =
-                              playlists[key_right]['TV Shows'];
-                          dynamic accessCode_right =
-                              playlists[key_right]['AccessCode'];
+                          final keyLeft = (leftMovieIndex < playlists.length)
+                              ? playlists.keys.elementAt(leftMovieIndex)
+                              : null;
+                          final keyRight = (rightMovieIndex < playlists.length)
+                              ? playlists.keys.elementAt(rightMovieIndex)
+                              : null;
+                          dynamic valueLeft,
+                              imageLeft,
+                              moviesLeft,
+                              valueRight,
+                              imageRight,
+                              moviesRight;
+                          if (keyLeft != null) {
+                            valueLeft = playlists[keyLeft]['Name'];
+                            imageLeft = playlists[keyLeft]['CoverPhoto'];
+                            moviesLeft = playlists[keyLeft]['TV Shows'];
+                          }
+                          if (keyRight != null) {
+                            valueRight = playlists[keyRight]['Name'];
+                            imageRight = playlists[keyRight]['CoverPhoto'];
+                            moviesRight = playlists[keyRight]['TV Shows'];
+                          }
                           return Row(
                             children: [
-                              if (key_left != null)
+                              if (keyLeft != null)
                                 GestureDetector(
                                   onTap: () {
-                                    // Handle the click event here
+                                    if (moviesLeft.contains(id)) {
+                                      deleteFromList(
+                                          id, keyLeft, moviesLeft, context);
+                                    } else {
+                                      addToList(
+                                          id, keyLeft, moviesLeft, context);
+                                    }
                                   },
                                   child: Container(
                                     margin: const EdgeInsets.fromLTRB(
@@ -274,7 +549,7 @@ class _TVShowResultState extends State<TVShowResult> {
                                                 BorderRadius.circular(10),
                                             image: DecorationImage(
                                               image: NetworkImage(
-                                                image_left,
+                                                imageLeft,
                                               ),
                                               fit: BoxFit.cover,
                                             ),
@@ -307,7 +582,7 @@ class _TVShowResultState extends State<TVShowResult> {
                                           child: Align(
                                             alignment: Alignment.bottomLeft,
                                             child: Text(
-                                              value_left,
+                                              valueLeft,
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 10,
@@ -323,10 +598,16 @@ class _TVShowResultState extends State<TVShowResult> {
                                     ),
                                   ),
                                 ),
-                              if (key_right != null)
+                              if (keyRight != null)
                                 GestureDetector(
                                   onTap: () {
-                                    // Handle the click event here
+                                    if (moviesRight.contains(id)) {
+                                      deleteFromList(
+                                          id, keyRight, moviesRight, context);
+                                    } else {
+                                      addToList(
+                                          id, keyRight, moviesRight, context);
+                                    }
                                   },
                                   child: Container(
                                     margin: const EdgeInsets.fromLTRB(
@@ -354,7 +635,7 @@ class _TVShowResultState extends State<TVShowResult> {
                                                 BorderRadius.circular(10),
                                             image: DecorationImage(
                                               image: NetworkImage(
-                                                image_right,
+                                                imageRight,
                                               ),
                                               fit: BoxFit.cover,
                                             ),
@@ -387,7 +668,7 @@ class _TVShowResultState extends State<TVShowResult> {
                                           child: Align(
                                             alignment: Alignment.bottomLeft,
                                             child: Text(
-                                              value_right,
+                                              valueRight,
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 10,
@@ -618,7 +899,10 @@ class _TVShowResultState extends State<TVShowResult> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       GestureDetector(
-                        onTap: () => _onTap('seen'),
+                        onTap: () => _onTap(
+                            'seen',
+                            snapshot.data!["id"].toString(),
+                            snapshot.data!["name"]),
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -629,7 +913,10 @@ class _TVShowResultState extends State<TVShowResult> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => _onTap('watchlist'),
+                        onTap: () => _onTap(
+                            'watchlist',
+                            snapshot.data!["id"].toString(),
+                            snapshot.data!["name"]),
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -640,7 +927,10 @@ class _TVShowResultState extends State<TVShowResult> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => _onTap('fav'),
+                        onTap: () => _onTap(
+                            'fav',
+                            snapshot.data!["id"].toString(),
+                            snapshot.data!["name"]),
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -651,7 +941,10 @@ class _TVShowResultState extends State<TVShowResult> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => _onTap('list'),
+                        onTap: () => _onTap(
+                            'list',
+                            snapshot.data!["id"].toString(),
+                            snapshot.data!["name"]),
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -752,7 +1045,7 @@ class _TVShowResultState extends State<TVShowResult> {
                               person['profile_path'] =
                                   imgLink + person['profile_path'];
                             }
-                            String link_person =
+                            String linkPerson =
                                 "https://api.themoviedb.org/3/person/";
                             return GestureDetector(
                               onTap: () {
