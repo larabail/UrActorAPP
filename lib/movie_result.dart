@@ -436,6 +436,9 @@ class _MovieResultState extends State<MovieResult> {
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       json["times_seen"] = movieData[3];
+      if (json["backdrop_path"] == null) {
+        json["backdrop_path"] = "";
+      }
       String imdbId = json['imdb_id'];
       String link2 = 'https://www.omdbapi.com/?i=$imdbId&apikey=768d2cf9';
       final r = await http.get(Uri.parse(link2));
@@ -849,17 +852,30 @@ class _MovieResultState extends State<MovieResult> {
                     ),
                     child: Stack(
                       children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            image: DecorationImage(
-                              image: NetworkImage(
-                                imgLink + snapshot.data!['backdrop_path'],
+                        if (snapshot.data!['backdrop_path'] != "")
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              image: DecorationImage(
+                                image: NetworkImage(
+                                  imgLink + snapshot.data!['backdrop_path'],
+                                ),
+                                fit: BoxFit.cover,
                               ),
-                              fit: BoxFit.cover,
                             ),
                           ),
-                        ),
+                        if (snapshot.data!['backdrop_path'] == "")
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              image: const DecorationImage(
+                                image: AssetImage(
+                                  "assets/logo.png",
+                                ),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
                         Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
@@ -893,30 +909,32 @@ class _MovieResultState extends State<MovieResult> {
                       ],
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Align(
-                      alignment: Alignment.bottomRight,
-                      child: Container(
-                        height: 85, // fixed height
-                        padding: const EdgeInsets.all(8), // optional padding
-                        child: ListView(
-                          children: [
-                            Text(
-                              snapshot.data!['overview'],
-                              textAlign: TextAlign.justify,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                wordSpacing: 2,
-                                height: 1.5,
+                  if (snapshot.data!['overview'] != null &&
+                      snapshot.data!['overview'] != "")
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Align(
+                        alignment: Alignment.bottomRight,
+                        child: Container(
+                          height: 85, // fixed height
+                          padding: const EdgeInsets.all(8), // optional padding
+                          child: ListView(
+                            children: [
+                              Text(
+                                snapshot.data!['overview'],
+                                textAlign: TextAlign.justify,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  wordSpacing: 2,
+                                  height: 1.5,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   Container(
                     height: 30, // fixed height
                     margin: const EdgeInsets.fromLTRB(20.0, 5.0, 0, 5.0),
@@ -1239,8 +1257,8 @@ class _MovieResultState extends State<MovieResult> {
                         );
                       } catch (e) {
                         // Handle the exception
-                        return Center(
-                          child: Text('An error occurred: $e'),
+                        return const Center(
+                          child: Text(''),
                         );
                       }
                     },

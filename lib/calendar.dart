@@ -89,7 +89,7 @@ class Calendar extends StatelessWidget {
               return SingleChildScrollView(
                 child: Container(
                   color: Color(0xFF121212),
-                  height: 400,
+                  height: MediaQuery.of(context).size.height * 0.35,
                   child: Padding(
                     padding: EdgeInsets.all(20.0),
                     child: Column(
@@ -103,7 +103,7 @@ class Calendar extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         Container(
-                          height: MediaQuery.of(context).size.height * 0.17,
+                          height: MediaQuery.of(context).size.height * 0.2,
                           child: ListView(
                             scrollDirection: Axis.horizontal,
                             children: [
@@ -129,11 +129,11 @@ class Calendar extends StatelessWidget {
                                           width: MediaQuery.of(context)
                                                   .size
                                                   .width *
-                                              0.25,
+                                              0.3,
                                           height: MediaQuery.of(context)
                                                   .size
                                                   .height *
-                                              0.15,
+                                              0.35,
                                           decoration: BoxDecoration(
                                             borderRadius:
                                                 BorderRadius.circular(27),
