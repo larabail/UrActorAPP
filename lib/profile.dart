@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:uractor/playlists.dart';
 import 'package:uractor/search.dart';
@@ -489,11 +491,9 @@ class Profile extends StatelessWidget {
                 Icons.logout_outlined,
                 color: Colors.white,
               ),
-              onPressed: () {
-                Future<void> _signOut() async {
-                  await FirebaseAuth.instance.signOut();
-                }
-
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+                email = "";
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => Login()),

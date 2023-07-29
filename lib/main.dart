@@ -26,13 +26,13 @@ List favMovies = [];
 List favTVShows = [];
 List seenMovies = [];
 List seenTVShows = [];
-Map reviews = {};
-Map rewatchedMovies = {};
 List watchlist = [];
 List watchlistTVShows = [];
-Map playlists = {};
 List movieResult = [];
 List tvShowResult = [];
+Map reviews = {};
+Map rewatchedMovies = {};
+Map playlists = {};
 Map personResult = {};
 Map oscars = {};
 List<Map<String, dynamic>> favsPage = [];
@@ -111,23 +111,23 @@ class _MyHomePageState extends State<MyHomePage> {
             .get()
             .then((QuerySnapshot querySnapshot) {
           for (var doc in querySnapshot.docs) {
-            if (doc.id == "Country") {
+            if (doc.id == "Country" && country == "") {
               country = (doc['Country']);
-            } else if (doc.id == "Calendar") {
+            } else if (doc.id == "Calendar" && calendar.keys.isEmpty) {
               calendar = doc.data() as Map;
-            } else if (doc.id == "FavActors") {
+            } else if (doc.id == "FavActors" && favActors.isEmpty) {
               Map tempFavActors = doc.data() as Map;
               favActors = tempFavActors.entries
                   .map((entry) => [entry.value, entry.key])
                   .toList();
               favActors.sort((a, b) => b[0].compareTo(a[0]));
-            } else if (doc.id == "FavDirectors") {
+            } else if (doc.id == "FavDirectors" && favDirectors.isEmpty) {
               Map tempFavDirectors = doc.data() as Map;
               favDirectors = tempFavDirectors.entries
                   .map((entry) => [entry.value, entry.key])
                   .toList();
               favDirectors.sort((a, b) => b[0].compareTo(a[0]));
-            } else if (doc.id == "Favorites") {
+            } else if (doc.id == "Favorites" && favMovies.isEmpty) {
               Map allFavs = doc.data() as Map;
               allFavs.forEach((key, el) {
                 allFavs[key].forEach((element) {
@@ -142,7 +142,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   }
                 });
               });
-            } else if (doc.id == "Movies") {
+            } else if (doc.id == "Movies" && seenMovies.isEmpty) {
               Map w = doc.data() as Map;
               w.forEach((key, el) {
                 w[key].forEach((element) {
@@ -151,11 +151,11 @@ class _MyHomePageState extends State<MyHomePage> {
                   ];
                 });
               });
-            } else if (doc.id == "Reviews") {
+            } else if (doc.id == "Reviews" && reviews.keys.isEmpty) {
               reviews = doc.data() as Map;
-            } else if (doc.id == "Rewatched") {
+            } else if (doc.id == "Rewatched" && rewatchedMovies.keys.isEmpty) {
               rewatchedMovies = doc.data() as Map;
-            } else if (doc.id == "TVShows") {
+            } else if (doc.id == "TVShows" && seenTVShows.isEmpty) {
               Map w = doc.data() as Map;
               w.forEach((key, el) {
                 w[key].forEach((element) {
@@ -164,7 +164,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ];
                 });
               });
-            } else if (doc.id == "Watchlist") {
+            } else if (doc.id == "Watchlist" && watchlist.isEmpty) {
               Map w = doc.data() as Map;
               w.forEach((key, el) {
                 w[key].forEach((element) {
