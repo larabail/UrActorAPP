@@ -77,9 +77,6 @@ class Watchlist extends StatelessWidget {
       );
     }
 
-    watchlist = watchlist.reversed.toList();
-    watchlistTVShows = watchlistTVShows.reversed.toList();
-
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
@@ -119,21 +116,21 @@ class Watchlist extends StatelessWidget {
                   child: TabBarView(
                     children: [
                       ListView.builder(
-                        itemCount: (watchlist.length / 3).ceil(),
+                        itemCount: (watchlist.reversed.toList().length / 3).ceil(),
                         itemBuilder: (context, index) {
                           final leftMovieIndex = index * 3;
                           final middleMovieIndex = index * 3 + 1;
                           final rightMovieIndex = index * 3 + 2;
-                          final leftMovie = (leftMovieIndex < watchlist.length)
-                              ? watchlist[leftMovieIndex]
+                          final leftMovie = (leftMovieIndex < watchlist.reversed.toList().length)
+                              ? watchlist.reversed.toList()[leftMovieIndex]
                               : null;
                           final middleMovie =
-                              (middleMovieIndex < watchlist.length)
-                                  ? watchlist[middleMovieIndex]
+                              (middleMovieIndex < watchlist.reversed.toList().length)
+                                  ? watchlist.reversed.toList()[middleMovieIndex]
                                   : null;
                           final rightMovie =
-                              (rightMovieIndex < watchlist.length)
-                                  ? watchlist[rightMovieIndex]
+                              (rightMovieIndex < watchlist.reversed.toList().length)
+                                  ? watchlist.reversed.toList()[rightMovieIndex]
                                   : null;
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -349,22 +346,22 @@ class Watchlist extends StatelessWidget {
                         },
                       ),
                       ListView.builder(
-                        itemCount: (watchlistTVShows.length / 3).ceil(),
+                        itemCount: (watchlistTVShows.reversed.toList().length / 3).ceil(),
                         itemBuilder: (context, index) {
                           final leftTVShowIndex = index * 3;
                           final middleTVShowIndex = index * 3 + 1;
                           final rightTVShowIndex = index * 3 + 2;
                           final leftTVShow =
-                              (leftTVShowIndex < watchlistTVShows.length)
-                                  ? watchlistTVShows[leftTVShowIndex]
+                              (leftTVShowIndex < watchlistTVShows.reversed.toList().length)
+                                  ? watchlistTVShows.reversed.toList()[leftTVShowIndex]
                                   : null;
                           final middleTVShow =
-                              (middleTVShowIndex < watchlistTVShows.length)
-                                  ? watchlistTVShows[middleTVShowIndex]
+                              (middleTVShowIndex < watchlistTVShows.reversed.toList().length)
+                                  ? watchlistTVShows.reversed.toList()[middleTVShowIndex]
                                   : null;
                           final rightTVShow =
-                              (rightTVShowIndex < watchlistTVShows.length)
-                                  ? watchlistTVShows[rightTVShowIndex]
+                              (rightTVShowIndex < watchlistTVShows.reversed.toList().length)
+                                  ? watchlistTVShows.reversed.toList()[rightTVShowIndex]
                                   : null;
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,

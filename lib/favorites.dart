@@ -75,9 +75,6 @@ class Favorites extends StatelessWidget {
       );
     }
 
-    favMovies = favMovies.reversed.toList();
-    favTVShows = favTVShows.reversed.toList();
-
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
@@ -117,21 +114,21 @@ class Favorites extends StatelessWidget {
                   child: TabBarView(
                     children: [
                       ListView.builder(
-                        itemCount: (favMovies.length / 3).ceil(),
+                        itemCount: (favMovies.reversed.toList().length / 3).ceil(),
                         itemBuilder: (context, index) {
                           final leftMovieIndex = index * 3;
                           final middleMovieIndex = index * 3 + 1;
                           final rightMovieIndex = index * 3 + 2;
-                          final leftMovie = (leftMovieIndex < favMovies.length)
-                              ? favMovies[leftMovieIndex]
+                          final leftMovie = (leftMovieIndex < favMovies.reversed.toList().length)
+                              ? favMovies.reversed.toList()[leftMovieIndex]
                               : null;
                           final middleMovie =
-                              (middleMovieIndex < favMovies.length)
-                                  ? favMovies[middleMovieIndex]
+                              (middleMovieIndex < favMovies.reversed.toList().length)
+                                  ? favMovies.reversed.toList()[middleMovieIndex]
                                   : null;
                           final rightMovie =
-                              (rightMovieIndex < favMovies.length)
-                                  ? favMovies[rightMovieIndex]
+                              (rightMovieIndex < favMovies.reversed.toList().length)
+                                  ? favMovies.reversed.toList()[rightMovieIndex]
                                   : null;
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -347,22 +344,22 @@ class Favorites extends StatelessWidget {
                         },
                       ),
                       ListView.builder(
-                        itemCount: (favTVShows.length / 3).ceil(),
+                        itemCount: (favTVShows.reversed.toList().length / 3).ceil(),
                         itemBuilder: (context, index) {
                           final leftTVShowIndex = index * 3;
                           final middleTVShowIndex = index * 3 + 1;
                           final rightTVShowIndex = index * 3 + 2;
                           final leftTVShow =
-                              (leftTVShowIndex < favTVShows.length)
-                                  ? favTVShows[leftTVShowIndex]
+                              (leftTVShowIndex < favTVShows.reversed.toList().length)
+                                  ? favTVShows.reversed.toList()[leftTVShowIndex]
                                   : null;
                           final middleTVShow =
-                              (middleTVShowIndex < favTVShows.length)
-                                  ? favTVShows[middleTVShowIndex]
+                              (middleTVShowIndex < favTVShows.reversed.toList().length)
+                                  ? favTVShows.reversed.toList()[middleTVShowIndex]
                                   : null;
                           final rightTVShow =
-                              (rightTVShowIndex < favTVShows.length)
-                                  ? favTVShows[rightTVShowIndex]
+                              (rightTVShowIndex < favTVShows.reversed.toList().length)
+                                  ? favTVShows.reversed.toList()[rightTVShowIndex]
                                   : null;
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
