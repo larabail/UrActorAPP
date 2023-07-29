@@ -1,6 +1,7 @@
 // ignore_for_file: non_constant_identifier_names
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/profile.dart';
 import 'package:uractor/search.dart';
@@ -74,10 +75,8 @@ Future<void> deleteFromWatchedConfirmation(
               ["Movies", element]
             ];
           }
-          Timer(const Duration(seconds: 1), () {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => MovieResult()));
-          });
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (context) => MovieResult()));
         }
       });
     });
@@ -169,16 +168,149 @@ void addtoCalendar(
         }
       });
     });
-    Timer(const Duration(seconds: 1), () {
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => MovieResult()));
-    });
-  } else {
-    Timer(const Duration(seconds: 1), () {
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => MovieResult()));
-    });
   }
+  Navigator.pushReplacement(
+      context, MaterialPageRoute(builder: (context) => MovieResult()));
+}
+
+void favorite(String id, context) async {
+  final userDoc = FirebaseFirestore.instance.collection(uid).doc("Favorites");
+  await userDoc.update({
+    'Movies': FieldValue.arrayUnion([id])
+  });
+  favMovies = [];
+  await FirebaseFirestore.instance
+      .collection(uid)
+      .get()
+      .then((QuerySnapshot querySnapshot) {
+    for (var doc in querySnapshot.docs) {
+      if (doc.id == "Favorites") {
+        Map allFavs = doc.data() as Map;
+        allFavs.forEach((key, el) {
+          allFavs[key].forEach((element) {
+            if (key == "Movies") {
+              favMovies += [
+                [key, element]
+              ];
+            } else {
+              favTVShows += [
+                [key, element]
+              ];
+            }
+          });
+        });
+      }
+    }
+  });
+  Navigator.pushReplacement(
+      context, MaterialPageRoute(builder: (context) => MovieResult()));
+}
+
+void unfavorite(String id, context) async {
+  await FirebaseFirestore.instance
+      .collection(uid)
+      .get()
+      .then((QuerySnapshot querySnapshot) async {
+    for (var doc in querySnapshot.docs) {
+      if (doc.id == "Favorites") {
+        Map allFavs = doc.data() as Map;
+        List movieInFavs = allFavs["Movies"];
+        int index = movieInFavs.indexOf(id);
+        if (index > -1) {
+          movieInFavs.removeAt(index);
+        }
+        final userDoc =
+            FirebaseFirestore.instance.collection(uid).doc("Favorites");
+        await userDoc.update({'Movies': movieInFavs});
+        favMovies = [];
+        allFavs.forEach((key, el) {
+          allFavs[key].forEach((element) {
+            if (key == "Movies") {
+              favMovies += [
+                [key, element]
+              ];
+            } else {
+              favTVShows += [
+                [key, element]
+              ];
+            }
+          });
+        });
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => MovieResult()));
+      }
+    }
+  });
+}
+
+void bookmark(String id, context) async {
+  final userDoc = FirebaseFirestore.instance.collection(uid).doc("Watchlist");
+  await userDoc.update({
+    'Movies': FieldValue.arrayUnion([id])
+  });
+  watchlist = [];
+  await FirebaseFirestore.instance
+      .collection(uid)
+      .get()
+      .then((QuerySnapshot querySnapshot) {
+    for (var doc in querySnapshot.docs) {
+      if (doc.id == "Watchlist") {
+        Map allFavs = doc.data() as Map;
+        allFavs.forEach((key, el) {
+          allFavs[key].forEach((element) {
+            if (key == "Movies") {
+              watchlist += [
+                [key, element]
+              ];
+            } else {
+              watchlistTVShows += [
+                [key, element]
+              ];
+            }
+          });
+        });
+      }
+    }
+  });
+  Navigator.pushReplacement(
+      context, MaterialPageRoute(builder: (context) => MovieResult()));
+}
+
+void unbookmark(String id, context) async {
+  await FirebaseFirestore.instance
+      .collection(uid)
+      .get()
+      .then((QuerySnapshot querySnapshot) async {
+    for (var doc in querySnapshot.docs) {
+      if (doc.id == "Watchlist") {
+        Map allWatch = doc.data() as Map;
+        List movieInWatchlist = allWatch["Movies"];
+        int index = movieInWatchlist.indexOf(id);
+        if (index > -1) {
+          movieInWatchlist.removeAt(index);
+        }
+        final userDoc =
+            FirebaseFirestore.instance.collection(uid).doc("Watchlist");
+        await userDoc.update({'Movies': movieInWatchlist});
+        watchlist = [];
+        allWatch.forEach((key, el) {
+          allWatch[key].forEach((element) {
+            if (key == "Movies") {
+              watchlist += [
+                [key, element]
+              ];
+            } else {
+              watchlistTVShows += [
+                [key, element]
+              ];
+            }
+          });
+        });
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => MovieResult()));
+      }
+    }
+  });
 }
 
 class MovieResult extends StatefulWidget {
@@ -374,15 +506,19 @@ class _MovieResultState extends State<MovieResult> {
               break;
             case 'watchlist':
               _isTappedWatchlist = !_isTappedWatchlist;
-              _imageProviderWatchlist = _isTappedWatchlist
-                  ? 'assets/watchlist_after.png'
-                  : 'assets/watchlist_before.png';
+              if (_isTappedWatchlist) {
+                bookmark(id, context);
+              } else {
+                unbookmark(id, context);
+              }
               break;
             case 'fav':
               _isTappedFav = !_isTappedFav;
-              _imageProviderFav = _isTappedFav
-                  ? 'assets/fav_after.png'
-                  : 'assets/fav_before.png';
+              if (_isTappedFav) {
+                favorite(id, context);
+              } else {
+                unfavorite(id, context);
+              }
               break;
             case 'list':
               _isTappedList = !_isTappedList;
