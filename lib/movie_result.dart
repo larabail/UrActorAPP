@@ -313,6 +313,59 @@ void unbookmark(String id, context) async {
   });
 }
 
+void addToList(String id, String listId, List moviesinList, context) async {
+  moviesinList.add(id);
+  final userDoc = FirebaseFirestore.instance
+      .collection("Watchlists")
+      .doc(listId.toString());
+  await userDoc.update({'Movies': moviesinList});
+  playlists = {};
+  await FirebaseFirestore.instance
+      .collection("Watchlists")
+      .get()
+      .then((QuerySnapshot querySnapshot) {
+    for (var doc in querySnapshot.docs) {
+      Map keysOfDoc = doc.data() as Map;
+      List users = keysOfDoc['Users'] as List;
+      for (var element in users) {
+        Map el = element as Map;
+        if (el.keys.contains(uid)) {
+          playlists[doc.id] = doc.data();
+        }
+      }
+    }
+  });
+  Navigator.pushReplacement(
+      context, MaterialPageRoute(builder: (context) => MovieResult()));
+}
+
+void deleteFromList(
+    String id, String listId, List moviesinList, context) async {
+  moviesinList.remove(id);
+  final userDoc = FirebaseFirestore.instance
+      .collection("Watchlists")
+      .doc(listId.toString());
+  await userDoc.update({'Movies': moviesinList});
+  playlists = {};
+  await FirebaseFirestore.instance
+      .collection("Watchlists")
+      .get()
+      .then((QuerySnapshot querySnapshot) {
+    for (var doc in querySnapshot.docs) {
+      Map keysOfDoc = doc.data() as Map;
+      List users = keysOfDoc['Users'] as List;
+      for (var element in users) {
+        Map el = element as Map;
+        if (el.keys.contains(uid)) {
+          playlists[doc.id] = doc.data();
+        }
+      }
+    }
+  });
+  Navigator.pushReplacement(
+      context, MaterialPageRoute(builder: (context) => MovieResult()));
+}
+
 class MovieResult extends StatefulWidget {
   MovieResult();
 
@@ -544,33 +597,31 @@ class _MovieResultState extends State<MovieResult> {
                           dynamic valueLeft,
                               imageLeft,
                               moviesLeft,
-                              tvshowsLeft,
-                              accesscodeLeft,
                               valueRight,
                               imageRight,
-                              moviesRight,
-                              tvshowsRight,
-                              accesscodeRight;
+                              moviesRight;
                           if (keyLeft != null) {
                             valueLeft = playlists[keyLeft]['Name'];
                             imageLeft = playlists[keyLeft]['CoverPhoto'];
                             moviesLeft = playlists[keyLeft]['Movies'];
-                            tvshowsLeft = playlists[keyLeft]['TV Shows'];
-                            accesscodeLeft = playlists[keyLeft]['AccessCode'];
                           }
                           if (keyRight != null) {
                             valueRight = playlists[keyRight]['Name'];
                             imageRight = playlists[keyRight]['CoverPhoto'];
                             moviesRight = playlists[keyRight]['Movies'];
-                            tvshowsRight = playlists[keyRight]['TV Shows'];
-                            accesscodeRight = playlists[keyRight]['AccessCode'];
                           }
                           return Row(
                             children: [
                               if (keyLeft != null)
                                 GestureDetector(
                                   onTap: () {
-                                    // Handle the click event here
+                                    if (moviesLeft.contains(id)) {
+                                      deleteFromList(
+                                          id, keyLeft, moviesLeft, context);
+                                    } else {
+                                      addToList(
+                                          id, keyLeft, moviesLeft, context);
+                                    }
                                   },
                                   child: Container(
                                     margin: const EdgeInsets.fromLTRB(
@@ -650,7 +701,13 @@ class _MovieResultState extends State<MovieResult> {
                               if (keyRight != null)
                                 GestureDetector(
                                   onTap: () {
-                                    // Handle the click event here
+                                    if (moviesRight.contains(id)) {
+                                      deleteFromList(
+                                          id, keyRight, moviesRight, context);
+                                    } else {
+                                      addToList(
+                                          id, keyRight, moviesRight, context);
+                                    }
                                   },
                                   child: Container(
                                     margin: const EdgeInsets.fromLTRB(
@@ -737,6 +794,7 @@ class _MovieResultState extends State<MovieResult> {
                       setState(() {
                         _imageProviderList = 'assets/playlists_before.png';
                         _isTappedList = !_isTappedList;
+                        print(playlists);
                       })
                     });
               } else {
