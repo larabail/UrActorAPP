@@ -40,7 +40,7 @@ class Login extends StatelessWidget {
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
-            padding: EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16.0),
             child: Form(
               key: _formKey,
               child: Column(
@@ -49,7 +49,7 @@ class Login extends StatelessWidget {
                 children: <Widget>[
                   TextFormField(
                     keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Email',
                       border: OutlineInputBorder(),
                     ),
@@ -63,10 +63,10 @@ class Login extends StatelessWidget {
                       _email = value!;
                     },
                   ),
-                  SizedBox(height: 16.0),
+                  const SizedBox(height: 16.0),
                   TextFormField(
                     obscureText: true,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Password',
                       border: OutlineInputBorder(),
                     ),
@@ -80,29 +80,37 @@ class Login extends StatelessWidget {
                       _password = value!;
                     },
                   ),
-                  SizedBox(height: 16.0),
+                  const SizedBox(height: 16.0),
                   ElevatedButton(
-                    child: Text('Login'),
-                    onPressed: () {
+                    child: const Text('Login'),
+                    onPressed: () async {
                       if (_formKey.currentState!.validate()) {
                         _formKey.currentState!.save();
-                        FirebaseAuth.instance
-                            .signInWithEmailAndPassword(
-                                email: _email, password: _password)
-                            .then((_) {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (context) => MyApp()),
-                          );
-                        }).catchError((e) {
-                          print(e);
-                        });
+                        try {
+                          final credential = await FirebaseAuth.instance
+                              .signInWithEmailAndPassword(
+                                  email: _email, password: _password)
+                              .then((_) {
+                            print(_email);
+                            print(_password);
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (context) => MyApp()),
+                            );
+                          });
+                        } on FirebaseAuthException catch (e) {
+                          if (e.code == 'user-not-found') {
+                            print('No user found for that email.');
+                          } else if (e.code == 'wrong-password') {
+                            print('Wrong password provided for that user.');
+                          }
+                        }
                       }
                     },
                   ),
-                  SizedBox(height: 16.0),
+                  const SizedBox(height: 16.0),
                   GestureDetector(
-                    child: Text('Don\'t have an account? Sign up'),
+                    child: const Text('Don\'t have an account? Sign up'),
                     onTap: () {
                       Navigator.of(context).pushNamed('/signup');
                     },
@@ -117,7 +125,7 @@ class Login extends StatelessWidget {
         selectedItemColor: Colors.grey,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Color(0xFF121212),
+        backgroundColor: const Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
