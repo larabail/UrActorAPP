@@ -1,37 +1,20 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
-import 'package:uractor/playlists.dart';
-import 'package:uractor/profile.dart';
-import 'package:uractor/search.dart';
+import 'package:uractor/signup.dart';
 import 'package:uractor/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class Login extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    int _selectedIndex = 0;
+    int selectedIndex = 0;
 
-    final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-    late String _email, _password;
-    final List<Widget> _pages = [
-      const MyApp(),
-      Search(),
-      Playlists(),
-      Profile(),
-      // Add more pages here
-    ];
-
-    void _onItemTapped(int index) {
-      _selectedIndex = index;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => _pages[_selectedIndex]),
-      );
-    }
+    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+    late String email, password;
 
     void resetPassword(String email) async {
-      if (email == "" || email == null) {
+      if (email == "") {
         await showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -108,7 +91,7 @@ class Login extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Form(
-              key: _formKey,
+              key: formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -136,7 +119,7 @@ class Login extends StatelessWidget {
                       return null;
                     },
                     onSaved: (String? value) {
-                      _email = value!;
+                      email = value!;
                     },
                   ),
                   const SizedBox(height: 16.0),
@@ -163,22 +146,20 @@ class Login extends StatelessWidget {
                       return null;
                     },
                     onSaved: (String? value) {
-                      _password = value!;
+                      password = value!;
                     },
                   ),
                   const SizedBox(height: 16.0),
                   ElevatedButton(
                     child: const Text('Login'),
                     onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
-                        _formKey.currentState!.save();
+                      if (formKey.currentState!.validate()) {
+                        formKey.currentState!.save();
                         try {
                           final credential = await FirebaseAuth.instance
                               .signInWithEmailAndPassword(
-                                  email: _email, password: _password)
+                                  email: email, password: password)
                               .then((_) {
-                            print(_email);
-                            print(_password);
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
@@ -202,7 +183,8 @@ class Login extends StatelessWidget {
                       style: TextStyle(color: Colors.white),
                     ),
                     onTap: () {
-                      Navigator.of(context).pushNamed('/signup');
+                      Navigator.pushReplacement(context,
+                          MaterialPageRoute(builder: (context) => SignUp()));
                     },
                   ),
                   SizedBox(height: 20),
@@ -221,33 +203,6 @@ class Login extends StatelessWidget {
           ),
         ),
       ),
-      //   bottomNavigationBar: BottomNavigationBar(
-      //     selectedItemColor: Colors.grey,
-      //     unselectedItemColor: Colors.grey,
-      //     type: BottomNavigationBarType.fixed,
-      //     backgroundColor: const Color(0xFF121212),
-      //     items: const [
-      //       BottomNavigationBarItem(
-      //         icon: Icon(Icons.home),
-      //         label: 'Home',
-      //       ),
-      //       BottomNavigationBarItem(
-      //         icon: Icon(Icons.search),
-      //         label: 'Search',
-      //       ),
-      //       BottomNavigationBarItem(
-      //         icon: Icon(Icons.library_books_rounded),
-      //         label: 'Library',
-      //       ),
-      //       BottomNavigationBarItem(
-      //         label: 'Profile',
-      //         backgroundColor: Color(0xFF121212),
-      //         icon: Icon(Icons.person),
-      //       ),
-      //     ],
-      //     currentIndex: _selectedIndex,
-      //     onTap: _onItemTapped,
-      //   ),
     );
   }
 }
