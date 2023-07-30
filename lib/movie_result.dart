@@ -100,6 +100,13 @@ void writeReview(id, context) {
 
 void editReview() {}
 
+void incrementWatched(String value, String id) {
+  var userDoc = FirebaseFirestore.instance.collection(uid).doc("Rewatched");
+  Map<String, int> doc = {};
+  if (value != "") doc[id] = int.parse(value);
+  userDoc.update(doc);
+}
+
 Future<void> deleteReview(id, context) async {
   await FirebaseFirestore.instance
       .collection(uid)
@@ -1239,6 +1246,12 @@ class _MovieResultState extends State<MovieResult> {
                       ),
                       style: const TextStyle(color: Colors.white),
                       keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        incrementWatched(
+                            value.toString(),
+                            snapshot.data!["id"]
+                                .toString()); // replace 'yourDocumentId' with your actual document ID
+                      },
                     ),
                   ),
                   Row(
