@@ -20,6 +20,7 @@ String uid = '';
 String email = '';
 String country = '';
 Map calendar = {};
+List allMovies = [];
 List favActors = [];
 List favDirectors = [];
 List favMovies = [];
@@ -212,6 +213,7 @@ class _MyHomePageState extends State<MyHomePage> {
             oscars[d["tmdb_id"]] = doc.data();
           }
         });
+        
       }
     });
 
