@@ -77,15 +77,15 @@ class _PersonResultState extends State<PersonResult> {
         .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
         .replaceAll(" ", "-");
     final response = await http
-        .get(Uri.parse('${link}${presult["id"]}-${name}${api_key_actor}'));
+        .get(Uri.parse('$link${presult["id"]}-$name$api_key_actor'));
     json = jsonDecode(response.body);
     if (response.statusCode == 200) {
       final r2 = await http
-          .get(Uri.parse('${link}${presult["id"]}-${name}${api_key_movie}'));
+          .get(Uri.parse('$link${presult["id"]}-$name$api_key_movie'));
       if (r2.statusCode == 200) {
         json['movie_credits_cast'] = jsonDecode(r2.body)['cast'];
         final r3 = await http
-            .get(Uri.parse('${link}${presult["id"]}-${name}${api_key_tv}'));
+            .get(Uri.parse('$link${presult["id"]}-$name$api_key_tv'));
         if (r3.statusCode == 200) {
           json['tv_credits_cast'] = jsonDecode(r3.body)['cast'];
         } else {
@@ -93,7 +93,7 @@ class _PersonResultState extends State<PersonResult> {
         }
         json['movie_credits_crew'] = jsonDecode(r2.body)['crew'];
         final r4 = await http
-            .get(Uri.parse('${link}${presult["id"]}-${name}${api_key_tv}'));
+            .get(Uri.parse('$link${presult["id"]}-$name$api_key_tv'));
         if (r4.statusCode == 200) {
           json['tv_credits_crew'] = jsonDecode(r4.body)['crew'];
           // Map oscars = await parseJSONFile();
