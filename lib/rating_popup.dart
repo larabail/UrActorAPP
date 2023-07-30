@@ -80,7 +80,6 @@ class _RatingDialogState extends State<RatingDialog> {
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
-                  fontWeight: FontWeight.bold,
                 ),
                 onChanged: (value) {
                   setState(() {
