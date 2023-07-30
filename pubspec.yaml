@@ -80,6 +80,7 @@ flutter:
     - assets/oscar2.png
     - assets/oscars_api.json
     - assets/temp_cover.png
+    - assets/explore.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

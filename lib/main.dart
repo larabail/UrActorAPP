@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:uractor/calendar.dart';
 import 'package:uractor/favorites.dart';
 import 'package:uractor/login.dart';
-import 'package:uractor/oscars.dart';
+import 'package:uractor/explore.dart';
 import 'package:uractor/playlists.dart';
 import 'package:uractor/profile.dart';
 import 'package:uractor/reviews.dart';
@@ -447,33 +447,33 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
               ),
-              //       GestureDetector(
-              //         onTap: () {
-              //           // Handle the click event here
-              //           Navigator.push(
-              //             context,
-              //             MaterialPageRoute(builder: (context) => Oscars()),
-              //           );
-              //         },
-              //         child: Container(
-              //           margin: const EdgeInsets.all(10.0),
-              //           width: MediaQuery.of(context).size.width * 0.4,
-              //           height: MediaQuery.of(context).size.width * 0.5,
-              //           decoration: myDecoration4,
-              //           child: Column(
-              //             children: [
-              //               Image.asset('assets/main_oscars.png'),
-              //               const Text(
-              //                 'Oscar Winners',
-              //                 style: TextStyle(
-              //                   fontSize: 15,
-              //                   fontWeight: FontWeight.bold,
-              //                 ),
-              //               ),
-              //             ],
-              //           ),
-              //         ),
-              //       ),
+              GestureDetector(
+                onTap: () {
+                  // Handle the click event here
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => Explore()),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.all(10.0),
+                  width: MediaQuery.of(context).size.width * 0.4,
+                  height: MediaQuery.of(context).size.width * 0.5,
+                  decoration: myDecoration4,
+                  child: Column(
+                    children: [
+                      Image.asset('assets/explore.png'),
+                      const Text(
+                        'Explore Movies',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ]),
