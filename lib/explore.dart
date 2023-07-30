@@ -55,7 +55,7 @@ class Explore extends StatelessWidget {
           height: 54,
         )),
       ),
-      body: Text("Explore Page"),
+      body: Text("Explore Page Here"),
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: Colors.grey,
         unselectedItemColor: Colors.grey,
