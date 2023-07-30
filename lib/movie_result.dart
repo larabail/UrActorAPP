@@ -1249,7 +1249,7 @@ class _MovieResultState extends State<MovieResult> {
                       ),
                       Container(
                         width: MediaQuery.of(context).size.width,
-                        height: MediaQuery.of(context).size.height * 0.2,
+                        height: MediaQuery.of(context).size.height * 0.25,
                         margin: const EdgeInsets.fromLTRB(30.0, 5.0, 30.0, 5.0),
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
