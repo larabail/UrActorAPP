@@ -22,6 +22,7 @@ bool _isTappedWatchlist = false;
 bool _isTappedFav = false;
 bool _isTappedList = false;
 String reviewId = "";
+final myController = TextEditingController(text: "");
 
 // Assuming the "context" object is available, e.g., from a Flutter widget.
 
@@ -419,10 +420,16 @@ void check() {
     _isTappedFav = false;
     _imageProviderFav = 'assets/fav_before.png';
   }
+  if (rewatchedMovies.keys.toList().contains(movieResult[0].toString())) {
+    myController.text = (rewatchedMovies[movieResult[0].toString()]).toString();
+  } else if (containsMap(seenMovies, ['Movies', movieResult[0]])) {
+    myController.text = "1";
+  } else {
+    myController.text = "0";
+  }
 }
 
 class _MovieResultState extends State<MovieResult> {
-  final myController = TextEditingController();
   final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
   String credits = "/credits?api_key=700cd4fab994df56eb41b34d38c4762a";
   final String imgLink = 'https://image.tmdb.org/t/p/w500';
@@ -443,7 +450,7 @@ class _MovieResultState extends State<MovieResult> {
     if (reviews.keys.toList().contains(movieData[0].toString())) {
       movieData[4] = (reviews[movieData[0].toString()] as Map);
     }
-    myController.text = movieData[3].toString();
+    // myController.text = movieData[3].toString();
     String name = movieData[1]
         .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
         .replaceAll(" ", "-");
