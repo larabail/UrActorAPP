@@ -227,20 +227,27 @@ class Recommendations extends StatelessWidget {
         itemBuilder: (BuildContext context, int index) {
           final leftReviewIndex = index * 2;
           final rightReviewIndex = index * 2 + 1;
-          final leftReviewId =
-              reviews.keys.toList().reversed.toList()[leftReviewIndex];
+          final leftReviewId = (leftReviewIndex < reviews.keys.toList().length)
+              ? reviews.keys.toList().reversed.toList()[leftReviewIndex]
+              : null;
           final rightReviewId =
-              reviews.keys.toList().reversed.toList()[rightReviewIndex];
-          Map leftReview = (reviews[leftReviewId]);
-          Map rightReview = (reviews[rightReviewId]);
+              (rightReviewIndex < reviews.keys.toList().length)
+                  ? reviews.keys.toList().reversed.toList()[rightReviewIndex]
+                  : null;
+          final leftReview =
+              (leftReviewId == null) ? (reviews[leftReviewId]) : null;
+          final rightReview =
+              (rightReviewId == null) ? (reviews[rightReviewId]) : null;
           return Row(
             children: [
-              Expanded(
-                child: buildReviewTile(context, leftReview, leftReviewId),
-              ),
-              Expanded(
-                child: buildReviewTile(context, rightReview, rightReviewId),
-              ),
+              if (leftReview != null)
+                Expanded(
+                  child: buildReviewTile(context, leftReview, leftReviewId),
+                ),
+              if (rightReview != null)
+                Expanded(
+                  child: buildReviewTile(context, rightReview, rightReviewId),
+                ),
             ],
           );
         },
