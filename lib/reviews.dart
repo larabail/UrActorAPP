@@ -235,9 +235,9 @@ class Recommendations extends StatelessWidget {
                   ? reviews.keys.toList().reversed.toList()[rightReviewIndex]
                   : null;
           final leftReview =
-              (leftReviewId == null) ? (reviews[leftReviewId]) : null;
+              (leftReviewId != null) ? (reviews[leftReviewId]) : null;
           final rightReview =
-              (rightReviewId == null) ? (reviews[rightReviewId]) : null;
+              (rightReviewId != null) ? (reviews[rightReviewId]) : null;
           return Row(
             children: [
               if (leftReview != null)
