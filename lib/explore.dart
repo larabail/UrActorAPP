@@ -12,8 +12,6 @@ import 'package:http/http.dart' as http;
 import 'package:uractor/main.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 
-import 'login.dart';
-
 const String api_key_actor =
     "?api_key=700cd4fab994df56eb41b34d38c4762a&include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc&adult=false&region=US";
 const String imgLink = 'https://image.tmdb.org/t/p/w500/';
@@ -30,6 +28,7 @@ Map _imageListsProviders = {};
 Map _isSeenTapped = {};
 Map _isWatchlistTapped = {};
 Map _isFavTapped = {};
+int itemsPerPage = 20;
 Map _isListsTapped = {};
 
 bool containsMap(List list, Map map) {
@@ -375,36 +374,6 @@ void check(id) {
 }
 
 final GlobalKey<CarouselSliderState> _sliderKey = GlobalKey();
-Future<List> getData() async {
-  List data = [];
-  List moviesData = [];
-  await FirebaseFirestore.instance
-            .collection("ExplorePage")
-            .get().then((QuerySnapshot querySnapshot) {
-          for (var doc in querySnapshot.docs) {
-            Map movieData = doc.data() as Map;
-            moviesData.add(movieData);
-          }});
-  // final response =
-  //     await http.get(Uri.parse('$popularMoviesLink$api_key_actor&page=$page'));
-  // if (response.statusCode == 200) {
-  //   final json = jsonDecode(response.body);
-  //   data = json["results"];
-  // } else {
-  //   throw Exception('Failed to load movie details');
-  // }
-  newItems = moviesData.length;
-  for (var element in moviesData) {
-    if (!containsMap(_items, element) &&
-        !containsList(seenMovies, ['Movies', element["id"].toString()]) &&
-        !element["adult"] &&
-        element["original_language"] == "en") {
-      _items.add(element);
-      check(element["id"].toString());
-    }
-  }
-  return _items;
-}
 
 class Explore extends StatefulWidget {
   Explore();
@@ -414,8 +383,63 @@ class Explore extends StatefulWidget {
 }
 
 class _ExploreState extends State<Explore> {
+  bool _carouselLoaded = false;
   int _currentSlide = 0;
   List<Map<String, dynamic>> movies = [];
+  bool isGridMode = false;
+
+  Future<void> getData() async {
+    List moviesData = [];
+    List ids = [];
+    await FirebaseFirestore.instance
+        .collection("ExploreMovies")
+        .doc("MoviesExplore")
+        .get()
+        .then((DocumentSnapshot snapshot) async {
+      Map json = snapshot.data() as Map;
+      ids = json["Ids"];
+    });
+    int i = itemsPerPage * (page - 1);
+    ids.shuffle();
+    // print(ids);
+    for (String id in ids) {
+      if (i < itemsPerPage * page) {
+        await FirebaseFirestore.instance
+            .collection("ExploreMovies")
+            .doc(id)
+            .get()
+            .then((DocumentSnapshot snapshot) {
+          Map data = snapshot.data() as Map;
+          if (data["imdb_data"].keys.toList().contains("imdbRating") &&
+              data["imdb_data"]["imdbRating"] != "N/A" &&
+              double.parse(data["imdb_data"]["imdbRating"]) > 6.5) {
+            moviesData.add(snapshot.data());
+          }
+        });
+        i++;
+      } else {
+        break;
+      }
+    }
+    for (var element in moviesData) {
+      if (!containsMap(_items, element) &&
+          !containsList(seenMovies, ['Movies', element["id"].toString()])) {
+        _items.add(element);
+        check(element["id"].toString());
+      }
+    }
+    ;
+    setState(() {
+      _carouselLoaded = true;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Call your function here that needs to run only once before the page is built
+    getData();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -712,6 +736,191 @@ class _ExploreState extends State<Explore> {
       );
     }
 
+    Widget _buildToggleViewButton() {
+      return Container(
+        alignment: Alignment.topRight,
+        child: IconButton(
+          color: Colors.white,
+          icon: Icon(isGridMode ? Icons.grid_on : Icons.view_carousel),
+          onPressed: () {
+            setState(() {
+              isGridMode = !isGridMode;
+            });
+          },
+        ),
+      );
+    }
+
+    Widget _buildCarouselView() {
+      return ListView.builder(
+        itemCount: _items.length,
+        itemBuilder: (BuildContext context, int index) {
+          // Let's say the first item is our carousel
+          if (index == 0) {
+            return Center(
+              child: CarouselSlider(
+                options: CarouselOptions(
+                  initialPage: _currentSlide,
+                  enableInfiniteScroll: false,
+                  onPageChanged: (index, reason) {
+                    setState(() {
+                      _currentSlide = index; // Updating the current slide index
+                      if (_currentSlide == _items.length - 4) {
+                        // We are at the last slide, so load more items
+                        _loadMoreItems();
+                      }
+                    });
+                  },
+                  height: MediaQuery.of(context).size.height * 0.725,
+                ),
+                items: _items.map((item) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Opacity(
+                          opacity:
+                              _currentSlide == _items.indexOf(item) ? 1.0 : 0.3,
+                          child: GestureDetector(
+                            onTap: () {
+                              // Handle the click event here
+                              movieResult = [
+                                item['id'],
+                                item['title'],
+                                "Movies",
+                              ];
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => MovieResult()),
+                              );
+                            },
+                            child: Container(
+                              margin:
+                                  const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
+                              width: MediaQuery.of(context).size.width * 0.8,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(27),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color.fromARGB(
+                                              255, 114, 113, 113)
+                                          .withOpacity(0.5),
+                                      spreadRadius: 1,
+                                      blurRadius: 10,
+                                      offset: const Offset(
+                                          2, 2), // changes position of shadow
+                                    ),
+                                  ],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(27),
+                                  child: Image.network(
+                                    imgLink + item["poster_path"],
+                                    fit: BoxFit.fitWidth,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 10.0,
+                        ), // You can adjust this value as needed
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            GestureDetector(
+                              onTap: () => _onTap(
+                                  'seen', item["id"].toString(), item["title"]),
+                              child: Container(
+                                margin: const EdgeInsets.fromLTRB(
+                                    0.0, 10.0, 10.0, 10.0),
+                                child: Image.asset(
+                                  _imageSeenProviders[item["id"].toString()],
+                                  height: 40,
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () => _onTap('watchlist',
+                                  item["id"].toString(), item["title"]),
+                              child: Container(
+                                margin: const EdgeInsets.fromLTRB(
+                                    0.0, 10.0, 10.0, 10.0),
+                                child: Image.asset(
+                                  _imageWatchlistProviders[
+                                      item["id"].toString()],
+                                  height: 40,
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () => _onTap(
+                                  'fav', item["id"].toString(), item["title"]),
+                              child: Container(
+                                margin: const EdgeInsets.fromLTRB(
+                                    0.0, 10.0, 10.0, 10.0),
+                                child: Image.asset(
+                                  _imageFavProviders[item["id"].toString()],
+                                  height: 40,
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () => _onTap(
+                                  'list', item["id"].toString(), item["title"]),
+                              child: Container(
+                                margin: const EdgeInsets.fromLTRB(
+                                    0.0, 10.0, 10.0, 10.0),
+                                child: Image.asset(
+                                  _imageListsProviders[item["id"].toString()],
+                                  height: 40,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            );
+          }
+        },
+      );
+    }
+
+    Widget _buildGridView() {
+      // Replace this with your grid content
+      List<Widget> gridItems = [
+        Container(color: Colors.yellow),
+        Container(color: Colors.orange),
+        Container(color: Colors.purple),
+      ];
+
+      return GridView.count(
+        crossAxisCount: 2,
+        children: gridItems,
+      );
+    }
+
+    Widget _buildContentView() {
+      if (_carouselLoaded) {
+        if (isGridMode) {
+          return _buildGridView();
+        } else {
+          return _buildCarouselView();
+        }
+      } else {
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      }
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
@@ -722,161 +931,11 @@ class _ExploreState extends State<Explore> {
           height: 54,
         )),
       ),
-      body: ListView.builder(
-        itemCount: 5, // The number of items in the list
-        itemBuilder: (BuildContext context, int index) {
-          // Let's say the first item is our carousel
-          if (index == 0) {
-            return FutureBuilder<List>(
-              future: getData(),
-              builder: (BuildContext context, AsyncSnapshot<List> snapshot) {
-                if (snapshot.hasData) {
-                  return Center(
-                      child: CarouselSlider(
-                    options: CarouselOptions(
-                      enableInfiniteScroll: false,
-                      onPageChanged: (index, reason) {
-                        setState(() {
-                          _currentSlide =
-                              index; // Updating the current slide index
-                          if (_currentSlide == _items.length - 1) {
-                            // We are at the last slide, so load more items
-                            _loadMoreItems();
-                          }
-                        });
-                      },
-                      height: MediaQuery.of(context).size.height * 0.8,
-                    ),
-                    items: _items.asMap().entries.map((entry) {
-                      int index = entry.key;
-                      var item = entry.value;
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment:
-                              MainAxisAlignment.center, // Centers the column
-                          children: [
-                            Opacity(
-                              opacity: _currentSlide == index
-                                  ? 1.0
-                                  : 0.3, // Change opacity based on focused slide
-                              child: GestureDetector(
-                                onTap: () {
-                                  // Handle the click event here
-                                  movieResult = [
-                                    item!['id'],
-                                    item!['title'],
-                                    "Movies",
-                                  ];
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => MovieResult()),
-                                  );
-                                },
-                                child: Container(
-                                  margin: const EdgeInsets.fromLTRB(
-                                      5.0, 10.0, 10.0, 0),
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.8,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(27),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: const Color.fromARGB(
-                                                  255, 114, 113, 113)
-                                              .withOpacity(0.5),
-                                          spreadRadius: 1,
-                                          blurRadius: 10,
-                                          offset: const Offset(2,
-                                              2), // changes position of shadow
-                                        ),
-                                      ],
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(27),
-                                      child: Image.network(
-                                        imgLink + item["poster_path"],
-                                        fit: BoxFit.fitWidth,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(
-                                height:
-                                    10.0), // You can adjust this value as needed
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                GestureDetector(
-                                  onTap: () => _onTap('seen',
-                                      item["id"].toString(), item["title"]),
-                                  child: Container(
-                                    margin: const EdgeInsets.fromLTRB(
-                                        0.0, 10.0, 10.0, 10.0),
-                                    child: Image.asset(
-                                      _imageSeenProviders[
-                                          item["id"].toString()],
-                                      height: 40,
-                                    ),
-                                  ),
-                                ),
-                                GestureDetector(
-                                  onTap: () => _onTap('watchlist',
-                                      item["id"].toString(), item["title"]),
-                                  child: Container(
-                                    margin: const EdgeInsets.fromLTRB(
-                                        0.0, 10.0, 10.0, 10.0),
-                                    child: Image.asset(
-                                      _imageWatchlistProviders[
-                                          item["id"].toString()],
-                                      height: 40,
-                                    ),
-                                  ),
-                                ),
-                                GestureDetector(
-                                  onTap: () => _onTap('fav',
-                                      item["id"].toString(), item["title"]),
-                                  child: Container(
-                                    margin: const EdgeInsets.fromLTRB(
-                                        0.0, 10.0, 10.0, 10.0),
-                                    child: Image.asset(
-                                      _imageFavProviders[item["id"].toString()],
-                                      height: 40,
-                                    ),
-                                  ),
-                                ),
-                                GestureDetector(
-                                  onTap: () => _onTap('list',
-                                      item["id"].toString(), item["title"]),
-                                  child: Container(
-                                    margin: const EdgeInsets.fromLTRB(
-                                        0.0, 10.0, 10.0, 10.0),
-                                    child: Image.asset(
-                                      _imageListsProviders[
-                                          item["id"].toString()],
-                                      height: 40,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ));
-                } else if (snapshot.hasError) {
-                  return Text('Something went wrong...');
-                }
-                // While fetching, show a loading spinner.
-                return CircularProgressIndicator();
-              },
-            );
-          }
-        },
+      body: Column(
+        children: [
+          _buildToggleViewButton(),
+          Expanded(child: _buildContentView()),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: Colors.grey,
