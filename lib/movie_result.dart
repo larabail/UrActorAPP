@@ -15,19 +15,18 @@ import 'dart:async';
 
 String _imageProviderSeen = 'assets/seen_before.png';
 String _imageProviderWatchlist = 'assets/watchlist_before.png';
+bool reviewed = false;
 String _imageProviderList = 'assets/playlists_before.png';
 String _imageProviderFav = 'assets/fav_before.png';
 bool _isTappedSeen = false;
 bool _isTappedWatchlist = false;
 bool _isTappedFav = false;
 bool _isTappedList = false;
-bool reviewed = false;
 String reviewId = "";
 Map reviewInfo = {};
 final myController = TextEditingController(text: "");
 
 // Assuming the "context" object is available, e.g., from a Flutter widget.
-
 Future<void> deleteFromWatchedConfirmation(
     String id, BuildContext context) async {
   // Display a dialog box for confirmation. You will have to create a custom dialog for this.
@@ -437,13 +436,7 @@ void check() {
     _isTappedFav = false;
     _imageProviderFav = 'assets/fav_before.png';
   }
-  if (rewatchedMovies.keys.toList().contains(movieResult[0].toString())) {
-    myController.text = (rewatchedMovies[movieResult[0].toString()]).toString();
-  } else if (containsMap(seenMovies, ['Movies', movieResult[0]])) {
-    myController.text = "1";
-  } else {
-    myController.text = "0";
-  }
+
   if (reviews.keys.toList().contains(movieResult[0].toString())) {
     reviewed = true;
   }
@@ -484,7 +477,6 @@ class _MovieResultState extends State<MovieResult> {
       if (json["backdrop_path"] == null) {
         json["backdrop_path"] = "";
       }
-      print(json);
       var imdbId = json['imdb_id'];
       if (imdbId != null) {
         String link2 = 'https://www.omdbapi.com/?i=$imdbId&apikey=***REMOVED***';
@@ -682,9 +674,21 @@ class _MovieResultState extends State<MovieResult> {
 
   @override
   Widget build(BuildContext context) {
+    reviewed = false;
     check();
 
     int selectedIndex = 0;
+
+    WidgetsBinding.instance!.addPostFrameCallback((_) {
+      if (rewatchedMovies.keys.toList().contains(movieResult[0].toString())) {
+        myController.text =
+            (rewatchedMovies[movieResult[0].toString()]).toString();
+      } else if (containsMap(seenMovies, ['Movies', movieResult[0]])) {
+        myController.text = "1";
+      } else {
+        myController.text = "0";
+      }
+    });
 
     // ignore: no_leading_underscores_for_local_identifiers
     void _onTap(String type, String id, String title) {
