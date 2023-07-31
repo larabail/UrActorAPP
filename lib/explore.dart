@@ -1,4 +1,4 @@
-// ignore_for_file: no_leading_underscores_for_local_identifiers
+// ignore_for_file: no_leading_underscores_for_local_identifiers, constant_identifier_names
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -14,10 +14,11 @@ import 'package:carousel_slider/carousel_slider.dart';
 
 import 'login.dart';
 
-const String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
+const String api_key_actor =
+    "?api_key=700cd4fab994df56eb41b34d38c4762a&include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc&adult=false&region=US";
 const String imgLink = 'https://image.tmdb.org/t/p/w500/';
 String link = "https://api.themoviedb.org/3/movie/";
-const String popularMoviesLink = "https://api.themoviedb.org/3/movie/popular";
+const String popularMoviesLink = "https://api.themoviedb.org/3/discover/movie";
 List _items = [];
 int page = 1;
 int newItems = 0;
@@ -387,7 +388,9 @@ Future<List> getData() async {
   newItems = data.length;
   for (var element in data) {
     if (!containsMap(_items, element) &&
-        !containsList(seenMovies, ['Movies', element["id"].toString()])) {
+        !containsList(seenMovies, ['Movies', element["id"].toString()]) &&
+        !element["adult"] &&
+        element["original_language"] == "en") {
       _items.add(element);
       check(element["id"].toString());
     }
