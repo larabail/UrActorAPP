@@ -679,7 +679,7 @@ class _MovieResultState extends State<MovieResult> {
 
     int selectedIndex = 0;
 
-    WidgetsBinding.instance!.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (rewatchedMovies.keys.toList().contains(movieResult[0].toString())) {
         myController.text =
             (rewatchedMovies[movieResult[0].toString()]).toString();
