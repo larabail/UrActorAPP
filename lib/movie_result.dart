@@ -484,12 +484,108 @@ class _MovieResultState extends State<MovieResult> {
       if (json["backdrop_path"] == null) {
         json["backdrop_path"] = "";
       }
-      String imdbId = json['imdb_id'];
-      String link2 = 'https://www.omdbapi.com/?i=$imdbId&apikey=***REMOVED***';
-      final r = await http.get(Uri.parse(link2));
-      if (r.statusCode == 200) {
-        json['imdb_rating'] = jsonDecode(r.body)['imdbRating'];
-        json['year'] = jsonDecode(r.body)['Year'];
+      print(json);
+      var imdbId = json['imdb_id'];
+      if (imdbId != null) {
+        String link2 = 'https://www.omdbapi.com/?i=$imdbId&apikey=***REMOVED***';
+        final r = await http.get(Uri.parse(link2));
+        if (r.statusCode == 200) {
+          json['imdb_rating'] = jsonDecode(r.body)['imdbRating'];
+          json['year'] = jsonDecode(r.body)['Year'];
+          final r2 = await http
+              .get(Uri.parse('$link${movieData[0]}-$name$watch_providers'));
+          if (r2.statusCode == 200) {
+            json['providers'] = [];
+            if (jsonDecode(r2.body)["results"].keys.contains(country)) {
+              if (jsonDecode(r2.body)["results"][country]['flatrate'] != null) {
+                jsonDecode(r2.body)["results"][country]['flatrate'].forEach(
+                  (provider) async {
+                    String name = provider['provider_name'];
+                    String photo = imgLink + provider['logo_path'];
+                    json['providers'].add([name, photo]);
+                  },
+                );
+                final r3 = await http
+                    .get(Uri.parse('$link${movieData[0]}-$name$credits'));
+                if (r3.statusCode == 200) {
+                  json['cast'] = jsonDecode(r3.body)["cast"];
+                  json['crew'] = jsonDecode(r3.body)["crew"];
+                  final r4 = await http
+                      .get(Uri.parse('$link${movieData[0]}-$name$video'));
+                  if (r4.statusCode == 200) {
+                    bool got = false;
+                    jsonDecode(r4.body)['results'].forEach((element) {
+                      if (element['site'] == "YouTube" &&
+                          element['type'] == "Trailer" &&
+                          !got) {
+                        json['trailer'] = element;
+                        got = true;
+                      }
+                    });
+                    return json;
+                  }
+                  throw Exception('Failed to load movie details');
+                }
+                throw Exception('Failed to load movie details');
+              } else {
+                json['providers'] = [];
+                final r3 = await http
+                    .get(Uri.parse('$link${movieData[0]}-$name$credits'));
+                if (r3.statusCode == 200) {
+                  json['cast'] = jsonDecode(r3.body)["cast"];
+                  json['crew'] = jsonDecode(r3.body)["crew"];
+                  final r4 = await http
+                      .get(Uri.parse('$link${movieData[0]}-$name$video'));
+                  if (r4.statusCode == 200) {
+                    bool got = false;
+                    jsonDecode(r4.body)['results'].forEach((element) {
+                      if (element['site'] == "YouTube" &&
+                          element['type'] == "Trailer" &&
+                          !got) {
+                        json['trailer'] = element;
+                        got = true;
+                      }
+                    });
+                    return json;
+                  }
+                  throw Exception('Failed to load movie details');
+                }
+                throw Exception('Failed to load movie details');
+              }
+            } else {
+              json['providers'] = [];
+              final r3 = await http
+                  .get(Uri.parse('$link${movieData[0]}-$name$credits'));
+              if (r3.statusCode == 200) {
+                json['cast'] = jsonDecode(r3.body)["cast"];
+                json['crew'] = jsonDecode(r3.body)["crew"];
+                final r4 = await http
+                    .get(Uri.parse('$link${movieData[0]}-$name$video'));
+                if (r4.statusCode == 200) {
+                  bool got = false;
+                  jsonDecode(r4.body)['results'].forEach((element) {
+                    if (element['site'] == "YouTube" &&
+                        element['type'] == "Trailer" &&
+                        !got) {
+                      json['trailer'] = element;
+                      got = true;
+                    }
+                  });
+                  return json;
+                }
+                throw Exception('Failed to load movie details');
+              }
+              throw Exception('Failed to load movie details');
+            }
+          } else {
+            throw Exception('Failed to load movie details');
+          }
+        } else {
+          throw Exception('Failed to load movie details');
+        }
+      } else {
+        json['imdb_rating'] = "None";
+        json['year'] = "None";
         final r2 = await http
             .get(Uri.parse('$link${movieData[0]}-$name$watch_providers'));
         if (r2.statusCode == 200) {
@@ -578,8 +674,6 @@ class _MovieResultState extends State<MovieResult> {
         } else {
           throw Exception('Failed to load movie details');
         }
-      } else {
-        throw Exception('Failed to load movie details');
       }
     } else {
       throw Exception('Failed to load movie details');
