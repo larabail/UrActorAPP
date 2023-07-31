@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/profile.dart';
 import 'package:uractor/search.dart';
@@ -15,6 +16,12 @@ String api_key_movie =
     '/movie_credits?api_key=700cd4fab994df56eb41b34d38c4762a';
 String api_key_tv = '/tv_credits?api_key=700cd4fab994df56eb41b34d38c4762a';
 String link = "https://api.themoviedb.org/3/person/";
+int scoreActor = 0;
+int scoreDirector = 0;
+List countedMoviesDirector = [];
+List countedMoviesActor = [];
+List countedTVShowsDirector = [];
+List countedTVShowsActor = [];
 
 Future<String> _loadJSONFile() async {
   return await rootBundle.loadString('assets/oscars_api.json');
@@ -59,6 +66,24 @@ class _PersonResultState extends State<PersonResult> {
           }
         }
         json['movie_credits_cast'] = movie_cast;
+        movie_cast.forEach((element) {
+          if (containsMap(seenMovies, ["Movies", element["id"]])) {
+            if (personResult["known_for_department"] == "Acting" &&
+                !countedMoviesActor.contains(element["id"].toString())) {
+              if (containsMap(
+                  favMovies, ['Movies', element["id"].toString()])) {
+                scoreActor += 3;
+              }
+              if (rewatchedMovies.keys.toList().contains(element["id"])) {
+                scoreActor +=
+                    int.parse(rewatchedMovies[element["id"].toString()]);
+              } else {
+                scoreActor += 1;
+              }
+              countedMoviesActor.add(element["id"].toString());
+            }
+          }
+        });
         final r3 =
             await http.get(Uri.parse('$link${presult["id"]}-$name$api_key_tv'));
         if (r3.statusCode == 200) {
@@ -69,6 +94,20 @@ class _PersonResultState extends State<PersonResult> {
             }
           }
           json['tv_credits_cast'] = tv_cast;
+          tv_cast.forEach((element) {
+            if (containsMap(seenTVShows, ["TVShows", element["id"]])) {
+              if (personResult["known_for_department"] == "Acting" &&
+                  !countedTVShowsActor.contains(element["id"].toString())) {
+                if (containsMap(
+                    favTVShows, ['Movies', element["id"].toString()])) {
+                  scoreActor += 3;
+                } else {
+                  scoreActor += 1;
+                }
+                countedTVShowsActor.add(element["id"].toString());
+              }
+            }
+          });
         } else {
           throw Exception('Failed to load movie details');
         }
@@ -79,6 +118,24 @@ class _PersonResultState extends State<PersonResult> {
           }
         }
         json['movie_credits_crew'] = movie_crew;
+        movie_crew.forEach((element) {
+          if (containsMap(seenMovies, ["Movies", element["id"]])) {
+            if (element["job"] == "Director" &&
+                !countedMoviesDirector.contains(element["id"].toString())) {
+              if (containsMap(
+                  favMovies, ['Movies', element["id"].toString()])) {
+                scoreDirector += 3;
+              }
+              if (rewatchedMovies.keys.toList().contains(element["id"])) {
+                scoreDirector +=
+                    int.parse(rewatchedMovies[element["id"].toString()]);
+              } else {
+                scoreDirector += 1;
+              }
+              countedMoviesDirector.add(element["id"].toString());
+            }
+          }
+        });
         final r4 =
             await http.get(Uri.parse('$link${presult["id"]}-$name$api_key_tv'));
         if (r4.statusCode == 200) {
@@ -89,13 +146,60 @@ class _PersonResultState extends State<PersonResult> {
             }
           }
           json['tv_credits_crew'] = tv_crew;
+          tv_crew.forEach((element) {
+            if (containsMap(seenTVShows, ["TVShows", element["id"]])) {
+              if (element["job"] == "Director" &&
+                  !countedTVShowsDirector.contains(element["id"].toString())) {
+                if (containsMap(
+                    favTVShows, ['Movies', element["id"].toString()])) {
+                  scoreDirector += 3;
+                } else {
+                  scoreDirector += 1;
+                }
+                countedTVShowsDirector.add(element["id"].toString());
+              }
+            }
+          });
           // Map oscars = await parseJSONFile();
           if (oscars.keys.contains(presult["id"])) {
             json['num_oscars'] = oscars[presult["id"]]['num_oscars'];
-            print(json['num_oscars']);
           } else {
             json['num_oscars'] = 0;
           }
+          print(scoreActor);
+          print(scoreDirector);
+          var userDoc =
+              FirebaseFirestore.instance.collection(uid).doc("FavDirectors");
+          Map<Object, Object?> directorStats = {};
+          directorStats[personResult['id'].toString()] = scoreDirector;
+          await userDoc.update(directorStats);
+          var ActorDoc =
+              FirebaseFirestore.instance.collection(uid).doc("FavActors");
+          Map<Object, Object?> actorStats = {};
+          actorStats[personResult['id'].toString()] = scoreActor;
+          await ActorDoc.update(actorStats);
+          favActors = [];
+          favDirectors = [];
+          await FirebaseFirestore.instance
+              .collection(uid)
+              .get()
+              .then((QuerySnapshot querySnapshot) {
+            for (var doc in querySnapshot.docs) {
+              if (doc.id == "FavActors" && favActors.isEmpty) {
+                Map tempFavActors = doc.data() as Map;
+                favActors = tempFavActors.entries
+                    .map((entry) => [entry.value, entry.key])
+                    .toList();
+                favActors.sort((a, b) => b[0].compareTo(a[0]));
+              } else if (doc.id == "FavDirectors" && favDirectors.isEmpty) {
+                Map tempFavDirectors = doc.data() as Map;
+                favDirectors = tempFavDirectors.entries
+                    .map((entry) => [entry.value, entry.key])
+                    .toList();
+                favDirectors.sort((a, b) => b[0].compareTo(a[0]));
+              }
+            }
+          });
           return json;
         } else {
           throw Exception('Failed to load movie details');
@@ -111,6 +215,10 @@ class _PersonResultState extends State<PersonResult> {
   @override
   Widget build(BuildContext context) {
     int _selectedIndex = 0;
+    scoreActor = 0;
+    scoreDirector = 0;
+    countedMoviesDirector = [];
+    countedMoviesActor = [];
     final List<Widget> _pages = [
       MyApp(),
       Search(),
