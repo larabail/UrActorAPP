@@ -21,7 +21,9 @@ bool _isTappedSeen = false;
 bool _isTappedWatchlist = false;
 bool _isTappedFav = false;
 bool _isTappedList = false;
+bool reviewed = false;
 String reviewId = "";
+Map reviewInfo = {};
 final myController = TextEditingController(text: "");
 
 // Assuming the "context" object is available, e.g., from a Flutter widget.
@@ -98,21 +100,34 @@ void writeReview(id, context) {
   );
 }
 
-void editReview() {}
+void editReview(id, context) {
+  reviewId = id.toString();
+  reviewInfo = reviews[id.toString()];
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return RatingDialog();
+    },
+  );
+}
 
 void incrementWatched(String value, String id) {
-  var userDoc = FirebaseFirestore.instance.collection(uid).doc("Rewatched");
-  Map<String, int> doc = {};
-  if (value != "") doc[id] = int.parse(value);
-  userDoc.update(doc);
+  if (value != "") {
+    var userDoc = FirebaseFirestore.instance.collection(uid).doc("Rewatched");
+    Map<String, int> doc = {};
+    rewatchedMovies[id] = int.parse(value);
+    doc[id] = int.parse(value);
+    userDoc.update(doc);
+  }
 }
 
 Future<void> deleteReview(id, context) async {
+  reviews.remove(id.toString());
+  reviewed = false;
   await FirebaseFirestore.instance
       .collection(uid)
       .get()
       .then((QuerySnapshot querySnapshot) async {
-    reviews = {};
     for (var doc in querySnapshot.docs) {
       if (doc.id == "Reviews") {
         Map allreviews = doc.data() as Map;
@@ -127,9 +142,6 @@ Future<void> deleteReview(id, context) async {
         final userDoc =
             FirebaseFirestore.instance.collection(uid).doc("Reviews");
         await userDoc.update({'Seen': tempReviewsInList});
-        for (var element in tempReviewsInList) {
-          reviews[element.keys.toList()[0]] = element[element.keys.toList()[0]];
-        }
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => MovieResult()),
@@ -357,8 +369,7 @@ void addToList(String id, String listId, List moviesinList, context) async {
       }
     }
   });
-  Navigator.pushReplacement(
-      context, MaterialPageRoute(builder: (context) => MovieResult()));
+  Navigator.pop(context);
 }
 
 void deleteFromList(
@@ -384,8 +395,7 @@ void deleteFromList(
       }
     }
   });
-  Navigator.pushReplacement(
-      context, MaterialPageRoute(builder: (context) => MovieResult()));
+  Navigator.pop(context);
 }
 
 class MovieResult extends StatefulWidget {
@@ -434,6 +444,9 @@ void check() {
   } else {
     myController.text = "0";
   }
+  if (reviews.keys.toList().contains(movieResult[0].toString())) {
+    reviewed = true;
+  }
 }
 
 class _MovieResultState extends State<MovieResult> {
@@ -454,7 +467,7 @@ class _MovieResultState extends State<MovieResult> {
       movieData.add(0);
     }
     movieData.add(null);
-    if (reviews.keys.toList().contains(movieData[0].toString())) {
+    if (reviewed) {
       movieData[4] = (reviews[movieData[0].toString()] as Map);
     }
     // myController.text = movieData[3].toString();
@@ -1106,7 +1119,7 @@ class _MovieResultState extends State<MovieResult> {
                       ),
                     ],
                   ),
-                  if (snapshot.data!["review"] != null)
+                  if (reviewed)
                     ExpansionTile(
                         title: const Text(
                           "Your Review",
@@ -1154,30 +1167,31 @@ class _MovieResultState extends State<MovieResult> {
                                         height: 1.5,
                                       ),
                                     ),
-                                    // Row(
-                                    //   mainAxisAlignment:
-                                    //       MainAxisAlignment.spaceEvenly,
-                                    //   children: [
-                                    //     ElevatedButton(
-                                    //         onPressed: () {
-                                    //           editReview();
-                                    //         },
-                                    //         child: const Text('Edit Review')),
-                                    //     ElevatedButton(
-                                    //         onPressed: () {
-                                    //           deleteReview(snapshot.data!["id"],
-                                    //               context);
-                                    //         },
-                                    //         child: const Text('Delete Review')),
-                                    //   ],
-                                    // ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        ElevatedButton(
+                                            onPressed: () {
+                                              editReview(snapshot.data!["id"],
+                                                  context);
+                                            },
+                                            child: const Text('Edit Review')),
+                                        ElevatedButton(
+                                            onPressed: () {
+                                              deleteReview(snapshot.data!["id"],
+                                                  context);
+                                            },
+                                            child: const Text('Delete Review')),
+                                      ],
+                                    ),
                                   ],
                                 ),
                               ),
                             ),
                           ),
                         ]),
-                  if (snapshot.data!["review"] == null &&
+                  if (!reviewed &&
                       containsMap(seenMovies,
                           ['Movies', snapshot.data!["id"].toString()]))
                     Row(
