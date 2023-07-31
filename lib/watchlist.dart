@@ -116,22 +116,24 @@ class Watchlist extends StatelessWidget {
                   child: TabBarView(
                     children: [
                       ListView.builder(
-                        itemCount: (watchlist.reversed.toList().length / 3).ceil(),
+                        itemCount:
+                            (watchlist.reversed.toList().length / 3).ceil(),
                         itemBuilder: (context, index) {
                           final leftMovieIndex = index * 3;
                           final middleMovieIndex = index * 3 + 1;
                           final rightMovieIndex = index * 3 + 2;
-                          final leftMovie = (leftMovieIndex < watchlist.reversed.toList().length)
+                          final leftMovie = (leftMovieIndex <
+                                  watchlist.reversed.toList().length)
                               ? watchlist.reversed.toList()[leftMovieIndex]
                               : null;
-                          final middleMovie =
-                              (middleMovieIndex < watchlist.reversed.toList().length)
-                                  ? watchlist.reversed.toList()[middleMovieIndex]
-                                  : null;
-                          final rightMovie =
-                              (rightMovieIndex < watchlist.reversed.toList().length)
-                                  ? watchlist.reversed.toList()[rightMovieIndex]
-                                  : null;
+                          final middleMovie = (middleMovieIndex <
+                                  watchlist.reversed.toList().length)
+                              ? watchlist.reversed.toList()[middleMovieIndex]
+                              : null;
+                          final rightMovie = (rightMovieIndex <
+                                  watchlist.reversed.toList().length)
+                              ? watchlist.reversed.toList()[rightMovieIndex]
+                              : null;
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
@@ -346,23 +348,28 @@ class Watchlist extends StatelessWidget {
                         },
                       ),
                       ListView.builder(
-                        itemCount: (watchlistTVShows.reversed.toList().length / 3).ceil(),
+                        itemCount:
+                            (watchlistTVShows.reversed.toList().length / 3)
+                                .ceil(),
                         itemBuilder: (context, index) {
                           final leftTVShowIndex = index * 3;
                           final middleTVShowIndex = index * 3 + 1;
                           final rightTVShowIndex = index * 3 + 2;
-                          final leftTVShow =
-                              (leftTVShowIndex < watchlistTVShows.reversed.toList().length)
-                                  ? watchlistTVShows.reversed.toList()[leftTVShowIndex]
-                                  : null;
-                          final middleTVShow =
-                              (middleTVShowIndex < watchlistTVShows.reversed.toList().length)
-                                  ? watchlistTVShows.reversed.toList()[middleTVShowIndex]
-                                  : null;
-                          final rightTVShow =
-                              (rightTVShowIndex < watchlistTVShows.reversed.toList().length)
-                                  ? watchlistTVShows.reversed.toList()[rightTVShowIndex]
-                                  : null;
+                          final leftTVShow = (leftTVShowIndex <
+                                  watchlistTVShows.reversed.toList().length)
+                              ? watchlistTVShows.reversed
+                                  .toList()[leftTVShowIndex]
+                              : null;
+                          final middleTVShow = (middleTVShowIndex <
+                                  watchlistTVShows.reversed.toList().length)
+                              ? watchlistTVShows.reversed
+                                  .toList()[middleTVShowIndex]
+                              : null;
+                          final rightTVShow = (rightTVShowIndex <
+                                  watchlistTVShows.reversed.toList().length)
+                              ? watchlistTVShows.reversed
+                                  .toList()[rightTVShowIndex]
+                              : null;
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
