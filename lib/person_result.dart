@@ -20,37 +20,6 @@ Future<String> _loadJSONFile() async {
   return await rootBundle.loadString('assets/oscars_api.json');
 }
 
-// Future<Map> parseJSONFile() async {
-//   if (oscars.length == 0) {
-//     Map people = {};
-//     String jsonString = await _loadJSONFile();
-//     Map items = jsonDecode(jsonString);
-//     for (String person_id in items.keys) {
-//       Map<String, dynamic> person = {};
-//       Map person_to_add = {};
-//       link = 'https://api.themoviedb.org/3/person/';
-//       final response = await http.get(
-//           Uri.parse('${link}${items[person_id]['tmdb_id']}${api_key_actor}'));
-//       if (response.statusCode == 200) {
-//         final json = jsonDecode(response.body);
-//         if (json['profile_path'] != null) {
-//           items[person_id]['profile_path'] = imgLink + json['profile_path'];
-//         } else {
-//           items[person_id]['profile_path'] =
-//               "https://cdn-icons-png.flaticon.com/512/3088/3088765.png";
-//         }
-//         people[items[person_id]['tmdb_id']] = items[person_id];
-//       } else {
-//         throw Exception('Failed to load movie details');
-//       }
-//     }
-//     oscars = people;
-//     return people;
-//   } else {
-//     return oscars;
-//   }
-// }
-
 bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
   String jsonString = json.encode(map);
   for (int i = 0; i < list.length; i++) {
@@ -76,26 +45,50 @@ class _PersonResultState extends State<PersonResult> {
     String name = presult['name']
         .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
         .replaceAll(" ", "-");
-    final response = await http
-        .get(Uri.parse('$link${presult["id"]}-$name$api_key_actor'));
+    final response =
+        await http.get(Uri.parse('$link${presult["id"]}-$name$api_key_actor'));
     json = jsonDecode(response.body);
     if (response.statusCode == 200) {
       final r2 = await http
           .get(Uri.parse('$link${presult["id"]}-$name$api_key_movie'));
       if (r2.statusCode == 200) {
-        json['movie_credits_cast'] = jsonDecode(r2.body)['cast'];
-        final r3 = await http
-            .get(Uri.parse('$link${presult["id"]}-$name$api_key_tv'));
+        List movie_cast = [];
+        for (Map movie in jsonDecode(r2.body)['cast']) {
+          if (movie["poster_path"] != null) {
+            movie_cast.add(movie);
+          }
+        }
+        json['movie_credits_cast'] = movie_cast;
+        final r3 =
+            await http.get(Uri.parse('$link${presult["id"]}-$name$api_key_tv'));
         if (r3.statusCode == 200) {
-          json['tv_credits_cast'] = jsonDecode(r3.body)['cast'];
+          List tv_cast = [];
+          for (Map show in jsonDecode(r3.body)['cast']) {
+            if (show["poster_path"] != null) {
+              tv_cast.add(show);
+            }
+          }
+          json['tv_credits_cast'] = tv_cast;
         } else {
           throw Exception('Failed to load movie details');
         }
-        json['movie_credits_crew'] = jsonDecode(r2.body)['crew'];
-        final r4 = await http
-            .get(Uri.parse('$link${presult["id"]}-$name$api_key_tv'));
+        List movie_crew = [];
+        for (Map movie in jsonDecode(r2.body)['crew']) {
+          if (movie["poster_path"] != null && movie["job"] != "Thanks") {
+            movie_crew.add(movie);
+          }
+        }
+        json['movie_credits_crew'] = movie_crew;
+        final r4 =
+            await http.get(Uri.parse('$link${presult["id"]}-$name$api_key_tv'));
         if (r4.statusCode == 200) {
-          json['tv_credits_crew'] = jsonDecode(r4.body)['crew'];
+          List tv_crew = [];
+          for (Map show in jsonDecode(r4.body)['crew']) {
+            if (show["poster_path"] != null) {
+              tv_crew.add(show);
+            }
+          }
+          json['tv_credits_crew'] = tv_crew;
           // Map oscars = await parseJSONFile();
           if (oscars.keys.contains(presult["id"])) {
             json['num_oscars'] = oscars[presult["id"]]['num_oscars'];
@@ -276,38 +269,15 @@ class _PersonResultState extends State<PersonResult> {
                                                           'movie_credits_cast']
                                                       [rightMovieIndex]
                                                   : null;
-                                              if (leftMovie != null) {
-                                                if (leftMovie['poster_path'] ==
-                                                    null) {
-                                                  leftMovie['poster_path'] =
-                                                      snapshot.data![
-                                                          'profile_path'];
-                                                }
-                                              }
-                                              if (middleMovie != null) {
-                                                if (middleMovie[
-                                                        'poster_path'] ==
-                                                    null) {
-                                                  middleMovie['poster_path'] =
-                                                      snapshot.data![
-                                                          'profile_path'];
-                                                }
-                                              }
-
-                                              if (rightMovie != null) {
-                                                if (rightMovie['poster_path'] ==
-                                                    null) {
-                                                  rightMovie['poster_path'] =
-                                                      snapshot.data![
-                                                          'profile_path'];
-                                                }
-                                              }
                                               return Row(
                                                 mainAxisAlignment:
                                                     MainAxisAlignment
                                                         .spaceAround,
                                                 children: [
-                                                  if (leftMovie != null)
+                                                  if (leftMovie != null &&
+                                                      leftMovie[
+                                                              "poster_path"] !=
+                                                          null)
                                                     GestureDetector(
                                                       onTap: () {
                                                         // Handle the click event here
@@ -326,7 +296,10 @@ class _PersonResultState extends State<PersonResult> {
                                                       child: seen(context,
                                                           leftMovie, "Movies"),
                                                     ),
-                                                  if (middleMovie != null)
+                                                  if (middleMovie != null &&
+                                                      middleMovie[
+                                                              "poster_path"] !=
+                                                          null)
                                                     GestureDetector(
                                                       onTap: () {
                                                         // Handle the click event here
@@ -347,7 +320,10 @@ class _PersonResultState extends State<PersonResult> {
                                                           middleMovie,
                                                           "Movies"),
                                                     ),
-                                                  if (rightMovie != null)
+                                                  if (rightMovie != null &&
+                                                      rightMovie[
+                                                              "poster_path"] !=
+                                                          null)
                                                     GestureDetector(
                                                       onTap: () {
                                                         // Handle the click event here
@@ -412,38 +388,15 @@ class _PersonResultState extends State<PersonResult> {
                                                           'tv_credits_cast']
                                                       [rightMovieIndex]
                                                   : null;
-                                              if (leftMovie != null) {
-                                                if (leftMovie['poster_path'] ==
-                                                    null) {
-                                                  leftMovie['poster_path'] =
-                                                      snapshot.data![
-                                                          'profile_path'];
-                                                }
-                                              }
-                                              if (middleMovie != null) {
-                                                if (middleMovie[
-                                                        'poster_path'] ==
-                                                    null) {
-                                                  middleMovie['poster_path'] =
-                                                      snapshot.data![
-                                                          'profile_path'];
-                                                }
-                                              }
-
-                                              if (rightMovie != null) {
-                                                if (rightMovie['poster_path'] ==
-                                                    null) {
-                                                  rightMovie['poster_path'] =
-                                                      snapshot.data![
-                                                          'profile_path'];
-                                                }
-                                              }
                                               return Row(
                                                 mainAxisAlignment:
                                                     MainAxisAlignment
                                                         .spaceAround,
                                                 children: [
-                                                  if (leftMovie != null)
+                                                  if (leftMovie != null &&
+                                                      leftMovie[
+                                                              "poster_path"] !=
+                                                          null)
                                                     GestureDetector(
                                                       onTap: () {
                                                         // Handle the click event here
@@ -462,7 +415,10 @@ class _PersonResultState extends State<PersonResult> {
                                                       child: seen(context,
                                                           leftMovie, "TVShows"),
                                                     ),
-                                                  if (middleMovie != null)
+                                                  if (middleMovie != null &&
+                                                      middleMovie[
+                                                              "poster_path"] !=
+                                                          null)
                                                     GestureDetector(
                                                       onTap: () {
                                                         // Handle the click event here
@@ -483,7 +439,10 @@ class _PersonResultState extends State<PersonResult> {
                                                           middleMovie,
                                                           "TVShows"),
                                                     ),
-                                                  if (rightMovie != null)
+                                                  if (rightMovie != null &&
+                                                      rightMovie[
+                                                              "poster_path"] !=
+                                                          null)
                                                     GestureDetector(
                                                       onTap: () {
                                                         // Handle the click event here
@@ -568,38 +527,15 @@ class _PersonResultState extends State<PersonResult> {
                                                           'movie_credits_crew']
                                                       [rightMovieIndex]
                                                   : null;
-                                              if (leftMovie != null) {
-                                                if (leftMovie['poster_path'] ==
-                                                    null) {
-                                                  leftMovie['poster_path'] =
-                                                      snapshot.data![
-                                                          'profile_path'];
-                                                }
-                                              }
-                                              if (middleMovie != null) {
-                                                if (middleMovie[
-                                                        'poster_path'] ==
-                                                    null) {
-                                                  middleMovie['poster_path'] =
-                                                      snapshot.data![
-                                                          'profile_path'];
-                                                }
-                                              }
-
-                                              if (rightMovie != null) {
-                                                if (rightMovie['poster_path'] ==
-                                                    null) {
-                                                  rightMovie['poster_path'] =
-                                                      snapshot.data![
-                                                          'profile_path'];
-                                                }
-                                              }
                                               return Row(
                                                 mainAxisAlignment:
                                                     MainAxisAlignment
                                                         .spaceAround,
                                                 children: [
-                                                  if (leftMovie != null)
+                                                  if (leftMovie != null &&
+                                                      leftMovie[
+                                                              "poster_path"] !=
+                                                          null)
                                                     GestureDetector(
                                                       onTap: () {
                                                         // Handle the click event here
@@ -618,7 +554,10 @@ class _PersonResultState extends State<PersonResult> {
                                                       child: seenCrew(context,
                                                           leftMovie, "Movies"),
                                                     ),
-                                                  if (middleMovie != null)
+                                                  if (middleMovie != null &&
+                                                      middleMovie[
+                                                              "poster_path"] !=
+                                                          null)
                                                     GestureDetector(
                                                       onTap: () {
                                                         // Handle the click event here
@@ -639,7 +578,10 @@ class _PersonResultState extends State<PersonResult> {
                                                           middleMovie,
                                                           "Movies"),
                                                     ),
-                                                  if (rightMovie != null)
+                                                  if (rightMovie != null &&
+                                                      rightMovie[
+                                                              "poster_path"] !=
+                                                          null)
                                                     GestureDetector(
                                                       onTap: () {
                                                         // Handle the click event here
@@ -704,37 +646,15 @@ class _PersonResultState extends State<PersonResult> {
                                                           'tv_credits_crew']
                                                       [rightMovieIndex]
                                                   : null;
-                                              if (leftMovie != null) {
-                                                if (leftMovie['poster_path'] ==
-                                                    null) {
-                                                  leftMovie['poster_path'] =
-                                                      snapshot.data![
-                                                          'profile_path'];
-                                                }
-                                              }
-                                              if (middleMovie != null) {
-                                                if (middleMovie[
-                                                        'poster_path'] ==
-                                                    null) {
-                                                  middleMovie['poster_path'] =
-                                                      snapshot.data![
-                                                          'profile_path'];
-                                                }
-                                              }
-                                              if (rightMovie != null) {
-                                                if (rightMovie['poster_path'] ==
-                                                    null) {
-                                                  rightMovie['poster_path'] =
-                                                      snapshot.data![
-                                                          'profile_path'];
-                                                }
-                                              }
                                               return Row(
                                                 mainAxisAlignment:
                                                     MainAxisAlignment
                                                         .spaceAround,
                                                 children: [
-                                                  if (leftMovie != null)
+                                                  if (leftMovie != null &&
+                                                      leftMovie[
+                                                              "poster_path"] !=
+                                                          null)
                                                     GestureDetector(
                                                       onTap: () {
                                                         // Handle the click event here
@@ -753,7 +673,10 @@ class _PersonResultState extends State<PersonResult> {
                                                       child: seenCrew(context,
                                                           leftMovie, "TVShows"),
                                                     ),
-                                                  if (middleMovie != null)
+                                                  if (middleMovie != null &&
+                                                      middleMovie[
+                                                              "poster_path"] !=
+                                                          null)
                                                     GestureDetector(
                                                       onTap: () {
                                                         // Handle the click event here
@@ -774,7 +697,10 @@ class _PersonResultState extends State<PersonResult> {
                                                           middleMovie,
                                                           "TVShows"),
                                                     ),
-                                                  if (rightMovie != null)
+                                                  if (rightMovie != null &&
+                                                      rightMovie[
+                                                              "poster_path"] !=
+                                                          null)
                                                     GestureDetector(
                                                       onTap: () {
                                                         // Handle the click event here

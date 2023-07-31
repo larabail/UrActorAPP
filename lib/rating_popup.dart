@@ -5,24 +5,29 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/movie_result.dart';
 import 'package:uractor/main.dart';
 
+final myController = TextEditingController(text: "");
+
 class RatingDialog extends StatefulWidget {
   @override
   _RatingDialogState createState() => _RatingDialogState();
 }
 
 class _RatingDialogState extends State<RatingDialog> {
+  bool got = false;
   int rating = 0;
   String opinion = "";
   Future<void> submit() async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
-
+    if (reviewInfo.keys.toList().isNotEmpty) {
+      await deleteReview(reviewId, context);
+    }
     Map<String, dynamic> information = {
       reviewId: {
         'Opinion': opinion,
         'Rating': rating.toString(),
       },
     };
-
+    reviewInfo = information;
     var userDoc = firestore.collection(uid).doc('Reviews');
     await userDoc.update({
       'Seen': FieldValue.arrayUnion([information])
@@ -48,6 +53,32 @@ class _RatingDialogState extends State<RatingDialog> {
         context, MaterialPageRoute(builder: (context) => MovieResult()));
   }
 
+  Future<void> deleteReview(id, context) async {
+    reviews.remove(id.toString());
+    reviewed = false;
+    await FirebaseFirestore.instance
+        .collection(uid)
+        .get()
+        .then((QuerySnapshot querySnapshot) async {
+      for (var doc in querySnapshot.docs) {
+        if (doc.id == "Reviews") {
+          Map allreviews = doc.data() as Map;
+          List reviewsInList = allreviews["Seen"] as List;
+          List tempReviewsInList = [];
+          for (var element in reviewsInList) {
+            element = element as Map;
+            if (element.keys.toList()[0].toString() != id.toString()) {
+              tempReviewsInList.add(element);
+            }
+          }
+          final userDoc =
+              FirebaseFirestore.instance.collection(uid).doc("Reviews");
+          await userDoc.update({'Seen': tempReviewsInList});
+        }
+      }
+    });
+  }
+
   void ratingStarFunction(int rating) {
     setState(() {
       this.rating = rating;
@@ -56,6 +87,12 @@ class _RatingDialogState extends State<RatingDialog> {
 
   @override
   Widget build(BuildContext context) {
+    if (reviewInfo.keys.toList().isNotEmpty && !got) {
+      myController.text = reviewInfo["Opinion"];
+      opinion = reviewInfo["Opinion"];
+      ratingStarFunction(int.parse(reviewInfo["Rating"]));
+      got = true;
+    }
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -77,6 +114,7 @@ class _RatingDialogState extends State<RatingDialog> {
                 ),
               ),
               TextField(
+                controller: myController,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
