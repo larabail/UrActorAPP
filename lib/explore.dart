@@ -377,16 +377,24 @@ void check(id) {
 final GlobalKey<CarouselSliderState> _sliderKey = GlobalKey();
 Future<List> getData() async {
   List data = [];
-  final response =
-      await http.get(Uri.parse('$popularMoviesLink$api_key_actor&page=$page'));
-  if (response.statusCode == 200) {
-    final json = jsonDecode(response.body);
-    data = json["results"];
-  } else {
-    throw Exception('Failed to load movie details');
-  }
-  newItems = data.length;
-  for (var element in data) {
+  List moviesData = [];
+  await FirebaseFirestore.instance
+            .collection("ExplorePage")
+            .get().then((QuerySnapshot querySnapshot) {
+          for (var doc in querySnapshot.docs) {
+            Map movieData = doc.data() as Map;
+            moviesData.add(movieData);
+          }});
+  // final response =
+  //     await http.get(Uri.parse('$popularMoviesLink$api_key_actor&page=$page'));
+  // if (response.statusCode == 200) {
+  //   final json = jsonDecode(response.body);
+  //   data = json["results"];
+  // } else {
+  //   throw Exception('Failed to load movie details');
+  // }
+  newItems = moviesData.length;
+  for (var element in moviesData) {
     if (!containsMap(_items, element) &&
         !containsList(seenMovies, ['Movies', element["id"].toString()]) &&
         !element["adult"] &&
