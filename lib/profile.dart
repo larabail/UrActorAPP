@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously, constant_identifier_names, no_leading_underscores_for_local_identifiers
 
 import 'package:flutter/material.dart';
 import 'package:uractor/playlists.dart';
@@ -12,8 +12,8 @@ import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:convert';
 
-final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-final String imgLink = 'https://image.tmdb.org/t/p/w500/';
+const String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
+const String imgLink = 'https://image.tmdb.org/t/p/w500/';
 String link = "https://api.themoviedb.org/3/movie/";
 int weekOffset = 0; // This will be used to go to previous or next weeks
 
@@ -44,7 +44,6 @@ Future<List<Map>> topMovies() async {
   moviesTemp.sort((a, b) => b[0].compareTo(a[0]));
 
   while (i < 18 && i < moviesTemp.length) {
-    Map data;
     String completeLinkMovie =
         link + moviesTemp[i][1].toString() + api_key_actor;
 
@@ -143,8 +142,9 @@ class _ProfileState extends State<Profile> {
     Map filteredData = {};
 
     Map tempData = Map.fromEntries(calendar.entries.where((entry) {
+      print(entry.key);
       DateTime entryDate = DateTime.parse(entry.key);
-      return entryDate.isAfter(startOfWeek) && entryDate.isBefore(endOfWeek);
+      return entryDate.isAfter(startOfWeek.add(const Duration(days: -1))) && entryDate.isBefore(endOfWeek);
     }));
 
     // print(tempData);
@@ -166,6 +166,7 @@ class _ProfileState extends State<Profile> {
                 .split("T")[0]];
       }
     }
+    print(tempData);
     List<BarChartGroupData> chartData = filteredData.entries.map((entry) {
       final day = DateTime.parse(entry.key).day;
       final moviesCount = entry.value.length;
@@ -243,7 +244,7 @@ class _ProfileState extends State<Profile> {
                     Container(
                         margin: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Color.fromARGB(
+                          color: const Color.fromARGB(
                               255, 49, 49, 49), // background color
                           borderRadius:
                               BorderRadius.circular(10), // border radius
@@ -260,7 +261,7 @@ class _ProfileState extends State<Profile> {
                             ),
                             children: <Widget>[
                               Padding(
-                                padding: EdgeInsets.fromLTRB(10, 0, 10, 25),
+                                padding: const EdgeInsets.fromLTRB(10, 0, 10, 25),
                                 child: Column(
                                   children: [
                                     if (startOfWeek.month == endOfWeek.month)
