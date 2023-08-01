@@ -199,7 +199,9 @@ class _MyHomePageState extends State<MyHomePage> {
             for (var element in users) {
               Map el = element as Map;
               if (el.keys.contains(uid)) {
-                playlists[doc.id] = doc.data();
+                Map docData = doc.data() as Map;
+                docData["id"] = doc.id;
+                playlists[doc.id] = docData;
               }
             }
           }
@@ -213,7 +215,6 @@ class _MyHomePageState extends State<MyHomePage> {
             oscars[d["tmdb_id"]] = doc.data();
           }
         });
-        
       }
     });
 

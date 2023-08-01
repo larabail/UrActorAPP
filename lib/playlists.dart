@@ -122,6 +122,7 @@ class _PlaylistsState extends State<Playlists> {
                         list_result["Backdrop"] = image;
                         list_result["Name"] = value;
                         list_result["AccessCode"] = accessCode;
+                        list_result["id"] = key;
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(builder: (context) => ListResult()),
