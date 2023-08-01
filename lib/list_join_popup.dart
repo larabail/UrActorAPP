@@ -36,11 +36,10 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
             Navigator.pop(context);
             Navigator.pushReplacement(
                 context, MaterialPageRoute(builder: (context) => Playlists()));
-          } else {
-            print("Wrong passcode for $_listName");
           }
         }
       }
+      print("WRONG ACCESS CODE OR LIST NAME");
     });
   }
 
@@ -56,7 +55,7 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 40, 20, 5),
               child: Text(
-                'Create New List',
+                'Join List',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,

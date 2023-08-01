@@ -11,10 +11,70 @@ import 'package:uractor/search.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'list_edit_popup.dart';
 import 'movie_add_popup.dart';
 import 'tv_add_popup.dart';
 
+String cover = "";
+String listName = "";
+String accessCode = "";
+String originalListName = "";
+String originalAccessCode = "";
+
 class InfoButtonDialog extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(
+              255, 23, 20, 20), // change the color of dialog window here
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        padding: const EdgeInsets.all(25.0),
+        child: SizedBox(
+          width: 20,
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(
+              "AccessCode: ${list_result['AccessCode']}",
+              style: const TextStyle(fontSize: 18),
+            ),
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () {
+                cover = list_result["Backdrop"];
+                originalListName = list_result["Name"];
+                originalAccessCode = list_result["AccessCode"];
+                listName = list_result["Name"];
+                accessCode = list_result["AccessCode"];
+
+                showDialog(
+                  context: context,
+                  builder: (context) => ListEditDialogue(),
+                );
+                print("EDIT");
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete),
+              color: Colors.red,
+              onPressed: () {
+                Navigator.pop(context);
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertButtonDialogue(),
+                );
+              },
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+class AlertButtonDialogue extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -201,7 +261,6 @@ class ListResult extends StatelessWidget {
                   Align(
                     alignment: Alignment.topRight,
                     child: Container(
-                        padding: const EdgeInsets.all(0),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(100),
                           color: Colors.black.withOpacity(
@@ -217,8 +276,8 @@ class ListResult extends StatelessWidget {
                                 builder: (context) => InfoButtonDialog(),
                               );
                             },
-                            icon: const Icon(Icons.delete),
-                            color: Colors.red,
+                            icon: const Icon(Icons.more_vert),
+                            color: Colors.white,
                           ),
                         ])),
                   ),
