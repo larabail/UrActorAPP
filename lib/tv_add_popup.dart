@@ -49,12 +49,12 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
               results.add(json2);
             }
           } else {
-            throw Exception('Failed to load movie details');
+            throw Exception('Failed to load tv show details');
           }
         }
         return results;
       } else {
-        throw Exception('Failed to load movie details');
+        throw Exception('Failed to load tv show details');
       }
     } else {
       return [];
@@ -106,7 +106,7 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 40, 20, 5),
               child: Text(
-                'Add a movie to ${list_result["Name"]}',
+                'Add a TV Show to ${list_result["Name"]}',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -119,14 +119,14 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
               child: TextFormField(
                 validator: (String? value) {
                   if (value == null || value.isEmpty || _movie == "") {
-                    return 'Please select a movie';
+                    return 'Please select a tv show';
                   }
                   return null;
                 },
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   labelStyle: TextStyle(color: Colors.white),
-                  labelText: 'Name of The Tv You\'d Like to Add',
+                  labelText: 'Name of The TV Show You\'d Like to Add',
                 ),
                 onChanged: (value) {
                   setState(() {
