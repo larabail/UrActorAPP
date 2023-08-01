@@ -278,6 +278,8 @@ class _CalendarState extends State<Calendar> {
               leftChevronIcon: Icon(Icons.chevron_left, color: Colors.white),
               rightChevronIcon: Icon(Icons.chevron_right, color: Colors.white),
               formatButtonTextStyle: TextStyle(color: Colors.white),
+              formatButtonVisible: false,
+              titleCentered: true,
             ),
             eventLoader: (date) {
               final eventsOnDate =

@@ -1,3 +1,5 @@
+// ignore_for_file: must_be_immutable
+
 import 'package:flutter/material.dart';
 import 'package:uractor/playlists.dart';
 import 'package:uractor/profile.dart';
@@ -18,6 +20,7 @@ bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
   return false;
 }
 
+// ignore: use_key_in_widget_constructors
 class Favorites extends StatelessWidget {
   final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
   final String imgLink = 'https://image.tmdb.org/t/p/w500/';
