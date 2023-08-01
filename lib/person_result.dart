@@ -896,8 +896,8 @@ class _PersonResultState extends State<PersonResult> {
 
   bool containsMap(List list, List map) {
     for (int i = 0; i < list.length; i++) {
-      if ((list[i][1]) as String == map[1].toString() &&
-          (list[i][0]) as String == map[0].toString()) {
+      if ((list[i][1]).toString() == map[1].toString() &&
+          (list[i][0]).toString() == map[0].toString()) {
         return true;
       }
     }
