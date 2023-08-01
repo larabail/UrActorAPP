@@ -67,7 +67,6 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
         .then((QuerySnapshot querySnapshot) async {
       for (var doc in querySnapshot.docs) {
         Map docData = doc.data() as Map;
-        print(originalAccessCode);
         if (originalListName == (docData["Name"])) {
           if (docData["AccessCode"] == originalAccessCode) {
             var userDoc =
