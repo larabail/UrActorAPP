@@ -81,8 +81,6 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
             Navigator.pop(context);
             Navigator.pushReplacement(
                 context, MaterialPageRoute(builder: (context) => ListResult()));
-          } else {
-            print("Wrong passcode for $listName");
           }
         }
       }
