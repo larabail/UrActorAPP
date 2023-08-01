@@ -62,7 +62,7 @@ class MyApp extends StatelessWidget {
       title: 'UrActor',
       theme: ThemeData.dark().copyWith(
         // Customize the background color for dark mode
-        scaffoldBackgroundColor: Color(
+        scaffoldBackgroundColor: const Color(
             0xFF121212), // Change this color to your desired background color
         // Add any other customizations to the dark theme here
         // For example, you can change the primaryColor, accentColor, etc.
@@ -82,6 +82,149 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  bool gotData = false;
+  Future<void> getFirebaseData(user) async {
+    uid = user.uid;
+    email = user.email!;
+    // print(_items);
+    await FirebaseFirestore.instance
+        .collection("ExploreMovies")
+        .doc("MoviesExplore")
+        .get()
+        .then((DocumentSnapshot snapshot) async {
+      Map json = snapshot.data() as Map;
+      idsExplorePage = json["Ids"];
+    });
+    await FirebaseFirestore.instance
+        .collection(uid)
+        .get()
+        .then((QuerySnapshot querySnapshot) {
+      for (var doc in querySnapshot.docs) {
+        if (doc.id == "Country" && country == "") {
+          country = (doc['Country']);
+        } else if (doc.id == "Calendar" && calendar.keys.isEmpty) {
+          calendar = doc.data() as Map;
+        } else if (doc.id == "FavActors" && favActors.isEmpty) {
+          Map tempFavActors = doc.data() as Map;
+          favActors = tempFavActors.entries
+              .map((entry) => [entry.value, entry.key])
+              .toList();
+          favActors.sort((a, b) => b[0].compareTo(a[0]));
+        } else if (doc.id == "FavDirectors" && favDirectors.isEmpty) {
+          Map tempFavDirectors = doc.data() as Map;
+          favDirectors = tempFavDirectors.entries
+              .map((entry) => [entry.value, entry.key])
+              .toList();
+          favDirectors.sort((a, b) => b[0].compareTo(a[0]));
+        } else if (doc.id == "Favorites" && favMovies.isEmpty) {
+          Map allFavs = doc.data() as Map;
+          allFavs.forEach((key, el) {
+            allFavs[key].forEach((element) {
+              if (key == "Movies") {
+                favMovies += [
+                  [key, element]
+                ];
+              } else {
+                favTVShows += [
+                  [key, element]
+                ];
+              }
+            });
+          });
+        } else if (doc.id == "Movies" && seenMovies.isEmpty) {
+          Map w = doc.data() as Map;
+          w.forEach((key, el) {
+            w[key].forEach((element) {
+              seenMovies += [
+                ["Movies", element]
+              ];
+            });
+          });
+        } else if (doc.id == "Reviews" && reviews.keys.isEmpty) {
+          Map reviewsMap = doc.data() as Map;
+          List reviewsList = reviewsMap["Seen"];
+          reviewsList.forEach((element) {
+            element = element as Map;
+            reviews[element.keys.toList()[0]] =
+                element[element.keys.toList()[0]];
+          });
+        } else if (doc.id == "Rewatched" && rewatchedMovies.keys.isEmpty) {
+          rewatchedMovies = doc.data() as Map;
+        } else if (doc.id == "TVShows" && seenTVShows.isEmpty) {
+          Map w = doc.data() as Map;
+          w.forEach((key, el) {
+            w[key].forEach((element) {
+              seenTVShows += [
+                ["TVShows", element]
+              ];
+            });
+          });
+        } else if (doc.id == "Watchlist" && watchlist.isEmpty) {
+          Map w = doc.data() as Map;
+          w.forEach((key, el) {
+            w[key].forEach((element) {
+              if (key == "Movies") {
+                watchlist += [
+                  [key, element]
+                ];
+              } else {
+                watchlistTVShows += [
+                  [key, element]
+                ];
+              }
+            });
+          });
+        }
+      }
+    });
+    await FirebaseFirestore.instance
+        .collection("Watchlists")
+        .get()
+        .then((QuerySnapshot querySnapshot) {
+      for (var doc in querySnapshot.docs) {
+        Map keysOfDoc = doc.data() as Map;
+        List users = keysOfDoc['Users'] as List;
+        for (var element in users) {
+          Map el = element as Map;
+          if (el.keys.contains(uid)) {
+            Map docData = doc.data() as Map;
+            docData["id"] = doc.id;
+            playlists[doc.id] = docData;
+          }
+        }
+      }
+    });
+    await FirebaseFirestore.instance
+        .collection("Oscars")
+        .get()
+        .then((QuerySnapshot querySnapshot) {
+      for (var doc in querySnapshot.docs) {
+        Map d = doc.data() as Map;
+        oscars[d["tmdb_id"]] = doc.data();
+      }
+    });
+    setState(() {
+      gotData = true;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      // Redirect to login page
+      Future.delayed(Duration.zero, () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Login()),
+        );
+      });
+    } else {
+      getFirebaseData(user);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     int selectedIndex = 0;
@@ -101,136 +244,6 @@ class _MyHomePageState extends State<MyHomePage> {
         MaterialPageRoute(builder: (context) => pages[selectedIndex]),
       );
     }
-
-    FirebaseAuth.instance.authStateChanges().listen((User? user) async {
-      if (user == null) {
-        // Redirect to login page
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => Login()),
-        );
-      } else {
-        uid = user.uid;
-        email = user.email!;
-        // print(_items);
-        await FirebaseFirestore.instance
-            .collection("ExploreMovies")
-            .doc("MoviesExplore")
-            .get()
-            .then((DocumentSnapshot snapshot) async {
-          Map json = snapshot.data() as Map;
-          idsExplorePage = json["Ids"];
-        });
-        await FirebaseFirestore.instance
-            .collection(uid)
-            .get()
-            .then((QuerySnapshot querySnapshot) {
-          for (var doc in querySnapshot.docs) {
-            if (doc.id == "Country" && country == "") {
-              country = (doc['Country']);
-            } else if (doc.id == "Calendar" && calendar.keys.isEmpty) {
-              calendar = doc.data() as Map;
-            } else if (doc.id == "FavActors" && favActors.isEmpty) {
-              Map tempFavActors = doc.data() as Map;
-              favActors = tempFavActors.entries
-                  .map((entry) => [entry.value, entry.key])
-                  .toList();
-              favActors.sort((a, b) => b[0].compareTo(a[0]));
-            } else if (doc.id == "FavDirectors" && favDirectors.isEmpty) {
-              Map tempFavDirectors = doc.data() as Map;
-              favDirectors = tempFavDirectors.entries
-                  .map((entry) => [entry.value, entry.key])
-                  .toList();
-              favDirectors.sort((a, b) => b[0].compareTo(a[0]));
-            } else if (doc.id == "Favorites" && favMovies.isEmpty) {
-              Map allFavs = doc.data() as Map;
-              allFavs.forEach((key, el) {
-                allFavs[key].forEach((element) {
-                  if (key == "Movies") {
-                    favMovies += [
-                      [key, element]
-                    ];
-                  } else {
-                    favTVShows += [
-                      [key, element]
-                    ];
-                  }
-                });
-              });
-            } else if (doc.id == "Movies" && seenMovies.isEmpty) {
-              Map w = doc.data() as Map;
-              w.forEach((key, el) {
-                w[key].forEach((element) {
-                  seenMovies += [
-                    ["Movies", element]
-                  ];
-                });
-              });
-            } else if (doc.id == "Reviews" && reviews.keys.isEmpty) {
-              Map reviewsMap = doc.data() as Map;
-              List reviewsList = reviewsMap["Seen"];
-              reviewsList.forEach((element) {
-                element = element as Map;
-                reviews[element.keys.toList()[0]] =
-                    element[element.keys.toList()[0]];
-              });
-            } else if (doc.id == "Rewatched" && rewatchedMovies.keys.isEmpty) {
-              rewatchedMovies = doc.data() as Map;
-            } else if (doc.id == "TVShows" && seenTVShows.isEmpty) {
-              Map w = doc.data() as Map;
-              w.forEach((key, el) {
-                w[key].forEach((element) {
-                  seenTVShows += [
-                    ["TVShows", element]
-                  ];
-                });
-              });
-            } else if (doc.id == "Watchlist" && watchlist.isEmpty) {
-              Map w = doc.data() as Map;
-              w.forEach((key, el) {
-                w[key].forEach((element) {
-                  if (key == "Movies") {
-                    watchlist += [
-                      [key, element]
-                    ];
-                  } else {
-                    watchlistTVShows += [
-                      [key, element]
-                    ];
-                  }
-                });
-              });
-            }
-          }
-        });
-        await FirebaseFirestore.instance
-            .collection("Watchlists")
-            .get()
-            .then((QuerySnapshot querySnapshot) {
-          for (var doc in querySnapshot.docs) {
-            Map keysOfDoc = doc.data() as Map;
-            List users = keysOfDoc['Users'] as List;
-            for (var element in users) {
-              Map el = element as Map;
-              if (el.keys.contains(uid)) {
-                Map docData = doc.data() as Map;
-                docData["id"] = doc.id;
-                playlists[doc.id] = docData;
-              }
-            }
-          }
-        });
-        await FirebaseFirestore.instance
-            .collection("Oscars")
-            .get()
-            .then((QuerySnapshot querySnapshot) {
-          for (var doc in querySnapshot.docs) {
-            Map d = doc.data() as Map;
-            oscars[d["tmdb_id"]] = doc.data();
-          }
-        });
-      }
-    });
 
     var myDecoration = BoxDecoration(
       borderRadius: BorderRadius.circular(27.0),
