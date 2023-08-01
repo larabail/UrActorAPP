@@ -895,15 +895,69 @@ class _ExploreState extends State<Explore> {
 
     Widget _buildGridView() {
       // Replace this with your grid content
-      List<Widget> gridItems = [
-        Container(color: Colors.yellow),
-        Container(color: Colors.orange),
-        Container(color: Colors.purple),
-      ];
+      return ListView.builder(
+        itemCount:
+            (_items.length / 3).ceil(), // Calculate number of rows needed
+        itemBuilder: (BuildContext context, int rowIndex) {
+          // Calculate starting index for the current row
+          int startIndex = rowIndex * 3;
+          int endIndex = startIndex + 3;
+          endIndex = endIndex > _items.length ? _items.length : endIndex;
 
-      return GridView.count(
-        crossAxisCount: 2,
-        children: gridItems,
+          // Create a sublist of movies for the current row
+          List<dynamic> rowItems = _items.sublist(startIndex, endIndex);
+
+          // Build a row of movies using GridView.builder
+          return GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 10.0,
+              mainAxisSpacing: MediaQuery.of(context).size.width * 0.2,
+              childAspectRatio: 0.5,
+            ),
+            itemCount: rowItems.length,
+            itemBuilder: (BuildContext context, int index) {
+              var item = rowItems[index];
+
+              // Create your movie widget here using the data from `item`
+              // For example, you can create a GestureDetector or InkWell
+              // to handle movie selection or tap events.
+              return GestureDetector(
+                onTap: () {
+                  movieResult = [item['id'], item['title'], "Movies"];
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => MovieResult()),
+                  );
+                },
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.2,
+                  height: MediaQuery.of(context).size.height * 0.2,
+                  child: Column(
+                    children: [
+                      // Your movie poster widget here
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(27),
+                        child: Image.network(
+                          imgLink + item["poster_path"],
+                          fit: BoxFit.fitWidth,
+                        ),
+                      ),
+                      const SizedBox(height: 10.0),
+                      // Your movie title or other information here
+                      Text(
+                        item['title'],
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
       );
     }
 
