@@ -83,6 +83,45 @@ flutter:
     - assets/oscars_api.json
     - assets/temp_cover.png
     - assets/explore.png
+    - assets/western_before2.png
+    - assets/western_after2.png
+    - assets/war_before2.png
+    - assets/war_after2.png
+    - assets/comedy_before2.png
+    - assets/comedy_after2.png
+    - assets/drama_before2.png
+    - assets/drama_after2.png
+    - assets/crime_before2.png
+    - assets/crime_after2.png
+    - assets/romance_before2.png
+    - assets/romance_after2.png
+    - assets/action_before2.png
+    - assets/action_after2.png
+    - assets/thriller_before2.png
+    - assets/thriller_after2.png
+    - assets/thriller_before2.png
+    - assets/scifi_after2.png
+    - assets/scifi_before2.png
+    - assets/mystery_after2.png
+    - assets/mystery_before2.png
+    - assets/music_after2.png
+    - assets/music_before2.png
+    - assets/horror_after2.png
+    - assets/horror_before2.png
+    - assets/history_after2.png
+    - assets/history_before2.png
+    - assets/fantasy_after2.png
+    - assets/fantasy_before2.png
+    - assets/family_after2.png
+    - assets/family_before2.png
+    - assets/documentary_after2.png
+    - assets/documentary_before2.png
+    - assets/crime_after2.png
+    - assets/crime_before2.png
+    - assets/animation_after2.png
+    - assets/animation_before2.png
+    - assets/adventure_after2.png
+    - assets/adventure_before2.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
