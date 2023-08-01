@@ -142,7 +142,6 @@ class _ProfileState extends State<Profile> {
     Map filteredData = {};
 
     Map tempData = Map.fromEntries(calendar.entries.where((entry) {
-      print(entry.key);
       DateTime entryDate = DateTime.parse(entry.key);
       return entryDate.isAfter(startOfWeek.add(const Duration(days: -1))) && entryDate.isBefore(endOfWeek);
     }));
@@ -166,7 +165,6 @@ class _ProfileState extends State<Profile> {
                 .split("T")[0]];
       }
     }
-    print(tempData);
     List<BarChartGroupData> chartData = filteredData.entries.map((entry) {
       final day = DateTime.parse(entry.key).day;
       final moviesCount = entry.value.length;

@@ -2,11 +2,11 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:uractor/playlists.dart';
 import 'package:uractor/profile.dart';
 import 'package:uractor/search.dart';
 import 'package:uractor/movie_result.dart';
-import 'package:uractor/rating_popup.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:uractor/main.dart';
@@ -48,9 +48,9 @@ class Genre {
       name = "SciFi";
     }
     if (isSelected) {
-      return 'assets/${name.toLowerCase()}_after2.png';
+      return 'assets/${name.toLowerCase()}_after.svg';
     } else {
-      return 'assets/${name.toLowerCase()}_before2.png';
+      return 'assets/${name.toLowerCase()}_before.svg';
     }
   }
 }
@@ -440,20 +440,10 @@ class _ExploreState extends State<Explore> {
   }
 
   Future<void> getData() async {
-    List moviesData = [];
-    List ids = [];
-    // print(_items);
-    await FirebaseFirestore.instance
-        .collection("ExploreMovies")
-        .doc("MoviesExplore")
-        .get()
-        .then((DocumentSnapshot snapshot) async {
-      Map json = snapshot.data() as Map;
-      ids = json["Ids"];
-    });
     int i = itemsPerPage * (page - 1);
-    ids.shuffle();
-    for (String id in ids) {
+    idsExplorePage.shuffle();
+    List moviesData = [];
+    for (String id in idsExplorePage) {
       // print(page);
       // print(i);
       if (i < itemsPerPage * page) {
@@ -602,7 +592,6 @@ class _ExploreState extends State<Explore> {
               if (_isListsTapped[id]) {
                 _imageListsProviders[id] = 'assets/playlists_after.png';
                 showModalBottomSheet(
-                  backgroundColor: const Color(0xFF121212),
                   context: context,
                   builder: (_) {
                     return Container(
@@ -708,7 +697,6 @@ class _ExploreState extends State<Explore> {
                                             child: Text(
                                               valueLeft,
                                               style: const TextStyle(
-                                                color: Colors.white,
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.bold,
                                                 letterSpacing: 1.5,
@@ -794,7 +782,6 @@ class _ExploreState extends State<Explore> {
                                             child: Text(
                                               valueRight,
                                               style: const TextStyle(
-                                                color: Colors.white,
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.bold,
                                                 letterSpacing: 1.5,
@@ -834,7 +821,6 @@ class _ExploreState extends State<Explore> {
 
     Widget _buildToggleViewButton() {
       return IconButton(
-        color: Colors.white,
         icon: Icon(isGridMode ? Icons.view_carousel : Icons.grid_on),
         onPressed: () {
           setState(() {
@@ -847,7 +833,6 @@ class _ExploreState extends State<Explore> {
     Widget _buildFiltersSection() {
       // Replace this with your actual filters UI
       return IconButton(
-        color: Colors.white,
         icon: Icon(isFilterOpen ? Icons.check : Icons.filter_list),
         onPressed: toggleFilter,
       );
@@ -1166,7 +1151,6 @@ class _ExploreState extends State<Explore> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
         backgroundColor: const Color(0xFF121212),
         title: Center(
@@ -1184,7 +1168,7 @@ class _ExploreState extends State<Explore> {
             height: isFilterOpen ? MediaQuery.of(context).size.height * 0.7 : 0,
             width: MediaQuery.of(context).size.width,
             decoration: const BoxDecoration(
-              color: Color.fromARGB(255, 7, 7, 7),
+              // color: Color.fromARGB(255, 7, 7, 7),
               borderRadius: BorderRadius.vertical(top: Radius.circular(40.0)),
             ),
             child: Column(
@@ -1199,7 +1183,7 @@ class _ExploreState extends State<Explore> {
                     style: TextStyle(
                       fontSize: 24.0,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      // color: Colors.white,
                     ),
                   ),
                 ),
@@ -1227,7 +1211,7 @@ class _ExploreState extends State<Explore> {
                           },
                           child: Stack(
                             children: [
-                              Image.asset(
+                              SvgPicture.asset(
                                 genre.getAssetImagePath(),
                                 width: double.infinity,
                                 height: 150.0, // Adjust the height as needed
@@ -1238,7 +1222,7 @@ class _ExploreState extends State<Explore> {
                                 left: 4.0,
                                 child: Text(
                                   genre.name,
-                                  style: const TextStyle(color: Colors.white),
+                                  // style: const TextStyle(color: Colors.white),
                                 ),
                               ),
                               if (genre.isSelected)
@@ -1283,7 +1267,6 @@ class _ExploreState extends State<Explore> {
           ),
           BottomNavigationBarItem(
             label: 'Profile',
-            backgroundColor: Color(0xFF121212),
             icon: Icon(Icons.person),
           ),
         ],
