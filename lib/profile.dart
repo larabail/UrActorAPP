@@ -256,7 +256,7 @@ class _ProfileState extends State<Profile> {
                                       color: Colors.white,
                                       backgroundColor:
                                           Color.fromARGB(0, 44, 44, 44)),
-                                  "Watching Statistics"),
+                                  "Viewing Statistics"),
                             ),
                             children: <Widget>[
                               Padding(
