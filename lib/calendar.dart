@@ -1,4 +1,4 @@
-// ignore_for_file: unnecessary_brace_in_string_interps
+// ignore_for_file: unnecessary_brace_in_string_interps, no_leading_underscores_for_local_identifiers, avoid_function_literals_in_foreach_calls
 
 import 'package:flutter/material.dart';
 import 'package:uractor/playlists.dart';
@@ -7,7 +7,6 @@ import 'package:uractor/profile.dart';
 import 'package:uractor/search.dart';
 import 'package:uractor/movie_result.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:uractor/main.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -35,23 +34,54 @@ class Calendar extends StatefulWidget {
 
 class _CalendarState extends State<Calendar> {
   final Map events = calendar;
+  void deleteMovieSubmit(String id, String title) async {
+    var userDoc = db.collection(uid).doc("Calendar");
+    for (String key in calendar.keys) {
+      if (key == _selectedDay) {
+        calendar[key].removeWhere(
+            (movie) => movie['id'] == id && movie['title'] == title);
+      }
+    }
+    Map<Object, Object> updatedCalendar = {};
+    for (String key in calendar.keys) {
+      if (calendar[key].isNotEmpty) {
+        updatedCalendar[key] = calendar[key];
+      }
+    }
+    await userDoc.update(updatedCalendar);
+
+    if (rewatchedMovies.keys.toList().contains(id)) {
+      rewatchedMovies[id] -= 1;
+      userDoc = db.collection(uid).doc("Rewatched");
+      Map<Object, Object> updatedRewatched = {};
+      for (String key in rewatchedMovies.keys) {
+        updatedRewatched[key] = rewatchedMovies[key];
+      }
+      await userDoc.update(updatedRewatched);
+    }
+
+    Navigator.pop(context);
+    setState(() {
+      calendar = calendar;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    int _selectedIndex = 0;
+    int selectedIndex = 0;
 
-    final List<Widget> _pages = [
-      MyApp(),
+    final List<Widget> pages = [
+      const MyApp(),
       Search(),
       Playlists(),
       Profile(),
-      // Add more pages here
     ];
 
     void _onItemTapped(int index) {
-      _selectedIndex = index;
+      selectedIndex = index;
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => _pages[_selectedIndex]),
+        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
       );
     }
 
@@ -59,9 +89,6 @@ class _CalendarState extends State<Calendar> {
     List movies = [];
 
     Future<void> _openDatePickerDialog() async {
-      // ... (Same code as before) ...
-
-      // Show the date picker dialog
       final DateTime? pickedDate = await showDatePicker(
         context: context,
         initialDate: selectedDate,
@@ -70,7 +97,7 @@ class _CalendarState extends State<Calendar> {
         builder: (BuildContext context, Widget? child) {
           return Theme(
             data: ThemeData.dark().copyWith(
-              colorScheme: ColorScheme.dark(primary: Colors.lightBlue),
+              colorScheme: const ColorScheme.dark(primary: Colors.lightBlue),
             ),
             child: child!,
           );
@@ -78,20 +105,14 @@ class _CalendarState extends State<Calendar> {
       );
 
       if (pickedDate != null && pickedDate != selectedDate) {
-        // Date is selected, do something with the pickedDate
         selectedDate = pickedDate;
         dateForMap = selectedDate.toIso8601String().split("T")[0];
-        // print(selectedDate.toIso8601String().split("T")[0]);
         showDialog(
           context: context,
           builder: (BuildContext context) {
             return CalendarAddDialogue();
           },
         );
-
-        // setState(() {
-        //   selectedDate = pickedDate;
-        // });
       }
     }
 
@@ -128,16 +149,15 @@ class _CalendarState extends State<Calendar> {
           throw Exception('Failed to load movie details');
         }
         if (i == moviesOnDay.length - 1) {
-          // ignore: use_build_context_synchronously
           showModalBottomSheet(
             context: context,
             builder: (_) {
               return SingleChildScrollView(
                 child: Container(
-                  color: Color(0xFF121212),
-                  height: MediaQuery.of(context).size.height * 0.35,
+                  color: const Color(0xFF121212),
+                  height: MediaQuery.of(context).size.height * 0.4,
                   child: Padding(
-                    padding: EdgeInsets.all(20.0),
+                    padding: const EdgeInsets.all(20.0),
                     child: Column(
                       children: [
                         Text(
@@ -147,49 +167,71 @@ class _CalendarState extends State<Calendar> {
                               fontSize: 22,
                               fontWeight: FontWeight.bold),
                         ),
-                        const SizedBox(height: 16),
-                        Container(
-                          height: MediaQuery.of(context).size.height * 0.2,
+                        Expanded(
+                          // height: MediaQuery.of(context).size.height * 0.3,
                           child: ListView(
                             scrollDirection: Axis.horizontal,
                             children: [
                               ...movies
-                                  .map((event) => GestureDetector(
-                                        onTap: () {
-                                          // Handle the click event here
-                                          movieResult = [
-                                            event['id'],
-                                            event['title'],
-                                            "Movie",
-                                          ];
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    MovieResult()),
-                                          );
-                                        },
-                                        child: Container(
-                                          margin: const EdgeInsets.fromLTRB(
-                                              10.0, 10.0, 5.0, 0),
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.3,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.35,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(27),
-                                            image: DecorationImage(
-                                              image: NetworkImage(imgLink +
-                                                  event['poster_path']),
-                                              fit: BoxFit.fitWidth,
+                                  .map((event) => Column(
+                                        children: [
+                                          GestureDetector(
+                                            onTap: () {
+                                              // Handle the click event here
+                                              movieResult = [
+                                                event['id'],
+                                                event['title'],
+                                                "Movie",
+                                              ];
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      MovieResult(),
+                                                ),
+                                              );
+                                            },
+                                            child: ClipRRect(
+                                              // Wrap the container with ClipRRect
+                                              borderRadius: BorderRadius.circular(
+                                                  50), // Set the border radius here
+                                              child: Container(
+                                                margin:
+                                                    const EdgeInsets.fromLTRB(
+                                                        10.0, 5.0, 10.0, 0),
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.3,
+                                                height: MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                    0.2,
+                                                decoration: BoxDecoration(
+                                                  image: DecorationImage(
+                                                    image: NetworkImage(
+                                                        imgLink +
+                                                            event[
+                                                                'poster_path']),
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                ),
+                                              ),
                                             ),
                                           ),
-                                        ),
+                                          IconButton(
+                                            style: IconButton.styleFrom(
+                                                backgroundColor:
+                                                    Colors.transparent),
+                                            onPressed: () {
+                                              deleteMovieSubmit(
+                                                  event['id'].toString(),
+                                                  event['title'].toString());
+                                            },
+                                            icon: const Icon(Icons.delete),
+                                            color: Colors.red,
+                                          ),
+                                        ],
                                       ))
                                   .toList(),
                             ],
@@ -208,9 +250,9 @@ class _CalendarState extends State<Calendar> {
     }
 
     return Scaffold(
-      backgroundColor: Color(0xFF121212),
+      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: Color(0xFF121212),
+        backgroundColor: const Color(0xFF121212),
         title: Center(
             child: Image.asset(
           'assets/logo.png',
@@ -249,11 +291,10 @@ class _CalendarState extends State<Calendar> {
               child: ListView.builder(
                 itemCount: moviesOnDay.length,
                 itemBuilder: (BuildContext context, int index) {
-                  print(moviesOnDay[index]);
                   return ListTile(
                     title: Text(
                       moviesOnDay[index]['title'],
-                      style: TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.white),
                     ),
                   );
                 },
@@ -262,11 +303,11 @@ class _CalendarState extends State<Calendar> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _openDatePickerDialog, // Function to open the dialog
-        child: Icon(
+        onPressed: _openDatePickerDialog,
+        backgroundColor: Colors.lightGreen, // Function to open the dialog
+        child: const Icon(
           Icons.add,
         ),
-        backgroundColor: Colors.lightGreen,
       ),
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: Colors.grey,
@@ -292,7 +333,7 @@ class _CalendarState extends State<Calendar> {
             icon: Icon(Icons.person),
           ),
         ],
-        currentIndex: _selectedIndex,
+        currentIndex: selectedIndex,
         onTap: _onItemTapped,
       ),
     );
@@ -354,12 +395,14 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
     }
   }
 
-  void addMovieSubmit(id, title) async {
+  void addMovieSubmit(String id, String title) async {
     Map myObject = {'id': id, 'title': title};
     if (calendar.keys.toList().contains(dateForMap)) {
       calendar[dateForMap].add(myObject);
     } else {
-      calendar[dateForMap] = [myObject,];
+      calendar[dateForMap] = [
+        myObject,
+      ];
     }
     var userDoc = db.collection(uid).doc("Calendar");
     Map<Object, Object> updatedCalendar = {};
@@ -368,9 +411,23 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
     }
     await userDoc.update(updatedCalendar);
 
+    if (rewatchedMovies.keys.toList().contains(id)) {
+      rewatchedMovies[id] += 1;
+    } else {
+      rewatchedMovies[id] = 1;
+    }
+
+    userDoc = db.collection(uid).doc("Rewatched");
+    Map<Object, Object> updatedRewatched = {};
+    for (String key in rewatchedMovies.keys) {
+      updatedRewatched[key] = rewatchedMovies[key];
+    }
+    await userDoc.update(updatedRewatched);
+
     Navigator.pop(context);
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => Calendar()));
+    setState(() {
+      calendar = calendar;
+    });
   }
 
   @override

@@ -26,6 +26,7 @@ List favDirectors = [];
 List favMovies = [];
 List favTVShows = [];
 List seenMovies = [];
+List idsExplorePage = [];
 List seenTVShows = [];
 List watchlist = [];
 List watchlistTVShows = [];
@@ -59,7 +60,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'UrActor',
-      theme: ThemeData.dark(),
+      theme: ThemeData.dark().copyWith(
+        // Customize the background color for dark mode
+        scaffoldBackgroundColor: Color(
+            0xFF121212), // Change this color to your desired background color
+        // Add any other customizations to the dark theme here
+        // For example, you can change the primaryColor, accentColor, etc.
+      ),
       home: const MyHomePage(title: 'Home'),
     );
   }
@@ -105,6 +112,15 @@ class _MyHomePageState extends State<MyHomePage> {
       } else {
         uid = user.uid;
         email = user.email!;
+        // print(_items);
+        await FirebaseFirestore.instance
+            .collection("ExploreMovies")
+            .doc("MoviesExplore")
+            .get()
+            .then((DocumentSnapshot snapshot) async {
+          Map json = snapshot.data() as Map;
+          idsExplorePage = json["Ids"];
+        });
         await FirebaseFirestore.instance
             .collection(uid)
             .get()
