@@ -15,6 +15,8 @@ import 'package:carousel_slider/carousel_slider.dart';
 const String api_key_actor =
     "?api_key=700cd4fab994df56eb41b34d38c4762a&include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc&adult=false&region=US";
 const String imgLink = 'https://image.tmdb.org/t/p/w500/';
+const String GENRES_LINK =
+    "https://api.themoviedb.org/3/genre/movie/list?api_key=700cd4fab994df56eb41b34d38c4762a";
 String link = "https://api.themoviedb.org/3/movie/";
 const String popularMoviesLink = "https://api.themoviedb.org/3/discover/movie";
 List _items = [];
@@ -30,6 +32,28 @@ Map _isWatchlistTapped = {};
 Map _isFavTapped = {};
 int itemsPerPage = 20;
 Map _isListsTapped = {};
+
+bool areAllFiltersPresent(List<String> genreFilters, List genreMaps) {
+  // Check if all genre filters are present in the list of maps
+  return genreFilters
+      .every((filter) => genreMaps.any((map) => map['name'] == filter));
+}
+
+class Genre {
+  String name;
+  bool isSelected;
+  Genre(this.name, this.isSelected);
+  String getAssetImagePath() {
+    if (name == "Science Fiction") {
+      name = "SciFi";
+    }
+    if (isSelected) {
+      return 'assets/${name.toLowerCase()}_after2.png';
+    } else {
+      return 'assets/${name.toLowerCase()}_before2.png';
+    }
+  }
+}
 
 bool containsMap(List list, Map map) {
   String jsonString = json.encode(map);
@@ -384,13 +408,41 @@ class Explore extends StatefulWidget {
 
 class _ExploreState extends State<Explore> {
   bool _carouselLoaded = false;
+  List<String> filters = [];
   int _currentSlide = 0;
   List<Map<String, dynamic>> movies = [];
   bool isGridMode = false;
+  List genres = [];
+  ScrollController _scrollController = ScrollController();
+
+  bool isFilterOpen = false;
+
+  Future<void> toggleFilter() async {
+    if (isFilterOpen) {
+      for (Genre genreCheckBox in genres) {
+        if (genreCheckBox.isSelected == true) {
+          filters.add(genreCheckBox.name);
+        }
+      }
+    } else {
+      filters = [];
+    }
+    if (filters.isNotEmpty) {
+      _items = [];
+      _currentSlide = 0;
+      await getData();
+      page = 1;
+      setState(() {});
+    }
+    setState(() {
+      isFilterOpen = !isFilterOpen;
+    });
+  }
 
   Future<void> getData() async {
     List moviesData = [];
     List ids = [];
+    // print(_items);
     await FirebaseFirestore.instance
         .collection("ExploreMovies")
         .doc("MoviesExplore")
@@ -401,8 +453,9 @@ class _ExploreState extends State<Explore> {
     });
     int i = itemsPerPage * (page - 1);
     ids.shuffle();
-    // print(ids);
     for (String id in ids) {
+      // print(page);
+      // print(i);
       if (i < itemsPerPage * page) {
         await FirebaseFirestore.instance
             .collection("ExploreMovies")
@@ -410,9 +463,17 @@ class _ExploreState extends State<Explore> {
             .get()
             .then((DocumentSnapshot snapshot) {
           Map data = snapshot.data() as Map;
-          if (data["imdb_data"].keys.toList().contains("imdbRating") &&
-              data["imdb_data"]["imdbRating"] != "N/A" &&
-              double.parse(data["imdb_data"]["imdbRating"]) > 6.5) {
+          // print(data);
+          // print(filters);
+          if (filters.isNotEmpty) {
+            // print(data["genres"]);
+            bool allFiltersPresent =
+                areAllFiltersPresent(filters, data["genres"]);
+            // print(allFiltersPresent);
+            if (allFiltersPresent) {
+              moviesData.add(snapshot.data());
+            }
+          } else {
             moviesData.add(snapshot.data());
           }
         });
@@ -422,23 +483,65 @@ class _ExploreState extends State<Explore> {
       }
     }
     for (var element in moviesData) {
-      if (!containsMap(_items, element) &&
-          !containsList(seenMovies, ['Movies', element["id"].toString()])) {
+      if (!containsMap(_items, element)) {
         _items.add(element);
         check(element["id"].toString());
       }
     }
-    ;
+    if (moviesData.length < 10) {
+      _loadMoreItems();
+    }
+
+    genres = await _fetchGenres();
     setState(() {
       _carouselLoaded = true;
     });
   }
 
+  void _loadMoreItems() {
+    page += 1;
+    print("LOAD MORE");
+    getData();
+  }
+
   @override
   void initState() {
     super.initState();
-    // Call your function here that needs to run only once before the page is built
     getData();
+    _scrollController.addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose(); // Don't forget to dispose the ScrollController
+    super.dispose();
+  }
+
+// The scroll listener function
+  void _scrollListener() {
+    // Check if the user has reached the end of the list
+    if (_scrollController.position.pixels ==
+            _scrollController.position.maxScrollExtent ||
+        _items.length < 10) {
+      // Load more items
+      setState(() {
+        _loadMoreItems();
+      });
+    }
+  }
+
+  Future<List<dynamic>> _fetchGenres() async {
+    final response = await http.get(Uri.parse(GENRES_LINK));
+    List<Genre> genresResult = [];
+    if (response.statusCode == 200) {
+      for (Map genre in jsonDecode(response.body)["genres"]) {
+        if (genre["name"] != "TV Movie")
+          genresResult.add(Genre(genre["name"], false));
+      }
+      return genresResult;
+    } else {
+      throw Exception('Failed to load genres');
+    }
   }
 
   @override
@@ -451,13 +554,6 @@ class _ExploreState extends State<Explore> {
       Playlists(),
       Profile(),
     ];
-    void _loadMoreItems() {
-      // Usually this should be an asynchronous function where you communicate with your backend
-      // and fetch new items. Once you have the new items, you add them to your _items list.
-      // Here we just add 3 more dummy items to the list for simplicity.
-      page += 1;
-      getData();
-    }
 
     void _onItemTapped(int index) {
       selectedIndex = index;
@@ -737,17 +833,36 @@ class _ExploreState extends State<Explore> {
     }
 
     Widget _buildToggleViewButton() {
-      return Container(
-        alignment: Alignment.topRight,
-        child: IconButton(
-          color: Colors.white,
-          icon: Icon(isGridMode ? Icons.grid_on : Icons.view_carousel),
-          onPressed: () {
-            setState(() {
-              isGridMode = !isGridMode;
-            });
-          },
-        ),
+      return IconButton(
+        color: Colors.white,
+        icon: Icon(isGridMode ? Icons.view_carousel : Icons.grid_on),
+        onPressed: () {
+          setState(() {
+            isGridMode = !isGridMode;
+          });
+        },
+      );
+    }
+
+    Widget _buildFiltersSection() {
+      // Replace this with your actual filters UI
+      return IconButton(
+        color: Colors.white,
+        icon: Icon(isFilterOpen ? Icons.close : Icons.filter_list),
+        onPressed: toggleFilter,
+      );
+    }
+
+// Combine the button and the filters using Stack
+    Widget _buildToggleViewAndFilters() {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Call your function to build the filters section
+          _buildFiltersSection(),
+          // Call your function to build the button
+          _buildToggleViewButton(),
+        ],
       );
     }
 
@@ -765,7 +880,8 @@ class _ExploreState extends State<Explore> {
                   onPageChanged: (index, reason) {
                     setState(() {
                       _currentSlide = index; // Updating the current slide index
-                      if (_currentSlide == _items.length - 4) {
+                      if (_currentSlide == _items.length - 10 ||
+                          _items.length < 10) {
                         // We are at the last slide, so load more items
                         _loadMoreItems();
                       }
@@ -896,6 +1012,7 @@ class _ExploreState extends State<Explore> {
     Widget _buildGridView() {
       // Replace this with your grid content
       return ListView.builder(
+        controller: _scrollController,
         itemCount:
             (_items.length / 3).ceil(), // Calculate number of rows needed
         itemBuilder: (BuildContext context, int rowIndex) {
@@ -911,11 +1028,11 @@ class _ExploreState extends State<Explore> {
           return GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
               crossAxisSpacing: 10.0,
-              mainAxisSpacing: MediaQuery.of(context).size.width * 0.2,
-              childAspectRatio: 0.5,
+              mainAxisSpacing: 10.0,
+              childAspectRatio: 0.55,
             ),
             itemCount: rowItems.length,
             itemBuilder: (BuildContext context, int index) {
@@ -924,35 +1041,108 @@ class _ExploreState extends State<Explore> {
               // Create your movie widget here using the data from `item`
               // For example, you can create a GestureDetector or InkWell
               // to handle movie selection or tap events.
-              return GestureDetector(
-                onTap: () {
-                  movieResult = [item['id'], item['title'], "Movies"];
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => MovieResult()),
-                  );
-                },
-                child: Container(
-                  width: MediaQuery.of(context).size.width * 0.2,
-                  height: MediaQuery.of(context).size.height * 0.2,
-                  child: Column(
-                    children: [
-                      // Your movie poster widget here
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(27),
-                        child: Image.network(
-                          imgLink + item["poster_path"],
-                          fit: BoxFit.fitWidth,
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        // Handle the click event here
+                        movieResult = [
+                          item['id'],
+                          item['title'],
+                          "Movies",
+                        ];
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => MovieResult()),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.fromLTRB(5.0, 5.0, 5.0, 0.0),
+                        width: MediaQuery.of(context).size.width * 0.8,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(27),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color.fromARGB(255, 114, 113, 113)
+                                    .withOpacity(0.5),
+                                spreadRadius: 1,
+                                blurRadius: 10,
+                                offset: const Offset(
+                                    2, 2), // changes position of shadow
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(27),
+                            child: Image.network(
+                              imgLink + item["poster_path"],
+                              fit: BoxFit.fitWidth,
+                            ),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 10.0),
-                      // Your movie title or other information here
-                      Text(
-                        item['title'],
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(
+                      height: 10.0,
+                    ), // You can adjust this value as needed
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () => _onTap(
+                              'seen', item["id"].toString(), item["title"]),
+                          child: Container(
+                            margin:
+                                const EdgeInsets.fromLTRB(0.0, 5.0, 5.0, 5.0),
+                            child: Image.asset(
+                              _imageSeenProviders[item["id"].toString()],
+                              height: 20,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => _onTap('watchlist',
+                              item["id"].toString(), item["title"]),
+                          child: Container(
+                            margin:
+                                const EdgeInsets.fromLTRB(0.0, 5.0, 5.0, 5.0),
+                            child: Image.asset(
+                              _imageWatchlistProviders[item["id"].toString()],
+                              height: 20,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => _onTap(
+                              'fav', item["id"].toString(), item["title"]),
+                          child: Container(
+                            margin:
+                                const EdgeInsets.fromLTRB(0.0, 5.0, 5.0, 5.0),
+                            child: Image.asset(
+                              _imageFavProviders[item["id"].toString()],
+                              height: 20,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => _onTap(
+                              'list', item["id"].toString(), item["title"]),
+                          child: Container(
+                            margin:
+                                const EdgeInsets.fromLTRB(0.0, 5.0, 5.0, 5.0),
+                            child: Image.asset(
+                              _imageListsProviders[item["id"].toString()],
+                              height: 25,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               );
             },
@@ -987,8 +1177,90 @@ class _ExploreState extends State<Explore> {
       ),
       body: Column(
         children: [
-          _buildToggleViewButton(),
+          _buildToggleViewAndFilters(),
           Expanded(child: _buildContentView()),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: isFilterOpen ? MediaQuery.of(context).size.height * 0.7 : 0,
+            width: MediaQuery.of(context).size.width,
+            decoration: const BoxDecoration(
+              color: Color.fromARGB(255, 7, 7, 7),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(40.0)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Centered text "Genres"
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(
+                      20, 20, 20, 0), // Add padding here as needed
+                  child: Text(
+                    'Genres',
+                    style: TextStyle(
+                      fontSize: 24.0,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(
+                    height: 16.0), // Add spacing between text and GridView
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(
+                        20.0), // Add padding here as needed
+                    child: GridView.builder(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 8.0,
+                        mainAxisSpacing: 8.0,
+                      ),
+                      itemCount: genres.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        Genre genre = genres[index];
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              genre.isSelected = !genre.isSelected;
+                            });
+                          },
+                          child: Stack(
+                            children: [
+                              Image.asset(
+                                genre.getAssetImagePath(),
+                                width: double.infinity,
+                                height: 150.0, // Adjust the height as needed
+                                fit: BoxFit.cover,
+                              ),
+                              Positioned(
+                                bottom: 0.0,
+                                left: 4.0,
+                                child: Text(
+                                  genre.name,
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ),
+                              if (genre.isSelected)
+                                const Positioned(
+                                  bottom: 4.0,
+                                  right: 4.0,
+                                  child: Icon(
+                                    Icons.check_circle,
+                                    color: Colors.green,
+                                    size: 24.0,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
