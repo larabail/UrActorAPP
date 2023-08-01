@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously, use_key_in_widget_constructors, must_be_immutable, non_constant_identifier_names, no_leading_underscores_for_local_identifiers
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/playlists.dart';
@@ -24,7 +26,6 @@ class InfoButtonDialog extends StatelessWidget {
       actions: [
         ElevatedButton(
           onPressed: () async {
-            print(list_result);
             // Perform the delete operation here
             playlists = {};
             await FirebaseFirestore.instance
@@ -46,7 +47,6 @@ class InfoButtonDialog extends StatelessWidget {
                 }
               }
             });
-
             Navigator.pop(context);
             Navigator.pushReplacement(
                 context, MaterialPageRoute(builder: (context) => Playlists()));
@@ -117,24 +117,9 @@ class ListResult extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    int _selectedIndex = 0;
+    int selectedIndex = 0;
 
-    final List<Widget> _tabPages = [
-      const Center(
-          child: Text(
-        'Content for Tab 1',
-        style: TextStyle(
-            fontSize: 25, fontWeight: FontWeight.bold, color: Colors.white),
-      )),
-      const Center(
-          child: Text(
-        'Content for Tab 2',
-        style: TextStyle(
-            fontSize: 25, fontWeight: FontWeight.bold, color: Colors.white),
-      )),
-    ];
-
-    final List<Widget> _pages = [
+    final List<Widget> pages = [
       const MyApp(),
       Search(),
       Playlists(),
@@ -143,10 +128,10 @@ class ListResult extends StatelessWidget {
     ];
 
     void _onItemTapped(int index) {
-      _selectedIndex = index;
+      selectedIndex = index;
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => _pages[_selectedIndex]),
+        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
       );
     }
 
@@ -1218,7 +1203,7 @@ class ListResult extends StatelessWidget {
               icon: Icon(Icons.person),
             ),
           ],
-          currentIndex: _selectedIndex,
+          currentIndex: selectedIndex,
           onTap: _onItemTapped,
         ),
       ),
