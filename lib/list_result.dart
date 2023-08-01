@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/playlists.dart';
 import 'package:uractor/profile.dart';
@@ -7,6 +9,61 @@ import 'package:uractor/tvshow_result.dart';
 import 'package:uractor/search.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+class InfoButtonDialog extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Delete List'),
+      content: const Text(
+        'Are you sure you want to delete this list?',
+        style: TextStyle(color: Colors.red),
+      ),
+      actions: [
+        ElevatedButton(
+          onPressed: () async {
+            print(list_result);
+            // Perform the delete operation here
+            playlists = {};
+            await FirebaseFirestore.instance
+                .collection("Watchlists")
+                .doc(list_result["id"])
+                .delete();
+            await FirebaseFirestore.instance
+                .collection("Watchlists")
+                .get()
+                .then((QuerySnapshot querySnapshot) {
+              for (var doc in querySnapshot.docs) {
+                Map keysOfDoc = doc.data() as Map;
+                List users = keysOfDoc['Users'] as List;
+                for (var element in users) {
+                  Map el = element as Map;
+                  if (el.keys.contains(uid)) {
+                    playlists[doc.id] = doc.data();
+                  }
+                }
+              }
+            });
+
+            Navigator.pop(context);
+            Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (context) => Playlists()));
+          },
+          style: ButtonStyle(
+            backgroundColor: MaterialStateProperty.all(Colors.red),
+          ),
+          child: const Text('Delete', style: TextStyle(color: Colors.white)),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context); // Close the dialog
+          },
+          child: const Text('Cancel'),
+        ),
+      ],
+    );
+  }
+}
 
 bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
   String jsonString = json.encode(map);
@@ -76,7 +133,7 @@ class ListResult extends StatelessWidget {
     ];
 
     final List<Widget> _pages = [
-      MyApp(),
+      const MyApp(),
       Search(),
       Playlists(),
       Profile(),
@@ -94,9 +151,9 @@ class ListResult extends StatelessWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: Color(0xFF121212),
+        backgroundColor: const Color(0xFF121212),
         appBar: AppBar(
-          backgroundColor: Color(0xFF121212),
+          backgroundColor: const Color(0xFF121212),
           title: Center(
               child: Image.asset(
             'assets/logo.png',
@@ -138,7 +195,7 @@ class ListResult extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(16.0),
                     child: Align(
                       alignment: Alignment.bottomRight,
                       child: Text(
@@ -152,6 +209,20 @@ class ListResult extends StatelessWidget {
                           height: 1.5,
                         ),
                       ),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: IconButton(
+                      onPressed: () {
+                        // Show the dialog when the info button is tapped
+                        showDialog(
+                          context: context,
+                          builder: (context) => InfoButtonDialog(),
+                        );
+                      },
+                      icon: const Icon(Icons.delete),
+                      color: Colors.red,
                     ),
                   ),
                 ],
@@ -1086,7 +1157,7 @@ class ListResult extends StatelessWidget {
           selectedItemColor: Colors.grey,
           unselectedItemColor: Colors.grey,
           type: BottomNavigationBarType.fixed,
-          backgroundColor: Color(0xFF121212),
+          backgroundColor: const Color(0xFF121212),
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home),
