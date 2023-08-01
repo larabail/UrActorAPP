@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/playlists.dart';
 import 'package:uractor/profile.dart';
@@ -9,6 +8,9 @@ import 'package:uractor/tvshow_result.dart';
 import 'package:uractor/search.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+import 'movie_add_popup.dart';
+import 'tv_add_popup.dart';
 
 class InfoButtonDialog extends StatelessWidget {
   @override
@@ -164,7 +166,7 @@ class ListResult extends StatelessWidget {
           children: [
             Container(
               margin: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 0),
-              height: 200,
+              height: MediaQuery.of(context).size.height * 0.25,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(27),
               ),
@@ -213,20 +215,59 @@ class ListResult extends StatelessWidget {
                   ),
                   Align(
                     alignment: Alignment.topRight,
-                    child: IconButton(
-                      onPressed: () {
-                        // Show the dialog when the info button is tapped
-                        showDialog(
-                          context: context,
-                          builder: (context) => InfoButtonDialog(),
-                        );
-                      },
-                      icon: const Icon(Icons.delete),
-                      color: Colors.red,
-                    ),
+                    child: Container(
+                        padding: const EdgeInsets.all(0),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(100),
+                          color: Colors.black.withOpacity(
+                              0.5), // Add black background with opacity
+                        ),
+                        child:
+                            Column(mainAxisSize: MainAxisSize.min, children: [
+                          IconButton(
+                            onPressed: () {
+                              // Show the dialog when the info button is tapped
+                              showDialog(
+                                context: context,
+                                builder: (context) => InfoButtonDialog(),
+                              );
+                            },
+                            icon: const Icon(Icons.delete),
+                            color: Colors.red,
+                          ),
+                        ])),
                   ),
                 ],
               ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return MovieAddDialogue();
+                      },
+                    );
+                  },
+                  icon: const Icon(Icons.movie),
+                  color: Colors.green,
+                ),
+                IconButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return TvAddDialogue();
+                      },
+                    );
+                  },
+                  icon: const Icon(Icons.tv),
+                  color: Colors.green,
+                ),
+              ],
             ),
             if (list["Movies"].length > 0 && list["TVShows"].length > 0)
               DefaultTabController(
@@ -240,7 +281,7 @@ class ListResult extends StatelessWidget {
                       ],
                     ),
                     Container(
-                      height: MediaQuery.of(context).size.height * 0.475,
+                      height: MediaQuery.of(context).size.height * 0.425,
                       child: TabBarView(
                         children: [
                           if (list["Movies"].length != 0)
@@ -732,7 +773,7 @@ class ListResult extends StatelessWidget {
               ),
             if (list["Movies"].length > 0 && list["TVShows"].length == 0)
               Container(
-                height: MediaQuery.of(context).size.height * 0.55,
+                height: MediaQuery.of(context).size.height * 0.475,
                 child: ListView.builder(
                   itemCount: (list["Movies"].length / 3).ceil(),
                   itemBuilder: (context, index) {
@@ -939,7 +980,7 @@ class ListResult extends StatelessWidget {
               ),
             if (list["TVShows"].length > 0 && list["Movies"].length == 0)
               Container(
-                  height: MediaQuery.of(context).size.height * 0.55,
+                  height: MediaQuery.of(context).size.height * 0.475,
                   child: ListView.builder(
                     itemCount: (list["TVShows"].length / 3).ceil(),
                     itemBuilder: (context, index) {
