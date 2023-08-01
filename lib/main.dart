@@ -456,6 +456,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       const Text(
                         'Your Reviews',
                         style: TextStyle(
+                          color: Colors.black,
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                         ),
