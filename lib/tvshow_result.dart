@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:uractor/profile.dart';
-import 'package:uractor/search.dart';
-import 'package:uractor/main.dart';
+import 'profile.dart';
+import 'search.dart';
+import 'main.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:uractor/playlists.dart';
-import 'package:uractor/person_result.dart';
+import 'playlists.dart';
+import 'person_result.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 String _imageProviderSeen = 'assets/seen_before.png';

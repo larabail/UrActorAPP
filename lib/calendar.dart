@@ -1,11 +1,11 @@
 // ignore_for_file: unnecessary_brace_in_string_interps, no_leading_underscores_for_local_identifiers, avoid_function_literals_in_foreach_calls
 
 import 'package:flutter/material.dart';
-import 'package:uractor/playlists.dart';
-import 'package:uractor/main.dart';
-import 'package:uractor/profile.dart';
-import 'package:uractor/search.dart';
-import 'package:uractor/movie_result.dart';
+import 'playlists.dart';
+import 'main.dart';
+import 'profile.dart';
+import 'search.dart';
+import 'movie_result.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:http/http.dart' as http;

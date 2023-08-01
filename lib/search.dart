@@ -1,12 +1,12 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 import 'package:flutter/material.dart';
-import 'package:uractor/playlists.dart';
-import 'package:uractor/person_result.dart';
-import 'package:uractor/profile.dart';
-import 'package:uractor/movie_result.dart';
-import 'package:uractor/tvshow_result.dart';
-import 'package:uractor/main.dart';
+import 'playlists.dart';
+import 'person_result.dart';
+import 'profile.dart';
+import 'movie_result.dart';
+import 'tvshow_result.dart';
+import 'main.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 

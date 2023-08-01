@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:uractor/main.dart';
-import 'package:uractor/playlists.dart';
+import 'main.dart';
+import 'playlists.dart';
 
 String cover = "";
 String _listName = "";

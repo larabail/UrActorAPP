@@ -2,16 +2,16 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:uractor/calendar.dart';
-import 'package:uractor/favorites.dart';
-import 'package:uractor/login.dart';
-import 'package:uractor/explore.dart';
-import 'package:uractor/playlists.dart';
-import 'package:uractor/profile.dart';
-import 'package:uractor/reviews.dart';
-import 'package:uractor/search.dart';
-import 'package:uractor/seen.dart';
-import 'package:uractor/watchlist.dart';
+import 'calendar.dart';
+import 'favorites.dart';
+import 'login.dart';
+import 'explore.dart';
+import 'playlists.dart';
+import 'profile.dart';
+import 'reviews.dart';
+import 'search.dart';
+import 'seen.dart';
+import 'watchlist.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';

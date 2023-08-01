@@ -1,10 +1,10 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 import 'package:flutter/material.dart';
-import 'package:uractor/profile.dart';
-import 'package:uractor/search.dart';
-import 'package:uractor/main.dart';
-import 'package:uractor/list_result.dart';
+import 'profile.dart';
+import 'search.dart';
+import 'main.dart';
+import 'list_result.dart';
 
 import 'list_add_popup.dart';
 import 'list_join_popup.dart';
