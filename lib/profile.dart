@@ -12,6 +12,50 @@ import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:convert';
 
+class InfoButtonDialog extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(
+              255, 23, 20, 20), // change the color of dialog window here
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        padding: const EdgeInsets.all(25.0),
+        child: SizedBox(
+          width: 20,
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(
+              "Country You're Viewing in: $country",
+              style: const TextStyle(fontSize: 18),
+            ),
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () {},
+            ),
+            IconButton(
+              icon: const Icon(Icons.logout_outlined),
+              color: Colors.red,
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+                email = "";
+                Navigator.pop(context);
+                Navigator.popUntil(context, (route) => route.isFirst);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => Login()),
+                );
+              },
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
 const String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
 const String imgLink = 'https://image.tmdb.org/t/p/w500/';
 String link = "https://api.themoviedb.org/3/movie/";
@@ -143,7 +187,8 @@ class _ProfileState extends State<Profile> {
 
     Map tempData = Map.fromEntries(calendar.entries.where((entry) {
       DateTime entryDate = DateTime.parse(entry.key);
-      return entryDate.isAfter(startOfWeek.add(const Duration(days: -1))) && entryDate.isBefore(endOfWeek);
+      return entryDate.isAfter(startOfWeek.add(const Duration(days: -1))) &&
+          entryDate.isBefore(endOfWeek);
     }));
 
     // print(tempData);
@@ -259,7 +304,8 @@ class _ProfileState extends State<Profile> {
                             ),
                             children: <Widget>[
                               Padding(
-                                padding: const EdgeInsets.fromLTRB(10, 0, 10, 25),
+                                padding:
+                                    const EdgeInsets.fromLTRB(10, 0, 10, 25),
                                 child: Column(
                                   children: [
                                     if (startOfWeek.month == endOfWeek.month)
@@ -930,16 +976,20 @@ class _ProfileState extends State<Profile> {
             right: 16,
             child: IconButton(
               icon: const Icon(
-                Icons.logout_outlined,
+                Icons.settings,
                 color: Colors.white,
               ),
-              onPressed: () async {
-                await FirebaseAuth.instance.signOut();
-                email = "";
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => Login()),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => InfoButtonDialog(),
                 );
+                // await FirebaseAuth.instance.signOut();
+                // email = "";
+                // Navigator.push(
+                //   context,
+                //   MaterialPageRoute(builder: (context) => Login()),
+                // );
               },
             ),
           ),

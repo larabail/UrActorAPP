@@ -490,7 +490,6 @@ class _ExploreState extends State<Explore> {
 
   void _loadMoreItems() {
     page += 1;
-    print("LOAD MORE");
     getData();
   }
 
