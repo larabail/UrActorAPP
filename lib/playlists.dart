@@ -1,3 +1,5 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers
+
 import 'package:flutter/material.dart';
 import 'package:uractor/profile.dart';
 import 'package:uractor/search.dart';
@@ -38,13 +40,13 @@ class _PlaylistsState extends State<Playlists> {
 
   @override
   Widget build(BuildContext context) {
-    int _selectedIndex = 0;
+    int selectedIndex = 0;
 
     dynamic movies = [];
     dynamic tvshows = [];
     dynamic accessCode = "";
 
-    final List<Widget> _pages = [
+    final List<Widget> pages = [
       const MyApp(),
       Search(),
       Playlists(),
@@ -53,10 +55,10 @@ class _PlaylistsState extends State<Playlists> {
     ];
 
     void _onItemTapped(int index) {
-      _selectedIndex = index;
+      selectedIndex = index;
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => _pages[_selectedIndex]),
+        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
       );
     }
 
