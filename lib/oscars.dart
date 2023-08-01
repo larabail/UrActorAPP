@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:uractor/profile.dart';
-import 'package:uractor/search.dart';
-import 'package:uractor/main.dart';
-import 'package:uractor/playlists.dart';
-import 'package:uractor/person_result.dart';
+import 'profile.dart';
+import 'search.dart';
+import 'main.dart';
+import 'playlists.dart';
+import 'person_result.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;

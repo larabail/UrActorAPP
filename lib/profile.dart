@@ -1,12 +1,12 @@
 // ignore_for_file: use_build_context_synchronously, constant_identifier_names, no_leading_underscores_for_local_identifiers
 
 import 'package:flutter/material.dart';
-import 'package:uractor/playlists.dart';
-import 'package:uractor/search.dart';
-import 'package:uractor/main.dart';
-import 'package:uractor/person_result.dart';
-import 'package:uractor/movie_result.dart';
-import 'package:uractor/login.dart';
+import 'playlists.dart';
+import 'search.dart';
+import 'main.dart';
+import 'person_result.dart';
+import 'movie_result.dart';
+import 'login.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';

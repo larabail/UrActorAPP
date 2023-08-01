@@ -1,12 +1,12 @@
 // ignore_for_file: must_be_immutable
 
 import 'package:flutter/material.dart';
-import 'package:uractor/playlists.dart';
-import 'package:uractor/profile.dart';
-import 'package:uractor/search.dart';
-import 'package:uractor/main.dart';
-import 'package:uractor/movie_result.dart';
-import 'package:uractor/tvshow_result.dart';
+import 'playlists.dart';
+import 'profile.dart';
+import 'search.dart';
+import 'main.dart';
+import 'movie_result.dart';
+import 'tvshow_result.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
