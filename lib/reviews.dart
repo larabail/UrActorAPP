@@ -1,14 +1,14 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers, use_key_in_widget_constructors, must_be_immutable, non_constant_identifier_names
 
 import 'package:flutter/material.dart';
-import 'package:uractor/playlists.dart';
-import 'package:uractor/profile.dart';
-import 'package:uractor/search.dart';
-import 'package:uractor/movie_result.dart';
-import 'package:uractor/tvshow_result.dart';
+import 'playlists.dart';
+import 'profile.dart';
+import 'search.dart';
+import 'movie_result.dart';
+import 'tvshow_result.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:uractor/main.dart';
+import 'main.dart';
 
 bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
   String jsonString = json.encode(map);

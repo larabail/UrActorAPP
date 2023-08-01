@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:uractor/movie_result.dart';
-import 'package:uractor/main.dart';
+import 'movie_result.dart';
+import 'main.dart';
 
 final myController = TextEditingController(text: "");
 

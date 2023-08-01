@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
-import 'package:uractor/list_result.dart';
-import 'package:uractor/playlists.dart';
+import 'list_result.dart';
+import 'playlists.dart';
 import 'dart:convert';
 import 'main.dart';
 

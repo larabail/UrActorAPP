@@ -1,13 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:uractor/profile.dart';
-import 'package:uractor/search.dart';
-import 'package:uractor/main.dart';
-import 'package:uractor/movie_result.dart';
-import 'package:uractor/tvshow_result.dart';
+import 'profile.dart';
+import 'search.dart';
+import 'main.dart';
+import 'movie_result.dart';
+import 'tvshow_result.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:uractor/playlists.dart';
+import 'playlists.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
 final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
