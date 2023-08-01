@@ -1,4 +1,4 @@
-// ignore_for_file: no_leading_underscores_for_local_identifiers
+// ignore_for_file: no_leading_underscores_for_local_identifiers, use_key_in_widget_constructors, must_be_immutable, non_constant_identifier_names
 
 import 'package:flutter/material.dart';
 import 'package:uractor/playlists.dart';
@@ -129,7 +129,6 @@ class Recommendations extends StatelessWidget {
                           'Opinion: ${review["Opinion"]}',
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            color: Colors.white,
                             fontSize: 15,
                             wordSpacing: 2,
                             height: 1.5,
@@ -139,7 +138,6 @@ class Recommendations extends StatelessWidget {
                           'Rating: ${review["Rating"]}',
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            color: Colors.white,
                             fontSize: 15,
                             wordSpacing: 2,
                             height: 1.5,

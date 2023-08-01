@@ -154,8 +154,7 @@ class _CalendarState extends State<Calendar> {
             builder: (_) {
               return SingleChildScrollView(
                 child: Container(
-                  color: const Color(0xFF121212),
-                  height: MediaQuery.of(context).size.height * 0.4,
+                  height: MediaQuery.of(context).size.height * 0.375,
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
                     child: Column(
@@ -163,9 +162,7 @@ class _CalendarState extends State<Calendar> {
                         Text(
                           "Movies seen on ${_selectedDay}",
                           style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold),
+                              fontSize: 20, fontWeight: FontWeight.bold),
                         ),
                         Expanded(
                           // height: MediaQuery.of(context).size.height * 0.3,
@@ -198,7 +195,7 @@ class _CalendarState extends State<Calendar> {
                                               child: Container(
                                                 margin:
                                                     const EdgeInsets.fromLTRB(
-                                                        10.0, 5.0, 10.0, 0),
+                                                        5.0, 7.0, 5.0, 0),
                                                 width: MediaQuery.of(context)
                                                         .size
                                                         .width *
@@ -259,38 +256,22 @@ class _CalendarState extends State<Calendar> {
           height: 54,
         )),
       ),
-      body: Column(
-        children: [
-          TableCalendar(
-            firstDay: DateTime.utc(1990, 10, 16),
-            lastDay: DateTime.utc(2030, 3, 14),
-            focusedDay: DateTime.now(),
-            headerStyle: const HeaderStyle(
-              formatButtonVisible: false,
-              titleCentered: true,
-            ),
-            eventLoader: (date) {
-              final eventsOnDate =
-                  events[date.toString().substring(0, 10)] ?? [];
-              return eventsOnDate.map((event) => event['title'] ?? '').toList();
-            },
-            onDaySelected: _onDaySelected,
+      body: FractionallySizedBox(
+        heightFactor: 0.9,
+        child: TableCalendar(
+          firstDay: DateTime.utc(1990, 10, 16),
+          lastDay: DateTime.utc(2030, 3, 14),
+          focusedDay: DateTime.now(),
+          headerStyle: const HeaderStyle(
+            formatButtonVisible: false,
+            titleCentered: true,
           ),
-          if (moviesOnDay.isNotEmpty)
-            Expanded(
-              child: ListView.builder(
-                itemCount: moviesOnDay.length,
-                itemBuilder: (BuildContext context, int index) {
-                  return ListTile(
-                    title: Text(
-                      moviesOnDay[index]['title'],
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  );
-                },
-              ),
-            ),
-        ],
+          eventLoader: (date) {
+            final eventsOnDate = events[date.toString().substring(0, 10)] ?? [];
+            return eventsOnDate.map((event) => event['title'] ?? '').toList();
+          },
+          onDaySelected: _onDaySelected,
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openDatePickerDialog,
@@ -423,7 +404,6 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.black,
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -436,7 +416,6 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
                 ),
               ),
             ),
@@ -450,9 +429,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                   }
                   return null;
                 },
-                style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
-                  labelStyle: TextStyle(color: Colors.white),
                   labelText: 'Name of The Movie You\'d Like to Add',
                 ),
                 onChanged: (value) {
