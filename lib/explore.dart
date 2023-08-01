@@ -848,7 +848,7 @@ class _ExploreState extends State<Explore> {
       // Replace this with your actual filters UI
       return IconButton(
         color: Colors.white,
-        icon: Icon(isFilterOpen ? Icons.close : Icons.filter_list),
+        icon: Icon(isFilterOpen ? Icons.check : Icons.filter_list),
         onPressed: toggleFilter,
       );
     }
