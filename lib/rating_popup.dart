@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:uractor/list_add_popup.dart';
 import 'movie_result.dart';
 import 'main.dart';
 

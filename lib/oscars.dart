@@ -19,7 +19,6 @@ Future<List<Map<String, dynamic>>> parseJSONFile() async {
     Map items = jsonDecode(jsonString);
     Map peopleOscars = {};
     for (String person_id in items.keys) {
-      Map person_to_add = {};
       link = 'https://api.themoviedb.org/3/person/';
       final response = await http.get(
           Uri.parse('${link}${items[person_id]['tmdb_id']}${api_key_actor}'));

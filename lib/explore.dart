@@ -155,7 +155,6 @@ void markWatched(String id, String title, BuildContext context) async {
   final snapshot = await FirebaseFirestore.instance.collection(uid).get();
   for (var doc in snapshot.docs) {
     if (doc.id == 'Calendar') {
-      final events = doc.data();
       if (!dontAskCalendar) {
           addtoCalendar(id, title, today, context);
         }
@@ -991,6 +990,7 @@ class _ExploreState extends State<Explore> {
               ),
             );
           }
+          return null;
         },
       );
     }

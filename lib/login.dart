@@ -175,7 +175,7 @@ class Login extends StatelessWidget {
                       if (formKey.currentState!.validate()) {
                         formKey.currentState!.save();
                         try {
-                          final credential = await FirebaseAuth.instance
+                          await FirebaseAuth.instance
                               .signInWithEmailAndPassword(
                                   email: email, password: password)
                               .then((_) {
