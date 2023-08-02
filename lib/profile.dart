@@ -146,7 +146,8 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                       const SizedBox(
                         width: 16,
                       ),
-                      const Icon(Icons.nightlight_round, color: Colors.blueAccent),
+                      const Icon(Icons.nightlight_round,
+                          color: Colors.blueAccent),
                     ],
                   );
                 },
@@ -180,7 +181,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
             ),
             IconButton(
               icon: const Icon(Icons.logout_outlined),
-              color: Color.fromARGB(255, 232, 85, 75),
+              color: const Color.fromARGB(255, 232, 85, 75),
               onPressed: () async {
                 await FirebaseAuth.instance.signOut();
                 email = "";
@@ -194,11 +195,19 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
             ),
             ElevatedButton(
                 style: ButtonStyle(
-                  backgroundColor:
-                      MaterialStateProperty.all<Color>(const Color.fromARGB(255, 242, 111, 102)),
+                  backgroundColor: MaterialStateProperty.all<Color>(
+                      const Color.fromARGB(255, 242, 111, 102)),
                 ),
-                onPressed: () {},
-                child: const Text('Delete Account', style: TextStyle(color: Color.fromARGB(255, 130, 9, 0)),)),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertButtonDialogue(),
+                  );
+                },
+                child: const Text(
+                  'Delete Account',
+                  style: TextStyle(color: Color.fromARGB(255, 130, 9, 0)),
+                )),
           ]),
         ),
       ),
@@ -251,6 +260,71 @@ Future<List<Map>> topMovies() async {
     i++;
   }
   return movies;
+}
+
+class AlertButtonDialogue extends StatelessWidget {
+  TextEditingController passwordController = TextEditingController();
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Delete Account'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'Are you sure you want to delete your account? This action will delete all your information.',
+            style: TextStyle(color: Colors.red),
+          ),
+          TextField(
+            controller: passwordController,
+            obscureText: true,
+            decoration: const InputDecoration(
+              hintText: "Enter your password",
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        ElevatedButton(
+          onPressed: () async {
+            CollectionReference collectionRef =
+                FirebaseFirestore.instance.collection(uid);
+            QuerySnapshot snapshot = await collectionRef.get();
+            for (DocumentSnapshot docSnapshot in snapshot.docs) {
+              await docSnapshot.reference.delete();
+            }
+            User? user = FirebaseAuth.instance.currentUser;
+            AuthCredential credential = EmailAuthProvider.credential(
+              email: user!.email as String,
+              password: passwordController
+                  .text, // Replace 'user_password' with the user's password
+            );
+            await user.reauthenticateWithCredential(credential);
+
+            await user.delete();
+
+            email = "";
+            Navigator.pop(context);
+            Navigator.popUntil(context, (route) => route.isFirst);
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => Login()),
+            );
+          },
+          style: ButtonStyle(
+            backgroundColor: MaterialStateProperty.all(Colors.red),
+          ),
+          child: const Text('Delete'),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context); // Close the dialog
+          },
+          child: const Text('Cancel'),
+        ),
+      ],
+    );
+  }
 }
 
 class Profile extends StatefulWidget {
