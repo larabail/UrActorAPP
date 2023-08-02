@@ -25,11 +25,8 @@ class InfoButtonDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color.fromARGB(
-              255, 23, 20, 20), // change the color of dialog window here
           borderRadius: BorderRadius.circular(10.0),
         ),
         padding: const EdgeInsets.all(25.0),
@@ -274,7 +271,7 @@ class ListResult extends StatelessWidget {
                                 builder: (context) => InfoButtonDialog(),
                               );
                             },
-                            icon: const Icon(Icons.more_vert),
+                            icon: const Icon(Icons.more_vert, color: Colors.white,),
                           ),
                         ])),
                   ),
