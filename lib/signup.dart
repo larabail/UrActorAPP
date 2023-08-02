@@ -146,6 +146,7 @@ class SignUp extends StatelessWidget {
                             const Map<String, dynamic> FavActors = {};
                             const Map<String, dynamic> Calendar = {};
                             const Map<String, dynamic> Rewatched = {};
+                            const Map<String, dynamic> Settings = {};
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("Movies")
@@ -186,9 +187,13 @@ class SignUp extends StatelessWidget {
                                 .collection(credential.user!.uid)
                                 .doc("Rewatched")
                                 .set(Rewatched);
+                            FirebaseFirestore.instance
+                                .collection(credential.user!.uid)
+                                .doc("Settings")
+                                .set(Settings);
                           });
                           try {
-                            final credential = await FirebaseAuth.instance
+                            await FirebaseAuth.instance
                                 .signInWithEmailAndPassword(
                                     email: email, password: password)
                                 .then((_) {
