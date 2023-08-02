@@ -138,7 +138,7 @@ class SignUp extends StatelessWidget {
                             const Map<String, dynamic> FavActors = {};
                             const Map<String, dynamic> Calendar = {};
                             const Map<String, dynamic> Rewatched = {};
-                            const Map<String, dynamic> Settings = {};
+                            const Map<String, dynamic> Settings = {"darkMode": true, "dontAskCalendar": false};
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("Movies")

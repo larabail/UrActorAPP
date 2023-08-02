@@ -93,6 +93,12 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
     country = element.isoCode;
   }
 
+  Future<void> updateSettings(element, newValue) async {
+    var userDoc = FirebaseFirestore.instance.collection(uid).doc("Settings");
+    settings[element] = newValue;
+    await userDoc.set(settings as Map<String, dynamic>);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -141,6 +147,8 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                         value: themeProvider.isDarkMode,
                         onChanged: (value) {
                           themeProvider.toggleDarkMode();
+                          updateSettings(
+                              "darkMode", themeProvider.isDarkMode);
                         },
                       ),
                       const SizedBox(
@@ -170,6 +178,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                   onChanged: (value) {
                     setState(() {
                       dontAskCalendar = !dontAskCalendar;
+                      updateSettings("dontAskCalendar", dontAskCalendar);
                     });
                   },
                 ),
