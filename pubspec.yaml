@@ -73,6 +73,7 @@ flutter:
     - assets/
     - assets/round_logo.png
     - assets/main_profile.png
+    - assets/logo_character.png
     - assets/watchlist_after.png
     - assets/watchlist_before.png
     - assets/seen_before.png

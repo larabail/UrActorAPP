@@ -73,8 +73,10 @@ class MyApp extends StatelessWidget {
                       color: Color(0xFF121212),
                     ),
                     switchTheme: SwitchThemeData(
-                      thumbColor: MaterialStateProperty.all<Color>(Color.fromARGB(248, 241, 105, 56)),
-                      trackColor: MaterialStateProperty.all<Color>(Color.fromARGB(250, 224, 190, 78)),
+                      thumbColor: MaterialStateProperty.all<Color>(
+                          Color.fromARGB(248, 241, 105, 56)),
+                      trackColor: MaterialStateProperty.all<Color>(
+                          Color.fromARGB(250, 224, 190, 78)),
                     ),
                     indicatorColor: Color.fromARGB(250, 224, 190, 78),
                     tabBarTheme: const TabBarTheme(
@@ -90,6 +92,9 @@ class MyApp extends StatelessWidget {
                     ),
                   )
                 : ThemeData.light().copyWith(
+                    appBarTheme: const AppBarTheme(
+                      color: Colors.white,
+                    ),
                     tabBarTheme: const TabBarTheme(
                       labelColor: Color.fromARGB(255, 150, 127, 52),
                       unselectedLabelColor: Colors
@@ -97,8 +102,10 @@ class MyApp extends StatelessWidget {
                       indicatorColor: Color.fromARGB(255, 150, 127, 52),
                     ),
                     switchTheme: SwitchThemeData(
-                      thumbColor: MaterialStateProperty.all<Color>(Color.fromARGB(248, 241, 105, 56)),
-                      trackColor: MaterialStateProperty.all<Color>(Color.fromARGB(250, 224, 190, 78)),
+                      thumbColor: MaterialStateProperty.all<Color>(
+                          Color.fromARGB(248, 241, 105, 56)),
+                      trackColor: MaterialStateProperty.all<Color>(
+                          Color.fromARGB(250, 224, 190, 78)),
                     ),
                     indicatorColor: Color.fromARGB(255, 150, 127, 52),
                     bottomNavigationBarTheme:
@@ -367,7 +374,7 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Center(
             child: Image.asset(
-          'assets/logo.png',
+          'assets/logo_character.png',
           height: 54,
         )),
       ),

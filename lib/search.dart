@@ -113,9 +113,10 @@ class _SearchResultState extends State<Search> {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Center(
           child: Image.asset(
-            'assets/logo.png',
+          'assets/logo_character.png',
             height: 54,
           ),
         ),
@@ -145,6 +146,7 @@ class _SearchResultState extends State<Search> {
                         children: [
                           TextField(
                             decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.search),
                               hintText: 'Enter name of actor...',
                               hintStyle: TextStyle(color: Colors.grey),
                               enabledBorder: UnderlineInputBorder(
@@ -388,6 +390,7 @@ class _SearchResultState extends State<Search> {
                         children: [
                           TextField(
                             decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.search),
                               hintText: 'Enter name of movie...',
                               hintStyle: TextStyle(color: Colors.grey),
                               enabledBorder: UnderlineInputBorder(
@@ -643,6 +646,7 @@ class _SearchResultState extends State<Search> {
                         children: [
                           TextField(
                             decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.search),
                               hintText: 'Enter name of show...',
                               hintStyle: TextStyle(color: Colors.grey),
                               enabledBorder: UnderlineInputBorder(
