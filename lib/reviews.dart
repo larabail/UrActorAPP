@@ -1,6 +1,8 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers, use_key_in_widget_constructors, must_be_immutable, non_constant_identifier_names
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/rating_popup.dart';
 import 'playlists.dart';
 import 'profile.dart';
 import 'search.dart';
@@ -20,11 +22,65 @@ bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
   return false;
 }
 
-class Recommendations extends StatelessWidget {
+class Recommendations extends StatefulWidget {
+  Recommendations();
+
+  @override
+  _RecommendationsState createState() => _RecommendationsState();
+}
+
+class _RecommendationsState extends State<Recommendations> {
   final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
   final String imgLink = 'https://image.tmdb.org/t/p/w500/';
   String link = "https://api.themoviedb.org/3/movie/";
   List<Map<String, dynamic>> movies = [];
+  void editReview(id, context) {
+    reviewId = id.toString();
+    reviewInfo = reviews[id.toString()];
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return RatingDialog();
+      },
+    );
+  }
+
+  Future<void> deleteReview(id, context) async {
+    reviews.remove(id.toString());
+    reviewInfo = {};
+    reviewed = false;
+    await FirebaseFirestore.instance
+        .collection(uid)
+        .get()
+        .then((QuerySnapshot querySnapshot) async {
+      for (var doc in querySnapshot.docs) {
+        if (doc.id == "Reviews") {
+          Map allreviews = doc.data() as Map;
+          List reviewsInList = allreviews["Seen"] as List;
+          List tempReviewsInList = [];
+          for (var element in reviewsInList) {
+            element = element as Map;
+            if (element.keys.toList()[0].toString() != id.toString()) {
+              tempReviewsInList.add(element);
+            }
+          }
+          final userDoc =
+              FirebaseFirestore.instance.collection(uid).doc("Reviews");
+          await userDoc.update({'Seen': tempReviewsInList});
+          reviews = {};
+          for (var element in tempReviewsInList) {
+            element = element as Map;
+            reviews[element.keys.toList()[0]] =
+                element[element.keys.toList()[0]];
+          }
+          setState(() {
+            reviews = reviews;
+          });
+        }
+      }
+    });
+  }
+
   Future<Map<String, dynamic>> getData(id, type) async {
     Map<String, dynamic> data = {};
     if (type == "TVShows") {
@@ -87,27 +143,51 @@ class Recommendations extends StatelessWidget {
               title: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                      width: MediaQuery.of(context).size.width * 0.28,
-                      height: MediaQuery.of(context).size.height * 0.18,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(27),
-                        image: DecorationImage(
-                          image: NetworkImage(
-                            snapshot.data!['poster'],
+                    GestureDetector(
+                      child: Container(
+                        margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
+                        width: MediaQuery.of(context).size.width * 0.28,
+                        height: MediaQuery.of(context).size.height * 0.18,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(27),
+                          image: DecorationImage(
+                            image: NetworkImage(
+                              snapshot.data!['poster'],
+                            ),
+                            fit: BoxFit.fitWidth,
                           ),
-                          fit: BoxFit.fitWidth,
                         ),
                       ),
+                      onTap: () {
+                        if (snapshot.data!['type'] == "Movies") {
+                          movieResult = [
+                            snapshot.data!['id'],
+                            snapshot.data!['title'],
+                            snapshot.data!['type'],
+                          ];
+                        } else {
+                          tvShowResult = [
+                            snapshot.data!['id'],
+                            snapshot.data!['title'],
+                            snapshot.data!['type'],
+                          ];
+                        }
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  snapshot.data!['type'] == "Movies"
+                                      ? MovieResult()
+                                      : TVShowResult()),
+                        );
+                      },
                     ),
                     Text(
                       snapshot.data!["title"],
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        color: Colors.blue,
                         fontSize: 15,
-                        wordSpacing: 2,
+                        wordSpacing: 1,
                         height: 1.5,
                       ),
                     ),
@@ -143,35 +223,24 @@ class Recommendations extends StatelessWidget {
                             height: 1.5,
                           ),
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        ButtonBar(
+                          alignment: MainAxisAlignment.center,
                           children: [
-                            ElevatedButton(
+                            IconButton(
                                 onPressed: () {
-                                  // Handle the click event here
-                                  if (snapshot.data!['type'] == "Movies") {
-                                    movieResult = [
-                                      snapshot.data!['id'],
-                                      snapshot.data!['title'],
-                                      snapshot.data!['type'],
-                                    ];
-                                  } else {
-                                    tvShowResult = [
-                                      snapshot.data!['id'],
-                                      snapshot.data!['title'],
-                                      snapshot.data!['type'],
-                                    ];
-                                  }
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            snapshot.data!['type'] == "Movies"
-                                                ? MovieResult()
-                                                : TVShowResult()),
-                                  );
+                                  editReview(snapshot.data!["id"], context);
                                 },
-                                child: const Text('Info')),
+                                icon: const Icon(Icons.edit)),
+                            // IconButton(
+                            //     onPressed: () {
+                            //       // Handle the click event here
+                            //     },
+                            //     icon: const Icon(Icons.info)),
+                            IconButton(
+                                onPressed: () {
+                                  deleteReview(snapshot.data!["id"], context);
+                                },
+                                icon: const Icon(Icons.delete)),
                           ],
                         ),
                       ],

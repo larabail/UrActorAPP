@@ -1274,20 +1274,20 @@ class _MovieResultState extends State<MovieResult> {
                                     ),
                                     Row(
                                       mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
+                                          MainAxisAlignment.center,
                                       children: [
-                                        ElevatedButton(
+                                        IconButton(
                                             onPressed: () {
                                               editReview(snapshot.data!["id"],
                                                   context);
                                             },
-                                            child: const Text('Edit Review')),
-                                        ElevatedButton(
+                                            icon: const Icon(Icons.edit)),
+                                        IconButton(
                                             onPressed: () {
                                               deleteReview(snapshot.data!["id"],
                                                   context);
                                             },
-                                            child: const Text('Delete Review')),
+                                            icon: const Icon(Icons.delete)),
                                       ],
                                     ),
                                   ],
