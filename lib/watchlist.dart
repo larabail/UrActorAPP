@@ -78,9 +78,7 @@ class Watchlist extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
         title: Center(
           child: Image.asset(
             'assets/logo.png',
@@ -95,7 +93,6 @@ class Watchlist extends StatelessWidget {
             child: Text(
               "Your Watchlist",
               style: TextStyle(
-                color: Colors.white,
                 fontSize: 24.0,
                 fontWeight: FontWeight.bold,
               ),
@@ -596,7 +593,6 @@ class Watchlist extends StatelessWidget {
         selectedItemColor: Colors.grey,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -612,7 +608,6 @@ class Watchlist extends StatelessWidget {
           ),
           BottomNavigationBarItem(
             label: 'Profile',
-            backgroundColor: Color(0xFF121212),
             icon: Icon(Icons.person),
           ),
         ],

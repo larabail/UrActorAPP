@@ -114,7 +114,7 @@ class AlertButtonDialogue extends StatelessWidget {
           style: ButtonStyle(
             backgroundColor: MaterialStateProperty.all(Colors.red),
           ),
-          child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          child: const Text('Delete'),
         ),
         TextButton(
           onPressed: () {
@@ -180,7 +180,7 @@ class ListResult extends StatelessWidget {
     int selectedIndex = 0;
 
     final List<Widget> pages = [
-      const MyApp(),
+      MyApp(),
       Search(),
       Playlists(),
       Profile(),
@@ -198,9 +198,7 @@ class ListResult extends StatelessWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: const Color(0xFF121212),
         appBar: AppBar(
-          backgroundColor: const Color(0xFF121212),
           title: Center(
               child: Image.asset(
             'assets/logo.png',
@@ -248,7 +246,6 @@ class ListResult extends StatelessWidget {
                       child: Text(
                         list['Name'],
                         style: const TextStyle(
-                          color: Colors.white,
                           fontSize: 30,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.5,
@@ -277,7 +274,6 @@ class ListResult extends StatelessWidget {
                               );
                             },
                             icon: const Icon(Icons.more_vert),
-                            color: Colors.white,
                           ),
                         ])),
                   ),
@@ -1242,7 +1238,6 @@ class ListResult extends StatelessWidget {
           selectedItemColor: Colors.grey,
           unselectedItemColor: Colors.grey,
           type: BottomNavigationBarType.fixed,
-          backgroundColor: const Color(0xFF121212),
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home),
@@ -1258,7 +1253,6 @@ class ListResult extends StatelessWidget {
             ),
             BottomNavigationBarItem(
               label: 'Profile',
-              backgroundColor: Color(0xFF121212),
               icon: Icon(Icons.person),
             ),
           ],

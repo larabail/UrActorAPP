@@ -197,7 +197,7 @@ class Recommendations extends StatelessWidget {
     int selectedIndex = 0;
 
     final List<Widget> pages = [
-      const MyApp(),
+      MyApp(),
       Search(),
       Playlists(),
       Profile(),
@@ -213,9 +213,7 @@ class Recommendations extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
         title: Center(
             child: Image.asset(
           'assets/logo.png',
@@ -256,7 +254,6 @@ class Recommendations extends StatelessWidget {
         selectedItemColor: Colors.grey,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -272,7 +269,6 @@ class Recommendations extends StatelessWidget {
           ),
           BottomNavigationBarItem(
             label: 'Profile',
-            backgroundColor: Color(0xFF121212),
             icon: Icon(Icons.person),
           ),
         ],

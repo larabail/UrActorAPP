@@ -538,7 +538,7 @@ class _ExploreState extends State<Explore> {
     int selectedIndex = 0;
 
     final List<Widget> pages = [
-      const MyApp(),
+      MyApp(),
       Search(),
       Playlists(),
       Profile(),

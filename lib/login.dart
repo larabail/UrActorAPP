@@ -8,8 +8,33 @@ import 'package:firebase_auth/firebase_auth.dart';
 class Login extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    int selectedIndex = 0;
-
+    uid = '';
+    country = '';
+    calendar = {};
+    allMovies = [];
+    favActors = [];
+    favDirectors = [];
+    favMovies = [];
+    favTVShows = [];
+    seenMovies = [];
+    idsExplorePage = [];
+    seenTVShows = [];
+    watchlist = [];
+    watchlistTVShows = [];
+    movieResult = [];
+    tvShowResult = [];
+    reviews = {};
+    rewatchedMovies = {};
+    playlists = {};
+    personResult = {};
+    oscars = {};
+    favsPage = [];
+    favsPageTVShows = [];
+    seenPage = [];
+    seenPageTVShows = [];
+    watchPageTVShows = [];
+    watchPage = [];
+    oscarsPage = [];
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     late String email, password;
 
@@ -77,9 +102,7 @@ class Login extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
         title: Center(
             child: Image.asset(
           'assets/logo.png',
@@ -98,18 +121,16 @@ class Login extends StatelessWidget {
                 children: <Widget>[
                   TextFormField(
                     keyboardType: TextInputType.emailAddress,
-                    style: const TextStyle(color: Colors.white),
                     decoration: const InputDecoration(
                       labelText: 'Email',
-                      labelStyle: TextStyle(color: Colors.white),
                       hintText: 'Your Email',
                       hintStyle:
                           TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white, width: 1.0),
+                        borderSide: BorderSide(width: 1.0),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white, width: 2.0),
+                        borderSide: BorderSide(width: 2.0),
                       ),
                     ),
                     validator: (String? value) {
@@ -124,19 +145,17 @@ class Login extends StatelessWidget {
                   ),
                   const SizedBox(height: 16.0),
                   TextFormField(
-                    style: const TextStyle(color: Colors.white),
                     obscureText: true,
                     decoration: const InputDecoration(
                       labelText: 'Password',
-                      labelStyle: TextStyle(color: Colors.white),
                       hintText: 'Your Password',
                       hintStyle:
                           TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white, width: 1.0),
+                        borderSide: BorderSide(width: 1.0),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white, width: 2.0),
+                        borderSide: BorderSide(width: 2.0),
                       ),
                     ),
                     validator: (String? value) {
@@ -162,8 +181,7 @@ class Login extends StatelessWidget {
                               .then((_) {
                             Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(
-                                  builder: (context) => const MyApp()),
+                              MaterialPageRoute(builder: (context) => MyApp()),
                             );
                           });
                         } on FirebaseAuthException catch (e) {
@@ -180,18 +198,16 @@ class Login extends StatelessWidget {
                   GestureDetector(
                     child: const Text(
                       'Don\'t have an account? Sign up',
-                      style: TextStyle(color: Colors.white),
                     ),
                     onTap: () {
                       Navigator.pushReplacement(context,
                           MaterialPageRoute(builder: (context) => SignUp()));
                     },
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   GestureDetector(
                     child: const Text(
                       'Forgot Password?',
-                      style: TextStyle(color: Colors.white),
                     ),
                     onTap: () {
                       resetPassword(email);

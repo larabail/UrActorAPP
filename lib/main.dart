@@ -15,6 +15,8 @@ import 'watchlist.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'theme_provider.dart';
 
 String uid = '';
 String email = '';
@@ -50,24 +52,37 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'UrActor',
-      theme: ThemeData.dark().copyWith(
-        // Customize the background color for dark mode
-        scaffoldBackgroundColor: const Color(
-            0xFF121212), // Change this color to your desired background color
-        // Add any other customizations to the dark theme here
-        // For example, you can change the primaryColor, accentColor, etc.
+    return ChangeNotifierProvider(
+      create: (context) => themeProvider,
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'UrActor',
+            theme: themeProvider.isDarkMode
+                ? ThemeData.dark().copyWith(
+                    scaffoldBackgroundColor: const Color(0xFF121212),
+                    primaryColor: const Color(0xFF121212),
+                    appBarTheme: const AppBarTheme(
+                      color: Color(0xFF121212),
+                    ),
+                    bottomNavigationBarTheme:
+                        const BottomNavigationBarThemeData(
+                      backgroundColor: Color(0xFF121212),
+                    ),
+                  )
+                : ThemeData.light().copyWith(
+                    primaryColor: const Color(0xFF121212),
+                  ),
+            home: const MyHomePage(title: 'Home'),
+          );
+        },
       ),
-      home: const MyHomePage(title: 'Home'),
     );
   }
 }
@@ -230,7 +245,7 @@ class _MyHomePageState extends State<MyHomePage> {
     int selectedIndex = 0;
 
     final List<Widget> pages = [
-      const MyApp(),
+      MyApp(),
       Search(),
       Playlists(),
       Profile(),
@@ -318,9 +333,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ],
     );
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
         title: Center(
             child: Image.asset(
           'assets/logo.png',
@@ -513,7 +526,6 @@ class _MyHomePageState extends State<MyHomePage> {
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -529,7 +541,6 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           BottomNavigationBarItem(
             label: 'Profile',
-            backgroundColor: Color(0xFF121212),
             icon: Icon(Icons.person),
           ),
         ],
