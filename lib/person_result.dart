@@ -236,9 +236,7 @@ class _PersonResultState extends State<PersonResult> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: Color(0xFF121212),
         title: Center(
             child: Image.asset(
           'assets/logo.png',
@@ -302,11 +300,9 @@ class _PersonResultState extends State<PersonResult> {
                     ),
                   ),
                   Center(
-                    child: Container(
-                      child: Text(
-                        snapshot.data!['name'],
-                        style: TextStyle(color: Colors.white, fontSize: 30),
-                      ),
+                    child: Text(
+                      snapshot.data!['name'],
+                      style: const TextStyle(fontSize: 30),
                     ),
                   ),
                   DefaultTabController(
@@ -314,12 +310,14 @@ class _PersonResultState extends State<PersonResult> {
                     child: Column(
                       children: [
                         const TabBar(
+                          labelColor: null,
+                          unselectedLabelColor: null,
                           tabs: [
                             Tab(text: 'As Part of the Cast'),
                             Tab(text: 'As Part of the Crew'),
                           ],
                         ),
-                        Container(
+                        SizedBox(
                           height: MediaQuery.of(context).size.height * 0.46,
                           child: TabBarView(
                             children: [
@@ -860,10 +858,7 @@ class _PersonResultState extends State<PersonResult> {
         },
       ),
       bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.grey,
-        unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -879,7 +874,6 @@ class _PersonResultState extends State<PersonResult> {
           ),
           BottomNavigationBarItem(
             label: 'Profile',
-            backgroundColor: Color(0xFF121212),
             icon: Icon(Icons.person),
           ),
         ],
@@ -928,7 +922,7 @@ class _PersonResultState extends State<PersonResult> {
                   height: MediaQuery.of(context).size.height * 0.2,
                 ),
                 Padding(
-                  padding: EdgeInsets.fromLTRB(15, 0, 0, 0),
+                  padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
                   child: Container(
                     height: 20.0,
                     width: MediaQuery.of(context).size.width * 0.26,
@@ -939,7 +933,6 @@ class _PersonResultState extends State<PersonResult> {
                           Text(
                             "${movie['character']}",
                             style: const TextStyle(
-                              color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
@@ -987,8 +980,8 @@ class _PersonResultState extends State<PersonResult> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color.fromARGB(255, 0, 0, 0).withOpacity(0.85),
-                  Color.fromARGB(0, 255, 255, 255).withOpacity(0),
+                  const Color.fromARGB(255, 0, 0, 0).withOpacity(0.85),
+                  const Color.fromARGB(0, 255, 255, 255).withOpacity(0),
                 ],
               ),
             ),
@@ -1012,7 +1005,7 @@ class _PersonResultState extends State<PersonResult> {
                   height: MediaQuery.of(context).size.height * 0.14,
                 ),
                 Padding(
-                  padding: EdgeInsets.fromLTRB(15, 0, 0, 0),
+                  padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
                   child: Container(
                     height: 20.0,
                     width: MediaQuery.of(context).size.width * 0.26,
@@ -1023,7 +1016,6 @@ class _PersonResultState extends State<PersonResult> {
                           Text(
                             "${movie['character']}",
                             style: const TextStyle(
-                              color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
@@ -1065,7 +1057,7 @@ class _PersonResultState extends State<PersonResult> {
                   height: MediaQuery.of(context).size.height * 0.2,
                 ),
                 Padding(
-                  padding: EdgeInsets.fromLTRB(15, 0, 0, 0),
+                  padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
                   child: Container(
                     height: 20.0,
                     width: MediaQuery.of(context).size.width * 0.26,
@@ -1076,7 +1068,6 @@ class _PersonResultState extends State<PersonResult> {
                           Text(
                             "${movie['job']}",
                             style: const TextStyle(
-                              color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
@@ -1124,8 +1115,8 @@ class _PersonResultState extends State<PersonResult> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color.fromARGB(255, 0, 0, 0).withOpacity(0.75),
-                  Color.fromARGB(0, 255, 255, 255).withOpacity(0),
+                  const Color.fromARGB(255, 0, 0, 0).withOpacity(0.75),
+                  const Color.fromARGB(0, 255, 255, 255).withOpacity(0),
                 ],
               ),
             ),
@@ -1149,7 +1140,7 @@ class _PersonResultState extends State<PersonResult> {
                   height: MediaQuery.of(context).size.height * 0.14,
                 ),
                 Padding(
-                  padding: EdgeInsets.fromLTRB(15, 0, 0, 0),
+                  padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
                   child: Container(
                     height: 20.0,
                     width: MediaQuery.of(context).size.width * 0.26,
@@ -1160,7 +1151,6 @@ class _PersonResultState extends State<PersonResult> {
                           Text(
                             "${movie['job']}",
                             style: const TextStyle(
-                              color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),

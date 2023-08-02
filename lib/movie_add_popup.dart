@@ -96,7 +96,6 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.black,
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -109,7 +108,6 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
                 ),
               ),
             ),
@@ -123,9 +121,7 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
                   }
                   return null;
                 },
-                style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
-                  labelStyle: TextStyle(color: Colors.white),
                   labelText: 'Name of The Movie You\'d Like to Add',
                 ),
                 onChanged: (value) {

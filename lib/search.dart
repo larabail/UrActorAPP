@@ -92,7 +92,7 @@ class _SearchResultState extends State<Search> {
     }
 
     final List<Widget> pages = [
-      const MyApp(),
+      MyApp(),
       Search(),
       Playlists(),
       Profile(),
@@ -108,9 +108,7 @@ class _SearchResultState extends State<Search> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
         title: Center(
           child: Image.asset(
             'assets/logo.png',
@@ -123,7 +121,8 @@ class _SearchResultState extends State<Search> {
         child: Column(
           children: [
             const TabBar(
-              unselectedLabelColor: Colors.grey,
+              labelColor: null,
+              unselectedLabelColor: null,
               tabs: [
                 Tab(text: 'Person'),
                 Tab(text: 'Movie'),
@@ -148,7 +147,6 @@ class _SearchResultState extends State<Search> {
                                 borderSide: BorderSide(color: Colors.grey),
                               ),
                             ),
-                            style: const TextStyle(color: Colors.white),
                             onChanged: (value) {
                               setState(() {
                                 _searchTermActor = value;
@@ -186,24 +184,20 @@ class _SearchResultState extends State<Search> {
                                   final people = snapshot.data!;
                                   return SizedBox(
                                     width: MediaQuery.of(context).size.width,
-                                    height:
-                                        MediaQuery.of(context).size.height,
+                                    height: MediaQuery.of(context).size.height,
                                     child: ListView.builder(
                                       shrinkWrap: true,
                                       itemCount: (people.length / 3).ceil(),
                                       itemBuilder: (context, index) {
                                         final leftPersonIndex = index * 3;
-                                        final middlePersonIndex =
-                                            index * 3 + 1;
-                                        final rightPersonIndex =
-                                            index * 3 + 2;
+                                        final middlePersonIndex = index * 3 + 1;
+                                        final rightPersonIndex = index * 3 + 2;
                                         final leftPerson =
                                             (leftPersonIndex < people.length)
                                                 ? people[leftPersonIndex]
                                                 : null;
                                         final middlePerson =
-                                            (middlePersonIndex <
-                                                    people.length)
+                                            (middlePersonIndex < people.length)
                                                 ? people[middlePersonIndex]
                                                 : null;
                                         final rightPerson =
@@ -230,10 +224,8 @@ class _SearchResultState extends State<Search> {
                                           } else if (middlePerson[
                                                   'profile_path'] !=
                                               'https://cdn-icons-png.flaticon.com/512/3088/3088765.png') {
-                                            middlePerson['profile_path'] =
-                                                img +
-                                                    middlePerson[
-                                                        'profile_path'];
+                                            middlePerson['profile_path'] = img +
+                                                middlePerson['profile_path'];
                                           }
                                         }
                                         if (rightPerson != null) {
@@ -244,10 +236,8 @@ class _SearchResultState extends State<Search> {
                                           } else if (rightPerson[
                                                   'profile_path'] !=
                                               'https://cdn-icons-png.flaticon.com/512/3088/3088765.png') {
-                                            rightPerson['profile_path'] =
-                                                img +
-                                                    rightPerson[
-                                                        'profile_path'];
+                                            rightPerson['profile_path'] = img +
+                                                rightPerson['profile_path'];
                                           }
                                         }
                                         return Row(
@@ -266,19 +256,17 @@ class _SearchResultState extends State<Search> {
                                                   );
                                                 },
                                                 child: Container(
-                                                  margin: const EdgeInsets
-                                                          .fromLTRB(
-                                                      10.0, 10.0, 5.0, 0),
-                                                  width:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.25,
-                                                  height:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height *
-                                                          0.18,
+                                                  margin:
+                                                      const EdgeInsets.fromLTRB(
+                                                          10.0, 10.0, 5.0, 0),
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.18,
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -308,16 +296,14 @@ class _SearchResultState extends State<Search> {
                                                           .symmetric(
                                                       horizontal: 5.0,
                                                       vertical: 10.0),
-                                                  width:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.25,
-                                                  height:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height *
-                                                          0.18,
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.18,
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -343,19 +329,17 @@ class _SearchResultState extends State<Search> {
                                                   );
                                                 },
                                                 child: Container(
-                                                  margin: const EdgeInsets
-                                                          .fromLTRB(
-                                                      5.0, 10.0, 10.0, 0),
-                                                  width:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.25,
-                                                  height:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height *
-                                                          0.18,
+                                                  margin:
+                                                      const EdgeInsets.fromLTRB(
+                                                          5.0, 10.0, 10.0, 0),
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.18,
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -379,7 +363,6 @@ class _SearchResultState extends State<Search> {
                                   return const Center(
                                     child: Text(
                                       "Failed to load movie details",
-                                      style: TextStyle(color: Colors.white),
                                     ),
                                   );
                                 } else {
@@ -405,7 +388,6 @@ class _SearchResultState extends State<Search> {
                                 borderSide: BorderSide(color: Colors.grey),
                               ),
                             ),
-                            style: const TextStyle(color: Colors.white),
                             onChanged: (value) {
                               setState(() {
                                 _searchTermMovie = value;
@@ -443,24 +425,20 @@ class _SearchResultState extends State<Search> {
                                   final people = snapshot.data!;
                                   return SizedBox(
                                     width: MediaQuery.of(context).size.width,
-                                    height:
-                                        MediaQuery.of(context).size.height,
+                                    height: MediaQuery.of(context).size.height,
                                     child: ListView.builder(
                                       shrinkWrap: true,
                                       itemCount: (people.length / 3).ceil(),
                                       itemBuilder: (context, index) {
                                         final leftPersonIndex = index * 3;
-                                        final middlePersonIndex =
-                                            index * 3 + 1;
-                                        final rightPersonIndex =
-                                            index * 3 + 2;
+                                        final middlePersonIndex = index * 3 + 1;
+                                        final rightPersonIndex = index * 3 + 2;
                                         final leftPerson =
                                             (leftPersonIndex < people.length)
                                                 ? people[leftPersonIndex]
                                                 : null;
                                         final middlePerson =
-                                            (middlePersonIndex <
-                                                    people.length)
+                                            (middlePersonIndex < people.length)
                                                 ? people[middlePersonIndex]
                                                 : null;
                                         final rightPerson =
@@ -475,8 +453,8 @@ class _SearchResultState extends State<Search> {
                                           } else if (leftPerson[
                                                   'poster_path'] !=
                                               'https://cdn-icons-png.flaticon.com/512/3088/3088765.png') {
-                                            leftPerson['poster_path'] = img +
-                                                leftPerson['poster_path'];
+                                            leftPerson['poster_path'] =
+                                                img + leftPerson['poster_path'];
                                           }
                                         }
                                         if (middlePerson != null) {
@@ -487,10 +465,8 @@ class _SearchResultState extends State<Search> {
                                           } else if (middlePerson[
                                                   'poster_path'] !=
                                               'https://cdn-icons-png.flaticon.com/512/3088/3088765.png') {
-                                            middlePerson['poster_path'] =
-                                                img +
-                                                    middlePerson[
-                                                        'poster_path'];
+                                            middlePerson['poster_path'] = img +
+                                                middlePerson['poster_path'];
                                           }
                                         }
                                         if (rightPerson != null) {
@@ -525,19 +501,17 @@ class _SearchResultState extends State<Search> {
                                                   );
                                                 },
                                                 child: Container(
-                                                  margin: const EdgeInsets
-                                                          .fromLTRB(
-                                                      10.0, 10.0, 5.0, 0),
-                                                  width:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.25,
-                                                  height:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height *
-                                                          0.18,
+                                                  margin:
+                                                      const EdgeInsets.fromLTRB(
+                                                          10.0, 10.0, 5.0, 0),
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.18,
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -571,16 +545,14 @@ class _SearchResultState extends State<Search> {
                                                           .symmetric(
                                                       horizontal: 5.0,
                                                       vertical: 10.0),
-                                                  width:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.25,
-                                                  height:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height *
-                                                          0.18,
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.18,
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -610,19 +582,17 @@ class _SearchResultState extends State<Search> {
                                                   );
                                                 },
                                                 child: Container(
-                                                  margin: const EdgeInsets
-                                                          .fromLTRB(
-                                                      5.0, 10.0, 10.0, 0),
-                                                  width:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.25,
-                                                  height:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height *
-                                                          0.18,
+                                                  margin:
+                                                      const EdgeInsets.fromLTRB(
+                                                          5.0, 10.0, 10.0, 0),
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.18,
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -646,7 +616,6 @@ class _SearchResultState extends State<Search> {
                                   return const Center(
                                     child: Text(
                                       "Failed to load movie details",
-                                      style: TextStyle(color: Colors.white),
                                     ),
                                   );
                                 } else {
@@ -672,7 +641,6 @@ class _SearchResultState extends State<Search> {
                                 borderSide: BorderSide(color: Colors.grey),
                               ),
                             ),
-                            style: const TextStyle(color: Colors.white),
                             onChanged: (value) {
                               setState(() {
                                 _searchTermTVShow = value;
@@ -710,24 +678,20 @@ class _SearchResultState extends State<Search> {
                                   final people = snapshot.data!;
                                   return SizedBox(
                                     width: MediaQuery.of(context).size.width,
-                                    height:
-                                        MediaQuery.of(context).size.height,
+                                    height: MediaQuery.of(context).size.height,
                                     child: ListView.builder(
                                       shrinkWrap: true,
                                       itemCount: (people.length / 3).ceil(),
                                       itemBuilder: (context, index) {
                                         final leftPersonIndex = index * 3;
-                                        final middlePersonIndex =
-                                            index * 3 + 1;
-                                        final rightPersonIndex =
-                                            index * 3 + 2;
+                                        final middlePersonIndex = index * 3 + 1;
+                                        final rightPersonIndex = index * 3 + 2;
                                         final leftPerson =
                                             (leftPersonIndex < people.length)
                                                 ? people[leftPersonIndex]
                                                 : null;
                                         final middlePerson =
-                                            (middlePersonIndex <
-                                                    people.length)
+                                            (middlePersonIndex < people.length)
                                                 ? people[middlePersonIndex]
                                                 : null;
                                         final rightPerson =
@@ -742,8 +706,8 @@ class _SearchResultState extends State<Search> {
                                           } else if (leftPerson[
                                                   'poster_path'] !=
                                               'https://cdn-icons-png.flaticon.com/512/3088/3088765.png') {
-                                            leftPerson['poster_path'] = img +
-                                                leftPerson['poster_path'];
+                                            leftPerson['poster_path'] =
+                                                img + leftPerson['poster_path'];
                                           }
                                         }
                                         if (middlePerson != null) {
@@ -754,10 +718,8 @@ class _SearchResultState extends State<Search> {
                                           } else if (middlePerson[
                                                   'poster_path'] !=
                                               'https://cdn-icons-png.flaticon.com/512/3088/3088765.png') {
-                                            middlePerson['poster_path'] =
-                                                img +
-                                                    middlePerson[
-                                                        'poster_path'];
+                                            middlePerson['poster_path'] = img +
+                                                middlePerson['poster_path'];
                                           }
                                         }
                                         if (rightPerson != null) {
@@ -792,19 +754,17 @@ class _SearchResultState extends State<Search> {
                                                   );
                                                 },
                                                 child: Container(
-                                                  margin: const EdgeInsets
-                                                          .fromLTRB(
-                                                      10.0, 10.0, 5.0, 0),
-                                                  width:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.25,
-                                                  height:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height *
-                                                          0.18,
+                                                  margin:
+                                                      const EdgeInsets.fromLTRB(
+                                                          10.0, 10.0, 5.0, 0),
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.18,
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -838,16 +798,14 @@ class _SearchResultState extends State<Search> {
                                                           .symmetric(
                                                       horizontal: 5.0,
                                                       vertical: 10.0),
-                                                  width:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.25,
-                                                  height:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height *
-                                                          0.18,
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.18,
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -877,19 +835,17 @@ class _SearchResultState extends State<Search> {
                                                   );
                                                 },
                                                 child: Container(
-                                                  margin: const EdgeInsets
-                                                          .fromLTRB(
-                                                      5.0, 10.0, 10.0, 0),
-                                                  width:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.25,
-                                                  height:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height *
-                                                          0.18,
+                                                  margin:
+                                                      const EdgeInsets.fromLTRB(
+                                                          5.0, 10.0, 10.0, 0),
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.18,
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -913,7 +869,6 @@ class _SearchResultState extends State<Search> {
                                   return const Center(
                                     child: Text(
                                       "Failed to load movie details",
-                                      style: TextStyle(color: Colors.white),
                                     ),
                                   );
                                 } else {
@@ -938,7 +893,6 @@ class _SearchResultState extends State<Search> {
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -954,7 +908,6 @@ class _SearchResultState extends State<Search> {
           ),
           BottomNavigationBarItem(
             label: 'Profile',
-            backgroundColor: Color(0xFF121212),
             icon: Icon(Icons.person),
           ),
         ],

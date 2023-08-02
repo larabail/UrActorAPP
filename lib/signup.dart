@@ -12,9 +12,7 @@ class SignUp extends StatelessWidget {
     late String email, password, repeatpassword;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
         title: Center(
             child: Image.asset(
           'assets/logo.png',
@@ -33,18 +31,16 @@ class SignUp extends StatelessWidget {
                 children: <Widget>[
                   TextFormField(
                     keyboardType: TextInputType.emailAddress,
-                    style: const TextStyle(color: Colors.white),
                     decoration: const InputDecoration(
                       labelText: 'Email',
-                      labelStyle: TextStyle(color: Colors.white),
                       hintText: 'Your Email',
                       hintStyle:
                           TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white, width: 1.0),
+                        borderSide: BorderSide( width: 1.0),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white, width: 2.0),
+                        borderSide: BorderSide(width: 2.0),
                       ),
                     ),
                     validator: (String? value) {
@@ -59,19 +55,17 @@ class SignUp extends StatelessWidget {
                   ),
                   const SizedBox(height: 16.0),
                   TextFormField(
-                    style: const TextStyle(color: Colors.white),
                     obscureText: true,
                     decoration: const InputDecoration(
                       labelText: 'Password',
-                      labelStyle: TextStyle(color: Colors.white),
                       hintText: 'Your Password',
                       hintStyle:
                           TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white, width: 1.0),
+                        borderSide: BorderSide(width: 1.0),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white, width: 2.0),
+                        borderSide: BorderSide( width: 2.0),
                       ),
                     ),
                     validator: (String? value) {
@@ -89,19 +83,17 @@ class SignUp extends StatelessWidget {
                   ),
                   const SizedBox(height: 16.0),
                   TextFormField(
-                    style: const TextStyle(color: Colors.white),
                     obscureText: true,
                     decoration: const InputDecoration(
                       labelText: 'Repeat Password',
-                      labelStyle: TextStyle(color: Colors.white),
                       hintText: 'Your Password',
                       hintStyle:
                           TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white, width: 1.0),
+                        borderSide: BorderSide(width: 1.0),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white, width: 2.0),
+                        borderSide: BorderSide(width: 2.0),
                       ),
                     ),
                     validator: (String? value) {
@@ -200,7 +192,7 @@ class SignUp extends StatelessWidget {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => const MyApp()),
+                                    builder: (context) => MyApp()),
                               );
                             });
                           } on FirebaseAuthException catch (e) {

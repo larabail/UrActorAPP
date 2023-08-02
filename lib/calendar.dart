@@ -71,7 +71,7 @@ class _CalendarState extends State<Calendar> {
     int selectedIndex = 0;
 
     final List<Widget> pages = [
-      const MyApp(),
+      MyApp(),
       Search(),
       Playlists(),
       Profile(),
