@@ -104,7 +104,7 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 40, 20, 5),
               child: Text(
-                'Add a movie to ${list_result["Name"]}',
+                'Add a movie to "${list_result["Name"]}"',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -137,9 +137,6 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
               child: Container(
                 height: MediaQuery.of(context).size.width * 0.5,
                 width: MediaQuery.of(context).size.width * 0.7,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                ),
                 child: FutureBuilder<List>(
                   future: searchData(
                       _searchTermMovie), // Replace 'Your Search Term' with your actual search term

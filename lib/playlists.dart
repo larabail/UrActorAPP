@@ -190,8 +190,6 @@ class _PlaylistsState extends State<Playlists> {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(

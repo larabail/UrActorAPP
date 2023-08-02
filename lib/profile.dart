@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously, constant_identifier_names, no_leading_underscores_for_local_identifiers
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'playlists.dart';
 import 'search.dart';
@@ -14,7 +15,84 @@ import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'theme_provider.dart';
 
-class InfoButtonDialog extends StatelessWidget {
+class Country {
+  final String isoCode;
+  final String englishName;
+  final String nativeName;
+
+  Country(
+      {required this.isoCode,
+      required this.englishName,
+      required this.nativeName});
+
+  factory Country.fromJson(Map<String, dynamic> json) {
+    return Country(
+      isoCode: json['iso_3166_1'],
+      englishName: json['english_name'],
+      nativeName: json['native_name'],
+    );
+  }
+}
+
+class InfoButtonDialog extends StatefulWidget {
+  InfoButtonDialog();
+
+  @override
+  _InfoButtonDialogState createState() => _InfoButtonDialogState();
+}
+
+class _InfoButtonDialogState extends State<InfoButtonDialog> {
+  String selectedCountry = country;
+  List<Country> countries = [];
+  Country? selectedCountryObject;
+  @override
+  @override
+  void initState() {
+    super.initState();
+    fetchCountries();
+  }
+
+  Future<void> fetchCountries() async {
+    try {
+      final response = await http.get(Uri.parse(
+          'https://api.themoviedb.org/3/configuration/countries?api_key=700cd4fab994df56eb41b34d38c4762a'));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        // print(data);
+        setState(() {
+          countries = List<Country>.from(
+              data.map((country) => Country.fromJson(country)));
+        });
+        selectedCountryObject = findCountryByIsoCode(selectedCountry);
+      } else {
+        print('Failed to fetch countries');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+  // Helper function to find the Country object with the matching ISO code
+  Country? findCountryByIsoCode(String isoCode) {
+    return countries.firstWhere(
+      (country) => country.isoCode == isoCode,
+      orElse: () => countries[0],
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Find the default selected Country based on the selectedCountry variable
+    // selectedCountryObject = findCountryByIsoCode(selectedCountry);
+  }
+
+  Future<void> updateCountry(Country element) async {
+    var userDoc = FirebaseFirestore.instance.collection(uid).doc("Country");
+    await userDoc.update({'Country': element.isoCode});
+    country = element.isoCode;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -27,9 +105,29 @@ class InfoButtonDialog extends StatelessWidget {
         child: SizedBox(
           width: 20,
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text(
-              "Country You're Viewing in: $country",
-              style: const TextStyle(fontSize: 18),
+            const Text(
+              "Country You're Viewing in",
+              style: TextStyle(fontSize: 18),
+            ),
+            DropdownButton<Country>(
+              value: selectedCountryObject,
+              onChanged: (Country? newValue) async {
+                await updateCountry(newValue as Country);
+                setState(() {
+                  selectedCountry = newValue.isoCode;
+                  selectedCountryObject = newValue;
+                });
+              },
+              items:
+                  countries.map<DropdownMenuItem<Country>>((Country country) {
+                return DropdownMenuItem<Country>(
+                  value: country,
+                  child: Text(country.englishName),
+                );
+              }).toList(),
+
+              isExpanded: true, // Make the dropdown list take full width
+              underline: Container(), // Remove the default underline
             ),
             Center(
               child: Consumer<ThemeProvider>(
@@ -48,19 +146,41 @@ class InfoButtonDialog extends StatelessWidget {
                       const SizedBox(
                         width: 16,
                       ),
-                      const Icon(Icons.nightlight_round, color: Colors.grey),
+                      const Icon(Icons.nightlight_round, color: Colors.blueAccent),
                     ],
                   );
                 },
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () {},
+            const SizedBox(
+              width: 20,
+            ),
+            const Text(
+              '"Did you watch this movie today?" reminders',
+              style: TextStyle(fontSize: 18),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.check_box, color: Colors.yellow),
+                const SizedBox(width: 16),
+                Switch(
+                  value: dontAskCalendar,
+                  onChanged: (value) {
+                    setState(() {
+                      dontAskCalendar = !dontAskCalendar;
+                    });
+                  },
+                ),
+                const SizedBox(
+                  width: 16,
+                ),
+                const Icon(Icons.disabled_by_default, color: Colors.redAccent),
+              ],
             ),
             IconButton(
               icon: const Icon(Icons.logout_outlined),
-              color: Colors.red,
+              color: Color.fromARGB(255, 232, 85, 75),
               onPressed: () async {
                 await FirebaseAuth.instance.signOut();
                 email = "";
@@ -72,6 +192,13 @@ class InfoButtonDialog extends StatelessWidget {
                 );
               },
             ),
+            ElevatedButton(
+                style: ButtonStyle(
+                  backgroundColor:
+                      MaterialStateProperty.all<Color>(const Color.fromARGB(255, 242, 111, 102)),
+                ),
+                onPressed: () {},
+                child: const Text('Delete Account', style: TextStyle(color: Color.fromARGB(255, 130, 9, 0)),)),
           ]),
         ),
       ),
@@ -308,19 +435,13 @@ class _ProfileState extends State<Profile> {
                     Container(
                         margin: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          // color: const Color.fromARGB(
-                          //     255, 49, 49, 49), // background color
                           borderRadius:
                               BorderRadius.circular(10), // border radius
                         ),
                         child: ExpansionTile(
                             title: const Padding(
                               padding: EdgeInsets.all(20),
-                              child: Text(
-                                  // style: TextStyle(
-                                  //     backgroundColor:
-                                  //         Color.fromARGB(0, 44, 44, 44)),
-                                  "Viewing Statistics"),
+                              child: Text("Viewing Statistics"),
                             ),
                             children: <Widget>[
                               Padding(
