@@ -423,13 +423,6 @@ class _ProfileState extends State<Profile> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            Text(
-                              "($country)",
-                              style: const TextStyle(
-                                fontSize: 25,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
                           ],
                         )),
                     Container(
