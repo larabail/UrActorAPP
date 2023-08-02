@@ -231,11 +231,6 @@ class _RecommendationsState extends State<Recommendations> {
                                   editReview(snapshot.data!["id"], context);
                                 },
                                 icon: const Icon(Icons.edit)),
-                            // IconButton(
-                            //     onPressed: () {
-                            //       // Handle the click event here
-                            //     },
-                            //     icon: const Icon(Icons.info)),
                             IconButton(
                                 onPressed: () {
                                   deleteReview(snapshot.data!["id"], context);
