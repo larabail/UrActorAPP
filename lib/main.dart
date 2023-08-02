@@ -21,6 +21,7 @@ import 'theme_provider.dart';
 String uid = '';
 String email = '';
 String country = '';
+bool dontAskCalendar = false;
 Map calendar = {};
 List allMovies = [];
 List favActors = [];
@@ -67,17 +68,42 @@ class MyApp extends StatelessWidget {
             theme: themeProvider.isDarkMode
                 ? ThemeData.dark().copyWith(
                     scaffoldBackgroundColor: const Color(0xFF121212),
-                    primaryColor: const Color(0xFF121212),
                     appBarTheme: const AppBarTheme(
                       color: Color(0xFF121212),
                     ),
+                    switchTheme: SwitchThemeData(
+                      thumbColor: MaterialStateProperty.all<Color>(Color.fromARGB(248, 241, 105, 56)),
+                      trackColor: MaterialStateProperty.all<Color>(Color.fromARGB(250, 224, 190, 78)),
+                    ),
+                    indicatorColor: Color.fromARGB(250, 224, 190, 78),
+                    tabBarTheme: const TabBarTheme(
+                      labelColor: Color.fromARGB(250, 224, 190, 78),
+                      unselectedLabelColor: Colors
+                          .grey, // Set your desired color for unselected tabs
+                      indicatorColor: Color.fromARGB(250, 224, 190, 78),
+                    ),
                     bottomNavigationBarTheme:
                         const BottomNavigationBarThemeData(
+                      selectedItemColor: Color.fromARGB(250, 224, 190, 78),
                       backgroundColor: Color(0xFF121212),
                     ),
                   )
                 : ThemeData.light().copyWith(
-                    primaryColor: const Color(0xFF121212),
+                    tabBarTheme: const TabBarTheme(
+                      labelColor: Color.fromARGB(255, 150, 127, 52),
+                      unselectedLabelColor: Colors
+                          .grey, // Set your desired color for unselected tabs
+                      indicatorColor: Color.fromARGB(255, 150, 127, 52),
+                    ),
+                    switchTheme: SwitchThemeData(
+                      thumbColor: MaterialStateProperty.all<Color>(Color.fromARGB(248, 241, 105, 56)),
+                      trackColor: MaterialStateProperty.all<Color>(Color.fromARGB(250, 224, 190, 78)),
+                    ),
+                    indicatorColor: Color.fromARGB(255, 150, 127, 52),
+                    bottomNavigationBarTheme:
+                        const BottomNavigationBarThemeData(
+                      selectedItemColor: Color.fromARGB(255, 150, 127, 52),
+                    ),
                   ),
             home: const MyHomePage(title: 'Home'),
           );
@@ -523,8 +549,6 @@ class _MyHomePageState extends State<MyHomePage> {
         ]),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
