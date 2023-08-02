@@ -42,9 +42,6 @@ class _PlaylistsState extends State<Playlists> {
   Widget build(BuildContext context) {
     int selectedIndex = 0;
 
-    dynamic movies = [];
-    dynamic tvshows = [];
-    dynamic accessCode = "";
 
     final List<Widget> pages = [
       MyApp(),

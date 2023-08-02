@@ -9,7 +9,7 @@ class SignUp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-    late String email, password, repeatpassword;
+    late String email, password;
 
     return Scaffold(
       appBar: AppBar(
@@ -106,7 +106,6 @@ class SignUp extends StatelessWidget {
                       return null;
                     },
                     onSaved: (String? value) {
-                      repeatpassword = value!;
                     },
                   ),
                   const SizedBox(height: 16.0),
@@ -116,7 +115,7 @@ class SignUp extends StatelessWidget {
                       if (formKey.currentState!.validate()) {
                         formKey.currentState!.save();
                         try {
-                          final credentials = await FirebaseAuth.instance
+                          await FirebaseAuth.instance
                               .createUserWithEmailAndPassword(
                                   email: email, password: password)
                               .then((credential) {
