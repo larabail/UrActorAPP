@@ -23,6 +23,7 @@ String email = '';
 String country = '';
 bool dontAskCalendar = false;
 Map calendar = {};
+Map settings = {};
 List allMovies = [];
 List favActors = [];
 List favDirectors = [];
@@ -181,6 +182,10 @@ class _MyHomePageState extends State<MyHomePage> {
               ];
             });
           });
+        } else if (doc.id == "Settings" && settings.keys.toList().isEmpty) {
+          settings = doc.data() as Map;
+          dontAskCalendar = settings["dontAskCalendar"];
+          themeProvider.setDarkMode(settings["darkMode"]);
         } else if (doc.id == "Reviews" && reviews.keys.isEmpty) {
           Map reviewsMap = doc.data() as Map;
           List reviewsList = reviewsMap["Seen"];
