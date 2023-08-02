@@ -167,6 +167,7 @@ class _PlaylistsState extends State<Playlists> {
                                 child: Text(
                                   value,
                                   style: const TextStyle(
+                                    color: Colors.white,
                                     fontSize: 30,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1.5,
