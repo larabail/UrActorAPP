@@ -11,16 +11,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:convert';
+import 'package:provider/provider.dart';
+import 'theme_provider.dart';
 
 class InfoButtonDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color.fromARGB(
-              255, 23, 20, 20), // change the color of dialog window here
+          // change the color of dialog window here
           borderRadius: BorderRadius.circular(10.0),
         ),
         padding: const EdgeInsets.all(25.0),
@@ -30,6 +30,29 @@ class InfoButtonDialog extends StatelessWidget {
             Text(
               "Country You're Viewing in: $country",
               style: const TextStyle(fontSize: 18),
+            ),
+            Center(
+              child: Consumer<ThemeProvider>(
+                builder: (context, themeProvider, child) {
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.wb_sunny, color: Colors.yellow),
+                      const SizedBox(width: 16),
+                      Switch(
+                        value: themeProvider.isDarkMode,
+                        onChanged: (value) {
+                          themeProvider.toggleDarkMode();
+                        },
+                      ),
+                      const SizedBox(
+                        width: 16,
+                      ),
+                      const Icon(Icons.nightlight_round, color: Colors.grey),
+                    ],
+                  );
+                },
+              ),
             ),
             IconButton(
               icon: const Icon(Icons.edit),
@@ -176,7 +199,7 @@ class _ProfileState extends State<Profile> {
     }
 
     final List<Widget> pages = [
-      const MyApp(),
+      MyApp(),
       Search(),
       Playlists(),
       Profile(),
@@ -238,9 +261,7 @@ class _ProfileState extends State<Profile> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
         title: Center(
           child: Image.asset(
             'assets/logo.png',
@@ -271,24 +292,24 @@ class _ProfileState extends State<Profile> {
                             Text(
                               email,
                               style: const TextStyle(
-                                  fontSize: 25,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white),
+                                fontSize: 25,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             Text(
                               "($country)",
                               style: const TextStyle(
-                                  fontSize: 25,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white),
+                                fontSize: 25,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         )),
                     Container(
                         margin: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: const Color.fromARGB(
-                              255, 49, 49, 49), // background color
+                          // color: const Color.fromARGB(
+                          //     255, 49, 49, 49), // background color
                           borderRadius:
                               BorderRadius.circular(10), // border radius
                         ),
@@ -296,10 +317,9 @@ class _ProfileState extends State<Profile> {
                             title: const Padding(
                               padding: EdgeInsets.all(20),
                               child: Text(
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      backgroundColor:
-                                          Color.fromARGB(0, 44, 44, 44)),
+                                  // style: TextStyle(
+                                  //     backgroundColor:
+                                  //         Color.fromARGB(0, 44, 44, 44)),
                                   "Viewing Statistics"),
                             ),
                             children: <Widget>[
@@ -315,9 +335,9 @@ class _ProfileState extends State<Profile> {
                                           "Movies seen the week of ${startOfWeek.toIso8601String().split("-")[2].split("T")[0]}-${endOfWeek.toIso8601String().split("-")[2].split("T")[0]} in ${months[startOfWeek.month - 1]}",
                                           textAlign: TextAlign.center,
                                           style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white),
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                     if (startOfWeek.month != endOfWeek.month)
@@ -327,9 +347,9 @@ class _ProfileState extends State<Profile> {
                                           "Movies seen the week of ${startOfWeek.toIso8601String().split("-")[2].split("T")[0]}-${endOfWeek.toIso8601String().split("-")[2].split("T")[0]} in ${months[startOfWeek.month - 1]}-${months[endOfWeek.month - 1]}",
                                           textAlign: TextAlign.center,
                                           style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white),
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                     Row(
@@ -417,20 +437,25 @@ class _ProfileState extends State<Profile> {
                                     ),
                                     Padding(
                                       padding: const EdgeInsets.all(12.0),
-                                      child: Text(
-                                        "Your record is $maxMovies movies in a day",
-                                        textAlign: TextAlign.left,
-                                        style: const TextStyle(
-                                            fontSize: 18, color: Colors.yellow),
-                                      ),
+                                      child: Consumer<ThemeProvider>(builder:
+                                          (context, themeProvider, child) {
+                                        return Text(
+                                          "Your record is $maxMovies movies in a day",
+                                          textAlign: TextAlign.left,
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              color: themeProvider.isDarkMode
+                                                  ? Colors.yellow
+                                                  : Colors.green),
+                                        );
+                                      }),
                                     ),
                                     Padding(
                                       padding: const EdgeInsets.all(5.0),
                                       child: Text(
                                         "Total Movies Ever Seen: ${seenMovies.length}",
                                         textAlign: TextAlign.left,
-                                        style: const TextStyle(
-                                            fontSize: 15, color: Colors.white),
+                                        style: const TextStyle(fontSize: 15),
                                       ),
                                     ),
                                     Padding(
@@ -438,8 +463,7 @@ class _ProfileState extends State<Profile> {
                                       child: Text(
                                         "Total TV Shows Ever Seen: ${seenTVShows.length}",
                                         textAlign: TextAlign.left,
-                                        style: const TextStyle(
-                                            fontSize: 15, color: Colors.white),
+                                        style: const TextStyle(fontSize: 15),
                                       ),
                                     ),
                                   ],
@@ -451,6 +475,8 @@ class _ProfileState extends State<Profile> {
                       child: Column(
                         children: [
                           const TabBar(
+                            labelColor: null,
+                            unselectedLabelColor: null,
                             tabs: [
                               Tab(text: 'Fav. Actors'),
                               Tab(text: 'Fav. Directors'),
@@ -977,29 +1003,19 @@ class _ProfileState extends State<Profile> {
             child: IconButton(
               icon: const Icon(
                 Icons.settings,
-                color: Colors.white,
               ),
               onPressed: () {
                 showDialog(
                   context: context,
                   builder: (context) => InfoButtonDialog(),
                 );
-                // await FirebaseAuth.instance.signOut();
-                // email = "";
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(builder: (context) => Login()),
-                // );
               },
             ),
           ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -1015,7 +1031,6 @@ class _ProfileState extends State<Profile> {
           ),
           BottomNavigationBarItem(
             label: 'Profile',
-            backgroundColor: Color(0xFF121212),
             icon: Icon(Icons.person),
           ),
         ],

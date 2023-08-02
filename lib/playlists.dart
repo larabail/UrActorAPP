@@ -47,7 +47,7 @@ class _PlaylistsState extends State<Playlists> {
     dynamic accessCode = "";
 
     final List<Widget> pages = [
-      const MyApp(),
+      MyApp(),
       Search(),
       Playlists(),
       Profile(),
@@ -63,9 +63,7 @@ class _PlaylistsState extends State<Playlists> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
         title: Center(
             child: Image.asset(
           'assets/logo.png',
@@ -171,7 +169,6 @@ class _PlaylistsState extends State<Playlists> {
                                 child: Text(
                                   value,
                                   style: const TextStyle(
-                                    color: Colors.white,
                                     fontSize: 30,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1.5,
@@ -196,7 +193,6 @@ class _PlaylistsState extends State<Playlists> {
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -212,7 +208,6 @@ class _PlaylistsState extends State<Playlists> {
           ),
           BottomNavigationBarItem(
             label: 'Profile',
-            backgroundColor: Color(0xFF121212),
             icon: Icon(Icons.person),
           ),
         ],

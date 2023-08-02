@@ -26,8 +26,61 @@ String reviewId = "";
 Map reviewInfo = {};
 final myController = TextEditingController(text: "");
 
-// Assuming the "context" object is available, e.g., from a Flutter widget.
-Future<void> deleteFromWatchedConfirmation(
+class MovieResult extends StatefulWidget {
+  MovieResult();
+
+  @override
+  _MovieResultState createState() => _MovieResultState();
+}
+
+bool containsMap(List list, List map) {
+  for (int i = 0; i < list.length; i++) {
+    if ((list[i][1]).toString() == map[1].toString() &&
+        (list[i][0]) as String == "Movies") {
+      return true;
+    }
+  }
+  return false;
+}
+
+void check() {
+  if (containsMap(seenMovies, ['Movies', movieResult[0]])) {
+    _isTappedSeen = true;
+    _imageProviderSeen = 'assets/seen_after.png';
+  } else {
+    _isTappedSeen = false;
+    _imageProviderSeen = 'assets/seen_before.png';
+  }
+  if (containsMap(watchlist, ['Movies', movieResult[0]])) {
+    _isTappedWatchlist = true;
+    _imageProviderWatchlist = 'assets/watchlist_after.png';
+  } else {
+    _isTappedWatchlist = false;
+    _imageProviderWatchlist = 'assets/watchlist_before.png';
+  }
+  if (containsMap(favMovies, ['Movies', movieResult[0]])) {
+    _isTappedFav = true;
+    _imageProviderFav = 'assets/fav_after.png';
+  } else {
+    _isTappedFav = false;
+    _imageProviderFav = 'assets/fav_before.png';
+  }
+
+  if (reviews.keys.toList().contains(movieResult[0].toString())) {
+    reviewed = true;
+  }
+}
+
+class _MovieResultState extends State<MovieResult> {
+  final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
+  String credits = "/credits?api_key=700cd4fab994df56eb41b34d38c4762a";
+  final String imgLink = 'https://image.tmdb.org/t/p/w500';
+  String link = "https://api.themoviedb.org/3/movie/";
+  String watch_providers =
+      "/watch/providers?api_key=700cd4fab994df56eb41b34d38c4762a";
+  String video = "/videos?api_key=700cd4fab994df56eb41b34d38c4762a";
+
+  Future<void> deleteFromWatchedConfirmation(
     String id, BuildContext context) async {
   // Display a dialog box for confirmation. You will have to create a custom dialog for this.
   bool confirmed = await showDialog(
@@ -78,8 +131,9 @@ Future<void> deleteFromWatchedConfirmation(
               ["Movies", element]
             ];
           }
-          Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (context) => MovieResult()));
+          setState(() {
+            seenMovies = seenMovies;
+          });
         }
       });
     });
@@ -122,6 +176,7 @@ void incrementWatched(String value, String id) {
 
 Future<void> deleteReview(id, context) async {
   reviews.remove(id.toString());
+  reviewInfo = {};
   reviewed = false;
   await FirebaseFirestore.instance
       .collection(uid)
@@ -141,10 +196,14 @@ Future<void> deleteReview(id, context) async {
         final userDoc =
             FirebaseFirestore.instance.collection(uid).doc("Reviews");
         await userDoc.update({'Seen': tempReviewsInList});
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => MovieResult()),
-        );
+        reviews = {};
+        for (var element in tempReviewsInList) {
+          element = element as Map;
+          reviews[element.keys.toList()[0]] = element[element.keys.toList()[0]];
+        }
+        setState(() {
+          reviews = reviews;
+        });
       }
     }
   });
@@ -234,8 +293,9 @@ void addtoCalendar(
       });
     });
   }
-  Navigator.pushReplacement(
-      context, MaterialPageRoute(builder: (context) => MovieResult()));
+  setState(() {
+    calendar = calendar;
+  });
 }
 
 void favorite(String id, context) async {
@@ -259,8 +319,9 @@ void favorite(String id, context) async {
       }
     }
   });
-  Navigator.pushReplacement(
-      context, MaterialPageRoute(builder: (context) => MovieResult()));
+  setState(() {
+    favMovies = favMovies;
+  });
 }
 
 void unfavorite(String id, context) async {
@@ -285,8 +346,9 @@ void unfavorite(String id, context) async {
             ["Movies", element]
           ];
         });
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => MovieResult()));
+        setState(() {
+          favMovies = favMovies;
+        });
       }
     }
   });
@@ -313,8 +375,9 @@ void bookmark(String id, context) async {
       }
     }
   });
-  Navigator.pushReplacement(
-      context, MaterialPageRoute(builder: (context) => MovieResult()));
+  setState(() {
+    watchlist = watchlist;
+  });
 }
 
 void unbookmark(String id, context) async {
@@ -339,8 +402,9 @@ void unbookmark(String id, context) async {
             ["Movies", element]
           ];
         });
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => MovieResult()));
+        setState(() {
+          watchlist = watchlist;
+        });
       }
     }
   });
@@ -397,59 +461,7 @@ void deleteFromList(
   Navigator.pop(context);
 }
 
-class MovieResult extends StatefulWidget {
-  MovieResult();
 
-  @override
-  _MovieResultState createState() => _MovieResultState();
-}
-
-bool containsMap(List list, List map) {
-  for (int i = 0; i < list.length; i++) {
-    if ((list[i][1]).toString() == map[1].toString() &&
-        (list[i][0]) as String == "Movies") {
-      return true;
-    }
-  }
-  return false;
-}
-
-void check() {
-  if (containsMap(seenMovies, ['Movies', movieResult[0]])) {
-    _isTappedSeen = true;
-    _imageProviderSeen = 'assets/seen_after.png';
-  } else {
-    _isTappedSeen = false;
-    _imageProviderSeen = 'assets/seen_before.png';
-  }
-  if (containsMap(watchlist, ['Movies', movieResult[0]])) {
-    _isTappedWatchlist = true;
-    _imageProviderWatchlist = 'assets/watchlist_after.png';
-  } else {
-    _isTappedWatchlist = false;
-    _imageProviderWatchlist = 'assets/watchlist_before.png';
-  }
-  if (containsMap(favMovies, ['Movies', movieResult[0]])) {
-    _isTappedFav = true;
-    _imageProviderFav = 'assets/fav_after.png';
-  } else {
-    _isTappedFav = false;
-    _imageProviderFav = 'assets/fav_before.png';
-  }
-
-  if (reviews.keys.toList().contains(movieResult[0].toString())) {
-    reviewed = true;
-  }
-}
-
-class _MovieResultState extends State<MovieResult> {
-  final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-  String credits = "/credits?api_key=700cd4fab994df56eb41b34d38c4762a";
-  final String imgLink = 'https://image.tmdb.org/t/p/w500';
-  String link = "https://api.themoviedb.org/3/movie/";
-  String watch_providers =
-      "/watch/providers?api_key=700cd4fab994df56eb41b34d38c4762a";
-  String video = "/videos?api_key=700cd4fab994df56eb41b34d38c4762a";
   Future<Map> getMovieData() async {
     List movieData = movieResult;
     if (rewatchedMovies.keys.toList().contains(movieData[0])) {
@@ -724,7 +736,6 @@ class _MovieResultState extends State<MovieResult> {
               if (_isTappedList) {
                 _imageProviderList = 'assets/playlists_after.png';
                 showModalBottomSheet(
-                  backgroundColor: const Color(0xFF121212),
                   context: context,
                   builder: (_) {
                     return Container(
@@ -830,7 +841,6 @@ class _MovieResultState extends State<MovieResult> {
                                             child: Text(
                                               valueLeft,
                                               style: const TextStyle(
-                                                color: Colors.white,
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.bold,
                                                 letterSpacing: 1.5,
@@ -916,7 +926,6 @@ class _MovieResultState extends State<MovieResult> {
                                             child: Text(
                                               valueRight,
                                               style: const TextStyle(
-                                                color: Colors.white,
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.bold,
                                                 letterSpacing: 1.5,
@@ -954,7 +963,7 @@ class _MovieResultState extends State<MovieResult> {
     }
 
     final List<Widget> pages = [
-      const MyApp(),
+      MyApp(),
       Search(),
       Playlists(),
       Profile(),
@@ -970,9 +979,7 @@ class _MovieResultState extends State<MovieResult> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
         title: Center(
             child: Image.asset(
           'assets/logo.png',
@@ -1038,7 +1045,6 @@ class _MovieResultState extends State<MovieResult> {
                             child: Text(
                               "${snapshot.data!['title']} (${snapshot.data!['year']})",
                               style: const TextStyle(
-                                color: Colors.white,
                                 fontSize: 30,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.5,
@@ -1066,7 +1072,6 @@ class _MovieResultState extends State<MovieResult> {
                                 snapshot.data!['overview'],
                                 textAlign: TextAlign.justify,
                                 style: const TextStyle(
-                                  color: Colors.white,
                                   fontSize: 15,
                                   wordSpacing: 2,
                                   height: 1.5,
@@ -1095,7 +1100,6 @@ class _MovieResultState extends State<MovieResult> {
                           child: Text(
                             snapshot.data!['genres'][index]['name'],
                             style: const TextStyle(
-                              color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1126,8 +1130,7 @@ class _MovieResultState extends State<MovieResult> {
                               ),
                               child: Text(
                                 'Runtime: ${snapshot.data!['runtime']} min',
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 18),
+                                style: const TextStyle(fontSize: 18),
                               ),
                             ),
                           ],
@@ -1147,8 +1150,7 @@ class _MovieResultState extends State<MovieResult> {
                               ),
                               child: Text(
                                 'IMDB Rating: ${snapshot.data!["imdb_rating"]}',
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 18),
+                                style: const TextStyle(fontSize: 18),
                               ),
                             ),
                           ],
@@ -1249,7 +1251,6 @@ class _MovieResultState extends State<MovieResult> {
                                       'Opinion: ${snapshot.data!["review"]["Opinion"]}',
                                       textAlign: TextAlign.center,
                                       style: const TextStyle(
-                                        color: Colors.white,
                                         fontSize: 15,
                                         wordSpacing: 2,
                                         height: 1.5,
@@ -1259,7 +1260,6 @@ class _MovieResultState extends State<MovieResult> {
                                       'Rating: ${snapshot.data!["review"]["Rating"]}',
                                       textAlign: TextAlign.center,
                                       style: const TextStyle(
-                                        color: Colors.white,
                                         fontSize: 15,
                                         wordSpacing: 2,
                                         height: 1.5,
@@ -1306,7 +1306,7 @@ class _MovieResultState extends State<MovieResult> {
                     margin: const EdgeInsets.all(10.0), // set margin here
                     child: const Text(
                       "Where to Watch?",
-                      style: TextStyle(color: Colors.white, fontSize: 18),
+                      style: TextStyle(fontSize: 18),
                     ),
                   ),
                   if (snapshot.data!['providers'].length != 0)
@@ -1340,7 +1340,7 @@ class _MovieResultState extends State<MovieResult> {
                       margin: const EdgeInsets.all(10.0), // set margin here
                       child: const Text(
                         "Nowhere at the moment",
-                        style: TextStyle(color: Colors.white, fontSize: 18),
+                        style: TextStyle(fontSize: 18),
                       ),
                     ),
                   SizedBox(
@@ -1356,7 +1356,6 @@ class _MovieResultState extends State<MovieResult> {
                         labelStyle: TextStyle(color: Colors.grey),
                         border: OutlineInputBorder(),
                       ),
-                      style: const TextStyle(color: Colors.white),
                       keyboardType: TextInputType.number,
                       onChanged: (value) {
                         incrementWatched(
@@ -1366,8 +1365,8 @@ class _MovieResultState extends State<MovieResult> {
                       },
                     ),
                   ),
-                  Row(
-                    children: const [],
+                  const Row(
+                    children: [],
                   ),
                   Column(
                     children: [
@@ -1376,7 +1375,7 @@ class _MovieResultState extends State<MovieResult> {
                         margin: const EdgeInsets.fromLTRB(30.0, 20.0, 0.0, 5.0),
                         child: const Text(
                           "Main Cast:",
-                          style: TextStyle(color: Colors.white, fontSize: 18),
+                          style: TextStyle(fontSize: 18),
                         ),
                       ),
                       Container(
@@ -1397,8 +1396,6 @@ class _MovieResultState extends State<MovieResult> {
                               person['profile_path'] =
                                   imgLink + person['profile_path'];
                             }
-                            String linkPerson =
-                                "https://api.themoviedb.org/3/person/";
                             return GestureDetector(
                                 onTap: () {
                                   personResult = person;
@@ -1431,8 +1428,7 @@ class _MovieResultState extends State<MovieResult> {
                                             10), // optional: to give some space between image and text
                                     Text(
                                       person["name"],
-                                      style: const TextStyle(
-                                          color: Colors.white, fontSize: 10),
+                                      style: const TextStyle(fontSize: 10),
                                     ),
                                   ],
                                 ));
@@ -1444,7 +1440,7 @@ class _MovieResultState extends State<MovieResult> {
                         margin: const EdgeInsets.fromLTRB(30.0, 20.0, 0, 5.0),
                         child: const Text(
                           "Main Crew:",
-                          style: TextStyle(color: Colors.white, fontSize: 18),
+                          style: TextStyle(fontSize: 18),
                         ),
                       ),
                       Container(
@@ -1460,8 +1456,7 @@ class _MovieResultState extends State<MovieResult> {
                             Map person = snapshot.data!['crew'][index];
                             return Text(
                               "${person['job']}: ${person['name']}",
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 15),
+                              style: const TextStyle(fontSize: 15),
                             );
                           },
                         ),
@@ -1514,7 +1509,6 @@ class _MovieResultState extends State<MovieResult> {
         selectedItemColor: Colors.grey,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -1530,7 +1524,6 @@ class _MovieResultState extends State<MovieResult> {
           ),
           BottomNavigationBarItem(
             label: 'Profile',
-            backgroundColor: Color(0xFF121212),
             icon: Icon(Icons.person),
           ),
         ],
