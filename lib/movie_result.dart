@@ -241,7 +241,6 @@ class _MovieResultState extends State<MovieResult> {
     final snapshot = await FirebaseFirestore.instance.collection(uid).get();
     for (var doc in snapshot.docs) {
       if (doc.id == 'Calendar') {
-        final events = doc.data();
         if (!dontAskCalendar) {
           addtoCalendar(id, title, today, context);
         } else {
