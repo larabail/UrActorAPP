@@ -409,11 +409,11 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Contents of the Add List panel
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 40, 20, 5),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 40, 20, 5),
               child: Text(
-                'Add a movie to ${list_result["Name"]}',
-                style: const TextStyle(
+                'Add a movie',
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),

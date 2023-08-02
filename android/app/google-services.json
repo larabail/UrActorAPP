@@ -8,9 +8,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:805906181872:android:eeec8ee078b0e4630d9c35",
+        "mobilesdk_app_id": "1:805906181872:android:991a1b1fd9047cb40d9c35",
         "android_client_info": {
-          "package_name": "com.example.uractor"
+          "package_name": "com.uractor.uractorapp"
         }
       },
       "oauth_client": [
