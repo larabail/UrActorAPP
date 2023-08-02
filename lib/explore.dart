@@ -1153,9 +1153,10 @@ class _ExploreState extends State<Explore> {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Center(
             child: Image.asset(
-          'assets/logo.png',
+          'assets/logo_character.png',
           height: 54,
         )),
       ),

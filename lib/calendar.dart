@@ -249,10 +249,11 @@ class _CalendarState extends State<Calendar> {
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFF121212),
         title: Center(
             child: Image.asset(
-          'assets/logo.png',
+          'assets/logo_character.png',
           height: 54,
         )),
       ),
