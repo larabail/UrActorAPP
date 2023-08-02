@@ -1051,8 +1051,6 @@ class _TVShowResultState extends State<TVShowResult> {
                               person['profile_path'] =
                                   imgLink + person['profile_path'];
                             }
-                            String linkPerson =
-                                "https://api.themoviedb.org/3/person/";
                             return GestureDetector(
                               onTap: () {
                                 personResult = person;
