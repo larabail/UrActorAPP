@@ -214,12 +214,13 @@ class _PersonResultState extends State<PersonResult> {
 
   @override
   Widget build(BuildContext context) {
-    int _selectedIndex = 0;
     scoreActor = 0;
     scoreDirector = 0;
     countedMoviesDirector = [];
     countedMoviesActor = [];
-    final List<Widget> _pages = [
+    int selectedIndex = 0;
+
+    final List<Widget> pages = [
       MyApp(),
       Search(),
       Playlists(),
@@ -228,10 +229,10 @@ class _PersonResultState extends State<PersonResult> {
     ];
 
     void _onItemTapped(int index) {
-      _selectedIndex = index;
+      selectedIndex = index;
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => _pages[_selectedIndex]),
+        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
       );
     }
 
@@ -858,33 +859,29 @@ class _PersonResultState extends State<PersonResult> {
         },
       ),
       bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.library_books_rounded),
-            label: 'Library',
-          ),
-          BottomNavigationBarItem(
-            label: 'Profile',
-            icon: Icon(Icons.person),
-          ),
-        ],
-        currentIndex: 2,
-        onTap: (int index) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => _pages[index]),
-          );
-        },
-      ),
+        selectedItemColor: Colors.grey,
+        unselectedItemColor: Colors.grey,
+          type: BottomNavigationBarType.fixed,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.search),
+              label: 'Search',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.library_books_rounded),
+              label: 'Library',
+            ),
+            BottomNavigationBarItem(
+              label: 'Profile',
+              icon: Icon(Icons.person),
+            ),
+          ],
+          currentIndex: selectedIndex,
+          onTap: _onItemTapped),
     );
   }
 

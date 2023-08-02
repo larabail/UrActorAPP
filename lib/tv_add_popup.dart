@@ -105,7 +105,7 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 40, 20, 5),
               child: Text(
-                'Add a TV Show to ${list_result["Name"]}',
+                'Add a TV Show to "${list_result["Name"]}"',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -137,9 +137,6 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
               child: Container(
                 height: MediaQuery.of(context).size.width * 0.5,
                 width: MediaQuery.of(context).size.width * 0.7,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                ),
                 child: FutureBuilder<List>(
                   future: searchData(
                       _searchTermTv), // Replace 'Your Search Term' with your actual search term

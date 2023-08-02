@@ -156,7 +156,9 @@ void markWatched(String id, String title, BuildContext context) async {
   for (var doc in snapshot.docs) {
     if (doc.id == 'Calendar') {
       final events = doc.data();
-      addtoCalendar(id, title, today, context);
+      if (!dontAskCalendar) {
+          addtoCalendar(id, title, today, context);
+        }
     }
   }
 }
@@ -1151,7 +1153,6 @@ class _ExploreState extends State<Explore> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
         title: Center(
             child: Image.asset(
           'assets/logo.png',
@@ -1250,7 +1251,6 @@ class _ExploreState extends State<Explore> {
         selectedItemColor: Colors.grey,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
