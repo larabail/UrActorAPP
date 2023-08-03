@@ -478,7 +478,6 @@ class _TVShowResultState extends State<TVShowResult> {
               if (_isTappedList) {
                 _imageProviderList = 'assets/playlists_after.png';
                 showModalBottomSheet(
-                  backgroundColor: const Color(0xFF121212),
                   context: context,
                   builder: (_) {
                     return Container(
@@ -584,7 +583,6 @@ class _TVShowResultState extends State<TVShowResult> {
                                             child: Text(
                                               valueLeft,
                                               style: const TextStyle(
-                                                color: Colors.white,
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.bold,
                                                 letterSpacing: 1.5,
@@ -670,7 +668,6 @@ class _TVShowResultState extends State<TVShowResult> {
                                             child: Text(
                                               valueRight,
                                               style: const TextStyle(
-                                                color: Colors.white,
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.bold,
                                                 letterSpacing: 1.5,
@@ -724,12 +721,11 @@ class _TVShowResultState extends State<TVShowResult> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: Color(0xFF121212),
+        automaticallyImplyLeading: false,
         title: Center(
             child: Image.asset(
-          'assets/logo.png',
+          'assets/logo_character.png',
           height: 54,
         )),
       ),
@@ -786,13 +782,12 @@ class _TVShowResultState extends State<TVShowResult> {
                           ),
                         ),
                         Padding(
-                          padding: EdgeInsets.all(16.0),
+                          padding: const EdgeInsets.all(16.0),
                           child: Align(
                             alignment: Alignment.bottomRight,
                             child: Text(
                               "${snapshot.data!['name']} (${snapshot.data!['year']})",
                               style: const TextStyle(
-                                color: Colors.white,
                                 fontSize: 30,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.5,
@@ -808,19 +803,18 @@ class _TVShowResultState extends State<TVShowResult> {
                   if (snapshot.data!['overview'] != null &&
                       snapshot.data!['overview'] != "")
                     Padding(
-                      padding: EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.all(16.0),
                       child: Align(
                         alignment: Alignment.bottomRight,
                         child: Container(
                           height: 85, // fixed height
-                          padding: EdgeInsets.all(8), // optional padding
+                          padding: const EdgeInsets.all(8), // optional padding
                           child: ListView(
                             children: [
                               Text(
                                 snapshot.data!['overview'],
                                 textAlign: TextAlign.justify,
                                 style: const TextStyle(
-                                  color: Colors.white,
                                   fontSize: 15,
                                   wordSpacing: 2,
                                   height: 1.5,
@@ -849,7 +843,6 @@ class _TVShowResultState extends State<TVShowResult> {
                           child: Text(
                             snapshot.data!['genres'][index]['name'],
                             style: const TextStyle(
-                              color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -881,7 +874,7 @@ class _TVShowResultState extends State<TVShowResult> {
                               child: Text(
                                 'Runtime: ${snapshot.data!['runtime']} min',
                                 style: const TextStyle(
-                                    color: Colors.white, fontSize: 18),
+                                    fontSize: 18),
                               ),
                             ),
                           ],
@@ -902,7 +895,7 @@ class _TVShowResultState extends State<TVShowResult> {
                               child: Text(
                                 'IMDB Rating: ${snapshot.data!["imdb_rating"]}',
                                 style: const TextStyle(
-                                    color: Colors.white, fontSize: 18),
+                                    fontSize: 18),
                               ),
                             ),
                           ],
@@ -972,10 +965,10 @@ class _TVShowResultState extends State<TVShowResult> {
                     ],
                   ),
                   Container(
-                    margin: EdgeInsets.all(10.0), // set margin here
+                    margin: const EdgeInsets.all(10.0), // set margin here
                     child: const Text(
                       "Where to Watch?",
-                      style: TextStyle(color: Colors.white, fontSize: 18),
+                      style: TextStyle(fontSize: 18),
                     ),
                   ),
                   if (snapshot.data!['providers'].length != 0)
@@ -1006,17 +999,17 @@ class _TVShowResultState extends State<TVShowResult> {
                     ),
                   if (snapshot.data!['providers'].length == 0)
                     Container(
-                      margin: EdgeInsets.all(10.0), // set margin here
+                      margin: const EdgeInsets.all(10.0), // set margin here
                       child: const Text(
                         "Nowhere at the moment",
-                        style: TextStyle(color: Colors.white, fontSize: 18),
+                        style: TextStyle(fontSize: 18),
                       ),
                     ),
-                  Container(
+                  SizedBox(
                     width: 200,
                     child: TextField(
                       controller: TextEditingController(),
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Times Seen',
                         hintStyle: TextStyle(color: Colors.grey),
                         enabledBorder: UnderlineInputBorder(
@@ -1025,11 +1018,10 @@ class _TVShowResultState extends State<TVShowResult> {
                         labelStyle: TextStyle(color: Colors.grey),
                         border: OutlineInputBorder(),
                       ),
-                      style: TextStyle(color: Colors.white),
                       keyboardType: TextInputType.number,
                     ),
                   ),
-                  Row(
+                  const Row(
                     children: [],
                   ),
                   Column(
@@ -1039,7 +1031,7 @@ class _TVShowResultState extends State<TVShowResult> {
                         margin: const EdgeInsets.fromLTRB(30.0, 20.0, 0.0, 5.0),
                         child: const Text(
                           "Main Cast:",
-                          style: TextStyle(color: Colors.white, fontSize: 18),
+                          style: TextStyle(fontSize: 18),
                         ),
                       ),
                       Container(
@@ -1060,8 +1052,6 @@ class _TVShowResultState extends State<TVShowResult> {
                               person['profile_path'] =
                                   imgLink + person['profile_path'];
                             }
-                            String linkPerson =
-                                "https://api.themoviedb.org/3/person/";
                             return GestureDetector(
                               onTap: () {
                                 personResult = person;
@@ -1094,7 +1084,7 @@ class _TVShowResultState extends State<TVShowResult> {
                         margin: const EdgeInsets.fromLTRB(30.0, 20.0, 0, 5.0),
                         child: const Text(
                           "Main Crew:",
-                          style: TextStyle(color: Colors.white, fontSize: 18),
+                          style: TextStyle( fontSize: 18),
                         ),
                       ),
                       Container(
@@ -1111,7 +1101,7 @@ class _TVShowResultState extends State<TVShowResult> {
                             return Text(
                               "${person['job']}: ${person['name']}",
                               style:
-                                  TextStyle(color: Colors.white, fontSize: 15),
+                                  const TextStyle( fontSize: 15),
                             );
                           },
                         ),
@@ -1164,7 +1154,6 @@ class _TVShowResultState extends State<TVShowResult> {
         selectedItemColor: Colors.grey,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -1180,7 +1169,6 @@ class _TVShowResultState extends State<TVShowResult> {
           ),
           BottomNavigationBarItem(
             label: 'Profile',
-            backgroundColor: Color(0xFF121212),
             icon: Icon(Icons.person),
           ),
         ],

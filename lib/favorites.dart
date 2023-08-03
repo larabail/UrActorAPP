@@ -79,12 +79,11 @@ class Favorites extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        automaticallyImplyLeading: false,
         title: Center(
           child: Image.asset(
-            'assets/logo.png',
+          'assets/logo_character.png',
             height: 54,
           ),
         ),
@@ -96,7 +95,6 @@ class Favorites extends StatelessWidget {
             child: Text(
               "Your Favorites",
               style: TextStyle(
-                color: Colors.white,
                 fontSize: 24.0,
                 fontWeight: FontWeight.bold,
               ),
@@ -590,7 +588,6 @@ class Favorites extends StatelessWidget {
         selectedItemColor: Colors.grey,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -606,7 +603,6 @@ class Favorites extends StatelessWidget {
           ),
           BottomNavigationBarItem(
             label: 'Profile',
-            backgroundColor: Color(0xFF121212),
             icon: Icon(Icons.person),
           ),
         ],

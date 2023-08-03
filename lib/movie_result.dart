@@ -26,377 +26,6 @@ String reviewId = "";
 Map reviewInfo = {};
 final myController = TextEditingController(text: "");
 
-// Assuming the "context" object is available, e.g., from a Flutter widget.
-Future<void> deleteFromWatchedConfirmation(
-    String id, BuildContext context) async {
-  // Display a dialog box for confirmation. You will have to create a custom dialog for this.
-  bool confirmed = await showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('Confirmation'),
-        content: const Text('Delete from watched?'),
-        actions: <Widget>[
-          TextButton(
-            child: const Text('No'),
-            onPressed: () {
-              Navigator.of(context).pop(false);
-            },
-          ),
-          TextButton(
-            child: const Text('Yes'),
-            onPressed: () {
-              Navigator.of(context).pop(true);
-            },
-          ),
-        ],
-      );
-    },
-  );
-
-  if (confirmed) {
-    List w;
-    await FirebaseFirestore.instance
-        .collection(uid)
-        .get()
-        .then((QuerySnapshot querySnapshot) {
-      querySnapshot.docs.forEach((doc) async {
-        if (doc.id == "Movies") {
-          Map movies_result = doc.data() as Map;
-          w = movies_result["Seen"];
-          int index = w.indexOf(id);
-
-          if (index > -1) {
-            w.removeAt(index);
-          }
-          var userDoc =
-              FirebaseFirestore.instance.collection(uid).doc("Movies");
-          await userDoc.update({'Seen': w});
-          seenMovies = [];
-          for (var element in w) {
-            seenMovies += [
-              ["Movies", element]
-            ];
-          }
-          Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (context) => MovieResult()));
-        }
-      });
-    });
-  } else {
-    _imageProviderSeen = 'assets/seen_after.png';
-  }
-}
-
-void writeReview(id, context) {
-  reviewId = id.toString();
-  // Show the dialog like this
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return RatingDialog();
-    },
-  );
-}
-
-void editReview(id, context) {
-  reviewId = id.toString();
-  reviewInfo = reviews[id.toString()];
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return RatingDialog();
-    },
-  );
-}
-
-void incrementWatched(String value, String id) {
-  if (value != "") {
-    var userDoc = FirebaseFirestore.instance.collection(uid).doc("Rewatched");
-    Map<String, int> doc = {};
-    rewatchedMovies[id] = int.parse(value);
-    doc[id] = int.parse(value);
-    userDoc.update(doc);
-  }
-}
-
-Future<void> deleteReview(id, context) async {
-  reviews.remove(id.toString());
-  reviewed = false;
-  await FirebaseFirestore.instance
-      .collection(uid)
-      .get()
-      .then((QuerySnapshot querySnapshot) async {
-    for (var doc in querySnapshot.docs) {
-      if (doc.id == "Reviews") {
-        Map allreviews = doc.data() as Map;
-        List reviewsInList = allreviews["Seen"] as List;
-        List tempReviewsInList = [];
-        for (var element in reviewsInList) {
-          element = element as Map;
-          if (element.keys.toList()[0].toString() != id.toString()) {
-            tempReviewsInList.add(element);
-          }
-        }
-        final userDoc =
-            FirebaseFirestore.instance.collection(uid).doc("Reviews");
-        await userDoc.update({'Seen': tempReviewsInList});
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => MovieResult()),
-        );
-      }
-    }
-  });
-}
-
-void markWatched(String id, String title, BuildContext context) async {
-  final userDoc = FirebaseFirestore.instance.collection(uid).doc('Movies');
-  id = id.toString();
-  await userDoc.update({
-    'Seen': FieldValue.arrayUnion([id])
-  });
-  // store id in shared preferences or another way
-  List w;
-  await FirebaseFirestore.instance
-      .collection(uid)
-      .get()
-      .then((QuerySnapshot querySnapshot) {
-    querySnapshot.docs.forEach((doc) async {
-      if (doc.id == "Movies") {
-        Map movies_result = doc.data() as Map;
-        w = movies_result["Seen"];
-        seenMovies = [];
-        for (var element in w) {
-          seenMovies += [
-            ["Movies", element]
-          ];
-        }
-      }
-    });
-  });
-
-  final today = DateTime.now();
-
-  final snapshot = await FirebaseFirestore.instance.collection(uid).get();
-  for (var doc in snapshot.docs) {
-    if (doc.id == 'Calendar') {
-      final events = doc.data();
-      addtoCalendar(id, title, today, context);
-    }
-  }
-}
-
-void addtoCalendar(
-    String id, String title, DateTime today, BuildContext context) async {
-  final confirmed = await showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('Confirm'),
-        content: const Text('Did you watch this movie today?'),
-        actions: <Widget>[
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () {
-              Navigator.of(context).pop(false);
-            },
-          ),
-          TextButton(
-            child: const Text('Yes'),
-            onPressed: () {
-              Navigator.of(context).pop(true);
-            },
-          ),
-        ],
-      );
-    },
-  );
-
-  if (confirmed) {
-    final myObject = {
-      today.toString().split(" ")[0]: FieldValue.arrayUnion([
-        {'id': id, 'title': title}
-      ])
-    };
-
-    final userDoc = FirebaseFirestore.instance.collection(uid).doc('Calendar');
-    await userDoc.update(myObject);
-    calendar = {};
-    await FirebaseFirestore.instance
-        .collection(uid)
-        .get()
-        .then((QuerySnapshot querySnapshot) {
-      querySnapshot.docs.forEach((doc) async {
-        if (doc.id == "Calendar") {
-          calendar = doc.data() as Map;
-        }
-      });
-    });
-  }
-  Navigator.pushReplacement(
-      context, MaterialPageRoute(builder: (context) => MovieResult()));
-}
-
-void favorite(String id, context) async {
-  final userDoc = FirebaseFirestore.instance.collection(uid).doc("Favorites");
-  await userDoc.update({
-    'Movies': FieldValue.arrayUnion([id])
-  });
-  favMovies = [];
-  await FirebaseFirestore.instance
-      .collection(uid)
-      .get()
-      .then((QuerySnapshot querySnapshot) {
-    for (var doc in querySnapshot.docs) {
-      if (doc.id == "Favorites") {
-        Map allFavs = doc.data() as Map;
-        allFavs["Movies"].forEach((element) {
-          favMovies += [
-            ["Movies", element]
-          ];
-        });
-      }
-    }
-  });
-  Navigator.pushReplacement(
-      context, MaterialPageRoute(builder: (context) => MovieResult()));
-}
-
-void unfavorite(String id, context) async {
-  await FirebaseFirestore.instance
-      .collection(uid)
-      .get()
-      .then((QuerySnapshot querySnapshot) async {
-    for (var doc in querySnapshot.docs) {
-      if (doc.id == "Favorites") {
-        Map allFavs = doc.data() as Map;
-        List movieInFavs = allFavs["Movies"];
-        int index = movieInFavs.indexOf(id);
-        if (index > -1) {
-          movieInFavs.removeAt(index);
-        }
-        final userDoc =
-            FirebaseFirestore.instance.collection(uid).doc("Favorites");
-        await userDoc.update({'Movies': movieInFavs});
-        favMovies = [];
-        allFavs["Movies"].forEach((element) {
-          favMovies += [
-            ["Movies", element]
-          ];
-        });
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => MovieResult()));
-      }
-    }
-  });
-}
-
-void bookmark(String id, context) async {
-  final userDoc = FirebaseFirestore.instance.collection(uid).doc("Watchlist");
-  await userDoc.update({
-    'Movies': FieldValue.arrayUnion([id])
-  });
-  watchlist = [];
-  await FirebaseFirestore.instance
-      .collection(uid)
-      .get()
-      .then((QuerySnapshot querySnapshot) {
-    for (var doc in querySnapshot.docs) {
-      if (doc.id == "Watchlist") {
-        Map watchlistAll = doc.data() as Map;
-        watchlistAll["Movies"].forEach((element) {
-          watchlist += [
-            ["Movies", element]
-          ];
-        });
-      }
-    }
-  });
-  Navigator.pushReplacement(
-      context, MaterialPageRoute(builder: (context) => MovieResult()));
-}
-
-void unbookmark(String id, context) async {
-  await FirebaseFirestore.instance
-      .collection(uid)
-      .get()
-      .then((QuerySnapshot querySnapshot) async {
-    for (var doc in querySnapshot.docs) {
-      if (doc.id == "Watchlist") {
-        Map watchlistAll = doc.data() as Map;
-        List movieInWatchlist = watchlistAll["Movies"];
-        int index = movieInWatchlist.indexOf(id);
-        if (index > -1) {
-          movieInWatchlist.removeAt(index);
-        }
-        final userDoc =
-            FirebaseFirestore.instance.collection(uid).doc("Watchlist");
-        await userDoc.update({'Movies': movieInWatchlist});
-        watchlist = [];
-        watchlistAll["Movies"].forEach((element) {
-          watchlist += [
-            ["Movies", element]
-          ];
-        });
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => MovieResult()));
-      }
-    }
-  });
-}
-
-void addToList(String id, String listId, List moviesinList, context) async {
-  moviesinList.add(id);
-  final userDoc = FirebaseFirestore.instance
-      .collection("Watchlists")
-      .doc(listId.toString());
-  await userDoc.update({'Movies': moviesinList});
-  playlists = {};
-  await FirebaseFirestore.instance
-      .collection("Watchlists")
-      .get()
-      .then((QuerySnapshot querySnapshot) {
-    for (var doc in querySnapshot.docs) {
-      Map keysOfDoc = doc.data() as Map;
-      List users = keysOfDoc['Users'] as List;
-      for (var element in users) {
-        Map el = element as Map;
-        if (el.keys.contains(uid)) {
-          playlists[doc.id] = doc.data();
-        }
-      }
-    }
-  });
-  Navigator.pop(context);
-}
-
-void deleteFromList(
-    String id, String listId, List moviesinList, context) async {
-  moviesinList.remove(id);
-  final userDoc = FirebaseFirestore.instance
-      .collection("Watchlists")
-      .doc(listId.toString());
-  await userDoc.update({'Movies': moviesinList});
-  playlists = {};
-  await FirebaseFirestore.instance
-      .collection("Watchlists")
-      .get()
-      .then((QuerySnapshot querySnapshot) {
-    for (var doc in querySnapshot.docs) {
-      Map keysOfDoc = doc.data() as Map;
-      List users = keysOfDoc['Users'] as List;
-      for (var element in users) {
-        Map el = element as Map;
-        if (el.keys.contains(uid)) {
-          playlists[doc.id] = doc.data();
-        }
-      }
-    }
-  });
-  Navigator.pop(context);
-}
-
 class MovieResult extends StatefulWidget {
   MovieResult();
 
@@ -450,6 +79,395 @@ class _MovieResultState extends State<MovieResult> {
   String watch_providers =
       "/watch/providers?api_key=700cd4fab994df56eb41b34d38c4762a";
   String video = "/videos?api_key=700cd4fab994df56eb41b34d38c4762a";
+
+  Future<void> deleteFromWatchedConfirmation(
+      String id, BuildContext context) async {
+    // Display a dialog box for confirmation. You will have to create a custom dialog for this.
+    bool confirmed = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmation'),
+          content: const Text('Delete from watched?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('No'),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+            TextButton(
+              child: const Text('Yes'),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed) {
+      List w;
+      await FirebaseFirestore.instance
+          .collection(uid)
+          .get()
+          .then((QuerySnapshot querySnapshot) {
+        querySnapshot.docs.forEach((doc) async {
+          if (doc.id == "Movies") {
+            Map movies_result = doc.data() as Map;
+            w = movies_result["Seen"];
+            int index = w.indexOf(id);
+
+            if (index > -1) {
+              w.removeAt(index);
+            }
+            var userDoc =
+                FirebaseFirestore.instance.collection(uid).doc("Movies");
+            await userDoc.update({'Seen': w});
+            seenMovies = [];
+            for (var element in w) {
+              seenMovies += [
+                ["Movies", element]
+              ];
+            }
+            setState(() {
+              seenMovies = seenMovies;
+            });
+          }
+        });
+      });
+    } else {
+      _imageProviderSeen = 'assets/seen_after.png';
+    }
+  }
+
+  void writeReview(id, context) {
+    reviewId = id.toString();
+    // Show the dialog like this
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return RatingDialog();
+      },
+    );
+  }
+
+  void editReview(id, context) {
+    reviewId = id.toString();
+    reviewInfo = reviews[id.toString()];
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return RatingDialog();
+      },
+    );
+  }
+
+  void incrementWatched(String value, String id) {
+    if (value != "") {
+      var userDoc = FirebaseFirestore.instance.collection(uid).doc("Rewatched");
+      Map<String, int> doc = {};
+      rewatchedMovies[id] = int.parse(value);
+      doc[id] = int.parse(value);
+      userDoc.update(doc);
+    }
+  }
+
+  Future<void> deleteReview(id, context) async {
+    reviews.remove(id.toString());
+    reviewInfo = {};
+    reviewed = false;
+    await FirebaseFirestore.instance
+        .collection(uid)
+        .get()
+        .then((QuerySnapshot querySnapshot) async {
+      for (var doc in querySnapshot.docs) {
+        if (doc.id == "Reviews") {
+          Map allreviews = doc.data() as Map;
+          List reviewsInList = allreviews["Seen"] as List;
+          List tempReviewsInList = [];
+          for (var element in reviewsInList) {
+            element = element as Map;
+            if (element.keys.toList()[0].toString() != id.toString()) {
+              tempReviewsInList.add(element);
+            }
+          }
+          final userDoc =
+              FirebaseFirestore.instance.collection(uid).doc("Reviews");
+          await userDoc.update({'Seen': tempReviewsInList});
+          reviews = {};
+          for (var element in tempReviewsInList) {
+            element = element as Map;
+            reviews[element.keys.toList()[0]] =
+                element[element.keys.toList()[0]];
+          }
+          setState(() {
+            reviews = reviews;
+          });
+        }
+      }
+    });
+  }
+
+  void markWatched(String id, String title, BuildContext context) async {
+    final userDoc = FirebaseFirestore.instance.collection(uid).doc('Movies');
+    id = id.toString();
+    await userDoc.update({
+      'Seen': FieldValue.arrayUnion([id])
+    });
+    // store id in shared preferences or another way
+    List w;
+    await FirebaseFirestore.instance
+        .collection(uid)
+        .get()
+        .then((QuerySnapshot querySnapshot) {
+      querySnapshot.docs.forEach((doc) async {
+        if (doc.id == "Movies") {
+          Map movies_result = doc.data() as Map;
+          w = movies_result["Seen"];
+          seenMovies = [];
+          for (var element in w) {
+            seenMovies += [
+              ["Movies", element]
+            ];
+          }
+        }
+      });
+    });
+
+    final today = DateTime.now();
+
+    final snapshot = await FirebaseFirestore.instance.collection(uid).get();
+    for (var doc in snapshot.docs) {
+      if (doc.id == 'Calendar') {
+        if (!dontAskCalendar) {
+          addtoCalendar(id, title, today, context);
+        } else {
+          setState(() {
+            seenMovies = seenMovies;
+          });
+        }
+      }
+    }
+  }
+
+  void addtoCalendar(
+      String id, String title, DateTime today, BuildContext context) async {
+    final confirmed = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm'),
+          content: const Text('Did you watch this movie today?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+            TextButton(
+              child: const Text('Yes'),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed) {
+      final myObject = {
+        today.toString().split(" ")[0]: FieldValue.arrayUnion([
+          {'id': id, 'title': title}
+        ])
+      };
+
+      final userDoc =
+          FirebaseFirestore.instance.collection(uid).doc('Calendar');
+      await userDoc.update(myObject);
+      calendar = {};
+      await FirebaseFirestore.instance
+          .collection(uid)
+          .get()
+          .then((QuerySnapshot querySnapshot) {
+        querySnapshot.docs.forEach((doc) async {
+          if (doc.id == "Calendar") {
+            calendar = doc.data() as Map;
+          }
+        });
+      });
+    }
+    setState(() {
+      calendar = calendar;
+    });
+  }
+
+  void favorite(String id, context) async {
+    final userDoc = FirebaseFirestore.instance.collection(uid).doc("Favorites");
+    await userDoc.update({
+      'Movies': FieldValue.arrayUnion([id])
+    });
+    favMovies = [];
+    await FirebaseFirestore.instance
+        .collection(uid)
+        .get()
+        .then((QuerySnapshot querySnapshot) {
+      for (var doc in querySnapshot.docs) {
+        if (doc.id == "Favorites") {
+          Map allFavs = doc.data() as Map;
+          allFavs["Movies"].forEach((element) {
+            favMovies += [
+              ["Movies", element]
+            ];
+          });
+        }
+      }
+    });
+    setState(() {
+      favMovies = favMovies;
+    });
+  }
+
+  void unfavorite(String id, context) async {
+    await FirebaseFirestore.instance
+        .collection(uid)
+        .get()
+        .then((QuerySnapshot querySnapshot) async {
+      for (var doc in querySnapshot.docs) {
+        if (doc.id == "Favorites") {
+          Map allFavs = doc.data() as Map;
+          List movieInFavs = allFavs["Movies"];
+          int index = movieInFavs.indexOf(id);
+          if (index > -1) {
+            movieInFavs.removeAt(index);
+          }
+          final userDoc =
+              FirebaseFirestore.instance.collection(uid).doc("Favorites");
+          await userDoc.update({'Movies': movieInFavs});
+          favMovies = [];
+          allFavs["Movies"].forEach((element) {
+            favMovies += [
+              ["Movies", element]
+            ];
+          });
+          setState(() {
+            favMovies = favMovies;
+          });
+        }
+      }
+    });
+  }
+
+  void bookmark(String id, context) async {
+    final userDoc = FirebaseFirestore.instance.collection(uid).doc("Watchlist");
+    await userDoc.update({
+      'Movies': FieldValue.arrayUnion([id])
+    });
+    watchlist = [];
+    await FirebaseFirestore.instance
+        .collection(uid)
+        .get()
+        .then((QuerySnapshot querySnapshot) {
+      for (var doc in querySnapshot.docs) {
+        if (doc.id == "Watchlist") {
+          Map watchlistAll = doc.data() as Map;
+          watchlistAll["Movies"].forEach((element) {
+            watchlist += [
+              ["Movies", element]
+            ];
+          });
+        }
+      }
+    });
+    setState(() {
+      watchlist = watchlist;
+    });
+  }
+
+  void unbookmark(String id, context) async {
+    await FirebaseFirestore.instance
+        .collection(uid)
+        .get()
+        .then((QuerySnapshot querySnapshot) async {
+      for (var doc in querySnapshot.docs) {
+        if (doc.id == "Watchlist") {
+          Map watchlistAll = doc.data() as Map;
+          List movieInWatchlist = watchlistAll["Movies"];
+          int index = movieInWatchlist.indexOf(id);
+          if (index > -1) {
+            movieInWatchlist.removeAt(index);
+          }
+          final userDoc =
+              FirebaseFirestore.instance.collection(uid).doc("Watchlist");
+          await userDoc.update({'Movies': movieInWatchlist});
+          watchlist = [];
+          watchlistAll["Movies"].forEach((element) {
+            watchlist += [
+              ["Movies", element]
+            ];
+          });
+          setState(() {
+            watchlist = watchlist;
+          });
+        }
+      }
+    });
+  }
+
+  void addToList(String id, String listId, List moviesinList, context) async {
+    moviesinList.add(id);
+    final userDoc = FirebaseFirestore.instance
+        .collection("Watchlists")
+        .doc(listId.toString());
+    await userDoc.update({'Movies': moviesinList});
+    playlists = {};
+    await FirebaseFirestore.instance
+        .collection("Watchlists")
+        .get()
+        .then((QuerySnapshot querySnapshot) {
+      for (var doc in querySnapshot.docs) {
+        Map keysOfDoc = doc.data() as Map;
+        List users = keysOfDoc['Users'] as List;
+        for (var element in users) {
+          Map el = element as Map;
+          if (el.keys.contains(uid)) {
+            playlists[doc.id] = doc.data();
+          }
+        }
+      }
+    });
+    Navigator.pop(context);
+  }
+
+  void deleteFromList(
+      String id, String listId, List moviesinList, context) async {
+    moviesinList.remove(id);
+    final userDoc = FirebaseFirestore.instance
+        .collection("Watchlists")
+        .doc(listId.toString());
+    await userDoc.update({'Movies': moviesinList});
+    playlists = {};
+    await FirebaseFirestore.instance
+        .collection("Watchlists")
+        .get()
+        .then((QuerySnapshot querySnapshot) {
+      for (var doc in querySnapshot.docs) {
+        Map keysOfDoc = doc.data() as Map;
+        List users = keysOfDoc['Users'] as List;
+        for (var element in users) {
+          Map el = element as Map;
+          if (el.keys.contains(uid)) {
+            playlists[doc.id] = doc.data();
+          }
+        }
+      }
+    });
+    Navigator.pop(context);
+  }
+
   Future<Map> getMovieData() async {
     List movieData = movieResult;
     if (rewatchedMovies.keys.toList().contains(movieData[0])) {
@@ -724,7 +742,6 @@ class _MovieResultState extends State<MovieResult> {
               if (_isTappedList) {
                 _imageProviderList = 'assets/playlists_after.png';
                 showModalBottomSheet(
-                  backgroundColor: const Color(0xFF121212),
                   context: context,
                   builder: (_) {
                     return Container(
@@ -830,7 +847,6 @@ class _MovieResultState extends State<MovieResult> {
                                             child: Text(
                                               valueLeft,
                                               style: const TextStyle(
-                                                color: Colors.white,
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.bold,
                                                 letterSpacing: 1.5,
@@ -916,7 +932,6 @@ class _MovieResultState extends State<MovieResult> {
                                             child: Text(
                                               valueRight,
                                               style: const TextStyle(
-                                                color: Colors.white,
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.bold,
                                                 letterSpacing: 1.5,
@@ -954,7 +969,7 @@ class _MovieResultState extends State<MovieResult> {
     }
 
     final List<Widget> pages = [
-      const MyApp(),
+      MyApp(),
       Search(),
       Playlists(),
       Profile(),
@@ -970,12 +985,11 @@ class _MovieResultState extends State<MovieResult> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        automaticallyImplyLeading: false,
         title: Center(
             child: Image.asset(
-          'assets/logo.png',
+          'assets/logo_character.png',
           height: 54,
         )),
       ),
@@ -1038,7 +1052,6 @@ class _MovieResultState extends State<MovieResult> {
                             child: Text(
                               "${snapshot.data!['title']} (${snapshot.data!['year']})",
                               style: const TextStyle(
-                                color: Colors.white,
                                 fontSize: 30,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.5,
@@ -1066,7 +1079,6 @@ class _MovieResultState extends State<MovieResult> {
                                 snapshot.data!['overview'],
                                 textAlign: TextAlign.justify,
                                 style: const TextStyle(
-                                  color: Colors.white,
                                   fontSize: 15,
                                   wordSpacing: 2,
                                   height: 1.5,
@@ -1095,7 +1107,6 @@ class _MovieResultState extends State<MovieResult> {
                           child: Text(
                             snapshot.data!['genres'][index]['name'],
                             style: const TextStyle(
-                              color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1126,8 +1137,7 @@ class _MovieResultState extends State<MovieResult> {
                               ),
                               child: Text(
                                 'Runtime: ${snapshot.data!['runtime']} min',
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 18),
+                                style: const TextStyle(fontSize: 18),
                               ),
                             ),
                           ],
@@ -1147,8 +1157,7 @@ class _MovieResultState extends State<MovieResult> {
                               ),
                               child: Text(
                                 'IMDB Rating: ${snapshot.data!["imdb_rating"]}',
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 18),
+                                style: const TextStyle(fontSize: 18),
                               ),
                             ),
                           ],
@@ -1249,7 +1258,6 @@ class _MovieResultState extends State<MovieResult> {
                                       'Opinion: ${snapshot.data!["review"]["Opinion"]}',
                                       textAlign: TextAlign.center,
                                       style: const TextStyle(
-                                        color: Colors.white,
                                         fontSize: 15,
                                         wordSpacing: 2,
                                         height: 1.5,
@@ -1259,7 +1267,6 @@ class _MovieResultState extends State<MovieResult> {
                                       'Rating: ${snapshot.data!["review"]["Rating"]}',
                                       textAlign: TextAlign.center,
                                       style: const TextStyle(
-                                        color: Colors.white,
                                         fontSize: 15,
                                         wordSpacing: 2,
                                         height: 1.5,
@@ -1267,20 +1274,20 @@ class _MovieResultState extends State<MovieResult> {
                                     ),
                                     Row(
                                       mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
+                                          MainAxisAlignment.center,
                                       children: [
-                                        ElevatedButton(
+                                        IconButton(
                                             onPressed: () {
                                               editReview(snapshot.data!["id"],
                                                   context);
                                             },
-                                            child: const Text('Edit Review')),
-                                        ElevatedButton(
+                                            icon: const Icon(Icons.edit)),
+                                        IconButton(
                                             onPressed: () {
                                               deleteReview(snapshot.data!["id"],
                                                   context);
                                             },
-                                            child: const Text('Delete Review')),
+                                            icon: const Icon(Icons.delete)),
                                       ],
                                     ),
                                   ],
@@ -1306,7 +1313,7 @@ class _MovieResultState extends State<MovieResult> {
                     margin: const EdgeInsets.all(10.0), // set margin here
                     child: const Text(
                       "Where to Watch?",
-                      style: TextStyle(color: Colors.white, fontSize: 18),
+                      style: TextStyle(fontSize: 18),
                     ),
                   ),
                   if (snapshot.data!['providers'].length != 0)
@@ -1340,7 +1347,7 @@ class _MovieResultState extends State<MovieResult> {
                       margin: const EdgeInsets.all(10.0), // set margin here
                       child: const Text(
                         "Nowhere at the moment",
-                        style: TextStyle(color: Colors.white, fontSize: 18),
+                        style: TextStyle(fontSize: 18),
                       ),
                     ),
                   SizedBox(
@@ -1356,7 +1363,6 @@ class _MovieResultState extends State<MovieResult> {
                         labelStyle: TextStyle(color: Colors.grey),
                         border: OutlineInputBorder(),
                       ),
-                      style: const TextStyle(color: Colors.white),
                       keyboardType: TextInputType.number,
                       onChanged: (value) {
                         incrementWatched(
@@ -1366,8 +1372,8 @@ class _MovieResultState extends State<MovieResult> {
                       },
                     ),
                   ),
-                  Row(
-                    children: const [],
+                  const Row(
+                    children: [],
                   ),
                   Column(
                     children: [
@@ -1376,7 +1382,7 @@ class _MovieResultState extends State<MovieResult> {
                         margin: const EdgeInsets.fromLTRB(30.0, 20.0, 0.0, 5.0),
                         child: const Text(
                           "Main Cast:",
-                          style: TextStyle(color: Colors.white, fontSize: 18),
+                          style: TextStyle(fontSize: 18),
                         ),
                       ),
                       Container(
@@ -1397,8 +1403,6 @@ class _MovieResultState extends State<MovieResult> {
                               person['profile_path'] =
                                   imgLink + person['profile_path'];
                             }
-                            String linkPerson =
-                                "https://api.themoviedb.org/3/person/";
                             return GestureDetector(
                                 onTap: () {
                                   personResult = person;
@@ -1431,8 +1435,7 @@ class _MovieResultState extends State<MovieResult> {
                                             10), // optional: to give some space between image and text
                                     Text(
                                       person["name"],
-                                      style: const TextStyle(
-                                          color: Colors.white, fontSize: 10),
+                                      style: const TextStyle(fontSize: 10),
                                     ),
                                   ],
                                 ));
@@ -1444,7 +1447,7 @@ class _MovieResultState extends State<MovieResult> {
                         margin: const EdgeInsets.fromLTRB(30.0, 20.0, 0, 5.0),
                         child: const Text(
                           "Main Crew:",
-                          style: TextStyle(color: Colors.white, fontSize: 18),
+                          style: TextStyle(fontSize: 18),
                         ),
                       ),
                       Container(
@@ -1460,8 +1463,7 @@ class _MovieResultState extends State<MovieResult> {
                             Map person = snapshot.data!['crew'][index];
                             return Text(
                               "${person['job']}: ${person['name']}",
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 15),
+                              style: const TextStyle(fontSize: 15),
                             );
                           },
                         ),
@@ -1514,7 +1516,6 @@ class _MovieResultState extends State<MovieResult> {
         selectedItemColor: Colors.grey,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -1530,7 +1531,6 @@ class _MovieResultState extends State<MovieResult> {
           ),
           BottomNavigationBarItem(
             label: 'Profile',
-            backgroundColor: Color(0xFF121212),
             icon: Icon(Icons.person),
           ),
         ],

@@ -49,50 +49,54 @@ class _SearchResultState extends State<Search> {
     String link = "https://api.themoviedb.org/3/person/";
     String img = 'https://image.tmdb.org/t/p/w500/';
 
-    Future<List> searchData(String searchTerm) async {
-      String name = searchTerm
-          .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
-          .replaceAll(" ", "+");
+    Future<List> searchData() async {
+      List<Map<String, dynamic>> results = [];
       String searchLink = "";
-      if (_selectedItem == "actor") {
-        searchLink = '$searchByName$name';
-      } else if (_selectedItem == "movie") {
-        searchLink = '$searchByNamemovie$name';
-      } else if (_selectedItem == "tvshow") {
-        searchLink = '$searchByNametvshow$name';
-      }
-      final response = await http.get(Uri.parse(searchLink));
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        List<Map<String, dynamic>> results = [];
-        for (final result in json['results']) {
-          String resultSearchLink = '';
-          if (_selectedItem == "actor") {
-            resultSearchLink =
-                '$link${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$apiKeyActor';
-          } else if (_selectedItem == "movie") {
-            resultSearchLink =
-                '$linkMovie${result["id"]}-${result["title"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$apiKeyActor';
-          } else if (_selectedItem == "tvshow") {
-            resultSearchLink =
-                '$linkTVSHOW${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$apiKeyActor';
-          }
-          final response2 = await http.get(Uri.parse(resultSearchLink));
-          if (response2.statusCode == 200) {
-            final json2 = jsonDecode(response2.body);
-            results.add(json2);
-          } else {
-            throw Exception('Failed to load movie details');
+      if (_searchTermActor != "" ||
+          _searchTermMovie != "" ||
+          _searchTermTVShow != "") {
+        if (_selectedItem == "actor") {
+          searchLink =
+              '$searchByName${_searchTermActor.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}';
+        } else if (_selectedItem == "movie") {
+          searchLink =
+              '$searchByNamemovie${_searchTermMovie.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}';
+        } else if (_selectedItem == "tvshow") {
+          searchLink =
+              '$searchByNametvshow${_searchTermTVShow.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}';
+        }
+        final response = await http.get(Uri.parse(searchLink));
+        if (response.statusCode == 200) {
+          final json = jsonDecode(response.body);
+          for (final result in json['results']) {
+            String resultSearchLink = '';
+            if (_selectedItem == "actor" && _searchTermActor != "") {
+              resultSearchLink =
+                  '$link${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$apiKeyActor';
+            } else if (_selectedItem == "movie" && _searchTermMovie != "") {
+              resultSearchLink =
+                  '$linkMovie${result["id"]}-${result["title"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$apiKeyActor';
+            } else if (_selectedItem == "tvshow" && _searchTermTVShow != "") {
+              resultSearchLink =
+                  '$linkTVSHOW${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$apiKeyActor';
+            }
+            if (resultSearchLink != "") {
+              final response2 = await http.get(Uri.parse(resultSearchLink));
+              if (response2.statusCode == 200) {
+                final json2 = jsonDecode(response2.body);
+                results.add(json2);
+              } else {
+                throw Exception('Failed to load movie details');
+              }
+            }
           }
         }
-        return results;
-      } else {
-        throw Exception('Failed to load movie details');
       }
+      return results;
     }
 
     final List<Widget> pages = [
-      const MyApp(),
+      MyApp(),
       Search(),
       Playlists(),
       Profile(),
@@ -108,12 +112,11 @@ class _SearchResultState extends State<Search> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        automaticallyImplyLeading: false,
         title: Center(
           child: Image.asset(
-            'assets/logo.png',
+          'assets/logo_character.png',
             height: 54,
           ),
         ),
@@ -123,7 +126,8 @@ class _SearchResultState extends State<Search> {
         child: Column(
           children: [
             const TabBar(
-              unselectedLabelColor: Colors.grey,
+              labelColor: null,
+              unselectedLabelColor: null,
               tabs: [
                 Tab(text: 'Person'),
                 Tab(text: 'Movie'),
@@ -142,29 +146,31 @@ class _SearchResultState extends State<Search> {
                         children: [
                           TextField(
                             decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.search),
                               hintText: 'Enter name of actor...',
                               hintStyle: TextStyle(color: Colors.grey),
                               enabledBorder: UnderlineInputBorder(
                                 borderSide: BorderSide(color: Colors.grey),
                               ),
                             ),
-                            style: const TextStyle(color: Colors.white),
                             onChanged: (value) {
                               setState(() {
                                 _searchTermActor = value;
-                                searchData(_searchTermActor);
+                                _searchTermMovie = "";
+                                _searchTermTVShow = "";
                               });
                             },
                             onSubmitted: (value) {
                               setState(() {
                                 _searchTermActor = value;
-                                searchData(_searchTermActor);
+                                _searchTermMovie = "";
+                                _searchTermTVShow = "";
                               });
                             },
                           ),
                           Expanded(
                             child: FutureBuilder<List>(
-                              future: searchData(_searchTermActor),
+                              future: searchData(),
                               builder: (context, snapshot) {
                                 int selectedTabIndex =
                                     DefaultTabController.of(context).index;
@@ -186,24 +192,20 @@ class _SearchResultState extends State<Search> {
                                   final people = snapshot.data!;
                                   return SizedBox(
                                     width: MediaQuery.of(context).size.width,
-                                    height:
-                                        MediaQuery.of(context).size.height,
+                                    height: MediaQuery.of(context).size.height,
                                     child: ListView.builder(
                                       shrinkWrap: true,
                                       itemCount: (people.length / 3).ceil(),
                                       itemBuilder: (context, index) {
                                         final leftPersonIndex = index * 3;
-                                        final middlePersonIndex =
-                                            index * 3 + 1;
-                                        final rightPersonIndex =
-                                            index * 3 + 2;
+                                        final middlePersonIndex = index * 3 + 1;
+                                        final rightPersonIndex = index * 3 + 2;
                                         final leftPerson =
                                             (leftPersonIndex < people.length)
                                                 ? people[leftPersonIndex]
                                                 : null;
                                         final middlePerson =
-                                            (middlePersonIndex <
-                                                    people.length)
+                                            (middlePersonIndex < people.length)
                                                 ? people[middlePersonIndex]
                                                 : null;
                                         final rightPerson =
@@ -230,10 +232,8 @@ class _SearchResultState extends State<Search> {
                                           } else if (middlePerson[
                                                   'profile_path'] !=
                                               'https://cdn-icons-png.flaticon.com/512/3088/3088765.png') {
-                                            middlePerson['profile_path'] =
-                                                img +
-                                                    middlePerson[
-                                                        'profile_path'];
+                                            middlePerson['profile_path'] = img +
+                                                middlePerson['profile_path'];
                                           }
                                         }
                                         if (rightPerson != null) {
@@ -244,10 +244,8 @@ class _SearchResultState extends State<Search> {
                                           } else if (rightPerson[
                                                   'profile_path'] !=
                                               'https://cdn-icons-png.flaticon.com/512/3088/3088765.png') {
-                                            rightPerson['profile_path'] =
-                                                img +
-                                                    rightPerson[
-                                                        'profile_path'];
+                                            rightPerson['profile_path'] = img +
+                                                rightPerson['profile_path'];
                                           }
                                         }
                                         return Row(
@@ -266,19 +264,17 @@ class _SearchResultState extends State<Search> {
                                                   );
                                                 },
                                                 child: Container(
-                                                  margin: const EdgeInsets
-                                                          .fromLTRB(
-                                                      10.0, 10.0, 5.0, 0),
-                                                  width:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.25,
-                                                  height:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height *
-                                                          0.18,
+                                                  margin:
+                                                      const EdgeInsets.fromLTRB(
+                                                          10.0, 10.0, 5.0, 0),
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.18,
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -308,16 +304,14 @@ class _SearchResultState extends State<Search> {
                                                           .symmetric(
                                                       horizontal: 5.0,
                                                       vertical: 10.0),
-                                                  width:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.25,
-                                                  height:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height *
-                                                          0.18,
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.18,
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -343,19 +337,17 @@ class _SearchResultState extends State<Search> {
                                                   );
                                                 },
                                                 child: Container(
-                                                  margin: const EdgeInsets
-                                                          .fromLTRB(
-                                                      5.0, 10.0, 10.0, 0),
-                                                  width:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.25,
-                                                  height:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height *
-                                                          0.18,
+                                                  margin:
+                                                      const EdgeInsets.fromLTRB(
+                                                          5.0, 10.0, 10.0, 0),
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.18,
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -379,7 +371,6 @@ class _SearchResultState extends State<Search> {
                                   return const Center(
                                     child: Text(
                                       "Failed to load movie details",
-                                      style: TextStyle(color: Colors.white),
                                     ),
                                   );
                                 } else {
@@ -399,29 +390,31 @@ class _SearchResultState extends State<Search> {
                         children: [
                           TextField(
                             decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.search),
                               hintText: 'Enter name of movie...',
                               hintStyle: TextStyle(color: Colors.grey),
                               enabledBorder: UnderlineInputBorder(
                                 borderSide: BorderSide(color: Colors.grey),
                               ),
                             ),
-                            style: const TextStyle(color: Colors.white),
                             onChanged: (value) {
                               setState(() {
                                 _searchTermMovie = value;
-                                searchData(_searchTermMovie);
+                                _searchTermActor = "";
+                                _searchTermTVShow = "";
                               });
                             },
                             onSubmitted: (value) {
                               setState(() {
                                 _searchTermMovie = value;
-                                searchData(_searchTermMovie);
+                                _searchTermActor = "";
+                                _searchTermTVShow = "";
                               });
                             },
                           ),
                           Expanded(
                             child: FutureBuilder<List>(
-                              future: searchData(_searchTermMovie),
+                              future: searchData(),
                               builder: (context, snapshot) {
                                 int selectedTabIndex =
                                     DefaultTabController.of(context).index;
@@ -443,24 +436,20 @@ class _SearchResultState extends State<Search> {
                                   final people = snapshot.data!;
                                   return SizedBox(
                                     width: MediaQuery.of(context).size.width,
-                                    height:
-                                        MediaQuery.of(context).size.height,
+                                    height: MediaQuery.of(context).size.height,
                                     child: ListView.builder(
                                       shrinkWrap: true,
                                       itemCount: (people.length / 3).ceil(),
                                       itemBuilder: (context, index) {
                                         final leftPersonIndex = index * 3;
-                                        final middlePersonIndex =
-                                            index * 3 + 1;
-                                        final rightPersonIndex =
-                                            index * 3 + 2;
+                                        final middlePersonIndex = index * 3 + 1;
+                                        final rightPersonIndex = index * 3 + 2;
                                         final leftPerson =
                                             (leftPersonIndex < people.length)
                                                 ? people[leftPersonIndex]
                                                 : null;
                                         final middlePerson =
-                                            (middlePersonIndex <
-                                                    people.length)
+                                            (middlePersonIndex < people.length)
                                                 ? people[middlePersonIndex]
                                                 : null;
                                         final rightPerson =
@@ -475,8 +464,8 @@ class _SearchResultState extends State<Search> {
                                           } else if (leftPerson[
                                                   'poster_path'] !=
                                               'https://cdn-icons-png.flaticon.com/512/3088/3088765.png') {
-                                            leftPerson['poster_path'] = img +
-                                                leftPerson['poster_path'];
+                                            leftPerson['poster_path'] =
+                                                img + leftPerson['poster_path'];
                                           }
                                         }
                                         if (middlePerson != null) {
@@ -487,10 +476,8 @@ class _SearchResultState extends State<Search> {
                                           } else if (middlePerson[
                                                   'poster_path'] !=
                                               'https://cdn-icons-png.flaticon.com/512/3088/3088765.png') {
-                                            middlePerson['poster_path'] =
-                                                img +
-                                                    middlePerson[
-                                                        'poster_path'];
+                                            middlePerson['poster_path'] = img +
+                                                middlePerson['poster_path'];
                                           }
                                         }
                                         if (rightPerson != null) {
@@ -525,19 +512,17 @@ class _SearchResultState extends State<Search> {
                                                   );
                                                 },
                                                 child: Container(
-                                                  margin: const EdgeInsets
-                                                          .fromLTRB(
-                                                      10.0, 10.0, 5.0, 0),
-                                                  width:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.25,
-                                                  height:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height *
-                                                          0.18,
+                                                  margin:
+                                                      const EdgeInsets.fromLTRB(
+                                                          10.0, 10.0, 5.0, 0),
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.18,
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -571,16 +556,14 @@ class _SearchResultState extends State<Search> {
                                                           .symmetric(
                                                       horizontal: 5.0,
                                                       vertical: 10.0),
-                                                  width:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.25,
-                                                  height:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height *
-                                                          0.18,
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.18,
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -610,19 +593,17 @@ class _SearchResultState extends State<Search> {
                                                   );
                                                 },
                                                 child: Container(
-                                                  margin: const EdgeInsets
-                                                          .fromLTRB(
-                                                      5.0, 10.0, 10.0, 0),
-                                                  width:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.25,
-                                                  height:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height *
-                                                          0.18,
+                                                  margin:
+                                                      const EdgeInsets.fromLTRB(
+                                                          5.0, 10.0, 10.0, 0),
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.18,
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -646,7 +627,6 @@ class _SearchResultState extends State<Search> {
                                   return const Center(
                                     child: Text(
                                       "Failed to load movie details",
-                                      style: TextStyle(color: Colors.white),
                                     ),
                                   );
                                 } else {
@@ -666,29 +646,31 @@ class _SearchResultState extends State<Search> {
                         children: [
                           TextField(
                             decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.search),
                               hintText: 'Enter name of show...',
                               hintStyle: TextStyle(color: Colors.grey),
                               enabledBorder: UnderlineInputBorder(
                                 borderSide: BorderSide(color: Colors.grey),
                               ),
                             ),
-                            style: const TextStyle(color: Colors.white),
                             onChanged: (value) {
                               setState(() {
                                 _searchTermTVShow = value;
-                                searchData(_searchTermTVShow);
+                                _searchTermMovie = "";
+                                _searchTermActor = "";
                               });
                             },
                             onSubmitted: (value) {
                               setState(() {
                                 _searchTermTVShow = value;
-                                searchData(_searchTermTVShow);
+                                _searchTermMovie = "";
+                                _searchTermActor = "";
                               });
                             },
                           ),
                           Expanded(
                             child: FutureBuilder<List>(
-                              future: searchData(_searchTermTVShow),
+                              future: searchData(),
                               builder: (context, snapshot) {
                                 int selectedTabIndex =
                                     DefaultTabController.of(context).index;
@@ -710,24 +692,20 @@ class _SearchResultState extends State<Search> {
                                   final people = snapshot.data!;
                                   return SizedBox(
                                     width: MediaQuery.of(context).size.width,
-                                    height:
-                                        MediaQuery.of(context).size.height,
+                                    height: MediaQuery.of(context).size.height,
                                     child: ListView.builder(
                                       shrinkWrap: true,
                                       itemCount: (people.length / 3).ceil(),
                                       itemBuilder: (context, index) {
                                         final leftPersonIndex = index * 3;
-                                        final middlePersonIndex =
-                                            index * 3 + 1;
-                                        final rightPersonIndex =
-                                            index * 3 + 2;
+                                        final middlePersonIndex = index * 3 + 1;
+                                        final rightPersonIndex = index * 3 + 2;
                                         final leftPerson =
                                             (leftPersonIndex < people.length)
                                                 ? people[leftPersonIndex]
                                                 : null;
                                         final middlePerson =
-                                            (middlePersonIndex <
-                                                    people.length)
+                                            (middlePersonIndex < people.length)
                                                 ? people[middlePersonIndex]
                                                 : null;
                                         final rightPerson =
@@ -742,8 +720,8 @@ class _SearchResultState extends State<Search> {
                                           } else if (leftPerson[
                                                   'poster_path'] !=
                                               'https://cdn-icons-png.flaticon.com/512/3088/3088765.png') {
-                                            leftPerson['poster_path'] = img +
-                                                leftPerson['poster_path'];
+                                            leftPerson['poster_path'] =
+                                                img + leftPerson['poster_path'];
                                           }
                                         }
                                         if (middlePerson != null) {
@@ -754,10 +732,8 @@ class _SearchResultState extends State<Search> {
                                           } else if (middlePerson[
                                                   'poster_path'] !=
                                               'https://cdn-icons-png.flaticon.com/512/3088/3088765.png') {
-                                            middlePerson['poster_path'] =
-                                                img +
-                                                    middlePerson[
-                                                        'poster_path'];
+                                            middlePerson['poster_path'] = img +
+                                                middlePerson['poster_path'];
                                           }
                                         }
                                         if (rightPerson != null) {
@@ -792,19 +768,17 @@ class _SearchResultState extends State<Search> {
                                                   );
                                                 },
                                                 child: Container(
-                                                  margin: const EdgeInsets
-                                                          .fromLTRB(
-                                                      10.0, 10.0, 5.0, 0),
-                                                  width:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.25,
-                                                  height:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height *
-                                                          0.18,
+                                                  margin:
+                                                      const EdgeInsets.fromLTRB(
+                                                          10.0, 10.0, 5.0, 0),
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.18,
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -838,16 +812,14 @@ class _SearchResultState extends State<Search> {
                                                           .symmetric(
                                                       horizontal: 5.0,
                                                       vertical: 10.0),
-                                                  width:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.25,
-                                                  height:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height *
-                                                          0.18,
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.18,
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -877,19 +849,17 @@ class _SearchResultState extends State<Search> {
                                                   );
                                                 },
                                                 child: Container(
-                                                  margin: const EdgeInsets
-                                                          .fromLTRB(
-                                                      5.0, 10.0, 10.0, 0),
-                                                  width:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .width *
-                                                          0.25,
-                                                  height:
-                                                      MediaQuery.of(context)
-                                                              .size
-                                                              .height *
-                                                          0.18,
+                                                  margin:
+                                                      const EdgeInsets.fromLTRB(
+                                                          5.0, 10.0, 10.0, 0),
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.25,
+                                                  height: MediaQuery.of(context)
+                                                          .size
+                                                          .height *
+                                                      0.18,
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -913,7 +883,6 @@ class _SearchResultState extends State<Search> {
                                   return const Center(
                                     child: Text(
                                       "Failed to load movie details",
-                                      style: TextStyle(color: Colors.white),
                                     ),
                                   );
                                 } else {
@@ -935,10 +904,7 @@ class _SearchResultState extends State<Search> {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -954,7 +920,6 @@ class _SearchResultState extends State<Search> {
           ),
           BottomNavigationBarItem(
             label: 'Profile',
-            backgroundColor: Color(0xFF121212),
             icon: Icon(Icons.person),
           ),
         ],

@@ -9,15 +9,14 @@ class SignUp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-    late String email, password, repeatpassword;
+    late String email, password;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        automaticallyImplyLeading: false,
         title: Center(
             child: Image.asset(
-          'assets/logo.png',
+          'assets/logo_character.png',
           height: 54,
         )),
       ),
@@ -33,18 +32,16 @@ class SignUp extends StatelessWidget {
                 children: <Widget>[
                   TextFormField(
                     keyboardType: TextInputType.emailAddress,
-                    style: const TextStyle(color: Colors.white),
                     decoration: const InputDecoration(
                       labelText: 'Email',
-                      labelStyle: TextStyle(color: Colors.white),
                       hintText: 'Your Email',
                       hintStyle:
                           TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white, width: 1.0),
+                        borderSide: BorderSide( width: 1.0),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white, width: 2.0),
+                        borderSide: BorderSide(width: 2.0),
                       ),
                     ),
                     validator: (String? value) {
@@ -59,19 +56,17 @@ class SignUp extends StatelessWidget {
                   ),
                   const SizedBox(height: 16.0),
                   TextFormField(
-                    style: const TextStyle(color: Colors.white),
                     obscureText: true,
                     decoration: const InputDecoration(
                       labelText: 'Password',
-                      labelStyle: TextStyle(color: Colors.white),
                       hintText: 'Your Password',
                       hintStyle:
                           TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white, width: 1.0),
+                        borderSide: BorderSide(width: 1.0),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white, width: 2.0),
+                        borderSide: BorderSide( width: 2.0),
                       ),
                     ),
                     validator: (String? value) {
@@ -89,19 +84,17 @@ class SignUp extends StatelessWidget {
                   ),
                   const SizedBox(height: 16.0),
                   TextFormField(
-                    style: const TextStyle(color: Colors.white),
                     obscureText: true,
                     decoration: const InputDecoration(
                       labelText: 'Repeat Password',
-                      labelStyle: TextStyle(color: Colors.white),
                       hintText: 'Your Password',
                       hintStyle:
                           TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white, width: 1.0),
+                        borderSide: BorderSide(width: 1.0),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white, width: 2.0),
+                        borderSide: BorderSide(width: 2.0),
                       ),
                     ),
                     validator: (String? value) {
@@ -114,7 +107,6 @@ class SignUp extends StatelessWidget {
                       return null;
                     },
                     onSaved: (String? value) {
-                      repeatpassword = value!;
                     },
                   ),
                   const SizedBox(height: 16.0),
@@ -124,7 +116,7 @@ class SignUp extends StatelessWidget {
                       if (formKey.currentState!.validate()) {
                         formKey.currentState!.save();
                         try {
-                          final credentials = await FirebaseAuth.instance
+                          await FirebaseAuth.instance
                               .createUserWithEmailAndPassword(
                                   email: email, password: password)
                               .then((credential) {
@@ -146,6 +138,7 @@ class SignUp extends StatelessWidget {
                             const Map<String, dynamic> FavActors = {};
                             const Map<String, dynamic> Calendar = {};
                             const Map<String, dynamic> Rewatched = {};
+                            const Map<String, dynamic> Settings = {"darkMode": true, "dontAskCalendar": false};
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("Movies")
@@ -186,16 +179,20 @@ class SignUp extends StatelessWidget {
                                 .collection(credential.user!.uid)
                                 .doc("Rewatched")
                                 .set(Rewatched);
+                            FirebaseFirestore.instance
+                                .collection(credential.user!.uid)
+                                .doc("Settings")
+                                .set(Settings);
                           });
                           try {
-                            final credential = await FirebaseAuth.instance
+                            await FirebaseAuth.instance
                                 .signInWithEmailAndPassword(
                                     email: email, password: password)
                                 .then((_) {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => const MyApp()),
+                                    builder: (context) => MyApp()),
                               );
                             });
                           } on FirebaseAuthException catch (e) {
