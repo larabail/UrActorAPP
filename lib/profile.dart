@@ -15,6 +15,8 @@ import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'theme_provider.dart';
 
+const String imgLink = 'https://image.tmdb.org/t/p/w500/';
+
 class Country {
   final String isoCode;
   final String englishName;
@@ -34,6 +36,29 @@ class Country {
   }
 }
 
+class Provider {
+  final String image;
+  final String name;
+  final String id;
+  bool isSelected;
+
+  Provider(
+      {required this.image,
+      required this.name,
+      required this.id,
+      required this.isSelected});
+
+  factory Provider.fromJson(Map<String, dynamic> json) {
+    return Provider(
+      image: json['logo_path'],
+      name: json['provider_name'],
+      id: json['provider_id'].toString(),
+      isSelected:
+          settings["providers"].contains(json['provider_id'].toString()),
+    );
+  }
+}
+
 class InfoButtonDialog extends StatefulWidget {
   InfoButtonDialog();
 
@@ -44,12 +69,14 @@ class InfoButtonDialog extends StatefulWidget {
 class _InfoButtonDialogState extends State<InfoButtonDialog> {
   String selectedCountry = country;
   List<Country> countries = [];
+  List<Provider> allProviders = [];
   Country? selectedCountryObject;
   @override
   @override
   void initState() {
     super.initState();
     fetchCountries();
+    fetchProviders();
   }
 
   Future<void> fetchCountries() async {
@@ -72,19 +99,26 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
     }
   }
 
+  Future<void> fetchProviders() async {
+    final response = await http.get(Uri.parse(
+        "https://api.themoviedb.org/3/watch/providers/movie?api_key=700cd4fab994df56eb41b34d38c4762a&watch_region=$country"));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      setState(() {
+        allProviders = List<Provider>.from(
+            data["results"].map((country) => Provider.fromJson(country)));
+      });
+    } else {
+      print('Failed to fetch providers');
+    }
+  }
+
   // Helper function to find the Country object with the matching ISO code
   Country? findCountryByIsoCode(String isoCode) {
     return countries.firstWhere(
       (country) => country.isoCode == isoCode,
       orElse: () => countries[0],
     );
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Find the default selected Country based on the selectedCountry variable
-    // selectedCountryObject = findCountryByIsoCode(selectedCountry);
   }
 
   Future<void> updateCountry(Country element) async {
@@ -147,8 +181,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                         value: themeProvider.isDarkMode,
                         onChanged: (value) {
                           themeProvider.toggleDarkMode();
-                          updateSettings(
-                              "darkMode", themeProvider.isDarkMode);
+                          updateSettings("darkMode", themeProvider.isDarkMode);
                         },
                       ),
                       const SizedBox(
@@ -188,6 +221,70 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                 const Icon(Icons.disabled_by_default, color: Colors.redAccent),
               ],
             ),
+            const Text(
+              'Your Providers',
+              style: TextStyle(fontSize: 18),
+            ),
+            Container(
+              height: MediaQuery.of(context).size.height * 0.18,
+              child: Padding(
+                padding:
+                    const EdgeInsets.all(5.0), // Add padding here as needed
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    crossAxisSpacing: 8.0,
+                    mainAxisSpacing: 8.0,
+                  ),
+                  itemCount: allProviders.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    Provider provider = allProviders[index];
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          provider.isSelected = !provider.isSelected;
+                          if (provider.isSelected) {
+                            settings["providers"].add(provider.id.toString());
+                          } else {
+                            settings["providers"]
+                                .remove(provider.id.toString());
+                          }
+                          updateSettings("providers", settings["providers"]);
+                        });
+                      },
+                      child: Stack(
+                        children: [
+                          Image.network(
+                            imgLink + provider.image,
+                            width: double.infinity,
+                            height: 150.0, // Adjust the height as needed
+                            fit: BoxFit.cover,
+                          ),
+                          Positioned(
+                            bottom: 0.0,
+                            left: 4.0,
+                            child: Text(
+                              provider.name,
+                              // style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          if (provider.isSelected)
+                            const Positioned(
+                              bottom: 4.0,
+                              right: 4.0,
+                              child: Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                                size: 24.0,
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
             IconButton(
               icon: const Icon(Icons.logout_outlined),
               color: const Color.fromARGB(255, 232, 85, 75),
@@ -225,7 +322,6 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
 }
 
 const String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-const String imgLink = 'https://image.tmdb.org/t/p/w500/';
 String link = "https://api.themoviedb.org/3/movie/";
 int weekOffset = 0; // This will be used to go to previous or next weeks
 
@@ -475,7 +571,7 @@ class _ProfileState extends State<Profile> {
         automaticallyImplyLeading: false,
         title: Center(
           child: Image.asset(
-          'assets/logo_character.png',
+            'assets/logo_character.png',
             height: 54,
           ),
         ),

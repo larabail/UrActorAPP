@@ -38,7 +38,7 @@ class SignUp extends StatelessWidget {
                       hintStyle:
                           TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide( width: 1.0),
+                        borderSide: BorderSide(width: 1.0),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderSide: BorderSide(width: 2.0),
@@ -66,7 +66,7 @@ class SignUp extends StatelessWidget {
                         borderSide: BorderSide(width: 1.0),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide( width: 2.0),
+                        borderSide: BorderSide(width: 2.0),
                       ),
                     ),
                     validator: (String? value) {
@@ -106,8 +106,7 @@ class SignUp extends StatelessWidget {
                       }
                       return null;
                     },
-                    onSaved: (String? value) {
-                    },
+                    onSaved: (String? value) {},
                   ),
                   const SizedBox(height: 16.0),
                   ElevatedButton(
@@ -138,7 +137,11 @@ class SignUp extends StatelessWidget {
                             const Map<String, dynamic> FavActors = {};
                             const Map<String, dynamic> Calendar = {};
                             const Map<String, dynamic> Rewatched = {};
-                            const Map<String, dynamic> Settings = {"darkMode": true, "dontAskCalendar": false};
+                            const Map<String, dynamic> Settings = {
+                              "darkMode": true,
+                              "dontAskCalendar": false,
+                              "providers": []
+                            };
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("Movies")
