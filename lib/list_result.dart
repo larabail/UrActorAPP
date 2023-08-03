@@ -25,11 +25,8 @@ class InfoButtonDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color.fromARGB(
-              255, 23, 20, 20), // change the color of dialog window here
           borderRadius: BorderRadius.circular(10.0),
         ),
         padding: const EdgeInsets.all(25.0),
@@ -114,7 +111,7 @@ class AlertButtonDialogue extends StatelessWidget {
           style: ButtonStyle(
             backgroundColor: MaterialStateProperty.all(Colors.red),
           ),
-          child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          child: const Text('Delete'),
         ),
         TextButton(
           onPressed: () {
@@ -180,7 +177,7 @@ class ListResult extends StatelessWidget {
     int selectedIndex = 0;
 
     final List<Widget> pages = [
-      const MyApp(),
+      MyApp(),
       Search(),
       Playlists(),
       Profile(),
@@ -198,12 +195,11 @@ class ListResult extends StatelessWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: const Color(0xFF121212),
         appBar: AppBar(
-          backgroundColor: const Color(0xFF121212),
+        automaticallyImplyLeading: false,
           title: Center(
               child: Image.asset(
-            'assets/logo.png',
+          'assets/logo_character.png',
             height: 54,
           )),
         ),
@@ -248,7 +244,6 @@ class ListResult extends StatelessWidget {
                       child: Text(
                         list['Name'],
                         style: const TextStyle(
-                          color: Colors.white,
                           fontSize: 30,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.5,
@@ -276,8 +271,7 @@ class ListResult extends StatelessWidget {
                                 builder: (context) => InfoButtonDialog(),
                               );
                             },
-                            icon: const Icon(Icons.more_vert),
-                            color: Colors.white,
+                            icon: const Icon(Icons.more_vert, color: Colors.white,),
                           ),
                         ])),
                   ),
@@ -1242,7 +1236,6 @@ class ListResult extends StatelessWidget {
           selectedItemColor: Colors.grey,
           unselectedItemColor: Colors.grey,
           type: BottomNavigationBarType.fixed,
-          backgroundColor: const Color(0xFF121212),
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home),
@@ -1258,7 +1251,6 @@ class ListResult extends StatelessWidget {
             ),
             BottomNavigationBarItem(
               label: 'Profile',
-              backgroundColor: Color(0xFF121212),
               icon: Icon(Icons.person),
             ),
           ],

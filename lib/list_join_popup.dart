@@ -46,7 +46,6 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.black,
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -59,7 +58,6 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
                 ),
               ),
             ),
@@ -72,9 +70,7 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
                   }
                   return null;
                 },
-                style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
-                  labelStyle: TextStyle(color: Colors.white),
                   labelText: 'List Name',
                 ),
                 onChanged: (value) {
@@ -86,9 +82,7 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
             Padding(
               padding: const EdgeInsets.all(10.0),
               child: TextFormField(
-                style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
-                  labelStyle: TextStyle(color: Colors.white),
                   labelText: 'Access Code For Other People',
                 ),
                 onChanged: (value) {
