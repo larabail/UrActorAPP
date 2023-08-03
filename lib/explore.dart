@@ -156,8 +156,8 @@ void markWatched(String id, String title, BuildContext context) async {
   for (var doc in snapshot.docs) {
     if (doc.id == 'Calendar') {
       if (!dontAskCalendar) {
-          addtoCalendar(id, title, today, context);
-        }
+        addtoCalendar(id, title, today, context);
+      }
     }
   }
 }
@@ -445,26 +445,27 @@ class _ExploreState extends State<Explore> {
     idsExplorePage.shuffle();
     List moviesData = [];
     for (String id in idsExplorePage) {
-      // print(page);
-      // print(i);
       if (i < itemsPerPage * page) {
         await FirebaseFirestore.instance
-            .collection("ExploreMovies")
+            .collection("AllMovies")
             .doc(id)
             .get()
             .then((DocumentSnapshot snapshot) {
           Map data = snapshot.data() as Map;
           // print(data);
           // print(filters);
+          Map allData = snapshot.data() as Map;
           if (filters.isNotEmpty) {
             // print(data["genres"]);
             bool allFiltersPresent =
                 areAllFiltersPresent(filters, data["genres"]);
-            // print(allFiltersPresent);
-            if (allFiltersPresent) {
+            if (allFiltersPresent &&
+                allData["poster_path"] != null &&
+                !containsList(seenMovies, ["Movies", data["id"]])) {
               moviesData.add(snapshot.data());
             }
-          } else {
+          } else if (allData["poster_path"] != null &&
+              !containsList(seenMovies, ["Movies", data["id"]])) {
             moviesData.add(snapshot.data());
           }
         });
@@ -664,7 +665,7 @@ class _ExploreState extends State<Explore> {
                                               image: NetworkImage(
                                                 imageLeft,
                                               ),
-                                              fit: BoxFit.cover,
+                                              fit: BoxFit.fitHeight,
                                             ),
                                           ),
                                         ),
