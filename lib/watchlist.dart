@@ -1,14 +1,14 @@
+// ignore_for_file: use_key_in_widget_constructors, must_be_immutable
+
 import 'package:flutter/material.dart';
 import 'movie_result.dart';
 import 'playlists.dart';
 import 'profile.dart';
 import 'search.dart';
 import 'main.dart';
-import 'movie_result.dart';
 import 'tvshow_result.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
   String jsonString = json.encode(map);
@@ -78,12 +78,11 @@ class Watchlist extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        automaticallyImplyLeading: false,
         title: Center(
           child: Image.asset(
-            'assets/logo.png',
+          'assets/logo_character.png',
             height: 54,
           ),
         ),
@@ -95,7 +94,6 @@ class Watchlist extends StatelessWidget {
             child: Text(
               "Your Watchlist",
               style: TextStyle(
-                color: Colors.white,
                 fontSize: 24.0,
                 fontWeight: FontWeight.bold,
               ),
@@ -596,7 +594,6 @@ class Watchlist extends StatelessWidget {
         selectedItemColor: Colors.grey,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -612,7 +609,6 @@ class Watchlist extends StatelessWidget {
           ),
           BottomNavigationBarItem(
             label: 'Profile',
-            backgroundColor: Color(0xFF121212),
             icon: Icon(Icons.person),
           ),
         ],

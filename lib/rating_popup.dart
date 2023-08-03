@@ -49,6 +49,7 @@ class _RatingDialogState extends State<RatingDialog> {
         }
       }
     });
+    reviewInfo = {};
     Navigator.pushReplacement(
         context, MaterialPageRoute(builder: (context) => MovieResult()));
   }
@@ -108,7 +109,6 @@ class _RatingDialogState extends State<RatingDialog> {
               const Text(
                 'Opinion',
                 style: TextStyle(
-                  color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -116,7 +116,6 @@ class _RatingDialogState extends State<RatingDialog> {
               TextField(
                 controller: myController,
                 style: const TextStyle(
-                  color: Colors.white,
                   fontSize: 16,
                 ),
                 onChanged: (value) {
@@ -129,7 +128,6 @@ class _RatingDialogState extends State<RatingDialog> {
               const Text(
                 'Your Rating',
                 style: TextStyle(
-                  color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -140,7 +138,7 @@ class _RatingDialogState extends State<RatingDialog> {
                   10,
                   (index) => IconButton(
                     icon: Icon(
-                      Icons.star,
+                      Icons.star_rate_outlined,
                       color: index < rating ? Colors.yellow[600] : Colors.white,
                     ),
                     onPressed: () {

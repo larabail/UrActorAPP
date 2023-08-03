@@ -19,7 +19,6 @@ Future<List<Map<String, dynamic>>> parseJSONFile() async {
     Map items = jsonDecode(jsonString);
     Map peopleOscars = {};
     for (String person_id in items.keys) {
-      Map person_to_add = {};
       link = 'https://api.themoviedb.org/3/person/';
       final response = await http.get(
           Uri.parse('${link}${items[person_id]['tmdb_id']}${api_key_actor}'));
@@ -84,12 +83,11 @@ class Oscars extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: Color(0xFF121212),
+        automaticallyImplyLeading: false,
         title: Center(
             child: Image.asset(
-          'assets/logo.png',
+          'assets/logo_character.png',
           height: 54,
         )),
       ),
@@ -101,7 +99,6 @@ class Oscars extends StatelessWidget {
               child: Text(
                 "Oscar Winners",
                 style: TextStyle(
-                  color: Colors.white,
                   fontSize: 24.0,
                   fontWeight: FontWeight.bold,
                 ),
@@ -188,7 +185,6 @@ class Oscars extends StatelessWidget {
                                                     Text(
                                                       "${leftPerson['name']}",
                                                       style: const TextStyle(
-                                                        color: Colors.white,
                                                         fontWeight:
                                                             FontWeight.bold,
                                                         fontSize: 14,
@@ -262,7 +258,6 @@ class Oscars extends StatelessWidget {
                                                     Text(
                                                       "${middlePerson['name']}",
                                                       style: const TextStyle(
-                                                        color: Colors.white,
                                                         fontWeight:
                                                             FontWeight.bold,
                                                         fontSize: 14,
@@ -336,7 +331,6 @@ class Oscars extends StatelessWidget {
                                                     Text(
                                                       "${rightPerson['name']}",
                                                       style: const TextStyle(
-                                                        color: Colors.white,
                                                         fontWeight:
                                                             FontWeight.bold,
                                                         fontSize: 14,
@@ -376,7 +370,6 @@ class Oscars extends StatelessWidget {
         selectedItemColor: Colors.grey,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -392,7 +385,6 @@ class Oscars extends StatelessWidget {
           ),
           BottomNavigationBarItem(
             label: 'Profile',
-            backgroundColor: Color(0xFF121212),
             icon: Icon(Icons.person),
           ),
         ],

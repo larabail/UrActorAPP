@@ -214,12 +214,13 @@ class _PersonResultState extends State<PersonResult> {
 
   @override
   Widget build(BuildContext context) {
-    int _selectedIndex = 0;
     scoreActor = 0;
     scoreDirector = 0;
     countedMoviesDirector = [];
     countedMoviesActor = [];
-    final List<Widget> _pages = [
+    int selectedIndex = 0;
+
+    final List<Widget> pages = [
       MyApp(),
       Search(),
       Playlists(),
@@ -228,20 +229,19 @@ class _PersonResultState extends State<PersonResult> {
     ];
 
     void _onItemTapped(int index) {
-      _selectedIndex = index;
+      selectedIndex = index;
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => _pages[_selectedIndex]),
+        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
       );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        backgroundColor: Color(0xFF121212),
+        automaticallyImplyLeading: false,
         title: Center(
             child: Image.asset(
-          'assets/logo.png',
+          'assets/logo_character.png',
           height: 54,
         )),
       ),
@@ -302,11 +302,9 @@ class _PersonResultState extends State<PersonResult> {
                     ),
                   ),
                   Center(
-                    child: Container(
-                      child: Text(
-                        snapshot.data!['name'],
-                        style: TextStyle(color: Colors.white, fontSize: 30),
-                      ),
+                    child: Text(
+                      snapshot.data!['name'],
+                      style: const TextStyle(fontSize: 30),
                     ),
                   ),
                   DefaultTabController(
@@ -314,12 +312,14 @@ class _PersonResultState extends State<PersonResult> {
                     child: Column(
                       children: [
                         const TabBar(
+                          labelColor: null,
+                          unselectedLabelColor: null,
                           tabs: [
                             Tab(text: 'As Part of the Cast'),
                             Tab(text: 'As Part of the Crew'),
                           ],
                         ),
-                        Container(
+                        SizedBox(
                           height: MediaQuery.of(context).size.height * 0.46,
                           child: TabBarView(
                             children: [
@@ -862,35 +862,27 @@ class _PersonResultState extends State<PersonResult> {
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: Colors.grey,
         unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF121212),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.library_books_rounded),
-            label: 'Library',
-          ),
-          BottomNavigationBarItem(
-            label: 'Profile',
-            backgroundColor: Color(0xFF121212),
-            icon: Icon(Icons.person),
-          ),
-        ],
-        currentIndex: 2,
-        onTap: (int index) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => _pages[index]),
-          );
-        },
-      ),
+          type: BottomNavigationBarType.fixed,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.search),
+              label: 'Search',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.library_books_rounded),
+              label: 'Library',
+            ),
+            BottomNavigationBarItem(
+              label: 'Profile',
+              icon: Icon(Icons.person),
+            ),
+          ],
+          currentIndex: selectedIndex,
+          onTap: _onItemTapped),
     );
   }
 
@@ -928,7 +920,7 @@ class _PersonResultState extends State<PersonResult> {
                   height: MediaQuery.of(context).size.height * 0.2,
                 ),
                 Padding(
-                  padding: EdgeInsets.fromLTRB(15, 0, 0, 0),
+                  padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
                   child: Container(
                     height: 20.0,
                     width: MediaQuery.of(context).size.width * 0.26,
@@ -939,7 +931,6 @@ class _PersonResultState extends State<PersonResult> {
                           Text(
                             "${movie['character']}",
                             style: const TextStyle(
-                              color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
@@ -987,8 +978,8 @@ class _PersonResultState extends State<PersonResult> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color.fromARGB(255, 0, 0, 0).withOpacity(0.85),
-                  Color.fromARGB(0, 255, 255, 255).withOpacity(0),
+                  const Color.fromARGB(255, 0, 0, 0).withOpacity(0.85),
+                  const Color.fromARGB(0, 255, 255, 255).withOpacity(0),
                 ],
               ),
             ),
@@ -1012,7 +1003,7 @@ class _PersonResultState extends State<PersonResult> {
                   height: MediaQuery.of(context).size.height * 0.14,
                 ),
                 Padding(
-                  padding: EdgeInsets.fromLTRB(15, 0, 0, 0),
+                  padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
                   child: Container(
                     height: 20.0,
                     width: MediaQuery.of(context).size.width * 0.26,
@@ -1023,7 +1014,6 @@ class _PersonResultState extends State<PersonResult> {
                           Text(
                             "${movie['character']}",
                             style: const TextStyle(
-                              color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
@@ -1065,7 +1055,7 @@ class _PersonResultState extends State<PersonResult> {
                   height: MediaQuery.of(context).size.height * 0.2,
                 ),
                 Padding(
-                  padding: EdgeInsets.fromLTRB(15, 0, 0, 0),
+                  padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
                   child: Container(
                     height: 20.0,
                     width: MediaQuery.of(context).size.width * 0.26,
@@ -1076,7 +1066,6 @@ class _PersonResultState extends State<PersonResult> {
                           Text(
                             "${movie['job']}",
                             style: const TextStyle(
-                              color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
@@ -1124,8 +1113,8 @@ class _PersonResultState extends State<PersonResult> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color.fromARGB(255, 0, 0, 0).withOpacity(0.75),
-                  Color.fromARGB(0, 255, 255, 255).withOpacity(0),
+                  const Color.fromARGB(255, 0, 0, 0).withOpacity(0.75),
+                  const Color.fromARGB(0, 255, 255, 255).withOpacity(0),
                 ],
               ),
             ),
@@ -1149,7 +1138,7 @@ class _PersonResultState extends State<PersonResult> {
                   height: MediaQuery.of(context).size.height * 0.14,
                 ),
                 Padding(
-                  padding: EdgeInsets.fromLTRB(15, 0, 0, 0),
+                  padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
                   child: Container(
                     height: 20.0,
                     width: MediaQuery.of(context).size.width * 0.26,
@@ -1160,7 +1149,6 @@ class _PersonResultState extends State<PersonResult> {
                           Text(
                             "${movie['job']}",
                             style: const TextStyle(
-                              color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),

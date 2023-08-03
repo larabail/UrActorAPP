@@ -155,8 +155,9 @@ void markWatched(String id, String title, BuildContext context) async {
   final snapshot = await FirebaseFirestore.instance.collection(uid).get();
   for (var doc in snapshot.docs) {
     if (doc.id == 'Calendar') {
-      final events = doc.data();
-      addtoCalendar(id, title, today, context);
+      if (!dontAskCalendar) {
+          addtoCalendar(id, title, today, context);
+        }
     }
   }
 }
@@ -538,7 +539,7 @@ class _ExploreState extends State<Explore> {
     int selectedIndex = 0;
 
     final List<Widget> pages = [
-      const MyApp(),
+      MyApp(),
       Search(),
       Playlists(),
       Profile(),
@@ -989,6 +990,7 @@ class _ExploreState extends State<Explore> {
               ),
             );
           }
+          return null;
         },
       );
     }
@@ -1151,10 +1153,10 @@ class _ExploreState extends State<Explore> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        automaticallyImplyLeading: false,
         title: Center(
             child: Image.asset(
-          'assets/logo.png',
+          'assets/logo_character.png',
           height: 54,
         )),
       ),
@@ -1250,7 +1252,6 @@ class _ExploreState extends State<Explore> {
         selectedItemColor: Colors.grey,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
