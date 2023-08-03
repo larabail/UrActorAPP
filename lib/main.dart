@@ -136,14 +136,27 @@ class _MyHomePageState extends State<MyHomePage> {
     uid = user.uid;
     email = user.email!;
     // print(_items);
-    await FirebaseFirestore.instance
-        .collection("ExploreMovies")
-        .doc("MoviesExplore")
-        .get()
-        .then((DocumentSnapshot snapshot) async {
-      Map json = snapshot.data() as Map;
-      idsExplorePage = json["Ids"];
-    });
+    if (idsExplorePage.isEmpty) {
+      await FirebaseFirestore.instance
+          .collection("AllMoviesIds")
+          .doc("AllIds")
+          .get()
+          .then((DocumentSnapshot snapshot) async {
+        Map json = snapshot.data() as Map;
+        List docIds = json["docIds"];
+        docIds.forEach((element) async {
+          await FirebaseFirestore.instance
+              .collection("AllMoviesIds")
+              .doc(element)
+              .get()
+              .then((DocumentSnapshot snapshot2) async {
+            Map json2 = snapshot2.data() as Map;
+            idsExplorePage.addAll(List.from(json2["ids"]));
+          });
+        });
+      });
+    }
+
     await FirebaseFirestore.instance
         .collection(uid)
         .get()
