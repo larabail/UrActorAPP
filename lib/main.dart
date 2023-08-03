@@ -74,11 +74,11 @@ class MyApp extends StatelessWidget {
                     ),
                     switchTheme: SwitchThemeData(
                       thumbColor: MaterialStateProperty.all<Color>(
-                          Color.fromARGB(248, 241, 105, 56)),
+                          const Color.fromARGB(248, 241, 105, 56)),
                       trackColor: MaterialStateProperty.all<Color>(
-                          Color.fromARGB(250, 224, 190, 78)),
+                          const Color.fromARGB(250, 224, 190, 78)),
                     ),
-                    indicatorColor: Color.fromARGB(250, 224, 190, 78),
+                    indicatorColor: const Color.fromARGB(250, 224, 190, 78),
                     tabBarTheme: const TabBarTheme(
                       labelColor: Color.fromARGB(250, 224, 190, 78),
                       unselectedLabelColor: Colors
@@ -103,11 +103,11 @@ class MyApp extends StatelessWidget {
                     ),
                     switchTheme: SwitchThemeData(
                       thumbColor: MaterialStateProperty.all<Color>(
-                          Color.fromARGB(248, 241, 105, 56)),
+                          const Color.fromARGB(248, 241, 105, 56)),
                       trackColor: MaterialStateProperty.all<Color>(
-                          Color.fromARGB(250, 224, 190, 78)),
+                          const Color.fromARGB(250, 224, 190, 78)),
                     ),
-                    indicatorColor: Color.fromARGB(255, 150, 127, 52),
+                    indicatorColor: const Color.fromARGB(255, 150, 127, 52),
                     bottomNavigationBarTheme:
                         const BottomNavigationBarThemeData(
                       selectedItemColor: Color.fromARGB(255, 150, 127, 52),

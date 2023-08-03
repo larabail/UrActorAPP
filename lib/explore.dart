@@ -15,6 +15,8 @@ import 'package:carousel_slider/carousel_slider.dart';
 const String api_key_actor =
     "?api_key=700cd4fab994df56eb41b34d38c4762a&include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc&adult=false&region=US";
 const String imgLink = 'https://image.tmdb.org/t/p/w500/';
+String watch_providers =
+    "/watch/providers?api_key=700cd4fab994df56eb41b34d38c4762a";
 const String GENRES_LINK =
     "https://api.themoviedb.org/3/genre/movie/list?api_key=700cd4fab994df56eb41b34d38c4762a";
 String link = "https://api.themoviedb.org/3/movie/";
@@ -415,8 +417,21 @@ class _ExploreState extends State<Explore> {
   bool isGridMode = false;
   List genres = [];
   ScrollController _scrollController = ScrollController();
+  bool _inMyProviders = false;
 
   bool isFilterOpen = false;
+
+  bool containsIdInMap(List ids, List data) {
+    for (String id in ids) {
+      for (Map<String, dynamic> map in data) {
+        if (map.containsKey('provider_id') &&
+            map['provider_id'] == int.parse(id)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 
   Future<void> toggleFilter() async {
     if (isFilterOpen) {
@@ -428,7 +443,7 @@ class _ExploreState extends State<Explore> {
     } else {
       filters = [];
     }
-    if (filters.isNotEmpty) {
+    if (filters.isNotEmpty || _inMyProviders) {
       _items = [];
       _currentSlide = 0;
       await getData();
@@ -450,23 +465,66 @@ class _ExploreState extends State<Explore> {
             .collection("AllMovies")
             .doc(id)
             .get()
-            .then((DocumentSnapshot snapshot) {
+            .then((DocumentSnapshot snapshot) async {
           Map data = snapshot.data() as Map;
           // print(data);
           // print(filters);
           Map allData = snapshot.data() as Map;
-          if (filters.isNotEmpty) {
-            // print(data["genres"]);
-            bool allFiltersPresent =
-                areAllFiltersPresent(filters, data["genres"]);
-            if (allFiltersPresent &&
-                allData["poster_path"] != null &&
+          String name = allData["title"]
+              .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
+              .replaceAll(" ", "-");
+          if (_inMyProviders) {
+            final response = await http
+                .get(Uri.parse('$link${allData["id"]}-$name$watch_providers'));
+            if (response.statusCode == 200) {
+              final data = json.decode(response.body);
+              if (data["results"].keys.toList().contains(country)) {
+                print(data["results"][country]);
+                if (data["results"][country]
+                    .keys
+                    .toList()
+                    .contains("flatrate")) {
+                  List providersForMovie = data["results"][country]['flatrate'];
+                  bool inMyProviders =
+                      containsIdInMap(settings["providers"], providersForMovie);
+                  if (inMyProviders) {
+                    if (filters.isNotEmpty) {
+                      // print(data["genres"]);
+                      if (data.keys.toList().contains("genres")) {
+                        bool allFiltersPresent =
+                            areAllFiltersPresent(filters, data["genres"]);
+                        if (allFiltersPresent &&
+                            allData["poster_path"] != null &&
+                            !containsList(seenMovies, ["Movies", data["id"]])) {
+                          moviesData.add(snapshot.data());
+                        }
+                      }
+                    } else if (allData["poster_path"] != null &&
+                        !containsList(seenMovies, ["Movies", data["id"]])) {
+                      moviesData.add(snapshot.data());
+                    }
+                  }
+                }
+              }
+            } else {
+              print('Failed to fetch countries');
+            }
+          } else {
+            if (filters.isNotEmpty) {
+              // print(data["genres"]);
+              if (data.keys.toList().contains("genres")) {
+                bool allFiltersPresent =
+                    areAllFiltersPresent(filters, data["genres"]);
+                if (allFiltersPresent &&
+                    allData["poster_path"] != null &&
+                    !containsList(seenMovies, ["Movies", data["id"]])) {
+                  moviesData.add(snapshot.data());
+                }
+              }
+            } else if (allData["poster_path"] != null &&
                 !containsList(seenMovies, ["Movies", data["id"]])) {
               moviesData.add(snapshot.data());
             }
-          } else if (allData["poster_path"] != null &&
-              !containsList(seenMovies, ["Movies", data["id"]])) {
-            moviesData.add(snapshot.data());
           }
         });
         i++;
@@ -508,13 +566,10 @@ class _ExploreState extends State<Explore> {
     super.dispose();
   }
 
-// The scroll listener function
   void _scrollListener() {
-    // Check if the user has reached the end of the list
     if (_scrollController.position.pixels ==
             _scrollController.position.maxScrollExtent ||
         _items.length < 10) {
-      // Load more items
       setState(() {
         _loadMoreItems();
       });
@@ -1176,6 +1231,19 @@ class _ExploreState extends State<Explore> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                Row(
+                  children: [
+                    Switch(
+                      value: _inMyProviders,
+                      onChanged: (value) {
+                        setState(() {
+                          _inMyProviders = !_inMyProviders;
+                        });
+                      },
+                    ),
+                    Text("In My Providers"),
+                  ],
+                ),
                 // Centered text "Genres"
                 const Padding(
                   padding: EdgeInsets.fromLTRB(
