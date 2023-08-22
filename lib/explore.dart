@@ -455,33 +455,7 @@ class _ExploreState extends State<Explore> {
     });
   }
 
-  Future <void> firstOpening() async {
-    if (idsExplorePage.isEmpty) {
-      await FirebaseFirestore.instance
-          .collection("AllMoviesIds")
-          .doc("AllIds")
-          .get()
-          .then((DocumentSnapshot snapshot) async {
-        Map json = snapshot.data() as Map;
-        List docIds = json["docIds"];
-        docIds.forEach((element) async {
-          await FirebaseFirestore.instance
-              .collection("AllMoviesIds")
-              .doc(element)
-              .get()
-              .then((DocumentSnapshot snapshot2) async {
-            Map json2 = snapshot2.data() as Map;
-            idsExplorePage.addAll(List.from(json2["ids"]));
-            await getData();
-          });
-        });
-      });
-    } else {
-      await getData();
-    }
-  }
   Future<void> getData() async {
-    
     int i = itemsPerPage * (page - 1);
     idsExplorePage.shuffle();
     List moviesData = [];
@@ -582,7 +556,7 @@ class _ExploreState extends State<Explore> {
   @override
   void initState() {
     super.initState();
-    firstOpening();
+    getData();
     _scrollController.addListener(_scrollListener);
   }
 
