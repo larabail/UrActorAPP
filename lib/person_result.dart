@@ -860,8 +860,8 @@ class _PersonResultState extends State<PersonResult> {
         },
       ),
       bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.grey,
-        unselectedItemColor: Colors.grey,
+          selectedItemColor: Colors.grey,
+          unselectedItemColor: Colors.grey,
           type: BottomNavigationBarType.fixed,
           items: const [
             BottomNavigationBarItem(
@@ -897,7 +897,8 @@ class _PersonResultState extends State<PersonResult> {
   }
 
   seen(BuildContext context, movie, type) {
-    if (!containsMap(seenMovies, [type, movie['id']])) {
+    if (!containsMap(seenMovies, [type, movie['id']]) &&
+        !containsMap(seenTVShows, [type, movie['id']])) {
       return Stack(
         children: [
           Container(
@@ -1032,7 +1033,8 @@ class _PersonResultState extends State<PersonResult> {
   }
 
   seenCrew(BuildContext context, movie, type) {
-    if (!containsMap(seenMovies, [type, movie['id']])) {
+    if (!containsMap(seenMovies, [type, movie['id']]) &&
+        !containsMap(seenTVShows, [type, movie['id']])) {
       return Stack(
         children: [
           Container(
