@@ -53,6 +53,37 @@ class _CalendarState extends State<Calendar> {
 
     if (rewatchedMovies.keys.toList().contains(id)) {
       rewatchedMovies[id] -= 1;
+      if (rewatchedMovies[id] == 0) {
+        List w;
+        await FirebaseFirestore.instance
+            .collection(uid)
+            .get()
+            .then((QuerySnapshot querySnapshot) {
+          querySnapshot.docs.forEach((doc) async {
+            if (doc.id == "Movies") {
+              Map movies_result = doc.data() as Map;
+              w = movies_result["Seen"];
+              int index = w.indexOf(id);
+
+              if (index > -1) {
+                w.removeAt(index);
+              }
+              var userDoc =
+                  FirebaseFirestore.instance.collection(uid).doc("Movies");
+              await userDoc.update({'Seen': w});
+              seenMovies = [];
+              for (var element in w) {
+                seenMovies += [
+                  ["Movies", element]
+                ];
+              }
+              setState(() {
+                seenMovies = seenMovies;
+              });
+            }
+          });
+        });
+      }
       userDoc = db.collection(uid).doc("Rewatched");
       Map<Object, Object> updatedRewatched = {};
       for (String key in rewatchedMovies.keys) {
@@ -397,7 +428,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
     }
     await userDoc.update(updatedRewatched);
 
-    if (containsList(seenMovies, ["Movies", id])) {
+    if (!containsList(seenMovies, ["Movies", id])) {
       final userDoc = FirebaseFirestore.instance.collection(uid).doc('Movies');
       id = id.toString();
       await userDoc.update({

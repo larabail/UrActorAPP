@@ -23,12 +23,7 @@ class Search extends StatefulWidget {
 }
 
 class _SearchResultState extends State<Search> {
-  // Define a TabController to manage the TabBar and TabBarView
-
-// Initialize the TabController in the State's initState method
-
   Future<List<String>> _search() async {
-    // Replace this with your actual async search logic
     await Future.delayed(const Duration(seconds: 2));
     return ['result 1', 'result 2', 'result 3'];
   }
@@ -116,7 +111,7 @@ class _SearchResultState extends State<Search> {
         automaticallyImplyLeading: false,
         title: Center(
           child: Image.asset(
-          'assets/logo_character.png',
+            'assets/logo_character.png',
             height: 54,
           ),
         ),
@@ -144,6 +139,7 @@ class _SearchResultState extends State<Search> {
                       margin: const EdgeInsets.all(10.0),
                       child: Column(
                         children: [
+                          // move the text field out of the tab controller, this way it's common for all of them, and when clicked on a tab display the results for that in each tab
                           TextField(
                             decoration: const InputDecoration(
                               prefixIcon: Icon(Icons.search),
