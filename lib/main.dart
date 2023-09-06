@@ -1,6 +1,7 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'calendar.dart';
 import 'favorites.dart';
@@ -135,7 +136,20 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> getFirebaseData(user) async {
     uid = user.uid;
     email = user.email!;
+    // final firebaseApp = Firebase.app();
+    // print(idsExplorePage);
     if (idsExplorePage.isEmpty) {
+      // print("SEARCHING...");
+      // final snapshot = await FirebaseDatabase.instanceFor(
+      //         app: firebaseApp,
+      //         databaseURL: "https://actordb-cf981-default-rtdb.firebaseio.com/")
+      //     .ref("allMovies")
+      //     .get();
+      // if (snapshot.exists) {
+      //   print(snapshot.value);
+      // } else {
+      //   print("No data");
+      // }
       await FirebaseFirestore.instance
           .collection("AllMoviesIds")
           .doc("AllIds")
