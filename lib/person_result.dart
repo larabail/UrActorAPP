@@ -62,7 +62,10 @@ class _PersonResultState extends State<PersonResult> {
         List movie_cast = [];
         for (Map movie in jsonDecode(r2.body)['cast']) {
           if (movie["poster_path"] != null) {
-            movie_cast.add(movie);
+            if (!movie["character"].toString().toLowerCase().contains("self") &&
+                movie["character"].toString() != "") {
+              movie_cast.add(movie);
+            }
           }
         }
         json['movie_credits_cast'] = movie_cast;
@@ -90,7 +93,13 @@ class _PersonResultState extends State<PersonResult> {
           List tv_cast = [];
           for (Map show in jsonDecode(r3.body)['cast']) {
             if (show["poster_path"] != null) {
-              tv_cast.add(show);
+              if (!show["character"]
+                      .toString()
+                      .toLowerCase()
+                      .contains("self") &&
+                  show["character"].toString() != "") {
+                tv_cast.add(show);
+              }
             }
           }
           json['tv_credits_cast'] = tv_cast;
