@@ -63,6 +63,14 @@ class _PersonResultState extends State<PersonResult> {
         for (Map movie in jsonDecode(r2.body)['cast']) {
           if (movie["poster_path"] != null) {
             if (!movie["character"].toString().toLowerCase().contains("self") &&
+                !movie["character"]
+                    .toString()
+                    .toLowerCase()
+                    .contains("archived") &&
+                !movie["character"]
+                    .toString()
+                    .toLowerCase()
+                    .contains("uncredited") &&
                 movie["character"].toString() != "") {
               movie_cast.add(movie);
             }
@@ -81,10 +89,16 @@ class _PersonResultState extends State<PersonResult> {
                 scoreActor +=
                     int.parse(rewatchedMovies[element["id"].toString()]);
               } else {
-                scoreActor += 1;
+                scoreActor += 2;
               }
               countedMoviesActor.add(element["id"].toString());
             }
+          } else if (containsMap(
+                  watchlist, ['Movies', element["id"].toString()]) &&
+              personResult["known_for_department"] == "Acting" &&
+              !countedMoviesActor.contains(element["id"].toString())) {
+            scoreActor += 1;
+            countedMoviesActor.add(element["id"].toString());
           }
         });
         final r3 =
@@ -111,10 +125,16 @@ class _PersonResultState extends State<PersonResult> {
                     favTVShows, ['Movies', element["id"].toString()])) {
                   scoreActor += 3;
                 } else {
-                  scoreActor += 1;
+                  scoreActor += 2;
                 }
                 countedTVShowsActor.add(element["id"].toString());
               }
+            } else if (containsMap(
+                    watchlistTVShows, ['Movies', element["id"].toString()]) &&
+                personResult["known_for_department"] == "Acting" &&
+                !countedTVShowsActor.contains(element["id"].toString())) {
+              scoreActor += 1;
+              countedTVShowsActor.add(element["id"].toString());
             }
           });
         } else {
@@ -128,7 +148,7 @@ class _PersonResultState extends State<PersonResult> {
         }
         json['movie_credits_crew'] = movie_crew;
         movie_crew.forEach((element) {
-          if (containsMap(seenMovies, ["Movies", element["id"]])) {
+          if (containsMap(seenMovies, ["Movies", element["id"].toString()])) {
             if (element["job"] == "Director" &&
                 !countedMoviesDirector.contains(element["id"].toString())) {
               if (containsMap(
@@ -139,10 +159,16 @@ class _PersonResultState extends State<PersonResult> {
                 scoreDirector +=
                     int.parse(rewatchedMovies[element["id"].toString()]);
               } else {
-                scoreDirector += 1;
+                scoreDirector += 2;
               }
               countedMoviesDirector.add(element["id"].toString());
             }
+          } else if (containsMap(
+                  watchlist, ['Movies', element["id"].toString()]) &&
+              element["job"] == "Director" &&
+              !countedMoviesDirector.contains(element["id"].toString())) {
+            scoreDirector += 1;
+            countedMoviesDirector.add(element["id"].toString());
           }
         });
         final r4 =
@@ -156,17 +182,24 @@ class _PersonResultState extends State<PersonResult> {
           }
           json['tv_credits_crew'] = tv_crew;
           tv_crew.forEach((element) {
-            if (containsMap(seenTVShows, ["TVShows", element["id"]])) {
+            if (containsMap(
+                seenTVShows, ["TVShows", element["id"].toString()])) {
               if (element["job"] == "Director" &&
                   !countedTVShowsDirector.contains(element["id"].toString())) {
                 if (containsMap(
-                    favTVShows, ['Movies', element["id"].toString()])) {
+                    favTVShows, ['TVShows', element["id"].toString()])) {
                   scoreDirector += 3;
                 } else {
                   scoreDirector += 1;
                 }
                 countedTVShowsDirector.add(element["id"].toString());
               }
+            } else if (containsMap(
+                    watchlistTVShows, ['TVShows', element["id"].toString()]) &&
+                element["job"] == "Director" &&
+                !countedTVShowsDirector.contains(element["id"].toString())) {
+              scoreDirector += 1;
+              countedTVShowsDirector.add(element["id"].toString());
             }
           });
           // Map oscars = await parseJSONFile();
