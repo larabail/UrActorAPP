@@ -82,8 +82,7 @@ class _PersonResultState extends State<PersonResult> {
         json['movie_credits_cast'] = movie_cast;
         movie_cast.forEach((element) {
           if (containsMap(seenMovies, ["Movies", element["id"]])) {
-            if (personResult["known_for_department"] == "Acting" &&
-                !countedMoviesActor.contains(element["id"].toString())) {
+            if (!countedMoviesActor.contains(element["id"].toString())) {
               stats += 1;
               if (containsMap(
                   favMovies, ['Movies', element["id"].toString()])) {
@@ -103,7 +102,6 @@ class _PersonResultState extends State<PersonResult> {
             }
           } else if (containsMap(
                   watchlist, ['Movies', element["id"].toString()]) &&
-              personResult["known_for_department"] == "Acting" &&
               !countedMoviesActor.contains(element["id"].toString())) {
             scoreActor += 1;
             countedMoviesActor.add(element["id"].toString());
@@ -127,8 +125,7 @@ class _PersonResultState extends State<PersonResult> {
           json['tv_credits_cast'] = tv_cast;
           tv_cast.forEach((element) {
             if (containsMap(seenTVShows, ["TVShows", element["id"]])) {
-              if (personResult["known_for_department"] == "Acting" &&
-                  !countedTVShowsActor.contains(element["id"].toString())) {
+              if (!countedTVShowsActor.contains(element["id"].toString())) {
                 stats_tv += 1;
                 if (containsMap(
                     favTVShows, ['Movies', element["id"].toString()])) {
@@ -140,7 +137,6 @@ class _PersonResultState extends State<PersonResult> {
               }
             } else if (containsMap(
                     watchlistTVShows, ['Movies', element["id"].toString()]) &&
-                personResult["known_for_department"] == "Acting" &&
                 !countedTVShowsActor.contains(element["id"].toString())) {
               scoreActor += 1;
               countedTVShowsActor.add(element["id"].toString());
