@@ -22,14 +22,14 @@ bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
   return false;
 }
 
-class Recommendations extends StatefulWidget {
-  Recommendations();
+class Reviews extends StatefulWidget {
+  Reviews();
 
   @override
-  _RecommendationsState createState() => _RecommendationsState();
+  _ReviewsState createState() => _ReviewsState();
 }
 
-class _RecommendationsState extends State<Recommendations> {
+class _ReviewsState extends State<Reviews> {
   final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
   final String imgLink = 'https://image.tmdb.org/t/p/w500/';
   String link = "https://api.themoviedb.org/3/movie/";

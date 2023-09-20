@@ -532,7 +532,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   // Handle the click event here
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => Recommendations()),
+                    MaterialPageRoute(builder: (context) => Reviews()),
                   );
                 },
                 child: Container(
