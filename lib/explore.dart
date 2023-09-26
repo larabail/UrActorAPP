@@ -1,15 +1,17 @@
-// ignore_for_file: no_leading_underscores_for_local_identifiers, constant_identifier_names
-
+// ignore_for_file: no_leading_underscores_for_local_identifiers, constant_identifier_names, non_constant_identifier_names
 import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'playlists.dart';
 import 'profile.dart';
 import 'search.dart';
+// import 'package:firebase_database/firebase_database.dart';
 import 'movie_result.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'main.dart';
+import 'person_result.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 
 const String api_key_actor =
@@ -20,7 +22,9 @@ String watch_providers =
 const String GENRES_LINK =
     "https://api.themoviedb.org/3/genre/movie/list?api_key=700cd4fab994df56eb41b34d38c4762a";
 String link = "https://api.themoviedb.org/3/movie/";
+String linkPerson = "https://api.themoviedb.org/3/person/";
 const String popularMoviesLink = "https://api.themoviedb.org/3/discover/movie";
+const String api_key = "?api_key=700cd4fab994df56eb41b34d38c4762a";
 List _items = [];
 int page = 1;
 int newItems = 0;
@@ -34,6 +38,9 @@ Map _isWatchlistTapped = {};
 Map _isFavTapped = {};
 int itemsPerPage = 20;
 Map _isListsTapped = {};
+List docIds = [];
+int added = 0;
+String actor_of_the_week = "";
 
 bool areAllFiltersPresent(List<String> genreFilters, List genreMaps) {
   // Check if all genre filters are present in the list of maps
@@ -57,10 +64,20 @@ class Genre {
   }
 }
 
-bool containsMap(List list, Map map) {
-  String jsonString = json.encode(map);
+// bool containsMap(List list, Map map) {
+//   String jsonString = json.encode(map);
+//   for (int i = 0; i < list.length; i++) {
+//     if (json.encode(list[i]) == jsonString) {
+//       return true;
+//     }
+//   }
+//   return false;
+// }
+
+bool containsMap(List list, List map) {
   for (int i = 0; i < list.length; i++) {
-    if (json.encode(list[i]) == jsonString) {
+    if ((list[i][1]).toString() == map[1].toString() &&
+        (list[i][0]) as String == "Movies") {
       return true;
     }
   }
@@ -102,8 +119,8 @@ Future<void> deleteFromWatchedConfirmation(
         .then((QuerySnapshot querySnapshot) {
       querySnapshot.docs.forEach((doc) async {
         if (doc.id == "Movies") {
-          Map movies_result = doc.data() as Map;
-          w = movies_result["Seen"];
+          Map moviesResult = doc.data() as Map;
+          w = moviesResult["Seen"];
           int index = w.indexOf(id);
 
           if (index > -1) {
@@ -140,8 +157,8 @@ void markWatched(String id, String title, BuildContext context) async {
       .then((QuerySnapshot querySnapshot) {
     querySnapshot.docs.forEach((doc) async {
       if (doc.id == "Movies") {
-        Map movies_result = doc.data() as Map;
-        w = movies_result["Seen"];
+        Map moviesResult = doc.data() as Map;
+        w = moviesResult["Seen"];
         seenMovies = [];
         for (var element in w) {
           seenMovies += [
@@ -421,6 +438,20 @@ class _ExploreState extends State<Explore> {
 
   bool isFilterOpen = false;
 
+  String api_key_movie =
+      '/movie_credits?api_key=700cd4fab994df56eb41b34d38c4762a';
+  String api_key_tv = '/tv_credits?api_key=700cd4fab994df56eb41b34d38c4762a';
+  int scoreActor = 0;
+  int scoreDirector = 0;
+  int stats = 0;
+  int stats_tv = 0;
+  int allDirMovies = 0;
+  int stats_dir = 0;
+  List countedMoviesDirector = [];
+  List countedMoviesActor = [];
+  List countedTVShowsDirector = [];
+  List countedTVShowsActor = [];
+
   bool containsIdInMap(List ids, List data) {
     for (String id in ids) {
       for (Map<String, dynamic> map in data) {
@@ -455,98 +486,204 @@ class _ExploreState extends State<Explore> {
     });
   }
 
-  Future<void> getData() async {
-    int i = itemsPerPage * (page - 1);
-    idsExplorePage.shuffle();
-    List moviesData = [];
-    for (String id in idsExplorePage) {
-      if (i < itemsPerPage * page) {
-        await FirebaseFirestore.instance
-            .collection("AllMovies")
-            .doc(id)
-            .get()
-            .then((DocumentSnapshot snapshot) async {
-          Map data = snapshot.data() as Map;
-          // print(data);
-          // print(filters);
-          Map allData = snapshot.data() as Map;
-          String name = allData["title"]
-              .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
-              .replaceAll(" ", "-");
-          if (_inMyProviders) {
-            final response = await http
-                .get(Uri.parse('$link${allData["id"]}-$name$watch_providers'));
-            if (response.statusCode == 200) {
-              final data = json.decode(response.body);
-              if (data["results"].keys.toList().contains(country)) {
-                print(data["results"][country]);
-                if (data["results"][country]
-                    .keys
-                    .toList()
-                    .contains("flatrate")) {
-                  List providersForMovie = data["results"][country]['flatrate'];
-                  bool inMyProviders =
-                      containsIdInMap(settings["providers"], providersForMovie);
-                  if (inMyProviders) {
-                    if (filters.isNotEmpty) {
-                      // print(data["genres"]);
-                      if (data.keys.toList().contains("genres")) {
-                        bool allFiltersPresent =
-                            areAllFiltersPresent(filters, data["genres"]);
-                        if (allFiltersPresent &&
-                            allData["poster_path"] != null &&
-                            !containsList(seenMovies, ["Movies", data["id"]])) {
-                          moviesData.add(snapshot.data());
-                        }
-                      }
-                    } else if (allData["poster_path"] != null &&
-                        !containsList(seenMovies, ["Movies", data["id"]])) {
-                      moviesData.add(snapshot.data());
-                    }
-                  }
-                }
-              }
-            } else {
-              print('Failed to fetch countries');
-            }
-          } else {
-            if (filters.isNotEmpty) {
-              // print(data["genres"]);
-              if (data.keys.toList().contains("genres")) {
-                bool allFiltersPresent =
-                    areAllFiltersPresent(filters, data["genres"]);
-                if (allFiltersPresent &&
-                    allData["poster_path"] != null &&
-                    !containsList(seenMovies, ["Movies", data["id"]])) {
-                  moviesData.add(snapshot.data());
-                }
-              }
-            } else if (allData["poster_path"] != null &&
-                !containsList(seenMovies, ["Movies", data["id"]])) {
-              moviesData.add(snapshot.data());
+  Future<void> getAllMovies() async {
+    List ids = [];
+    if (docIds.isEmpty) {
+      DocumentSnapshot snapshot = await FirebaseFirestore.instance
+          .collection("Admin")
+          .doc("recommendations")
+          .get();
+
+      Map json = snapshot.data() as Map;
+      // docIds = json["docIds"];
+      for (var element in json.keys) {
+        ids.add(element);
+      }
+    }
+    // docIds.shuffle();
+    // var element = docIds[0];
+    // added = 0;
+    // DocumentSnapshot snapshot2 = await FirebaseFirestore.instance
+    //     .collection("AllMoviesIds")
+    //     .doc(element)
+    //     .get();
+
+    // Map json2 = snapshot2.data() as Map;
+    idsExplorePage.addAll(ids);
+    // print(idsExplorePage.length);
+    // docIds.remove(element);
+  }
+
+  Future<Map> getMovieData(String id) async {
+    final response = await http.get(Uri.parse('$link$id$api_key_actor'));
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      if (json["backdrop_path"] == null) {
+        json["backdrop_path"] = "";
+      }
+      var imdbId = json['imdb_id'];
+      if (imdbId != null) {
+        String link2 = 'https://www.omdbapi.com/?i=$imdbId&apikey=***REMOVED***';
+        final r = await http.get(Uri.parse(link2));
+        if (r.statusCode == 200) {
+          json['imdb_rating'] = jsonDecode(r.body)['imdbRating'];
+          json['year'] = jsonDecode(r.body)['Year'];
+        } else {
+          json['imdb_rating'] = "None";
+          json['year'] = "None";
+        }
+        final r2 = await http.get(Uri.parse('$link$id$watch_providers'));
+        if (r2.statusCode == 200) {
+          json['providers'] = [];
+          if (jsonDecode(r2.body)["results"].keys.contains(country)) {
+            if (jsonDecode(r2.body)["results"][country]['flatrate'] != null) {
+              jsonDecode(r2.body)["results"][country]['flatrate'].forEach(
+                (provider) async {
+                  String name = provider['provider_name'];
+                  String photo = imgLink + provider['logo_path'];
+                  json['providers'].add([name, photo]);
+                },
+              );
             }
           }
-        });
-        i++;
+        }
+        return json;
       } else {
-        break;
+        throw Exception('Failed to load movie details');
       }
+    } else {
+      throw Exception('Failed to load movie details');
     }
-    for (var element in moviesData) {
-      if (!containsMap(_items, element)) {
-        _items.add(element);
-        check(element["id"].toString());
-      }
-    }
-    if (moviesData.length < 10) {
-      _loadMoreItems();
-    }
+  }
 
-    genres = await _fetchGenres();
+  Future<void> getData() async {
+    if (idsExplorePage.isEmpty) {
+      await getAllMovies();
+    }
+    for (String id in idsExplorePage) {
+      Map element = await getMovieData(id);
+      _items.add(element);
+      check(element["id"].toString());
+    }
     setState(() {
       _carouselLoaded = true;
     });
   }
+
+  // Future<void> getData() async {
+  //   if (idsExplorePage.isEmpty) {
+  //     await getAllMovies();
+  //   }
+  //   // print(idsExplorePage);
+  //   int i = itemsPerPage * (page - 1);
+  //   idsExplorePage.shuffle();
+  //   List moviesData = [];
+  //   for (String id in idsExplorePage) {
+  //     if (i < itemsPerPage * page) {
+  //       await FirebaseFirestore.instance
+  //           .collection("AllMovies")
+  //           .doc(id)
+  //           .get()
+  //           .then((DocumentSnapshot snapshot) async {
+  //         Map data = snapshot.data() as Map;
+  //         Map allData = snapshot.data() as Map;
+  //         double imdbRating = 0.0;
+  //         if (allData.keys.contains("imdb_data")) {
+  //           if (allData["imdb_data"] != null) {
+  //             if (allData["imdb_data"]["imdbRating"] != "N/A" &&
+  //                 allData["imdb_data"]["imdbRating"] != null) {
+  //               imdbRating = double.parse(allData["imdb_data"]["imdbRating"]);
+  //             }
+  //           }
+  //         }
+  //         if (imdbRating > 5.0 &&
+  //             allData["runtime"] > 60 &&
+  //             allData["original_language"] == "en" &&
+  //             allData["poster_path"] != null &&
+  //             allData["backdrop_path"] != null) {
+  //           String name = allData["title"]
+  //               .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
+  //               .replaceAll(" ", "-");
+  //           if (_inMyProviders) {
+  //             final response = await http.get(
+  //                 Uri.parse('$link${allData["id"]}-$name$watch_providers'));
+  //             if (response.statusCode == 200) {
+  //               final data = json.decode(response.body);
+  //               if (data["results"].keys.toList().contains(country)) {
+  //                 if (data["results"][country]
+  //                     .keys
+  //                     .toList()
+  //                     .contains("flatrate")) {
+  //                   List providersForMovie =
+  //                       data["results"][country]['flatrate'];
+  //                   bool inMyProviders = containsIdInMap(
+  //                       settings["providers"], providersForMovie);
+  //                   if (inMyProviders) {
+  //                     if (filters.isNotEmpty) {
+  //                       if (data.keys.toList().contains("genres")) {
+  //                         bool allFiltersPresent =
+  //                             areAllFiltersPresent(filters, data["genres"]);
+  //                         if (allFiltersPresent &&
+  //                             allData["poster_path"] != null &&
+  //                             !containsList(
+  //                                 seenMovies, ["Movies", data["id"]])) {
+  //                           moviesData.add(snapshot.data());
+  //                         }
+  //                       }
+  //                     } else if (allData["poster_path"] != null &&
+  //                         !containsList(seenMovies, ["Movies", data["id"]])) {
+  //                       moviesData.add(snapshot.data());
+  //                     }
+  //                   }
+  //                 }
+  //               }
+  //             } else {
+  //               print('Failed to fetch countries');
+  //             }
+  //           } else {
+  //             if (filters.isNotEmpty) {
+  //               // print(data["genres"]);
+  //               if (data.keys.toList().contains("genres")) {
+  //                 bool allFiltersPresent =
+  //                     areAllFiltersPresent(filters, data["genres"]);
+  //                 if (allFiltersPresent &&
+  //                     allData["poster_path"] != null &&
+  //                     !containsList(seenMovies, ["Movies", data["id"]])) {
+  //                   moviesData.add(snapshot.data());
+  //                 }
+  //               }
+  //             } else if (allData["poster_path"] != null &&
+  //                 !containsList(seenMovies, ["Movies", data["id"]])) {
+  //               moviesData.add(snapshot.data());
+  //             }
+  //           }
+  //         }
+  //       });
+  //       i++;
+  //     } else {
+  //       break;
+  //     }
+  //     added += 1;
+  //   }
+  //   for (var element in moviesData) {
+  //     if (!containsMap(_items, element)) {
+  //       _items.add(element);
+  //       check(element["id"].toString());
+  //     }
+  //   }
+  //   print(added);
+  //   if (added == idsExplorePage.length) {
+  //     await getAllMovies();
+  //   }
+  //   if (moviesData.length < 10) {
+  //     _loadMoreItems();
+  //   }
+
+  //   genres = await _fetchGenres();
+  //   setState(() {
+  //     _carouselLoaded = true;
+  //   });
+  // }
 
   void _loadMoreItems() {
     page += 1;
@@ -567,13 +704,13 @@ class _ExploreState extends State<Explore> {
   }
 
   void _scrollListener() {
-    if (_scrollController.position.pixels ==
-            _scrollController.position.maxScrollExtent ||
-        _items.length < 10) {
-      setState(() {
-        _loadMoreItems();
-      });
-    }
+    // if (_scrollController.position.pixels ==
+    //         _scrollController.position.maxScrollExtent ||
+    //     _items.length < 10) {
+    //   setState(() {
+    //     _loadMoreItems();
+    //   });
+    // }
   }
 
   Future<List<dynamic>> _fetchGenres() async {
@@ -581,8 +718,9 @@ class _ExploreState extends State<Explore> {
     List<Genre> genresResult = [];
     if (response.statusCode == 200) {
       for (Map genre in jsonDecode(response.body)["genres"]) {
-        if (genre["name"] != "TV Movie")
+        if (genre["name"] != "TV Movie") {
           genresResult.add(Genre(genre["name"], false));
+        }
       }
       return genresResult;
     } else {
@@ -921,11 +1059,11 @@ class _ExploreState extends State<Explore> {
                   onPageChanged: (index, reason) {
                     setState(() {
                       _currentSlide = index; // Updating the current slide index
-                      if (_currentSlide == _items.length - 10 ||
-                          _items.length < 10) {
-                        // We are at the last slide, so load more items
-                        _loadMoreItems();
-                      }
+                      // if (_currentSlide == _items.length - 10 ||
+                      //     _items.length < 10) {
+                      //   // We are at the last slide, so load more items
+                      //   _loadMoreItems();
+                      // }
                     });
                   },
                   height: MediaQuery.of(context).size.height * 0.725,
@@ -1195,15 +1333,287 @@ class _ExploreState extends State<Explore> {
 
     Widget _buildContentView() {
       if (_carouselLoaded) {
-        if (isGridMode) {
-          return _buildGridView();
-        } else {
-          return _buildCarouselView();
-        }
+        return _buildGridView();
+        // if (isGridMode) {
+        //   return _buildGridView();
+        // } else {
+        //   return _buildCarouselView();
+        // }
       } else {
         return const Center(
           child: CircularProgressIndicator(),
         );
+      }
+    }
+
+    Future<Map> getPersonData() async {
+      DocumentSnapshot snapshot2 = await FirebaseFirestore.instance
+          .collection("Admin")
+          .doc("monthlyPerson")
+          .get();
+      Map actsWeek = snapshot2.data() as Map;
+      print(actsWeek);
+      List keys = [];
+      for (var element in actsWeek.keys) {
+        keys.add(element);
+      }
+      actor_of_the_week = keys[0];
+      Map json = {};
+      print(Uri.parse('$linkPerson$actor_of_the_week$api_key'));
+      final response =
+          await http.get(Uri.parse('$linkPerson$actor_of_the_week$api_key'));
+      json = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final r2 = await http
+            .get(Uri.parse('$linkPerson$actor_of_the_week$api_key_movie'));
+        if (r2.statusCode == 200) {
+          List movieCast = [];
+          for (Map movie in jsonDecode(r2.body)['cast']) {
+            if (movie["poster_path"] != null) {
+              if (!movie["character"]
+                      .toString()
+                      .toLowerCase()
+                      .contains("self") &&
+                  !movie["character"]
+                      .toString()
+                      .toLowerCase()
+                      .contains("archived") &&
+                  !movie["character"]
+                      .toString()
+                      .toLowerCase()
+                      .contains("uncredited") &&
+                  movie["character"].toString() != "") {
+                movieCast.add(movie);
+              }
+            }
+          }
+          json['movie_credits_cast'] = movieCast;
+          movieCast.forEach((element) {
+            if (containsMap(seenMovies, ["Movies", element["id"]])) {
+              if (!countedMoviesActor.contains(element["id"].toString())) {
+                stats += 1;
+                if (containsMap(
+                    favMovies, ['Movies', element["id"].toString()])) {
+                  scoreActor += 3;
+                }
+                print(rewatchedMovies.keys
+                    .toList()
+                    .contains(element["id"].toString()));
+                if (rewatchedMovies.keys
+                    .toList()
+                    .contains(element["id"].toString())) {
+                  scoreActor +=
+                      rewatchedMovies[element["id"].toString()] as int;
+                } else {
+                  scoreActor += 2;
+                }
+                countedMoviesActor.add(element["id"].toString());
+              }
+            } else if (containsMap(
+                    watchlist, ['Movies', element["id"].toString()]) &&
+                !countedMoviesActor.contains(element["id"].toString())) {
+              scoreActor += 1;
+              countedMoviesActor.add(element["id"].toString());
+            }
+          });
+          final r3 = await http
+              .get(Uri.parse('$linkPerson$actor_of_the_week$api_key_tv'));
+          if (r3.statusCode == 200) {
+            List tvCast = [];
+            for (Map show in jsonDecode(r3.body)['cast']) {
+              if (show["poster_path"] != null) {
+                if (!show["character"]
+                        .toString()
+                        .toLowerCase()
+                        .contains("self") &&
+                    show["character"].toString() != "") {
+                  tvCast.add(show);
+                }
+              }
+            }
+            json['tv_credits_cast'] = tvCast;
+            tvCast.forEach((element) {
+              if (containsMap(seenTVShows, ["TVShows", element["id"]])) {
+                if (!countedTVShowsActor.contains(element["id"].toString())) {
+                  stats_tv += 1;
+                  if (containsMap(
+                      favTVShows, ['Movies', element["id"].toString()])) {
+                    scoreActor += 3;
+                  } else {
+                    scoreActor += 2;
+                  }
+                  countedTVShowsActor.add(element["id"].toString());
+                }
+              } else if (containsMap(
+                      watchlistTVShows, ['Movies', element["id"].toString()]) &&
+                  !countedTVShowsActor.contains(element["id"].toString())) {
+                scoreActor += 1;
+                countedTVShowsActor.add(element["id"].toString());
+              }
+            });
+          } else {
+            throw Exception('Failed to load movie details');
+          }
+          List movieCrew = [];
+          for (Map movie in jsonDecode(r2.body)['crew']) {
+            if (movie["poster_path"] != null && movie["job"] != "Thanks") {
+              movieCrew.add(movie);
+            }
+          }
+          json['movie_credits_crew'] = movieCrew;
+          movieCrew.forEach((element) {
+            if (containsMap(seenMovies, ["Movies", element["id"].toString()])) {
+              if (element["job"] == "Director" &&
+                  !countedMoviesDirector.contains(element["id"].toString())) {
+                stats_dir += 1;
+                if (containsMap(
+                    favMovies, ['Movies', element["id"].toString()])) {
+                  scoreDirector += 3;
+                }
+                if (rewatchedMovies.keys.toList().contains(element["id"])) {
+                  scoreDirector +=
+                      int.parse(rewatchedMovies[element["id"].toString()]);
+                } else {
+                  scoreDirector += 2;
+                }
+                countedMoviesDirector.add(element["id"].toString());
+              }
+            } else if (containsMap(
+                    watchlist, ['Movies', element["id"].toString()]) &&
+                element["job"] == "Director" &&
+                !countedMoviesDirector.contains(element["id"].toString())) {
+              scoreDirector += 1;
+              countedMoviesDirector.add(element["id"].toString());
+            }
+            if (element["job"] == "Director") {
+              allDirMovies += 1;
+            }
+          });
+          final r4 = await http
+              .get(Uri.parse('$linkPerson$actor_of_the_week$api_key_tv'));
+          if (r4.statusCode == 200) {
+            List tvCrew = [];
+            for (Map show in jsonDecode(r4.body)['crew']) {
+              if (show["poster_path"] != null) {
+                tvCrew.add(show);
+              }
+            }
+            json['tv_credits_crew'] = tvCrew;
+            tvCrew.forEach((element) {
+              if (containsMap(
+                  seenTVShows, ["TVShows", element["id"].toString()])) {
+                if (element["job"] == "Director" &&
+                    !countedTVShowsDirector
+                        .contains(element["id"].toString())) {
+                  stats_dir += 1;
+                  if (containsMap(
+                      favTVShows, ['TVShows', element["id"].toString()])) {
+                    scoreDirector += 3;
+                  } else {
+                    scoreDirector += 1;
+                  }
+                  countedTVShowsDirector.add(element["id"].toString());
+                }
+              } else if (containsMap(watchlistTVShows,
+                      ['TVShows', element["id"].toString()]) &&
+                  element["job"] == "Director" &&
+                  !countedTVShowsDirector.contains(element["id"].toString())) {
+                scoreDirector += 1;
+                countedTVShowsDirector.add(element["id"].toString());
+              }
+
+              if (element["job"] == "Director") {
+                allDirMovies += 1;
+              }
+            });
+            // Map oscars = await parseJSONFile();
+            // if (oscars.keys
+            //     .contains(actor_of_the_week.split("-")[0].toString())) {
+            //   json['num_oscars'] =
+            //       oscars[actor_of_the_week.split("-")[0]]['num_oscars'];
+            // } else {
+            //   json['num_oscars'] = 0;
+            // }
+            var userDoc =
+                FirebaseFirestore.instance.collection(uid).doc("FavDirectors");
+            Map<Object, Object?> directorStats = {};
+            directorStats[personResult['id'].toString()] = scoreDirector;
+            await userDoc.update(directorStats);
+            await userDoc.get().then((DocumentSnapshot doc) async {
+              Map info = doc.data() as Map;
+              List actrs = [];
+              info.forEach((key, value) {
+                List item = [value, key];
+                actrs.add(item);
+              });
+              actrs.sort((a, b) => a[0].compareTo(b[0]));
+              actrs = actrs.reversed.toList();
+              int num = 0;
+              for (var act in actrs) {
+                num++;
+                if (act[1].toString() ==
+                    actor_of_the_week.split("-")[0].toString()) {
+                  break;
+                }
+              }
+              json["director_ranking"] = num;
+              json["allDirMovies"] = allDirMovies;
+            });
+            var ActorDoc =
+                FirebaseFirestore.instance.collection(uid).doc("FavActors");
+            Map<Object, Object?> actorStats = {};
+            actorStats[personResult['id'].toString()] = scoreActor;
+            await ActorDoc.update(actorStats);
+            await ActorDoc.get().then((DocumentSnapshot doc) async {
+              Map info = doc.data() as Map;
+              List actrs = [];
+              info.forEach((key, value) {
+                List item = [value, key];
+                actrs.add(item);
+              });
+              actrs.sort((a, b) => a[0].compareTo(b[0]));
+              actrs = actrs.reversed.toList();
+              int num = 0;
+              for (var act in actrs) {
+                num++;
+                if (act[1].toString() ==
+                    actor_of_the_week.split("-")[0].toString()) {
+                  break;
+                }
+              }
+              json["actor_ranking"] = num;
+            });
+            favActors = [];
+            favDirectors = [];
+            await FirebaseFirestore.instance
+                .collection(uid)
+                .get()
+                .then((QuerySnapshot querySnapshot) {
+              for (var doc in querySnapshot.docs) {
+                if (doc.id == "FavActors" && favActors.isEmpty) {
+                  Map tempFavActors = doc.data() as Map;
+                  favActors = tempFavActors.entries
+                      .map((entry) => [entry.value, entry.key])
+                      .toList();
+                  favActors.sort((a, b) => b[0].compareTo(a[0]));
+                } else if (doc.id == "FavDirectors" && favDirectors.isEmpty) {
+                  Map tempFavDirectors = doc.data() as Map;
+                  favDirectors = tempFavDirectors.entries
+                      .map((entry) => [entry.value, entry.key])
+                      .toList();
+                  favDirectors.sort((a, b) => b[0].compareTo(a[0]));
+                }
+              }
+            });
+            return json;
+          } else {
+            throw Exception('Failed to load movie details');
+          }
+        } else {
+          throw Exception('Failed to load movie details');
+        }
+      } else {
+        throw Exception('Failed to load movie details');
       }
     }
 
@@ -1218,7 +1628,145 @@ class _ExploreState extends State<Explore> {
       ),
       body: Column(
         children: [
-          _buildToggleViewAndFilters(),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(10, 10, 10, 10),
+            child: Text(
+              "Pick of the Week",
+              style: TextStyle(fontSize: 30),
+            ),
+          ),
+          FutureBuilder<Map>(
+            future: getPersonData(),
+            builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
+              if (snapshot.hasData) {
+                return SingleChildScrollView(
+                    child: Column(children: [
+                  Center(
+                    child: Container(
+                      width: MediaQuery.of(context).size.width * 0.25,
+                      height: MediaQuery.of(context).size.width * 0.38,
+                      child: ListView.builder(
+                        scrollDirection: Axis.vertical,
+                        itemCount: 1,
+                        itemBuilder: (BuildContext context, int index) {
+                          return GestureDetector(
+                            onTap: () {
+                              personResult = snapshot.data!;
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => PersonResult()),
+                              );
+                            },
+                            child: Container(
+                              width: MediaQuery.of(context).size.width * 0.1,
+                              height: MediaQuery.of(context).size.height * 0.17,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(27),
+                                image: DecorationImage(
+                                  image: NetworkImage(
+                                      imgLink + snapshot.data!['profile_path']),
+                                  fit: BoxFit.fitHeight,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  Center(
+                    child: Text(
+                      snapshot.data!['name'],
+                      style: const TextStyle(fontSize: 22),
+                    ),
+                  ),
+                  ExpansionTile(
+                      title: const Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Text("Your Statistics"),
+                      ),
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(10, 0, 10, 25),
+                          child: Column(
+                            children: [
+                              Text(
+                                "Actor ranking: #${snapshot.data!['actor_ranking']} ($scoreActor)",
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              if (allDirMovies != 0)
+                                Text(
+                                  "Director ranking: #${snapshot.data!['director_ranking']} ($scoreDirector)",
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              if (snapshot.data!['movie_credits_cast'].length !=
+                                  0)
+                                Text(
+                                  "Actor Movie Progress: $stats / ${(snapshot.data!['movie_credits_cast'].length)} (${double.parse((stats / (snapshot.data!['movie_credits_cast'].length) * 100).toStringAsFixed(2))}%)",
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              if (snapshot.data!['movie_credits_cast'].length !=
+                                  0)
+                                Padding(
+                                  padding: const EdgeInsets.all(10.0),
+                                  child: LinearProgressIndicator(
+                                    value: stats /
+                                        (snapshot.data!['movie_credits_cast']
+                                            .length),
+                                  ),
+                                ),
+                              if (snapshot.data!['tv_credits_cast'].length != 0)
+                                Text(
+                                  "Actor TV Show Progress: $stats_tv / ${(snapshot.data!['tv_credits_cast'].length)} (${double.parse((stats_tv / (snapshot.data!['tv_credits_cast'].length) * 100).toStringAsFixed(2))}%)",
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              if (snapshot.data!['tv_credits_cast'].length != 0)
+                                Padding(
+                                  padding: const EdgeInsets.all(10.0),
+                                  child: LinearProgressIndicator(
+                                    value: stats_tv /
+                                        (snapshot
+                                            .data!['tv_credits_cast'].length),
+                                  ),
+                                ),
+                              if (allDirMovies != 0)
+                                Text(
+                                  "Director Progress: $stats_dir / ${(snapshot.data!['allDirMovies'])} (${double.parse((stats_dir / (snapshot.data!['allDirMovies']) * 100).toStringAsFixed(2))}%)",
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              if (allDirMovies != 0)
+                                Padding(
+                                  padding: const EdgeInsets.all(10.0),
+                                  child: LinearProgressIndicator(
+                                    value: stats_dir /
+                                        (snapshot.data!['allDirMovies']),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ]),
+                ]));
+              } else if (snapshot.hasError) {
+                return const Center(
+                  child: Text("Failed to load movie details"),
+                );
+              } else {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+            },
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(10, 10, 10, 10),
+            child: Text(
+              "Staff picks",
+              style: TextStyle(fontSize: 30),
+            ),
+          ),
+          // _buildToggleViewAndFilters(),
           Expanded(child: _buildContentView()),
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
@@ -1241,7 +1789,7 @@ class _ExploreState extends State<Explore> {
                         });
                       },
                     ),
-                    Text("In My Providers"),
+                    const Text("In My Providers"),
                   ],
                 ),
                 // Centered text "Genres"
