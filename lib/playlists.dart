@@ -1,6 +1,7 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 import 'package:flutter/material.dart';
+import 'friends.dart';
 import 'profile.dart';
 import 'search.dart';
 import 'main.dart';
@@ -45,8 +46,9 @@ class _PlaylistsState extends State<Playlists> {
 
     final List<Widget> pages = [
       MyApp(),
-      Search(),
       Playlists(),
+      Search(),
+      Friends(),
       Profile(),
       // Add more pages here
     ];
@@ -196,19 +198,23 @@ class _PlaylistsState extends State<Playlists> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.library_books_rounded),
+            label: 'Library',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.search),
             label: 'Search',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.library_books_rounded),
-            label: 'Library',
+            label: 'Friends',
+            icon: Icon(Icons.contacts),
           ),
           BottomNavigationBarItem(
             label: 'Profile',
             icon: Icon(Icons.person),
           ),
         ],
-        currentIndex: 2,
+        currentIndex: 1,
         onTap: _onItemTapped,
       ),
     );

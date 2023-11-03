@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:uractor/explore.dart';
+import 'friends.dart';
 import 'playlists.dart';
 import 'main.dart';
 import 'profile.dart';
@@ -104,9 +105,11 @@ class _CalendarState extends State<Calendar> {
 
     final List<Widget> pages = [
       MyApp(),
-      Search(),
       Playlists(),
+      Search(),
+      Friends(),
       Profile(),
+      // Add more pages here
     ];
 
     void _onItemTapped(int index) {
@@ -317,23 +320,25 @@ class _CalendarState extends State<Calendar> {
         selectedItemColor: Colors.grey,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF121212),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.library_books_rounded),
             label: 'Library',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.search),
+            label: 'Search',
+          ),
+          BottomNavigationBarItem(
+            label: 'Friends',
+            icon: Icon(Icons.contacts),
+          ),
+          BottomNavigationBarItem(
             label: 'Profile',
-            backgroundColor: Color(0xFF121212),
             icon: Icon(Icons.person),
           ),
         ],
