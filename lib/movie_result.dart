@@ -2,6 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'friends.dart';
 import 'profile.dart';
 import 'search.dart';
 import 'main.dart';
@@ -970,8 +971,9 @@ class _MovieResultState extends State<MovieResult> {
 
     final List<Widget> pages = [
       MyApp(),
-      Search(),
       Playlists(),
+      Search(),
+      Friends(),
       Profile(),
       // Add more pages here
     ];
@@ -1522,25 +1524,24 @@ class _MovieResultState extends State<MovieResult> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.library_books_rounded),
+            label: 'Library',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.search),
             label: 'Search',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.library_books_rounded),
-            label: 'Library',
+            label: 'Friends',
+            icon: Icon(Icons.contacts),
           ),
           BottomNavigationBarItem(
             label: 'Profile',
             icon: Icon(Icons.person),
           ),
         ],
-        currentIndex: 2,
-        onTap: (int index) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => pages[index]),
-          );
-        },
+        currentIndex: selectedIndex,
+        onTap: _onItemTapped,
       ),
     );
   }

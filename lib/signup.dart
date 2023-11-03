@@ -140,7 +140,8 @@ class SignUp extends StatelessWidget {
                             const Map<String, dynamic> Settings = {
                               "darkMode": true,
                               "dontAskCalendar": false,
-                              "providers": []
+                              "providers": [],
+                              "profile_photo": ""
                             };
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)

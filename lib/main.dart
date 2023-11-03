@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'calendar.dart';
 import 'favorites.dart';
+import 'friends.dart';
 import 'login.dart';
 import 'explore.dart';
 import 'playlists.dart';
@@ -275,8 +276,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
     final List<Widget> pages = [
       MyApp(),
-      Search(),
       Playlists(),
+      Search(),
+      Friends(),
       Profile(),
       // Add more pages here
     ];
@@ -559,12 +561,16 @@ class _MyHomePageState extends State<MyHomePage> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.library_books_rounded),
+            label: 'Library',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.search),
             label: 'Search',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.library_books_rounded),
-            label: 'Library',
+            label: 'Friends',
+            icon: Icon(Icons.contacts),
           ),
           BottomNavigationBarItem(
             label: 'Profile',

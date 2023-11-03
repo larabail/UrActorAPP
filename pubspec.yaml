@@ -40,12 +40,15 @@ dependencies:
   firebase_auth: ^4.4.0
   cloud_firestore: ^4.5.0
   table_calendar: ^3.0.8
-  http: ^0.13.5
+  http: ^1.0.0
   fl_chart: ^0.36.0
   flutter_svg: ^1.1.6
   youtube_player_flutter: ^8.1.2
+  firebase_storage: ^11.4.1
   carousel_slider: ^4.0.0
   provider: ^5.0.0
+  image_picker: ^1.0.4
+  image_cropper: ^5.0.0
   firebase_database: ^10.2.5
 
 
@@ -126,6 +129,7 @@ flutter:
     - assets/animation_before.svg
     - assets/adventure_after.svg
     - assets/adventure_before.svg
+    - assets/friends.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

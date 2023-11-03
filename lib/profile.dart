@@ -1,7 +1,13 @@
 // ignore_for_file: use_build_context_synchronously, constant_identifier_names, no_leading_underscores_for_local_identifiers, use_key_in_widget_constructors, must_be_immutable
 
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
+import 'friends.dart';
 import 'playlists.dart';
 import 'search.dart';
 import 'main.dart';
@@ -454,8 +460,6 @@ class _ProfileState extends State<Profile> {
       int i = 0;
       for (List item in favActors) {
         if (i < 9) {
-          print(item);
-          print(Uri.parse('${link}${item[1]}${api_key_actor}'));
           final response =
               await http.get(Uri.parse('${link}${item[1]}${api_key_actor}'));
           if (response.statusCode == 200) {
@@ -478,14 +482,57 @@ class _ProfileState extends State<Profile> {
       return favActsData;
     }
 
+    Future<String> uploadImage() async {
+      final ImagePicker _picker = ImagePicker();
+      XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+
+      if (image == null) return "";
+
+      // Crop the image
+      CroppedFile? croppedFile = await ImageCropper().cropImage(
+        sourcePath: image.path,
+        aspectRatioPresets: [
+          CropAspectRatioPreset.square,
+        ],
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Cropper',
+            toolbarColor: Colors.deepOrange,
+            toolbarWidgetColor: Colors.white,
+            initAspectRatio: CropAspectRatioPreset.original,
+            lockAspectRatio: false,
+          ),
+        ],
+      );
+
+      if (croppedFile == null) return "";
+      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+      File fileToUpload = File(croppedFile.path);
+
+      FirebaseStorage storage = FirebaseStorage.instance;
+      Reference ref = storage.ref().child("profile_images").child(fileName);
+      UploadTask uploadTask = ref.putFile(fileToUpload);
+
+      await uploadTask.whenComplete(() => null);
+      String downloadUrl = await ref.getDownloadURL();
+
+      var userDoc = FirebaseFirestore.instance.collection(uid).doc("Settings");
+      await userDoc.update({'profile_photo': downloadUrl});
+      settings["profile_photo"] = downloadUrl;
+
+      setState(() {
+        settings = settings;
+      });
+
+      return downloadUrl;
+    }
+
     Future<List<Map<String, dynamic>>> dirData() async {
       List<Map<String, dynamic>> favActsData = [];
       const link = 'https://api.themoviedb.org/3/person/';
       int i = 0;
       for (List item in favDirectors) {
         if (i < 9) {
-          print(favDirectors);
-          print(Uri.parse('${link}${item[1]}${api_key_actor}'));
           final response =
               await http.get(Uri.parse('${link}${item[1]}${api_key_actor}'));
           if (response.statusCode == 200) {
@@ -510,8 +557,9 @@ class _ProfileState extends State<Profile> {
 
     final List<Widget> pages = [
       MyApp(),
-      Search(),
       Playlists(),
+      Search(),
+      Friends(),
       Profile(),
       // Add more pages here
     ];
@@ -585,12 +633,37 @@ class _ProfileState extends State<Profile> {
           SingleChildScrollView(
             child: Column(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Image.asset(
-                      'assets/main_profile.png',
-                      height: 200,
+                    ClipOval(
+                      child: settings["profile_photo"] != ""
+                          ? Image.network(
+                              settings["profile_photo"],
+                              height: 200,
+                              width: 200,
+                              fit: BoxFit.cover,
+                            )
+                          : Image.asset(
+                              'assets/main_profile.png',
+                              height: 200,
+                              width: 200,
+                              fit: BoxFit.cover,
+                            ),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: CircleAvatar(
+                        backgroundColor: Color.fromARGB(250, 224, 190, 78),
+                        child: IconButton(
+                          icon: Icon(Icons.file_upload),
+                          color: Colors.black, // Icon color
+                          onPressed: () async {
+                            await uploadImage();
+                          },
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -1320,19 +1393,23 @@ class _ProfileState extends State<Profile> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.library_books_rounded),
+            label: 'Library',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.search),
             label: 'Search',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.library_books_rounded),
-            label: 'Library',
+            label: 'Friends',
+            icon: Icon(Icons.contacts),
           ),
           BottomNavigationBarItem(
             label: 'Profile',
             icon: Icon(Icons.person),
           ),
         ],
-        currentIndex: 3,
+        currentIndex: 4,
         onTap: _onItemTapped,
       ),
     );
