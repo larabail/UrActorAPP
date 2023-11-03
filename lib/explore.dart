@@ -560,6 +560,7 @@ class _ExploreState extends State<Explore> {
     if (idsExplorePage.isEmpty) {
       await getAllMovies();
     }
+    _items = [];
     for (String id in idsExplorePage) {
       Map element = await getMovieData(id);
       _items.add(element);
@@ -1536,34 +1537,11 @@ class _ExploreState extends State<Explore> {
             // }
             var userDoc =
                 FirebaseFirestore.instance.collection(uid).doc("FavDirectors");
-            Map<Object, Object?> directorStats = {};
-            directorStats[personResult['id'].toString()] = scoreDirector;
-            await userDoc.update(directorStats);
-            await userDoc.get().then((DocumentSnapshot doc) async {
-              Map info = doc.data() as Map;
-              List actrs = [];
-              info.forEach((key, value) {
-                List item = [value, key];
-                actrs.add(item);
-              });
-              actrs.sort((a, b) => a[0].compareTo(b[0]));
-              actrs = actrs.reversed.toList();
-              int num = 0;
-              for (var act in actrs) {
-                num++;
-                if (act[1].toString() ==
-                    actor_of_the_week.split("-")[0].toString()) {
-                  break;
-                }
-              }
-              json["director_ranking"] = num;
-              json["allDirMovies"] = allDirMovies;
-            });
             var ActorDoc =
                 FirebaseFirestore.instance.collection(uid).doc("FavActors");
-            Map<Object, Object?> actorStats = {};
-            actorStats[personResult['id'].toString()] = scoreActor;
-            await ActorDoc.update(actorStats);
+            Map<Object, Object?> directorStats = {};
+            directorStats[personResult['id'].toString()] = scoreDirector;
+            // await userDoc.update(directorStats);
             await ActorDoc.get().then((DocumentSnapshot doc) async {
               Map info = doc.data() as Map;
               List actrs = [];
@@ -1583,27 +1561,25 @@ class _ExploreState extends State<Explore> {
               }
               json["actor_ranking"] = num;
             });
-            favActors = [];
-            favDirectors = [];
-            await FirebaseFirestore.instance
-                .collection(uid)
-                .get()
-                .then((QuerySnapshot querySnapshot) {
-              for (var doc in querySnapshot.docs) {
-                if (doc.id == "FavActors" && favActors.isEmpty) {
-                  Map tempFavActors = doc.data() as Map;
-                  favActors = tempFavActors.entries
-                      .map((entry) => [entry.value, entry.key])
-                      .toList();
-                  favActors.sort((a, b) => b[0].compareTo(a[0]));
-                } else if (doc.id == "FavDirectors" && favDirectors.isEmpty) {
-                  Map tempFavDirectors = doc.data() as Map;
-                  favDirectors = tempFavDirectors.entries
-                      .map((entry) => [entry.value, entry.key])
-                      .toList();
-                  favDirectors.sort((a, b) => b[0].compareTo(a[0]));
+            await userDoc.get().then((DocumentSnapshot doc) async {
+              Map info = doc.data() as Map;
+              List actrs = [];
+              info.forEach((key, value) {
+                List item = [value, key];
+                actrs.add(item);
+              });
+              actrs.sort((a, b) => a[0].compareTo(b[0]));
+              actrs = actrs.reversed.toList();
+              int num = 0;
+              for (var act in actrs) {
+                num++;
+                if (act[1].toString() ==
+                    actor_of_the_week.split("-")[0].toString()) {
+                  break;
                 }
               }
+              json["director_ranking"] = num;
+              json["allDirMovies"] = allDirMovies;
             });
             return json;
           } else {
