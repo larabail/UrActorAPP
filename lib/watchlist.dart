@@ -1,6 +1,7 @@
 // ignore_for_file: use_key_in_widget_constructors, must_be_immutable
 
 import 'package:flutter/material.dart';
+import 'friends.dart';
 import 'movie_result.dart';
 import 'playlists.dart';
 import 'profile.dart';
@@ -61,10 +62,11 @@ class Watchlist extends StatelessWidget {
   Widget build(BuildContext context) {
     int _selectedIndex = 0;
 
-    final List<Widget> _pages = [
+    final List<Widget> pages = [
       MyApp(),
-      Search(),
       Playlists(),
+      Search(),
+      Friends(),
       Profile(),
       // Add more pages here
     ];
@@ -73,7 +75,7 @@ class Watchlist extends StatelessWidget {
       _selectedIndex = index;
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => _pages[_selectedIndex]),
+        MaterialPageRoute(builder: (context) => pages[_selectedIndex]),
       );
     }
 
@@ -82,7 +84,7 @@ class Watchlist extends StatelessWidget {
         automaticallyImplyLeading: false,
         title: Center(
           child: Image.asset(
-          'assets/logo_character.png',
+            'assets/logo_character.png',
             height: 54,
           ),
         ),
@@ -600,12 +602,16 @@ class Watchlist extends StatelessWidget {
             label: 'Home',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.library_books_rounded),
+            label: 'Library',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.search),
             label: 'Search',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.library_books_rounded),
-            label: 'Library',
+            label: 'Friends',
+            icon: Icon(Icons.contacts),
           ),
           BottomNavigationBarItem(
             label: 'Profile',

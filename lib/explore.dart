@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'friends.dart';
 import 'playlists.dart';
 import 'profile.dart';
 import 'search.dart';
@@ -735,9 +736,11 @@ class _ExploreState extends State<Explore> {
 
     final List<Widget> pages = [
       MyApp(),
-      Search(),
       Playlists(),
+      Search(),
+      Friends(),
       Profile(),
+      // Add more pages here
     ];
 
     void _onItemTapped(int index) {
@@ -1851,12 +1854,16 @@ class _ExploreState extends State<Explore> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.library_books_rounded),
+            label: 'Library',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.search),
             label: 'Search',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.library_books_rounded),
-            label: 'Library',
+            label: 'Friends',
+            icon: Icon(Icons.contacts),
           ),
           BottomNavigationBarItem(
             label: 'Profile',

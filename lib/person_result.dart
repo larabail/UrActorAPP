@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'friends.dart';
 import 'profile.dart';
 import 'search.dart';
 import 'main.dart';
@@ -317,8 +318,9 @@ class _PersonResultState extends State<PersonResult> {
 
     final List<Widget> pages = [
       MyApp(),
-      Search(),
       Playlists(),
+      Search(),
+      Friends(),
       Profile(),
       // Add more pages here
     ];
@@ -521,29 +523,34 @@ class _PersonResultState extends State<PersonResult> {
         },
       ),
       bottomNavigationBar: BottomNavigationBar(
-          selectedItemColor: Colors.grey,
-          unselectedItemColor: Colors.grey,
-          type: BottomNavigationBarType.fixed,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.search),
-              label: 'Search',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.library_books_rounded),
-              label: 'Library',
-            ),
-            BottomNavigationBarItem(
-              label: 'Profile',
-              icon: Icon(Icons.person),
-            ),
-          ],
-          currentIndex: selectedIndex,
-          onTap: _onItemTapped),
+        selectedItemColor: Colors.grey,
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.library_books_rounded),
+            label: 'Library',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.search),
+            label: 'Search',
+          ),
+          BottomNavigationBarItem(
+            label: 'Friends',
+            icon: Icon(Icons.contacts),
+          ),
+          BottomNavigationBarItem(
+            label: 'Profile',
+            icon: Icon(Icons.person),
+          ),
+        ],
+        currentIndex: selectedIndex,
+        onTap: _onItemTapped,
+      ),
     );
   }
 
