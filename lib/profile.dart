@@ -360,7 +360,7 @@ Future<List<Map>> topMovies() async {
       final json = jsonDecode(response.body);
       movies.add(json);
     } else {
-      throw Exception('Failed to load movie details');
+      throw Exception('Failed to load actor details');
     }
     i++;
   }
@@ -454,6 +454,8 @@ class _ProfileState extends State<Profile> {
       int i = 0;
       for (List item in favActors) {
         if (i < 9) {
+          print(item);
+          print(Uri.parse('${link}${item[1]}${api_key_actor}'));
           final response =
               await http.get(Uri.parse('${link}${item[1]}${api_key_actor}'));
           if (response.statusCode == 200) {
@@ -482,6 +484,8 @@ class _ProfileState extends State<Profile> {
       int i = 0;
       for (List item in favDirectors) {
         if (i < 9) {
+          print(favDirectors);
+          print(Uri.parse('${link}${item[1]}${api_key_actor}'));
           final response =
               await http.get(Uri.parse('${link}${item[1]}${api_key_actor}'));
           if (response.statusCode == 200) {
