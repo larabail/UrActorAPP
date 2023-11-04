@@ -892,33 +892,64 @@ class _ProfileState extends State<Profile> {
                                     ),
                                     Padding(
                                       padding: const EdgeInsets.all(12.0),
-                                      child: Consumer<ThemeProvider>(builder:
-                                          (context, themeProvider, child) {
-                                        return Text(
-                                          "Your record is $maxMovies movies in a day",
-                                          textAlign: TextAlign.left,
-                                          style: TextStyle(
-                                              fontSize: 18,
-                                              color: themeProvider.isDarkMode
-                                                  ? Colors.yellow
-                                                  : Colors.green),
-                                        );
-                                      }),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(5.0),
-                                      child: Text(
-                                        "Total Movies Ever Seen: ${seenMovies.length}",
-                                        textAlign: TextAlign.left,
-                                        style: const TextStyle(fontSize: 15),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(5.0),
-                                      child: Text(
-                                        "Total TV Shows Ever Seen: ${seenTVShows.length}",
-                                        textAlign: TextAlign.left,
-                                        style: const TextStyle(fontSize: 15),
+                                      child: Column(
+                                        children: [
+                                          Consumer<ThemeProvider>(builder:
+                                              (context, themeProvider, child) {
+                                            return Row(
+                                              children: [
+                                                const Icon(
+                                                    Icons.record_voice_over,
+                                                    size: 30,
+                                                    color: Colors.blue),
+                                                const SizedBox(width: 10),
+                                                Expanded(
+                                                  child: Text(
+                                                    "Record: $maxMovies movies in a day",
+                                                    style: TextStyle(
+                                                      fontSize: 18,
+                                                      color: themeProvider
+                                                              .isDarkMode
+                                                          ? Colors.yellow
+                                                          : Colors.green,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          }),
+                                          const SizedBox(height: 10),
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.movie,
+                                                  size: 30,
+                                                  color: Colors.green),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  "Total Movies Ever Seen: ${seenMovies.length}",
+                                                  style: const TextStyle(
+                                                      fontSize: 15),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 10),
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.tv,
+                                                  size: 30, color: Colors.red),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  "Total TV Shows Ever Seen: ${seenTVShows.length}",
+                                                  style: const TextStyle(
+                                                      fontSize: 15),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],

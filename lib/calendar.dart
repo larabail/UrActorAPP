@@ -36,7 +36,7 @@ class Calendar extends StatefulWidget {
 class _CalendarState extends State<Calendar> {
   DateTime _focusedDay = DateTime.now();
   String _selectedDay = DateTime.now().toIso8601String().split('T')[0];
-  num _monthlyStats = 0;
+  List _monthlyStats = [0, 0, 0];
   final Map events = calendar;
   void deleteMovieSubmit(String id, String title) async {
     var userDoc = db.collection(uid).doc("Calendar");
@@ -102,20 +102,34 @@ class _CalendarState extends State<Calendar> {
   }
 
   void _updateMonthlyStats(DateTime focusedDay) {
-    print(focusedDay);
-    // Calculate and update the monthly stats based on the focusedDay
     _monthlyStats = _getMonthlyStats(focusedDay);
   }
 
-  num _getMonthlyStats(DateTime focusedDay) {
-    _monthlyStats = 0;
+  List _getMonthlyStats(DateTime focusedDay) {
+    num totalRuntime = 0; // Total runtime of all movies in the month
+    double totalRating = 0; // Total rating of all movies in the month
+    int movieCount = 0; // Total number of movies in the month
+
     for (String key in calendar.keys) {
       DateTime date = DateTime.parse(key);
       if (date.month == focusedDay.month && date.year == focusedDay.year) {
-        _monthlyStats += calendar[key]?.length ?? 0;
+        for (var movie in calendar[key]) {
+          totalRuntime += movie['runtime'] ?? 0;
+          totalRating += movie['rating'] ?? 0;
+          movieCount++;
+        }
       }
     }
-    return _monthlyStats;
+
+    double averageRating = movieCount > 0 ? totalRating / movieCount : 0;
+
+    return [movieCount, averageRating, totalRuntime];
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _updateMonthlyStats(_focusedDay); // Add this line
   }
 
   @override
@@ -354,9 +368,38 @@ class _CalendarState extends State<Calendar> {
             ),
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Total movies watched this month: $_monthlyStats',
-                style: const TextStyle(fontSize: 15),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Column(
+                    children: [
+                      const Icon(Icons.movie, size: 40, color: Colors.blue),
+                      Text('${_monthlyStats[0]}',
+                          style: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold)),
+                      const Text('# Movies', style: TextStyle(fontSize: 15)),
+                    ],
+                  ),
+                  Column(
+                    children: [
+                      const Icon(Icons.timer, size: 40, color: Colors.green),
+                      Text('${_monthlyStats[2]}',
+                          style: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold)),
+                      const Text('Mins. Spent', style: TextStyle(fontSize: 15)),
+                    ],
+                  ),
+                  Column(
+                    children: [
+                      const Icon(Icons.star, size: 40, color: Colors.yellow),
+                      Text(
+                          '${_monthlyStats[1].toStringAsFixed(2)}', // Round to 2 decimal places
+                          style: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold)),
+                      const Text('Avg. Rating', style: TextStyle(fontSize: 15)),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
