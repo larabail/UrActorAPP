@@ -35,6 +35,9 @@ class Calendar extends StatefulWidget {
 }
 
 class _CalendarState extends State<Calendar> {
+  DateTime _focusedDay = DateTime.now();
+  String _selectedDay = DateTime.now().toIso8601String().split('T')[0];
+  num _monthlyStats = 0;
   final Map events = calendar;
   void deleteMovieSubmit(String id, String title) async {
     var userDoc = db.collection(uid).doc("Calendar");
@@ -97,6 +100,23 @@ class _CalendarState extends State<Calendar> {
     setState(() {
       calendar = calendar;
     });
+  }
+
+  void _updateMonthlyStats(DateTime focusedDay) {
+    print(focusedDay);
+    // Calculate and update the monthly stats based on the focusedDay
+    _monthlyStats = _getMonthlyStats(focusedDay);
+  }
+
+  num _getMonthlyStats(DateTime focusedDay) {
+    _monthlyStats = 0;
+    for (String key in calendar.keys) {
+      DateTime date = DateTime.parse(key);
+      if (date.month == focusedDay.month && date.year == focusedDay.year) {
+        _monthlyStats += calendar[key]?.length ?? 0;
+      }
+    }
+    return _monthlyStats;
   }
 
   @override
@@ -292,21 +312,55 @@ class _CalendarState extends State<Calendar> {
           height: 54,
         )),
       ),
-      body: FractionallySizedBox(
-        heightFactor: 0.9,
-        child: TableCalendar(
-          firstDay: DateTime.utc(1990, 10, 16),
-          lastDay: DateTime.utc(2030, 3, 14),
-          focusedDay: DateTime.now(),
-          headerStyle: const HeaderStyle(
-            formatButtonVisible: false,
-            titleCentered: true,
-          ),
-          eventLoader: (date) {
-            final eventsOnDate = events[date.toString().substring(0, 10)] ?? [];
-            return eventsOnDate.map((event) => event['title'] ?? '').toList();
-          },
-          onDaySelected: _onDaySelected,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Container(
+              height:
+                  MediaQuery.of(context).size.height * 0.5, // Adjust as needed
+
+              child: TableCalendar(
+                  firstDay: DateTime.utc(1990, 10, 16),
+                  lastDay: DateTime.utc(2030, 3, 14),
+                  // focusedDay: DateTime.now(),
+                  headerStyle: const HeaderStyle(
+                    formatButtonVisible: false,
+                    titleCentered: true,
+                  ),
+                  eventLoader: (date) {
+                    final eventsOnDate =
+                        events[date.toString().substring(0, 10)] ?? [];
+                    return eventsOnDate
+                        .map((event) => event['title'] ?? '')
+                        .toList();
+                  },
+                  focusedDay: _focusedDay,
+                  selectedDayPredicate: (day) =>
+                      isSameDay(DateTime.parse(_selectedDay), day),
+                  onPageChanged: (focusedDay) {
+                    setState(() {
+                      _focusedDay = focusedDay;
+                      _updateMonthlyStats(focusedDay);
+                    });
+                  },
+                  onDaySelected: (selectedDay, focusedDay) {
+                    setState(() {
+                      _selectedDay =
+                          selectedDay.toIso8601String().split('T')[0];
+                      _focusedDay = focusedDay; // update focusedDay here
+                      _updateMonthlyStats(focusedDay);
+                    });
+                    _onDaySelected(selectedDay, focusedDay);
+                  }),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Total movies watched this month: $_monthlyStats',
+                style: const TextStyle(fontSize: 15),
+              ),
+            ),
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton(

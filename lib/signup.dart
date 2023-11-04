@@ -137,11 +137,15 @@ class SignUp extends StatelessWidget {
                             const Map<String, dynamic> FavActors = {};
                             const Map<String, dynamic> Calendar = {};
                             const Map<String, dynamic> Rewatched = {};
+                            const Map<String, dynamic> Friends = {
+                              "friends": []
+                            };
                             const Map<String, dynamic> Settings = {
                               "darkMode": true,
                               "dontAskCalendar": false,
                               "providers": [],
-                              "profile_photo": ""
+                              "profile_photo": "",
+                              "username": ""
                             };
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
@@ -187,6 +191,10 @@ class SignUp extends StatelessWidget {
                                 .collection(credential.user!.uid)
                                 .doc("Settings")
                                 .set(Settings);
+                            FirebaseFirestore.instance
+                                .collection(credential.user!.uid)
+                                .doc("Friends")
+                                .set(Friends);
                           });
                           try {
                             await FirebaseAuth.instance
