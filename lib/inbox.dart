@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import 'main.dart';
+
 class FriendRequestsPage extends StatefulWidget {
   final String currentUserUID;
 
@@ -23,17 +25,18 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
     // Add each other to friends list
     await FirebaseFirestore.instance
         .collection(recipientUID)
-        .doc('Settings')
+        .doc('Friends')
         .update({
       'friends': FieldValue.arrayUnion([senderUID]),
     });
 
     await FirebaseFirestore.instance
         .collection(senderUID)
-        .doc('Settings')
+        .doc('Friends')
         .update({
       'friends': FieldValue.arrayUnion([recipientUID]),
     });
+    friends.add(senderUID);
   }
 
   void rejectFriendRequest(String recipientUID, String senderUID) async {
@@ -58,45 +61,74 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Friend Requests'),
+        title: const Text('Friend Requests'),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: getFriendRequests(widget.currentUserUID),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Text('Error: ${snapshot.error}');
           } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text('No friend requests found'));
+            return const Center(child: Text('No friend requests found'));
           } else {
             return ListView.builder(
               itemCount: snapshot.data!.docs.length,
               itemBuilder: (context, index) {
                 var request = snapshot.data!.docs[index];
-                String senderUID = request.id;
                 String status = request['status'];
-
-                return ListTile(
-                  title: Text('Request from UID: $senderUID'),
-                  subtitle: Text('Status: $status'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.check, color: Colors.green),
-                        onPressed: () {
-                          acceptFriendRequest(widget.currentUserUID, senderUID);
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.close, color: Colors.red),
-                        onPressed: () {
-                          rejectFriendRequest(widget.currentUserUID, senderUID);
-                        },
-                      ),
-                    ],
-                  ),
+                return FutureBuilder<DocumentSnapshot>(
+                  future: FirebaseFirestore.instance
+                      .collection(request.id)
+                      .doc("Settings")
+                      .get(),
+                  builder: (BuildContext context,
+                      AsyncSnapshot<DocumentSnapshot> snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return ListTile(
+                        title: const Text('Loading...'),
+                        subtitle: Text('Status: $status'),
+                      );
+                    } else if (snapshot.hasError) {
+                      return ListTile(
+                        title: Text('Error: ${snapshot.error}'),
+                        subtitle: Text('Status: $status'),
+                      );
+                    } else if (!snapshot.hasData || !snapshot.data!.exists) {
+                      return ListTile(
+                        title: const Text('User not found'),
+                        subtitle: Text('Status: $status'),
+                      );
+                    } else {
+                      String senderUsername =
+                          snapshot.data!['username'] ?? 'Unknown User';
+                      return ListTile(
+                        title: Text('Request from: $senderUsername'),
+                        subtitle: Text('Status: $status'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon:
+                                  const Icon(Icons.check, color: Colors.green),
+                              onPressed: () {
+                                acceptFriendRequest(
+                                    widget.currentUserUID, request.id);
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close, color: Colors.red),
+                              onPressed: () {
+                                rejectFriendRequest(
+                                    widget.currentUserUID, request.id);
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  },
                 );
               },
             );
