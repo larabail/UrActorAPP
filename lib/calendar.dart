@@ -1,5 +1,4 @@
 // ignore_for_file: unnecessary_brace_in_string_interps, no_leading_underscores_for_local_identifiers, avoid_function_literals_in_foreach_calls
-
 import 'package:flutter/material.dart';
 import 'package:uractor/explore.dart';
 import 'friends.dart';
@@ -442,8 +441,17 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
           final response2 = await http.get(Uri.parse(resultSearchLink));
           if (response2.statusCode == 200) {
             final json2 = jsonDecode(response2.body);
-            if (json2["poster_path"] != "" && json2["poster_path"] != null) {
-              results.add(json2);
+            final omdbLink =
+                'http://www.omdbapi.com/?i=${json2["imdb_id"]}&apikey=768d2cf9';
+            final omdbData = await http.get(Uri.parse(omdbLink));
+            if (response2.statusCode == 200) {
+              final json3 = jsonDecode(omdbData.body);
+              json2["imdbRating"] = json3["imdbRating"];
+              if (json2["poster_path"] != "" && json2["poster_path"] != null) {
+                results.add(json2);
+              }
+            } else {
+              throw Exception('Failed to load movie details');
             }
           } else {
             throw Exception('Failed to load movie details');
@@ -458,8 +466,14 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
     }
   }
 
-  void addMovieSubmit(String id, String title) async {
-    Map myObject = {'id': id, 'title': title};
+  void addMovieSubmit(
+      String id, String title, int runtime, double rating) async {
+    Map myObject = {
+      'id': id,
+      'title': title,
+      'runtime': runtime,
+      'rating': rating
+    };
     if (calendar.keys.toList().contains(dateForMap)) {
       calendar[dateForMap].add(myObject);
     } else {
@@ -578,8 +592,11 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                               child: GestureDetector(
                                 onTap: () {
                                   _movie = item["id"].toString();
-                                  addMovieSubmit(item["id"].toString(),
-                                      item["title"].toString());
+                                  addMovieSubmit(
+                                      item["id"].toString(),
+                                      item["title"].toString(),
+                                      item["runtime"],
+                                      double.parse(item["imdbRating"]));
                                 },
                                 child: Container(
                                   decoration: BoxDecoration(
