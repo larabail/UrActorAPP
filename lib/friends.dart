@@ -36,7 +36,6 @@ class _FriendsState extends State<Friends> {
       Search(),
       Friends(),
       Profile(),
-      // Add more pages here
     ];
 
     void _onItemTapped(int index) {
@@ -192,35 +191,114 @@ class _FriendsState extends State<Friends> {
                   var data = snapshot.data!.data() as Map<String, dynamic>;
                   String profilePath = data['profile_photo'] ?? '';
                   String userName = data['username'] ?? '';
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 8.0, horizontal: 16.0),
-                    child: Row(
-                      children: [
-                        ClipOval(
-                          child: profilePath != ""
-                              ? Image.network(
-                                  profilePath,
-                                  height: 100,
-                                  width: 100,
-                                  fit: BoxFit.cover,
-                                )
-                              : Image.asset(
-                                  'assets/main_profile.png',
-                                  height: 100,
-                                  width: 100,
-                                  fit: BoxFit.cover,
-                                ),
-                        ),
-                        const SizedBox(width: 16.0),
-                        Expanded(
-                          child: Text(
-                            userName,
-                            style: const TextStyle(fontSize: 16.0),
+                  return ExpansionTile(
+                    title: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        children: [
+                          ClipOval(
+                            child: profilePath != ""
+                                ? Image.network(
+                                    profilePath,
+                                    height: 50,
+                                    width: 50,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.asset(
+                                    'assets/main_profile.png',
+                                    height: 50,
+                                    width: 50,
+                                    fit: BoxFit.cover,
+                                  ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 16.0),
+                          Expanded(
+                            child: Text(
+                              userName,
+                              style: const TextStyle(fontSize: 16.0),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.person, color: Colors.blue),
+                            onPressed: () {
+                              // Navigate to Profile Page
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.calendar_today,
+                                color: Colors.green),
+                            onPressed: () {
+                              // Navigate to Calendar Page
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle,
+                                color: Colors.red),
+                            onPressed: () async {
+                              bool confirmed = await showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: const Text('Confirmation'),
+                                    content: const Text(
+                                        'Are you sure you want to remove this friend?'),
+                                    actions: <Widget>[
+                                      TextButton(
+                                        child: const Text('No'),
+                                        onPressed: () {
+                                          Navigator.of(context).pop(false);
+                                        },
+                                      ),
+                                      TextButton(
+                                        child: const Text('Yes'),
+                                        onPressed: () {
+                                          Navigator.of(context).pop(true);
+                                        },
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+
+                              if (confirmed) {
+                                String friendUID = friends[friendIndex];
+
+                                // Reference to the Firestore instance
+                                FirebaseFirestore firestore =
+                                    FirebaseFirestore.instance;
+
+                                // Remove friend from current user's friend list
+                                await firestore
+                                    .collection(friendUID)
+                                    .doc("Friends")
+                                    .update({
+                                  'friends': FieldValue.arrayRemove([uid])
+                                });
+
+                                // Remove current user from friend's friend list
+                                await firestore
+                                    .collection(uid)
+                                    .doc("Friends")
+                                    .update({
+                                  'friends': FieldValue.arrayRemove([friendUID])
+                                });
+
+                                setState(() {
+                                  friends.remove(friendUID);
+                                });
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
                   );
                 }
               },
