@@ -3,10 +3,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/profile.dart';
+import 'friends_calendar.dart';
+import 'friends_profile.dart';
 import 'inbox.dart';
 import 'playlists.dart';
 import 'search.dart';
 import 'main.dart';
+
 // import 'person_result.dart';
 // import 'movie_result.dart';
 // import 'login.dart';
@@ -16,6 +19,7 @@ import 'main.dart';
 // import 'dart:convert';
 // import 'package:provider/provider.dart';
 // import 'theme_provider.dart';
+String friendUid = "";
 
 class Friends extends StatefulWidget {
   Friends();
@@ -28,6 +32,7 @@ class _FriendsState extends State<Friends> {
   final TextEditingController _usernameController = TextEditingController();
   @override
   Widget build(BuildContext context) {
+    friendUid = "";
     int selectedIndex = 0;
 
     final List<Widget> pages = [
@@ -229,6 +234,14 @@ class _FriendsState extends State<Friends> {
                             icon: const Icon(Icons.person, color: Colors.blue),
                             onPressed: () {
                               // Navigate to Profile Page
+                              friendUid = friends[friendIndex];
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      FriendProfile(friendUid: friendUid),
+                                ),
+                              );
                             },
                           ),
                           IconButton(
@@ -236,6 +249,14 @@ class _FriendsState extends State<Friends> {
                                 color: Colors.green),
                             onPressed: () {
                               // Navigate to Calendar Page
+                              friendUid = friends[friendIndex];
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      FriendCalendar(friendUid: friendUid),
+                                ),
+                              );
                             },
                           ),
                           IconButton(
