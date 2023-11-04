@@ -59,46 +59,6 @@ class _FriendsState extends State<Friends> {
       });
     }
 
-    void acceptFriendRequest(String recipientUID) async {
-      // Update status to accepted
-      await FirebaseFirestore.instance
-          .collection(recipientUID)
-          .doc('Friends')
-          .collection('FriendRequests')
-          .doc(uid)
-          .update({'status': 'accepted'});
-
-      // Add each other to friends list
-      await FirebaseFirestore.instance
-          .collection(recipientUID)
-          .doc('Settings')
-          .update({
-        'friends': FieldValue.arrayUnion([uid]),
-      });
-
-      await FirebaseFirestore.instance.collection(uid).doc('Settings').update({
-        'friends': FieldValue.arrayUnion([recipientUID]),
-      });
-    }
-
-    void rejectFriendRequest(String recipientUID) async {
-      await FirebaseFirestore.instance
-          .collection(recipientUID)
-          .doc('Friends')
-          .collection('FriendRequests')
-          .doc(uid)
-          .update({'status': 'rejected'});
-    }
-
-    Stream<QuerySnapshot> getFriendRequests(String recipientUID) {
-      return FirebaseFirestore.instance
-          .collection(recipientUID)
-          .doc('Friends')
-          .collection('FriendRequests')
-          .where('status', isEqualTo: 'pending')
-          .snapshots();
-    }
-
     void addFriend() {
       showDialog(
         context: context,
