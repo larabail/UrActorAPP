@@ -50,6 +50,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
     });
     setState(() {
       gotData = true;
+      _updateMonthlyStats(_focusedDay); // Add this line
     });
   }
 
@@ -66,10 +67,10 @@ class _FriendCalendarState extends State<FriendCalendar> {
     double totalRating = 0; // Total rating of all movies in the month
     int movieCount = 0; // Total number of movies in the month
 
-    for (String key in calendar.keys) {
+    for (String key in friendCalendar.keys) {
       DateTime date = DateTime.parse(key);
       if (date.month == focusedDay.month && date.year == focusedDay.year) {
-        for (var movie in calendar[key]) {
+        for (var movie in friendCalendar[key]) {
           totalRuntime += movie['runtime'] ?? 0;
           totalRating += movie['rating'] ?? 0;
           movieCount++;
@@ -84,9 +85,8 @@ class _FriendCalendarState extends State<FriendCalendar> {
 
   @override
   void initState() {
-    getFirebaseData();
     super.initState();
-    _updateMonthlyStats(_focusedDay); // Add this line
+    getFirebaseData();
   }
 
   @override
