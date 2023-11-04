@@ -85,7 +85,7 @@ class Favorites extends StatelessWidget {
         automaticallyImplyLeading: false,
         title: Center(
           child: Image.asset(
-          'assets/logo_character.png',
+            'assets/logo_character.png',
             height: 54,
           ),
         ),
@@ -117,22 +117,24 @@ class Favorites extends StatelessWidget {
                   child: TabBarView(
                     children: [
                       ListView.builder(
-                        itemCount: (favMovies.reversed.toList().length / 3).ceil(),
+                        itemCount:
+                            (favMovies.reversed.toList().length / 3).ceil(),
                         itemBuilder: (context, index) {
                           final leftMovieIndex = index * 3;
                           final middleMovieIndex = index * 3 + 1;
                           final rightMovieIndex = index * 3 + 2;
-                          final leftMovie = (leftMovieIndex < favMovies.reversed.toList().length)
+                          final leftMovie = (leftMovieIndex <
+                                  favMovies.reversed.toList().length)
                               ? favMovies.reversed.toList()[leftMovieIndex]
                               : null;
-                          final middleMovie =
-                              (middleMovieIndex < favMovies.reversed.toList().length)
-                                  ? favMovies.reversed.toList()[middleMovieIndex]
-                                  : null;
-                          final rightMovie =
-                              (rightMovieIndex < favMovies.reversed.toList().length)
-                                  ? favMovies.reversed.toList()[rightMovieIndex]
-                                  : null;
+                          final middleMovie = (middleMovieIndex <
+                                  favMovies.reversed.toList().length)
+                              ? favMovies.reversed.toList()[middleMovieIndex]
+                              : null;
+                          final rightMovie = (rightMovieIndex <
+                                  favMovies.reversed.toList().length)
+                              ? favMovies.reversed.toList()[rightMovieIndex]
+                              : null;
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
@@ -347,23 +349,24 @@ class Favorites extends StatelessWidget {
                         },
                       ),
                       ListView.builder(
-                        itemCount: (favTVShows.reversed.toList().length / 3).ceil(),
+                        itemCount:
+                            (favTVShows.reversed.toList().length / 3).ceil(),
                         itemBuilder: (context, index) {
                           final leftTVShowIndex = index * 3;
                           final middleTVShowIndex = index * 3 + 1;
                           final rightTVShowIndex = index * 3 + 2;
-                          final leftTVShow =
-                              (leftTVShowIndex < favTVShows.reversed.toList().length)
-                                  ? favTVShows.reversed.toList()[leftTVShowIndex]
-                                  : null;
-                          final middleTVShow =
-                              (middleTVShowIndex < favTVShows.reversed.toList().length)
-                                  ? favTVShows.reversed.toList()[middleTVShowIndex]
-                                  : null;
-                          final rightTVShow =
-                              (rightTVShowIndex < favTVShows.reversed.toList().length)
-                                  ? favTVShows.reversed.toList()[rightTVShowIndex]
-                                  : null;
+                          final leftTVShow = (leftTVShowIndex <
+                                  favTVShows.reversed.toList().length)
+                              ? favTVShows.reversed.toList()[leftTVShowIndex]
+                              : null;
+                          final middleTVShow = (middleTVShowIndex <
+                                  favTVShows.reversed.toList().length)
+                              ? favTVShows.reversed.toList()[middleTVShowIndex]
+                              : null;
+                          final rightTVShow = (rightTVShowIndex <
+                                  favTVShows.reversed.toList().length)
+                              ? favTVShows.reversed.toList()[rightTVShowIndex]
+                              : null;
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
@@ -590,26 +593,34 @@ class Favorites extends StatelessWidget {
         selectedItemColor: Colors.grey,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.library_books_rounded),
             label: 'Library',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.search),
             label: 'Search',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             label: 'Friends',
             icon: Icon(Icons.contacts),
           ),
           BottomNavigationBarItem(
             label: 'Profile',
-            icon: Icon(Icons.person),
+            icon: settings["profile_photo"] != ""
+                ? ClipOval(
+                    child: Image.network(
+                    settings["profile_photo"],
+                    height: 27,
+                    width: 27,
+                    fit: BoxFit.cover,
+                  ))
+                : const Icon(Icons.person),
           ),
         ],
         currentIndex: selectedIndex,
