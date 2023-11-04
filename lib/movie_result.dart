@@ -2,6 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'friends.dart';
 import 'profile.dart';
 import 'search.dart';
@@ -494,6 +495,16 @@ class _MovieResultState extends State<MovieResult> {
       final json = jsonDecode(response.body);
       json["times_seen"] = movieData[3];
       json["review"] = movieData[4];
+      json["seen_dates"] = [];
+      for (String key in calendar.keys) {
+        for (var movie in calendar[key]) {
+          if (movie['id'] == movieData[0].toString()) {
+            json["seen_dates"].add(key);
+          }
+        }
+      }
+      json["seen_dates"]
+          .sort((a, b) => DateTime.parse(b).compareTo(DateTime.parse(a)));
       if (json["backdrop_path"] == null) {
         json["backdrop_path"] = "";
       }
@@ -1384,6 +1395,96 @@ class _MovieResultState extends State<MovieResult> {
                       },
                     ),
                   ),
+                  if (containsMap(seenMovies, ['Movies', movieResult[0]]))
+                    ExpansionTile(
+                      title: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.history, color: Colors.blue),
+                          SizedBox(width: 8),
+                          Text(
+                            "Watching History",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontSize: 15,
+                              wordSpacing: 2,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                      children: [
+                        if ((snapshot.data!['seen_dates'] as List).isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Row(
+                              children: [
+                                const SizedBox(
+                                    width: 16), // Added margin to the left
+                                const Icon(Icons.access_time,
+                                    color: Colors.green),
+                                const SizedBox(width: 8),
+                                Text(
+                                  "Last watched: ${DateFormat('dd MMMM, yyyy').format(DateTime.parse(snapshot.data!['seen_dates'].first))}",
+                                  style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green),
+                                ),
+                              ],
+                            ),
+                          ),
+                        // Rest of the dates in a smaller font
+                        if ((snapshot.data!['seen_dates'] as List).isNotEmpty)
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: (snapshot.data!['seen_dates'] as List)
+                                  .skip(1)
+                                  .map<Widget>((date) {
+                                return Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 2.0),
+                                  child: Row(
+                                    children: [
+                                      const SizedBox(
+                                          width:
+                                              16), // Added margin to the left
+                                      const Icon(Icons.calendar_today,
+                                          size: 16, color: Colors.grey),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        DateFormat('dd MMMM, yyyy')
+                                            .format(DateTime.parse(date)),
+                                        style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey[700]),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        if ((snapshot.data!['seen_dates'] as List).isNotEmpty)
+                          const SizedBox(height: 15),
+                        // Message when 'seen_dates' is empty
+                        if ((snapshot.data!['seen_dates'] as List).isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(12.0),
+                            child: Text(
+                              "No watching history available.",
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontStyle: FontStyle.italic,
+                                  color: Colors.red),
+                            ),
+                          ),
+                      ],
+                    ),
                   const Row(
                     children: [],
                   ),

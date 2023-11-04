@@ -383,10 +383,10 @@ class _CalendarState extends State<Calendar> {
                   Column(
                     children: [
                       const Icon(Icons.timer, size: 40, color: Colors.green),
-                      Text('${_monthlyStats[2]}',
+                      Text('${(_monthlyStats[2] / 60).toStringAsFixed(2)}',
                           style: const TextStyle(
                               fontSize: 20, fontWeight: FontWeight.bold)),
-                      const Text('Mins. Spent', style: TextStyle(fontSize: 15)),
+                      const Text('Hours Spent', style: TextStyle(fontSize: 15)),
                     ],
                   ),
                   Column(
