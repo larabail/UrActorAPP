@@ -101,7 +101,7 @@ class _FriendsState extends State<Friends> {
                         //   'friends': FieldValue.arrayUnion([friendUid])
                         // });
 
-                        // Navigator.of(context).pop(); // Close the dialog
+                        Navigator.of(context).pop(); // Close the dialog
                         // setState(() {
                         //   friends.add(friendUid);
                         // }); // Refresh the UI
@@ -190,7 +190,7 @@ class _FriendsState extends State<Friends> {
                   return const Text('No data found');
                 } else {
                   var data = snapshot.data!.data() as Map<String, dynamic>;
-                  String profilePath = data['profile_path'] ?? '';
+                  String profilePath = data['profile_photo'] ?? '';
                   String userName = data['username'] ?? '';
                   return Padding(
                     padding: const EdgeInsets.symmetric(
