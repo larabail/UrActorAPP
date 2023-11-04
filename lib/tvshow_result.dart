@@ -875,8 +875,7 @@ class _TVShowResultState extends State<TVShowResult> {
                               ),
                               child: Text(
                                 'Runtime: ${snapshot.data!['runtime']} min',
-                                style: const TextStyle(
-                                    fontSize: 18),
+                                style: const TextStyle(fontSize: 18),
                               ),
                             ),
                           ],
@@ -896,8 +895,7 @@ class _TVShowResultState extends State<TVShowResult> {
                               ),
                               child: Text(
                                 'IMDB Rating: ${snapshot.data!["imdb_rating"]}',
-                                style: const TextStyle(
-                                    fontSize: 18),
+                                style: const TextStyle(fontSize: 18),
                               ),
                             ),
                           ],
@@ -1086,7 +1084,7 @@ class _TVShowResultState extends State<TVShowResult> {
                         margin: const EdgeInsets.fromLTRB(30.0, 20.0, 0, 5.0),
                         child: const Text(
                           "Main Crew:",
-                          style: TextStyle( fontSize: 18),
+                          style: TextStyle(fontSize: 18),
                         ),
                       ),
                       Container(
@@ -1102,8 +1100,7 @@ class _TVShowResultState extends State<TVShowResult> {
                             Map person = snapshot.data!['crew'][index];
                             return Text(
                               "${person['job']}: ${person['name']}",
-                              style:
-                                  const TextStyle( fontSize: 15),
+                              style: const TextStyle(fontSize: 15),
                             );
                           },
                         ),
@@ -1156,26 +1153,34 @@ class _TVShowResultState extends State<TVShowResult> {
         selectedItemColor: Colors.grey,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.library_books_rounded),
             label: 'Library',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.search),
             label: 'Search',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             label: 'Friends',
             icon: Icon(Icons.contacts),
           ),
           BottomNavigationBarItem(
             label: 'Profile',
-            icon: Icon(Icons.person),
+            icon: settings["profile_photo"] != ""
+                ? ClipOval(
+                    child: Image.network(
+                    settings["profile_photo"],
+                    height: 27,
+                    width: 27,
+                    fit: BoxFit.cover,
+                  ))
+                : const Icon(Icons.person),
           ),
         ],
         currentIndex: _selectedIndex,

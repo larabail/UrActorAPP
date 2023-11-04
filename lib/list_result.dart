@@ -198,10 +198,10 @@ class ListResult extends StatelessWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-        automaticallyImplyLeading: false,
+          automaticallyImplyLeading: false,
           title: Center(
               child: Image.asset(
-          'assets/logo_character.png',
+            'assets/logo_character.png',
             height: 54,
           )),
         ),
@@ -273,7 +273,10 @@ class ListResult extends StatelessWidget {
                                 builder: (context) => InfoButtonDialog(),
                               );
                             },
-                            icon: const Icon(Icons.more_vert, color: Colors.white,),
+                            icon: const Icon(
+                              Icons.more_vert,
+                              color: Colors.white,
+                            ),
                           ),
                         ])),
                   ),
@@ -1235,34 +1238,42 @@ class ListResult extends StatelessWidget {
           ],
         ),
         bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.grey,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.library_books_rounded),
-            label: 'Library',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          BottomNavigationBarItem(
-            label: 'Friends',
-            icon: Icon(Icons.contacts),
-          ),
-          BottomNavigationBarItem(
-            label: 'Profile',
-            icon: Icon(Icons.person),
-          ),
-        ],
-        currentIndex: selectedIndex,
-        onTap: _onItemTapped,
-      ),
+          selectedItemColor: Colors.grey,
+          unselectedItemColor: Colors.grey,
+          type: BottomNavigationBarType.fixed,
+          items: [
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.library_books_rounded),
+              label: 'Library',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.search),
+              label: 'Search',
+            ),
+            const BottomNavigationBarItem(
+              label: 'Friends',
+              icon: Icon(Icons.contacts),
+            ),
+            BottomNavigationBarItem(
+              label: 'Profile',
+              icon: settings["profile_photo"] != ""
+                  ? ClipOval(
+                      child: Image.network(
+                      settings["profile_photo"],
+                      height: 27,
+                      width: 27,
+                      fit: BoxFit.cover,
+                    ))
+                  : const Icon(Icons.person),
+            ),
+          ],
+          currentIndex: selectedIndex,
+          onTap: _onItemTapped,
+        ),
       ),
     );
   }
