@@ -321,26 +321,34 @@ class _ReviewsState extends State<Reviews> {
         selectedItemColor: Colors.grey,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.library_books_rounded),
             label: 'Library',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.search),
             label: 'Search',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             label: 'Friends',
             icon: Icon(Icons.contacts),
           ),
           BottomNavigationBarItem(
             label: 'Profile',
-            icon: Icon(Icons.person),
+            icon: settings["profile_photo"] != ""
+                ? ClipOval(
+                    child: Image.network(
+                    settings["profile_photo"],
+                    height: 27,
+                    width: 27,
+                    fit: BoxFit.cover,
+                  ))
+                : const Icon(Icons.person),
           ),
         ],
         currentIndex: selectedIndex,
