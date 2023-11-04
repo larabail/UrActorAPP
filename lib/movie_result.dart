@@ -211,7 +211,8 @@ class _MovieResultState extends State<MovieResult> {
     });
   }
 
-  void markWatched(String id, String title, BuildContext context) async {
+  void markWatched(String id, String title, int runtime, double rating,
+      BuildContext context) async {
     final userDoc = FirebaseFirestore.instance.collection(uid).doc('Movies');
     id = id.toString();
     await userDoc.update({
@@ -243,7 +244,7 @@ class _MovieResultState extends State<MovieResult> {
     for (var doc in snapshot.docs) {
       if (doc.id == 'Calendar') {
         if (!dontAskCalendar) {
-          addtoCalendar(id, title, today, context);
+          addtoCalendar(id, title, runtime, rating, today, context);
         } else {
           setState(() {
             seenMovies = seenMovies;
@@ -253,8 +254,8 @@ class _MovieResultState extends State<MovieResult> {
     }
   }
 
-  void addtoCalendar(
-      String id, String title, DateTime today, BuildContext context) async {
+  void addtoCalendar(String id, String title, int runtime, double imdbRating,
+      DateTime today, BuildContext context) async {
     final confirmed = await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -282,7 +283,7 @@ class _MovieResultState extends State<MovieResult> {
     if (confirmed) {
       final myObject = {
         today.toString().split(" ")[0]: FieldValue.arrayUnion([
-          {'id': id, 'title': title}
+          {'id': id, 'title': title, 'runtime': runtime, 'rating': imdbRating}
         ])
       };
 
@@ -710,14 +711,15 @@ class _MovieResultState extends State<MovieResult> {
     });
 
     // ignore: no_leading_underscores_for_local_identifiers
-    void _onTap(String type, String id, String title) {
+    void _onTap(
+        String type, String id, String title, int runtime, double rating) {
       setState(
         () {
           switch (type) {
             case 'seen':
               _isTappedSeen = !_isTappedSeen;
               if (_isTappedSeen) {
-                markWatched(id, title, context);
+                markWatched(id, title, runtime, rating, context);
               } else {
                 deleteFromWatchedConfirmation(id, context);
               }
@@ -1174,7 +1176,9 @@ class _MovieResultState extends State<MovieResult> {
                         onTap: () => _onTap(
                             'seen',
                             snapshot.data!["id"].toString(),
-                            snapshot.data!["title"]),
+                            snapshot.data!["title"],
+                            snapshot.data!["runtime"],
+                            double.parse(snapshot.data!["imdb_rating"])),
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -1188,7 +1192,9 @@ class _MovieResultState extends State<MovieResult> {
                         onTap: () => _onTap(
                             'watchlist',
                             snapshot.data!["id"].toString(),
-                            snapshot.data!["title"]),
+                            snapshot.data!["title"],
+                            snapshot.data!["runtime"],
+                            double.parse(snapshot.data!["imdb_rating"])),
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -1202,7 +1208,9 @@ class _MovieResultState extends State<MovieResult> {
                         onTap: () => _onTap(
                             'fav',
                             snapshot.data!["id"].toString(),
-                            snapshot.data!["title"]),
+                            snapshot.data!["title"],
+                            snapshot.data!["runtime"],
+                            double.parse(snapshot.data!["imdb_rating"])),
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -1216,7 +1224,9 @@ class _MovieResultState extends State<MovieResult> {
                         onTap: () => _onTap(
                             'list',
                             snapshot.data!["id"].toString(),
-                            snapshot.data!["title"]),
+                            snapshot.data!["title"],
+                            snapshot.data!["runtime"],
+                            double.parse(snapshot.data!["imdb_rating"])),
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
