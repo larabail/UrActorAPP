@@ -27,6 +27,7 @@ Map calendar = {};
 Map settings = {};
 List allMovies = [];
 List favActors = [];
+List friends = [];
 List favDirectors = [];
 List favMovies = [];
 List favTVShows = [];
@@ -219,6 +220,9 @@ class _MyHomePageState extends State<MyHomePage> {
               }
             });
           });
+        } else if (doc.id == "Friends" && friends.isEmpty) {
+          Map f = doc.data() as Map;
+          friends = f["friends"];
         }
       }
     });
