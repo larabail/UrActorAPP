@@ -1,6 +1,4 @@
-// ignore_for_file: unnecessary_brace_in_string_interps, no_leading_underscores_for_local_identifiers, avoid_function_literals_in_foreach_calls, use_build_context_synchronously
 import 'package:flutter/material.dart';
-import 'package:uractor/explore.dart';
 import 'friends.dart';
 import 'playlists.dart';
 import 'main.dart';
