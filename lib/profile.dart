@@ -446,6 +446,68 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
+  TextEditingController _usernameController = TextEditingController();
+  String? currentUsername;
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUsername();
+  }
+
+  _loadCurrentUsername() async {
+    DocumentSnapshot settingsDoc =
+        await FirebaseFirestore.instance.collection(uid).doc('Settings').get();
+    setState(() {
+      currentUsername = settingsDoc['username'];
+      _usernameController.text = currentUsername ?? '';
+    });
+  }
+
+  _updateUsername() async {
+    String newUsername = _usernameController.text.trim();
+
+    // Check if username is unique
+    QuerySnapshot result = await FirebaseFirestore.instance
+        .collection('usernames')
+        .where('username', isEqualTo: newUsername)
+        .get();
+
+    if (result.docs.isNotEmpty) {
+      // Username is taken
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Username is already taken')));
+    } else {
+      // Update username in user's Settings document
+      await FirebaseFirestore.instance
+          .collection(uid)
+          .doc('Settings')
+          .update({'username': newUsername});
+
+      // Add username to usernames collection
+      await FirebaseFirestore.instance
+          .collection('usernames')
+          .add({'username': newUsername});
+
+      // Optionally, remove old username from usernames collection
+      if (currentUsername != null) {
+        QuerySnapshot oldUsernameDocs = await FirebaseFirestore.instance
+            .collection('usernames')
+            .where('username', isEqualTo: currentUsername)
+            .get();
+        for (var doc in oldUsernameDocs.docs) {
+          await doc.reference.delete();
+        }
+      }
+
+      setState(() {
+        currentUsername = newUsername;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Username updated successfully')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     int selectedIndex = 0;
@@ -655,9 +717,10 @@ class _ProfileState extends State<Profile> {
                       bottom: 0,
                       right: 0,
                       child: CircleAvatar(
-                        backgroundColor: Color.fromARGB(250, 224, 190, 78),
+                        backgroundColor:
+                            const Color.fromARGB(250, 224, 190, 78),
                         child: IconButton(
-                          icon: Icon(Icons.file_upload),
+                          icon: const Icon(Icons.file_upload),
                           color: Colors.black, // Icon color
                           onPressed: () async {
                             await uploadImage();
@@ -673,13 +736,34 @@ class _ProfileState extends State<Profile> {
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
                           children: [
-                            Text(
-                              email,
-                              style: const TextStyle(
-                                fontSize: 25,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    margin: const EdgeInsets.only(
+                                        left: 16.0), // Add margin here
+                                    child: TextField(
+                                      controller: _usernameController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Username',
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                IconButton(
+                                  icon: const Icon(Icons.check),
+                                  onPressed: _updateUsername,
+                                ),
+                              ],
                             ),
+                            // Text(
+                            //   email,
+                            //   style: const TextStyle(
+                            //     fontSize: 25,
+                            //     fontWeight: FontWeight.bold,
+                            //   ),
+                            // ),
                           ],
                         )),
                     Container(
