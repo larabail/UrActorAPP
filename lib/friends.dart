@@ -30,6 +30,23 @@ class Friends extends StatefulWidget {
 
 class _FriendsState extends State<Friends> {
   final TextEditingController _usernameController = TextEditingController();
+  Future<void> _refreshFriends() async {
+    await FirebaseFirestore.instance
+        .collection(uid)
+        .get()
+        .then((QuerySnapshot querySnapshot) {
+      for (var doc in querySnapshot.docs) {
+        if (doc.id == "Friends" && friends.isEmpty) {
+          Map f = doc.data() as Map;
+          friends = f["friends"];
+        }
+      }
+    });
+    setState(() {
+      friends = friends;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     friendUid = "";
@@ -145,187 +162,192 @@ class _FriendsState extends State<Friends> {
           ),
         ),
       ),
-      body: ListView.builder(
-        itemCount: friends.length + 1, // Increase itemCount by 1
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            // Add a custom ListTile at the beginning
-            return ListTile(
-              leading: const Padding(
-                padding: EdgeInsets.only(left: 16.0), // Add left padding
-                child: Column(
-                  mainAxisAlignment:
-                      MainAxisAlignment.center, // Center vertically
-                  children: [
-                    Icon(Icons.mail), // Icon to the left
-                  ],
-                ),
-              ),
-              title: const Text(
-                  'Friend requests'), // Text to the right of the icon
-              subtitle: const Text(
-                  'Approve or reject requests'), // Subtitle below the title
-              onTap: () {
-                // Navigate to FriendRequestsPage when ListTile is tapped
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        FriendRequestsPage(currentUserUID: uid),
-                  ),
-                );
-              },
-            );
-          } else {
-            // Adjust the index to account for the added ListTile
-            int friendIndex = index - 1;
-
-            return FutureBuilder<DocumentSnapshot>(
-              future: FirebaseFirestore.instance
-                  .collection(friends[friendIndex])
-                  .doc('Settings')
-                  .get(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Text('Error: ${snapshot.error}');
-                } else if (!snapshot.hasData || !snapshot.data!.exists) {
-                  return const Text('No data found');
-                } else {
-                  var data = snapshot.data!.data() as Map<String, dynamic>;
-                  String profilePath = data['profile_photo'] ?? '';
-                  String userName = data['username'] ?? '';
-                  return ExpansionTile(
-                    title: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Row(
-                        children: [
-                          ClipOval(
-                            child: profilePath != ""
-                                ? Image.network(
-                                    profilePath,
-                                    height: 50,
-                                    width: 50,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Image.asset(
-                                    'assets/main_profile.png',
-                                    height: 50,
-                                    width: 50,
-                                    fit: BoxFit.cover,
-                                  ),
-                          ),
-                          const SizedBox(width: 16.0),
-                          Expanded(
-                            child: Text(
-                              userName,
-                              style: const TextStyle(fontSize: 16.0),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+      body: RefreshIndicator(
+        onRefresh: _refreshFriends,
+        child: ListView.builder(
+          itemCount: friends.length + 1, // Increase itemCount by 1
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              // Add a custom ListTile at the beginning
+              return ListTile(
+                leading: const Padding(
+                  padding: EdgeInsets.only(left: 16.0), // Add left padding
+                  child: Column(
+                    mainAxisAlignment:
+                        MainAxisAlignment.center, // Center vertically
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.person, color: Colors.blue),
-                            onPressed: () {
-                              // Navigate to Profile Page
-                              friendUid = friends[friendIndex];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      FriendProfile(friendUid: friendUid),
-                                ),
-                              );
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.calendar_today,
-                                color: Colors.green),
-                            onPressed: () {
-                              // Navigate to Calendar Page
-                              friendUid = friends[friendIndex];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      FriendCalendar(friendUid: friendUid),
-                                ),
-                              );
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.remove_circle,
-                                color: Colors.red),
-                            onPressed: () async {
-                              bool confirmed = await showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: const Text('Confirmation'),
-                                    content: const Text(
-                                        'Are you sure you want to remove this friend?'),
-                                    actions: <Widget>[
-                                      TextButton(
-                                        child: const Text('No'),
-                                        onPressed: () {
-                                          Navigator.of(context).pop(false);
-                                        },
-                                      ),
-                                      TextButton(
-                                        child: const Text('Yes'),
-                                        onPressed: () {
-                                          Navigator.of(context).pop(true);
-                                        },
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-
-                              if (confirmed) {
-                                String friendUID = friends[friendIndex];
-
-                                // Reference to the Firestore instance
-                                FirebaseFirestore firestore =
-                                    FirebaseFirestore.instance;
-
-                                // Remove friend from current user's friend list
-                                await firestore
-                                    .collection(friendUID)
-                                    .doc("Friends")
-                                    .update({
-                                  'friends': FieldValue.arrayRemove([uid])
-                                });
-
-                                // Remove current user from friend's friend list
-                                await firestore
-                                    .collection(uid)
-                                    .doc("Friends")
-                                    .update({
-                                  'friends': FieldValue.arrayRemove([friendUID])
-                                });
-
-                                setState(() {
-                                  friends.remove(friendUID);
-                                });
-                              }
-                            },
-                          ),
-                        ],
-                      ),
+                      Icon(Icons.mail), // Icon to the left
                     ],
+                  ),
+                ),
+                title: const Text(
+                    'Friend requests'), // Text to the right of the icon
+                subtitle: const Text(
+                    'Approve or reject requests'), // Subtitle below the title
+                onTap: () {
+                  // Navigate to FriendRequestsPage when ListTile is tapped
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          FriendRequestsPage(currentUserUID: uid),
+                    ),
                   );
-                }
-              },
-            );
-          }
-        },
+                },
+              );
+            } else {
+              // Adjust the index to account for the added ListTile
+              int friendIndex = index - 1;
+
+              return FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection(friends[friendIndex])
+                    .doc('Settings')
+                    .get(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Text('Error: ${snapshot.error}');
+                  } else if (!snapshot.hasData || !snapshot.data!.exists) {
+                    return const Text('No data found');
+                  } else {
+                    var data = snapshot.data!.data() as Map<String, dynamic>;
+                    String profilePath = data['profile_photo'] ?? '';
+                    String userName = data['username'] ?? '';
+                    return ExpansionTile(
+                      title: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Row(
+                          children: [
+                            ClipOval(
+                              child: profilePath != ""
+                                  ? Image.network(
+                                      profilePath,
+                                      height: 50,
+                                      width: 50,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Image.asset(
+                                      'assets/main_profile.png',
+                                      height: 50,
+                                      width: 50,
+                                      fit: BoxFit.cover,
+                                    ),
+                            ),
+                            const SizedBox(width: 16.0),
+                            Expanded(
+                              child: Text(
+                                userName,
+                                style: const TextStyle(fontSize: 16.0),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            IconButton(
+                              icon:
+                                  const Icon(Icons.person, color: Colors.blue),
+                              onPressed: () {
+                                // Navigate to Profile Page
+                                friendUid = friends[friendIndex];
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        FriendProfile(friendUid: friendUid),
+                                  ),
+                                );
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.calendar_today,
+                                  color: Colors.green),
+                              onPressed: () {
+                                // Navigate to Calendar Page
+                                friendUid = friends[friendIndex];
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        FriendCalendar(friendUid: friendUid),
+                                  ),
+                                );
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.remove_circle,
+                                  color: Colors.red),
+                              onPressed: () async {
+                                bool confirmed = await showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: const Text('Confirmation'),
+                                      content: const Text(
+                                          'Are you sure you want to remove this friend?'),
+                                      actions: <Widget>[
+                                        TextButton(
+                                          child: const Text('No'),
+                                          onPressed: () {
+                                            Navigator.of(context).pop(false);
+                                          },
+                                        ),
+                                        TextButton(
+                                          child: const Text('Yes'),
+                                          onPressed: () {
+                                            Navigator.of(context).pop(true);
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+
+                                if (confirmed) {
+                                  String friendUID = friends[friendIndex];
+
+                                  // Reference to the Firestore instance
+                                  FirebaseFirestore firestore =
+                                      FirebaseFirestore.instance;
+
+                                  // Remove friend from current user's friend list
+                                  await firestore
+                                      .collection(friendUID)
+                                      .doc("Friends")
+                                      .update({
+                                    'friends': FieldValue.arrayRemove([uid])
+                                  });
+
+                                  // Remove current user from friend's friend list
+                                  await firestore
+                                      .collection(uid)
+                                      .doc("Friends")
+                                      .update({
+                                    'friends':
+                                        FieldValue.arrayRemove([friendUID])
+                                  });
+
+                                  setState(() {
+                                    friends.remove(friendUID);
+                                  });
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                  }
+                },
+              );
+            }
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: addFriend,

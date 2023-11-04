@@ -486,7 +486,7 @@ class _ProfileState extends State<Profile> {
       // Add username to usernames collection
       await FirebaseFirestore.instance
           .collection('usernames')
-          .add({'username': newUsername});
+          .add({'username': newUsername, "uid": uid});
 
       // Optionally, remove old username from usernames collection
       if (currentUsername != null) {
