@@ -941,78 +941,64 @@ class _MyHomePageState extends State<MyHomePage> {
                     height: MediaQuery.of(context).size.height * 0.18,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      itemCount: reviews.length > 3 ? 3 : reviews.length,
+                      itemCount: reviews.length > 6 ? 6 : reviews.length,
                       itemBuilder: (context, index) {
                         final review = reviews[
                             reviews.keys.toList().reversed.toList()[index]];
                         return FutureBuilder<Map<String, dynamic>>(
-                          future:
-                              getData(reviews.keys.toList()[index], "Movies"),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return Center(child: CircularProgressIndicator());
-                            } else if (snapshot.hasError) {
-                              return Center(
-                                  child: Text('Error: ${snapshot.error}'));
-                            } else if (!snapshot.hasData) {
-                              return Center(child: Text('No data'));
-                            } else {
-                              return Container(
-                                width: MediaQuery.of(context).size.width * 0.6,
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 5),
-                                decoration: BoxDecoration(
-                                  color: const Color.fromARGB(255, 26, 25, 25),
-                                  borderRadius: BorderRadius.circular(27),
-                                ),
-                                padding: const EdgeInsets.all(15),
-                                child: Row(
-                                  children: [
-                                    // Cover Image
-                                    Container(
-                                      height: 100,
-                                      width: 70,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(5),
-                                        image: DecorationImage(
-                                          image: NetworkImage(
-                                              snapshot.data!['poster']),
-                                          fit: BoxFit.cover,
-                                        ),
+                          future: getData(
+                              reviews.keys.toList().reversed.toList()[index],
+                              "Movies"),
+                          builder: (BuildContext context,
+                              AsyncSnapshot<Map> snapshot) {
+                            if (snapshot.hasData) {
+                              return GestureDetector(
+                                onTap: () {
+                                  movieResult = [
+                                    snapshot.data!['id'],
+                                    snapshot.data!['title'],
+                                    snapshot.data!['type'],
+                                  ];
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => MovieResult()),
+                                  );
+                                },
+                                child: Column(children: [
+                                  Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        5.0, 10.0, 10.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.28,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.125,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(27),
+                                      image: DecorationImage(
+                                        image: NetworkImage(
+                                            snapshot.data!['poster']),
+                                        fit: BoxFit.fitWidth,
                                       ),
                                     ),
-                                    const SizedBox(width: 10),
-                                    // Review
-                                    Expanded(
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment
-                                            .center, // Center content vertically
-                                        children: [
-                                          Text(
-                                            'Opinion: ${review["Opinion"]}',
-                                            textAlign: TextAlign.center,
-                                            style: const TextStyle(
-                                              fontSize: 15,
-                                              wordSpacing: 2,
-                                              height: 1.5,
-                                            ),
-                                          ),
-                                          Text(
-                                            'Rating: ${review["Rating"]}',
-                                            textAlign: TextAlign.center,
-                                            style: const TextStyle(
-                                              fontSize: 15,
-                                              wordSpacing: 2,
-                                              height: 1.5,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                  ),
+                                  Text(
+                                    'Your Rating: ${review["Rating"]}',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      wordSpacing: 2,
+                                      height: 1.5,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ]),
                               );
+                            } else if (snapshot.hasError) {
+                              return const Center(
+                                  child: Text("Failed to load movie details"));
+                            } else {
+                              return const Center(
+                                  child: CircularProgressIndicator());
                             }
                           },
                         );
