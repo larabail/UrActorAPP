@@ -148,6 +148,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
       ),
       child: Container(
         decoration: BoxDecoration(
+          color: Colors.grey[900],
           borderRadius: BorderRadius.circular(10.0),
         ),
         padding: const EdgeInsets.all(25.0),
