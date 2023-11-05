@@ -794,7 +794,7 @@ class _ExploreState extends State<Explore> {
                   context: context,
                   builder: (_) {
                     return Container(
-                      height: 300, // set the height here
+                      height: 300,
                       child: ListView.builder(
                         itemCount: (playlists.length / 2).ceil(),
                         itemBuilder: (context, index) {
@@ -835,78 +835,34 @@ class _ExploreState extends State<Explore> {
                                           id, keyLeft, moviesLeft, context);
                                     }
                                   },
-                                  child: Container(
-                                    margin: const EdgeInsets.fromLTRB(
-                                        10.0, 10.0, 5.0, 0),
-                                    width: MediaQuery.of(context).size.width *
-                                        0.45,
-                                    height: MediaQuery.of(context).size.height *
-                                        0.18,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(27),
-                                    ),
-                                    child: Stack(
-                                      children: [
-                                        Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.45,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.18,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            image: DecorationImage(
-                                              image: NetworkImage(
-                                                imageLeft,
-                                              ),
-                                              fit: BoxFit.fitHeight,
-                                            ),
+                                  child: Stack(
+                                    children: [
+                                      Container(
+                                        margin: const EdgeInsets.fromLTRB(
+                                            10.0, 10.0, 5.0, 0),
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.45,
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.18,
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(27),
+                                          image: DecorationImage(
+                                            image: NetworkImage(imageLeft),
+                                            fit: BoxFit.cover,
                                           ),
                                         ),
-                                        Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.45,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.18,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            gradient: LinearGradient(
-                                              begin: Alignment.topCenter,
-                                              end: Alignment.bottomCenter,
-                                              colors: [
-                                                Colors.transparent,
-                                                Colors.black.withOpacity(1),
-                                              ],
-                                            ),
-                                          ),
+                                      ),
+                                      if (moviesLeft.contains(id))
+                                        const Positioned(
+                                          top: 10,
+                                          right: 10,
+                                          child: Icon(Icons.check_circle,
+                                              color: Colors.green),
                                         ),
-                                        Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Align(
-                                            alignment: Alignment.bottomLeft,
-                                            child: Text(
-                                              valueLeft,
-                                              style: const TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
-                                                letterSpacing: 1.5,
-                                                wordSpacing: 2,
-                                                height: 1.5,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                    ],
                                   ),
                                 ),
                               if (keyRight != null)
@@ -920,78 +876,34 @@ class _ExploreState extends State<Explore> {
                                           id, keyRight, moviesRight, context);
                                     }
                                   },
-                                  child: Container(
-                                    margin: const EdgeInsets.fromLTRB(
-                                        5.0, 10.0, 10.0, 0),
-                                    width: MediaQuery.of(context).size.width *
-                                        0.45,
-                                    height: MediaQuery.of(context).size.height *
-                                        0.18,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(27),
-                                    ),
-                                    child: Stack(
-                                      children: [
-                                        Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.45,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.18,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            image: DecorationImage(
-                                              image: NetworkImage(
-                                                imageRight,
-                                              ),
-                                              fit: BoxFit.cover,
-                                            ),
+                                  child: Stack(
+                                    children: [
+                                      Container(
+                                        margin: const EdgeInsets.fromLTRB(
+                                            5.0, 10.0, 10.0, 0),
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.45,
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.18,
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(27),
+                                          image: DecorationImage(
+                                            image: NetworkImage(imageRight),
+                                            fit: BoxFit.cover,
                                           ),
                                         ),
-                                        Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.45,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.18,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            gradient: LinearGradient(
-                                              begin: Alignment.topCenter,
-                                              end: Alignment.bottomCenter,
-                                              colors: [
-                                                Colors.transparent,
-                                                Colors.black.withOpacity(1),
-                                              ],
-                                            ),
-                                          ),
+                                      ),
+                                      if (moviesRight.contains(id))
+                                        const Positioned(
+                                          top: 10,
+                                          right: 10,
+                                          child: Icon(Icons.check_circle,
+                                              color: Colors.green),
                                         ),
-                                        Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Align(
-                                            alignment: Alignment.bottomLeft,
-                                            child: Text(
-                                              valueRight,
-                                              style: const TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
-                                                letterSpacing: 1.5,
-                                                wordSpacing: 2,
-                                                height: 1.5,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                    ],
                                   ),
                                 ),
                             ],
