@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/profile.dart';
+import 'package:uractor/tabView.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'friends_calendar.dart';
@@ -45,23 +46,6 @@ class _FriendsState extends State<Friends> {
   @override
   Widget build(BuildContext context) {
     friendUid = "";
-    int selectedIndex = 0;
-
-    final List<Widget> pages = [
-      MyApp(),
-      Playlists(),
-      Search(),
-      Friends(),
-      Profile(),
-    ];
-
-    void _onItemTapped(int index) {
-      selectedIndex = index;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
-      );
-    }
 
     void sendFriendRequest(String recipientUID) async {
       await FirebaseFirestore.instance
@@ -262,7 +246,6 @@ class _FriendsState extends State<Friends> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 10),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[900],
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Row(
@@ -297,7 +280,6 @@ class _FriendsState extends State<Friends> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 10),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[900],
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Row(
@@ -377,7 +359,6 @@ class _FriendsState extends State<Friends> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 10),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[900],
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Row(
@@ -398,6 +379,67 @@ class _FriendsState extends State<Friends> {
                               ),
                             ),
                           ],
+                        ),
+                        const SizedBox(
+                            height:
+                                10), // Optional: to add some space between the row and the list
+                        FutureBuilder<DocumentSnapshot>(
+                          future: FirebaseFirestore.instance
+                              .collection(uid)
+                              .doc('Calendar')
+                              .get(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            } else if (snapshot.hasError) {
+                              return Text('Error: ${snapshot.error}');
+                            } else if (!snapshot.hasData ||
+                                !snapshot.data!.exists) {
+                              return const Text('No data found');
+                            } else {
+                              var calendar = snapshot.data!.data() as Map;
+                              List moviesSeenTogether = [];
+
+                              for (var date in calendar.keys) {
+                                for (var movie in calendar[date]) {
+                                  if (movie.containsKey("friends")) {
+                                    if (movie['friends']
+                                        .contains(friends[friendIndex])) {
+                                      moviesSeenTogether.add(movie["title"]);
+                                    }
+                                  }
+                                }
+                              }
+                              if (moviesSeenTogether.length > 0) {
+                                return Column(children: [
+                                  Text(moviesSeenTogether.length > 1
+                                      ? "You have seen ${moviesSeenTogether.length} movies together"
+                                      : "You have seen ${moviesSeenTogether.length} movie together"),
+                                  Container(
+                                    height: 125,
+                                    child: ListView.builder(
+                                      itemCount: moviesSeenTogether.length,
+                                      itemBuilder: (context, index) {
+                                        return ListTile(
+                                          title: Text(
+                                            '${index + 1}. ${moviesSeenTogether[index]}',
+                                            style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 16),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  )
+                                ]);
+                              } else {
+                                return const Text(
+                                    "You haven't watched any movies together yet");
+                              }
+                            }
+                          },
                         ),
                       ],
                     );

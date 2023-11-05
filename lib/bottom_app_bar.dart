@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:uractor/playlists.dart';
 import 'package:uractor/profile.dart';
-import 'package:uractor/search.dart';
 
 import 'friends.dart';
 import 'main.dart';
