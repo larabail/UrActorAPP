@@ -104,14 +104,7 @@ class Login extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Center(
-            child: Image.asset(
-          'assets/logo_character.png',
-          height: 54,
-        )),
-      ),
+      appBar: AppBar(),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
