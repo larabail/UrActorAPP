@@ -131,12 +131,12 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
     return Stack(
       children: <Widget>[
         Container(
+          decoration: BoxDecoration(
+            color: Colors.grey[900],
+            borderRadius: BorderRadius.circular(10.0),
+          ),
           padding:
               const EdgeInsets.only(left: 20, top: 20, right: 20, bottom: 20),
-          decoration: BoxDecoration(
-            shape: BoxShape.rectangle,
-            borderRadius: BorderRadius.circular(15),
-          ),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
