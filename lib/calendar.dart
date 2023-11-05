@@ -546,139 +546,147 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10.0),
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 40, 20, 5),
-              child: Text(
-                'Add a movie',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: TextFormField(
-                validator: (String? value) {
-                  if (value == null || value.isEmpty || _movie == "") {
-                    return 'Please select a movie';
-                  }
-                  return null;
-                },
-                decoration: const InputDecoration(
-                  labelText: 'Name of The Movie You\'d Like to Add',
-                  labelStyle: TextStyle(color: Colors.white),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white),
+      child: Container(
+        padding:
+            const EdgeInsets.only(left: 20, top: 10, right: 20, bottom: 20),
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 40, 20, 5),
+                child: Text(
+                  'Add a movie',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchTermMovie = value;
-                    searchData(_searchTermMovie);
-                  });
-                },
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Container(
-                height: MediaQuery.of(context).size.width * 0.5,
-                width: MediaQuery.of(context).size.width * 0.7,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
+              Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: TextFormField(
+                  validator: (String? value) {
+                    if (value == null || value.isEmpty || _movie == "") {
+                      return 'Please select a movie';
+                    }
+                    return null;
+                  },
+                  decoration: const InputDecoration(
+                    labelText: 'Name of The Movie You\'d Like to Add',
+                    labelStyle: TextStyle(color: Colors.white),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchTermMovie = value;
+                      searchData(_searchTermMovie);
+                    });
+                  },
                 ),
-                child: FutureBuilder<List>(
-                  future: searchData(_searchTermMovie),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(
-                          color: Colors.green,
-                        ),
-                      );
-                    } else if (snapshot.hasError) {
-                      return Center(
-                        child: Text(
-                          'Error: ${snapshot.error}',
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      );
-                    } else {
-                      return ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: snapshot.data?.length,
-                        itemBuilder: (context, index) {
-                          Map<String, dynamic> item = snapshot.data?[index];
-                          return Container(
-                            width: 100,
-                            margin: const EdgeInsets.symmetric(horizontal: 5),
-                            child: GridTile(
-                              child: GestureDetector(
-                                onTap: () {
-                                  _movie = item["id"].toString();
-                                  addMovieSubmit(
-                                      item["id"].toString(),
-                                      item["title"].toString(),
-                                      item["runtime"],
-                                      double.parse(item["imdbRating"]));
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    image: DecorationImage(
-                                      image: NetworkImage(
-                                          img + item['poster_path']),
-                                      fit: BoxFit.cover,
+              ),
+              Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Container(
+                  height: MediaQuery.of(context).size.width * 0.5,
+                  width: MediaQuery.of(context).size.width * 0.7,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: FutureBuilder<List>(
+                    future: searchData(_searchTermMovie),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.green,
+                          ),
+                        );
+                      } else if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                            'Error: ${snapshot.error}',
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        );
+                      } else {
+                        return ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: snapshot.data?.length,
+                          itemBuilder: (context, index) {
+                            Map<String, dynamic> item = snapshot.data?[index];
+                            return Container(
+                              width: 100,
+                              margin: const EdgeInsets.symmetric(horizontal: 5),
+                              child: GridTile(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    _movie = item["id"].toString();
+                                    addMovieSubmit(
+                                        item["id"].toString(),
+                                        item["title"].toString(),
+                                        item["runtime"],
+                                        double.parse(item["imdbRating"]));
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      image: DecorationImage(
+                                        image: NetworkImage(
+                                            img + item['poster_path']),
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                          );
-                        },
-                      );
-                    }
-                  },
+                            );
+                          },
+                        );
+                      }
+                    },
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        primary: Colors.grey[900],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+              Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          primary: Colors.grey[900],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(
-                            Icons.cancel,
-                            color: Colors.red,
-                          ),
-                          SizedBox(
-                            width: 10,
-                          ),
-                          Text("Cancel")
-                        ],
-                      )),
-                ],
+                        child: const Row(
+                          children: [
+                            Icon(
+                              Icons.cancel,
+                              color: Colors.red,
+                            ),
+                            SizedBox(
+                              width: 10,
+                            ),
+                            Text("Cancel")
+                          ],
+                        )),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
