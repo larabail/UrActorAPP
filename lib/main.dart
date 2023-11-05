@@ -149,6 +149,34 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> getFirebaseData(user) async {
     uid = user.uid;
     email = user.email!;
+    country = '';
+    calendar = {};
+    allMovies = [];
+    favActors = [];
+    favDirectors = [];
+    favMovies = [];
+    favTVShows = [];
+    seenMovies = [];
+    idsExplorePage = [];
+    seenTVShows = [];
+    watchlist = [];
+    watchlistTVShows = [];
+    movieResult = [];
+    tvShowResult = [];
+    reviews = {};
+    rewatchedMovies = {};
+    playlists = {};
+    personResult = {};
+    oscars = {};
+    favsPage = [];
+    settings = {};
+    friends = [];
+    favsPageTVShows = [];
+    seenPage = [];
+    seenPageTVShows = [];
+    watchPageTVShows = [];
+    watchPage = [];
+    oscarsPage = [];
     await FirebaseFirestore.instance
         .collection(uid)
         .get()

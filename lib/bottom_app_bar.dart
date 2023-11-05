@@ -7,6 +7,7 @@ import 'package:uractor/search.dart';
 import 'friends.dart';
 import 'main.dart';
 
+// ignore: must_be_immutable
 class CommonBottomAppBar extends StatelessWidget {
   int _selectedIndex = 0;
   CommonBottomAppBar(int selectedIndex, {super.key}) {
