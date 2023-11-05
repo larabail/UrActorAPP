@@ -17,7 +17,7 @@ class CommonBottomAppBar extends StatelessWidget {
   final List<Widget> pages = [
     MyApp(),
     Playlists(),
-    Search(),
+    // Search(),
     Friends(),
     Profile(),
     // Add more pages here
@@ -47,10 +47,10 @@ class CommonBottomAppBar extends StatelessWidget {
           icon: Icon(Icons.library_books_rounded),
           label: 'Library',
         ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.search),
-          label: 'Search',
-        ),
+        // const BottomNavigationBarItem(
+        //   icon: Icon(Icons.search),
+        //   label: 'Search',
+        // ),
         const BottomNavigationBarItem(
           label: 'Friends',
           icon: Icon(Icons.contacts),

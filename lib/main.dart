@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
+import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'calendar.dart';
 import 'favorites.dart';
@@ -363,13 +364,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     if (gotData) {
       return Scaffold(
-        appBar: AppBar(
-          title: Center(
-              child: Image.asset(
-            'assets/logo_character.png',
-            height: 54,
-          )),
-        ),
+        appBar: CustomAppBar(),
         body: RefreshIndicator(
           onRefresh: _refreshMain,
           child: SingleChildScrollView(
@@ -1039,42 +1034,6 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ),
         bottomNavigationBar: CommonBottomAppBar(selectedIndex),
-        // BottomNavigationBar(
-        //   type: BottomNavigationBarType.fixed,
-        //   items: [
-        //     const BottomNavigationBarItem(
-        //       icon: Icon(Icons.home),
-        //       label: 'Home',
-        //     ),
-        //     const BottomNavigationBarItem(
-        //       icon: Icon(Icons.library_books_rounded),
-        //       label: 'Library',
-        //     ),
-        //     const BottomNavigationBarItem(
-        //       icon: Icon(Icons.search),
-        //       label: 'Search',
-        //     ),
-        //     const BottomNavigationBarItem(
-        //       label: 'Friends',
-        //       icon: Icon(Icons.contacts),
-        //     ),
-        //     BottomNavigationBarItem(
-        //       label: 'Profile',
-        //       icon: settings["profile_photo"] != "" &&
-        //               settings["profile_photo"] != null
-        //           ? ClipOval(
-        //               child: Image.network(
-        //               settings["profile_photo"],
-        //               height: 27,
-        //               width: 27,
-        //               fit: BoxFit.cover,
-        //             ))
-        //           : const Icon(Icons.person),
-        //     ),
-        //   ],
-        //   currentIndex: selectedIndex,
-        //   onTap: _onItemTapped,
-        // ),
       );
     } else {
       return Scaffold(
