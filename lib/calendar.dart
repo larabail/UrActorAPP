@@ -44,14 +44,25 @@ class _CalendarState extends State<Calendar> {
     var userDoc = db.collection(uid).doc("Calendar");
     for (String key in calendar.keys) {
       if (key == _selectedDay) {
-        calendar[key].removeWhere(
-            (movie) => movie['id'] == id && movie['title'] == title);
+        if (calendar[key].length == 1) {
+          var movie = calendar[key][0];
+          if (movie['id'].toString() == id.toString() &&
+              movie['title'].toString() == title.toString()) {
+            calendar[key] = []; // Clear the list
+          }
+        } else {
+          calendar[key].removeWhere((movie) =>
+              movie['id'].toString() == id.toString() &&
+              movie['title'].toString() == title.toString());
+        }
       }
     }
     Map<Object, Object> updatedCalendar = {};
     for (String key in calendar.keys) {
       if (calendar[key].isNotEmpty) {
         updatedCalendar[key] = calendar[key];
+      } else {
+        updatedCalendar[key] = [];
       }
     }
     await userDoc.update(updatedCalendar);
@@ -481,13 +492,16 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
     }
   }
 
-  void addMovieSubmit(
-      String id, String title, int runtime, double rating) async {
+  void addMovieSubmit(String id, String title, int runtime, double rating,
+      Map friendsWatchedWith) async {
     Map myObject = {
       'id': id,
       'title': title,
       'runtime': runtime,
-      'rating': rating
+      'rating': rating,
+      'friends': friendsWatchedWith.keys
+          .where((key) => friendsWatchedWith[key] == true)
+          .toList(),
     };
     if (calendar.keys.toList().contains(dateForMap)) {
       calendar[dateForMap].add(myObject);
@@ -495,6 +509,37 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
       calendar[dateForMap] = [
         myObject,
       ];
+    }
+    for (var friend in friendsWatchedWith.keys) {
+      if (friendsWatchedWith[friend] == true) {
+        // Update Calendar
+        var userDoc =
+            FirebaseFirestore.instance.collection(friend).doc("Calendar");
+        await userDoc.update({
+          '$dateForMap': FieldValue.arrayUnion([myObject])
+        });
+
+        // Update Seen movies
+        userDoc = FirebaseFirestore.instance.collection(friend).doc("Movies");
+        await userDoc.update({
+          'Seen': FieldValue.arrayUnion([id])
+        });
+
+        // Update Rewatched
+        userDoc =
+            FirebaseFirestore.instance.collection(friend).doc("Rewatched");
+        DocumentSnapshot doc = await userDoc.get();
+        if (doc.exists) {
+          Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+          if (data.containsKey(id)) {
+            // Increment the count if movie id exists
+            await userDoc.update({id: FieldValue.increment(1)});
+          } else {
+            // Add the movie id with count 1 if it doesn't exist
+            await userDoc.update({id: 1});
+          }
+        }
+      }
     }
     var userDoc = db.collection(uid).doc("Calendar");
     Map<Object, Object> updatedCalendar = {};
@@ -531,6 +576,13 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
     setState(() {
       calendar = calendar;
     });
+  }
+
+  Map<String, bool> selectedFriends = {};
+
+  @override
+  void initState() {
+    super.initState();
   }
 
   @override
@@ -626,7 +678,8 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                                         item["id"].toString(),
                                         item["title"].toString(),
                                         item["runtime"],
-                                        double.parse(item["imdbRating"]));
+                                        double.parse(item["imdbRating"]),
+                                        selectedFriends);
                                   },
                                   child: Container(
                                     decoration: BoxDecoration(
@@ -644,6 +697,91 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                           },
                         );
                       }
+                    },
+                  ),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 40, 20, 5),
+                child: Text(
+                  'Did you watch it with anyone?',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Container(
+                  height: 125, // Set your desired height here
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: friends.length,
+                    itemBuilder: (context, friendIndex) {
+                      return FutureBuilder<DocumentSnapshot>(
+                        future: FirebaseFirestore.instance
+                            .collection(friends[friendIndex])
+                            .doc('Settings')
+                            .get(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          } else if (snapshot.hasError) {
+                            return Text('Error: ${snapshot.error}');
+                          } else if (!snapshot.hasData ||
+                              !snapshot.data!.exists) {
+                            return const Text('No data found');
+                          } else {
+                            var data =
+                                snapshot.data!.data() as Map<String, dynamic>;
+                            String userName = data['username'] ?? '';
+                            String profilePath = data['profile_photo'] ?? '';
+                            return CheckboxListTile(
+                              title: Row(
+                                children: [
+                                  ClipOval(
+                                    child: profilePath != ""
+                                        ? Image.network(
+                                            profilePath,
+                                            height: 25,
+                                            width: 25,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : Image.asset(
+                                            'assets/main_profile.png',
+                                            height: 25,
+                                            width: 25,
+                                            fit: BoxFit.cover,
+                                          ),
+                                  ),
+                                  const SizedBox(width: 16.0),
+                                  Expanded(
+                                    child: Text(
+                                      userName,
+                                      style: const TextStyle(fontSize: 16.0),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              value: selectedFriends.keys
+                                      .toList()
+                                      .contains(friends[friendIndex])
+                                  ? selectedFriends[friends[friendIndex]]
+                                  : false,
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  selectedFriends[friends[friendIndex]] =
+                                      value!;
+                                });
+                              },
+                            );
+                          }
+                        },
+                      );
                     },
                   ),
                 ),
