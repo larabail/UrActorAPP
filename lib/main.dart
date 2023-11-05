@@ -49,6 +49,7 @@ Map rewatchedMovies = {};
 Map playlists = {};
 Map personResult = {};
 Map oscars = {};
+bool gotData = false;
 List<Map<String, dynamic>> favsPage = [];
 List<Map<String, dynamic>> favsPageTVShows = [];
 List<Map<String, dynamic>> seenPage = [];
@@ -139,8 +140,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  bool gotData = false;
-
   Future<void> getFirebaseData(user) async {
     uid = user.uid;
     email = user.email!;
@@ -647,8 +646,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     height: MediaQuery.of(context).size.height * 0.18,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      itemCount:
-                          watchlist.length > 6 ? 6 : watchlist.length,
+                      itemCount: watchlist.length > 6 ? 6 : watchlist.length,
                       itemBuilder: (context, index) {
                         return FutureBuilder<Map<String, dynamic>>(
                           future: getData(
@@ -747,8 +745,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     height: MediaQuery.of(context).size.height * 0.18,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      itemCount:
-                          favMovies.length > 6 ? 6 : favMovies.length,
+                      itemCount: favMovies.length > 6 ? 6 : favMovies.length,
                       itemBuilder: (context, index) {
                         return FutureBuilder<Map<String, dynamic>>(
                           future: getData(
@@ -846,8 +843,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     height: MediaQuery.of(context).size.height * 0.18,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      itemCount:
-                          seenMovies.length > 6 ? 6 : seenMovies.length,
+                      itemCount: seenMovies.length > 6 ? 6 : seenMovies.length,
                       itemBuilder: (context, index) {
                         return FutureBuilder<Map<String, dynamic>>(
                           future: getData(
