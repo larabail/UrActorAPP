@@ -1,6 +1,7 @@
 // ignore_for_file: unnecessary_brace_in_string_interps, no_leading_underscores_for_local_identifiers, avoid_function_literals_in_foreach_calls
 import 'package:flutter/material.dart';
 import 'package:uractor/explore.dart';
+import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'friends.dart';
 import 'playlists.dart';
@@ -317,15 +318,7 @@ class _CalendarState extends State<Calendar> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: const Color(0xFF121212),
-        title: Center(
-            child: Image.asset(
-          'assets/logo_character.png',
-          height: 54,
-        )),
-      ),
+      appBar: CustomAppBar(),
       body: SingleChildScrollView(
         child: Column(
           children: [

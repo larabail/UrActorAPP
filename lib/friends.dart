@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/profile.dart';
+import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'friends_calendar.dart';
 import 'friends_profile.dart';
@@ -157,15 +158,7 @@ class _FriendsState extends State<Friends> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Center(
-          child: Image.asset(
-            'assets/logo_character.png',
-            height: 54,
-          ),
-        ),
-      ),
+      appBar: CustomAppBar(),
       body: RefreshIndicator(
         onRefresh: _refreshFriends,
         child: ListView.builder(
@@ -424,7 +417,7 @@ class _FriendsState extends State<Friends> {
           size: 30,
         ),
       ),
-      bottomNavigationBar: CommonBottomAppBar(3),
+      bottomNavigationBar: CommonBottomAppBar(2),
     );
   }
 }

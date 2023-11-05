@@ -7,6 +7,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'friends.dart';
 import 'playlists.dart';
@@ -729,15 +730,7 @@ class _ProfileState extends State<Profile> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Center(
-          child: Image.asset(
-            'assets/logo_character.png',
-            height: 54,
-          ),
-        ),
-      ),
+      appBar: CustomAppBar(),
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -1541,7 +1534,7 @@ class _ProfileState extends State<Profile> {
           ),
         ],
       ),
-      bottomNavigationBar: CommonBottomAppBar(4),
+      bottomNavigationBar: CommonBottomAppBar(3),
     );
   }
 }

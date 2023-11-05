@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'friends.dart';
 import 'profile.dart';
@@ -724,14 +725,7 @@ class _TVShowResultState extends State<TVShowResult> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Center(
-            child: Image.asset(
-          'assets/logo_character.png',
-          height: 54,
-        )),
-      ),
+      appBar: CustomAppBar(),
       body: FutureBuilder<Map>(
         future: getMovieData(),
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {

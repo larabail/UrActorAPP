@@ -1,11 +1,9 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 import 'package:flutter/material.dart';
+import 'appbar.dart';
 import 'bottom_app_bar.dart';
-import 'friends.dart';
-import 'playlists.dart';
 import 'person_result.dart';
-import 'profile.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
 import 'main.dart';
@@ -24,7 +22,6 @@ class Search extends StatefulWidget {
 class _SearchResultState extends State<Search> {
   @override
   Widget build(BuildContext context) {
-    int selectedIndex = 0;
     String searchByName =
         'https://api.themoviedb.org/3/search/multi?api_key=700cd4fab994df56eb41b34d38c4762a&query=';
     String linkMovie = "https://api.themoviedb.org/3/movie/";
@@ -76,33 +73,8 @@ class _SearchResultState extends State<Search> {
       return results;
     }
 
-    final List<Widget> pages = [
-      MyApp(),
-      Playlists(),
-      Search(),
-      Friends(),
-      Profile(),
-      // Add more pages here
-    ];
-
-    void _onItemTapped(int index) {
-      selectedIndex = index;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
-      );
-    }
-
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Center(
-          child: Image.asset(
-            'assets/logo_character.png',
-            height: 54,
-          ),
-        ),
-      ),
+      appBar: CustomAppBar(),
       body: DefaultTabController(
         length: 3,
         child: Column(
@@ -428,7 +400,7 @@ class _SearchResultState extends State<Search> {
           ],
         ),
       ),
-      bottomNavigationBar: CommonBottomAppBar(2),
+      bottomNavigationBar: CommonBottomAppBar(-1),
     );
   }
 }
