@@ -101,7 +101,6 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
         borderRadius: BorderRadius.circular(15), // Add rounded corners
       ),
       elevation: 0,
-      backgroundColor: Colors.transparent,
       child: contentBox(context),
     );
   }
@@ -115,10 +114,6 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
           decoration: BoxDecoration(
             shape: BoxShape.rectangle,
             borderRadius: BorderRadius.circular(15),
-            boxShadow: const [
-              BoxShadow(
-                  color: Colors.black, offset: Offset(0, 10), blurRadius: 10),
-            ],
           ),
           child: SingleChildScrollView(
             child: Column(

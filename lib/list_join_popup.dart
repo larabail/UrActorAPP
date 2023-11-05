@@ -50,7 +50,6 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
         borderRadius: BorderRadius.circular(15), // Add rounded corners
       ),
       elevation: 0,
-      backgroundColor: Colors.transparent,
       child: contentBox(context),
     );
   }
@@ -64,10 +63,6 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
           decoration: BoxDecoration(
             shape: BoxShape.rectangle,
             borderRadius: BorderRadius.circular(15),
-            boxShadow: const [
-              BoxShadow(
-                  color: Colors.black, offset: Offset(0, 10), blurRadius: 10),
-            ],
           ),
           child: SingleChildScrollView(
             child: Column(

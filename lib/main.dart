@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
+import 'bottom_app_bar.dart';
 import 'calendar.dart';
 import 'favorites.dart';
 import 'friends.dart';
@@ -153,23 +154,23 @@ class _MyHomePageState extends State<MyHomePage> {
         .get()
         .then((QuerySnapshot querySnapshot) {
       for (var doc in querySnapshot.docs) {
-        if (doc.id == "Country" && country == "") {
+        if (doc.id == "Country") {
           country = (doc['Country']);
-        } else if (doc.id == "Calendar" && calendar.keys.isEmpty) {
+        } else if (doc.id == "Calendar") {
           calendar = doc.data() as Map;
-        } else if (doc.id == "FavActors" && favActors.isEmpty) {
+        } else if (doc.id == "FavActors") {
           Map tempFavActors = doc.data() as Map;
           favActors = tempFavActors.entries
               .map((entry) => [entry.value, entry.key])
               .toList();
           favActors.sort((a, b) => b[0].compareTo(a[0]));
-        } else if (doc.id == "FavDirectors" && favDirectors.isEmpty) {
+        } else if (doc.id == "FavDirectors") {
           Map tempFavDirectors = doc.data() as Map;
           favDirectors = tempFavDirectors.entries
               .map((entry) => [entry.value, entry.key])
               .toList();
           favDirectors.sort((a, b) => b[0].compareTo(a[0]));
-        } else if (doc.id == "Favorites" && favMovies.isEmpty) {
+        } else if (doc.id == "Favorites") {
           Map allFavs = doc.data() as Map;
           allFavs.forEach((key, el) {
             allFavs[key].forEach((element) {
@@ -184,7 +185,7 @@ class _MyHomePageState extends State<MyHomePage> {
               }
             });
           });
-        } else if (doc.id == "Movies" && seenMovies.isEmpty) {
+        } else if (doc.id == "Movies") {
           Map w = doc.data() as Map;
           w.forEach((key, el) {
             w[key].forEach((element) {
@@ -193,7 +194,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ];
             });
           });
-        } else if (doc.id == "Settings" && settings.keys.toList().isEmpty) {
+        } else if (doc.id == "Settings") {
           settings = doc.data() as Map;
           dontAskCalendar = settings["dontAskCalendar"];
           themeProvider.setDarkMode(settings["darkMode"]);
@@ -205,9 +206,9 @@ class _MyHomePageState extends State<MyHomePage> {
             reviews[element.keys.toList()[0]] =
                 element[element.keys.toList()[0]];
           });
-        } else if (doc.id == "Rewatched" && rewatchedMovies.keys.isEmpty) {
+        } else if (doc.id == "Rewatched") {
           rewatchedMovies = doc.data() as Map;
-        } else if (doc.id == "TVShows" && seenTVShows.isEmpty) {
+        } else if (doc.id == "TVShows") {
           Map w = doc.data() as Map;
           w.forEach((key, el) {
             w[key].forEach((element) {
@@ -216,7 +217,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ];
             });
           });
-        } else if (doc.id == "Watchlist" && watchlist.isEmpty) {
+        } else if (doc.id == "Watchlist") {
           Map w = doc.data() as Map;
           w.forEach((key, el) {
             w[key].forEach((element) {
@@ -231,7 +232,7 @@ class _MyHomePageState extends State<MyHomePage> {
               }
             });
           });
-        } else if (doc.id == "Friends" && friends.isEmpty) {
+        } else if (doc.id == "Friends") {
           Map f = doc.data() as Map;
           friends = f["friends"];
         }
@@ -1028,42 +1029,43 @@ class _MyHomePageState extends State<MyHomePage> {
             ]),
           ),
         ),
-        bottomNavigationBar: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          items: [
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.library_books_rounded),
-              label: 'Library',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.search),
-              label: 'Search',
-            ),
-            const BottomNavigationBarItem(
-              label: 'Friends',
-              icon: Icon(Icons.contacts),
-            ),
-            BottomNavigationBarItem(
-              label: 'Profile',
-              icon: settings["profile_photo"] != "" &&
-                      settings["profile_photo"] != null
-                  ? ClipOval(
-                      child: Image.network(
-                      settings["profile_photo"],
-                      height: 27,
-                      width: 27,
-                      fit: BoxFit.cover,
-                    ))
-                  : const Icon(Icons.person),
-            ),
-          ],
-          currentIndex: selectedIndex,
-          onTap: _onItemTapped,
-        ),
+        bottomNavigationBar: CommonBottomAppBar(selectedIndex),
+        // BottomNavigationBar(
+        //   type: BottomNavigationBarType.fixed,
+        //   items: [
+        //     const BottomNavigationBarItem(
+        //       icon: Icon(Icons.home),
+        //       label: 'Home',
+        //     ),
+        //     const BottomNavigationBarItem(
+        //       icon: Icon(Icons.library_books_rounded),
+        //       label: 'Library',
+        //     ),
+        //     const BottomNavigationBarItem(
+        //       icon: Icon(Icons.search),
+        //       label: 'Search',
+        //     ),
+        //     const BottomNavigationBarItem(
+        //       label: 'Friends',
+        //       icon: Icon(Icons.contacts),
+        //     ),
+        //     BottomNavigationBarItem(
+        //       label: 'Profile',
+        //       icon: settings["profile_photo"] != "" &&
+        //               settings["profile_photo"] != null
+        //           ? ClipOval(
+        //               child: Image.network(
+        //               settings["profile_photo"],
+        //               height: 27,
+        //               width: 27,
+        //               fit: BoxFit.cover,
+        //             ))
+        //           : const Icon(Icons.person),
+        //     ),
+        //   ],
+        //   currentIndex: selectedIndex,
+        //   onTap: _onItemTapped,
+        // ),
       );
     } else {
       return Scaffold(

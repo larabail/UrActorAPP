@@ -1,6 +1,7 @@
 // ignore_for_file: unnecessary_brace_in_string_interps, no_leading_underscores_for_local_identifiers, avoid_function_literals_in_foreach_calls
 import 'package:flutter/material.dart';
 import 'package:uractor/explore.dart';
+import 'bottom_app_bar.dart';
 import 'friends.dart';
 import 'playlists.dart';
 import 'main.dart';
@@ -414,43 +415,7 @@ class _CalendarState extends State<Calendar> {
           size: 30,
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.grey,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.library_books_rounded),
-            label: 'Library',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          const BottomNavigationBarItem(
-            label: 'Friends',
-            icon: Icon(Icons.contacts),
-          ),
-          BottomNavigationBarItem(
-            label: 'Profile',
-            icon: settings["profile_photo"] != ""
-                ? ClipOval(
-                    child: Image.network(
-                    settings["profile_photo"],
-                    height: 27,
-                    width: 27,
-                    fit: BoxFit.cover,
-                  ))
-                : const Icon(Icons.person),
-          ),
-        ],
-        currentIndex: selectedIndex,
-        onTap: _onItemTapped,
-      ),
+      bottomNavigationBar: CommonBottomAppBar(-1),
     );
   }
 }

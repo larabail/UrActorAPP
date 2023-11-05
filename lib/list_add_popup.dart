@@ -123,7 +123,6 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
         borderRadius: BorderRadius.circular(15), // Add rounded corners
       ),
       elevation: 0,
-      backgroundColor: Colors.transparent,
       child: contentBox(context),
     );
   }
@@ -137,15 +136,21 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
           decoration: BoxDecoration(
             shape: BoxShape.rectangle,
             borderRadius: BorderRadius.circular(15),
-            boxShadow: const [
-              BoxShadow(
-                  color: Colors.black, offset: Offset(0, 10), blurRadius: 10),
-            ],
           ),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(5, 10, 20, 5),
+                  child: Text(
+                    'Create a New List',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
                 Padding(
                   padding: const EdgeInsets.all(10.0),
                   child: TextFormField(
