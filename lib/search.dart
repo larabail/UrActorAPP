@@ -1,6 +1,7 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 import 'package:flutter/material.dart';
+import 'bottom_app_bar.dart';
 import 'friends.dart';
 import 'playlists.dart';
 import 'person_result.dart';
@@ -427,41 +428,7 @@ class _SearchResultState extends State<Search> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.library_books_rounded),
-            label: 'Library',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          const BottomNavigationBarItem(
-            label: 'Friends',
-            icon: Icon(Icons.contacts),
-          ),
-          BottomNavigationBarItem(
-            label: 'Profile',
-            icon: settings["profile_photo"] != ""
-                ? ClipOval(
-                    child: Image.network(
-                    settings["profile_photo"],
-                    height: 27,
-                    width: 27,
-                    fit: BoxFit.cover,
-                  ))
-                : const Icon(Icons.person),
-          ),
-        ],
-        currentIndex: 2,
-        onTap: _onItemTapped,
-      ),
+      bottomNavigationBar: CommonBottomAppBar(2),
     );
   }
 }

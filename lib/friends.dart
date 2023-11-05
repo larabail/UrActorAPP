@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/profile.dart';
+import 'bottom_app_bar.dart';
 import 'friends_calendar.dart';
 import 'friends_profile.dart';
 import 'inbox.dart';
@@ -423,41 +424,7 @@ class _FriendsState extends State<Friends> {
           size: 30,
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.library_books_rounded),
-            label: 'Library',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          const BottomNavigationBarItem(
-            label: 'Friends',
-            icon: Icon(Icons.contacts),
-          ),
-          BottomNavigationBarItem(
-            label: 'Profile',
-            icon: settings["profile_photo"] != ""
-                ? ClipOval(
-                    child: Image.network(
-                    settings["profile_photo"],
-                    height: 27,
-                    width: 27,
-                    fit: BoxFit.cover,
-                  ))
-                : const Icon(Icons.person),
-          ),
-        ],
-        currentIndex: 3,
-        onTap: _onItemTapped,
-      ),
+      bottomNavigationBar: CommonBottomAppBar(3),
     );
   }
 }
