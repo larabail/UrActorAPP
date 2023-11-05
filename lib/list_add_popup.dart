@@ -28,6 +28,7 @@ class ListAddDialogue extends StatefulWidget {
 }
 
 class _ListAddDialogueState extends State<ListAddDialogue> {
+  int _selectedIndex = 0;
   Future<List> searchData(String searchTerm) async {
     // print(searchTerm);
     if (searchTerm != "") {
@@ -47,7 +48,10 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
           final response2 = await http.get(Uri.parse(resultSearchLink));
           if (response2.statusCode == 200) {
             final json2 = jsonDecode(response2.body);
-            if (json2["poster_path"] != "" && json2["poster_path"] != null) {
+            if (json2["poster_path"] != "" &&
+                json2["poster_path"] != null &&
+                json2["backdrop_path"] != null &&
+                json2["backdrop_path"] != "") {
               results.add(json2);
             }
           } else {
@@ -115,155 +119,214 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Contents of the Add List panel
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 40, 20, 5),
-              child: Text(
-                'Create New List',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15), // Add rounded corners
+      ),
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      child: contentBox(context),
+    );
+  }
+
+  contentBox(BuildContext context) {
+    return Stack(
+      children: <Widget>[
+        Container(
+          padding:
+              const EdgeInsets.only(left: 20, top: 20, right: 20, bottom: 20),
+          decoration: BoxDecoration(
+            shape: BoxShape.rectangle,
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: const [
+              BoxShadow(
+                  color: Colors.black, offset: Offset(0, 10), blurRadius: 10),
+            ],
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: TextFormField(
+                    validator: (String? value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a list name';
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'List Name',
+                    ),
+                    onChanged: (value) {
+                      _listName = value;
+                    },
+                  ),
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: TextFormField(
-                validator: (String? value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a list name';
-                  }
-                  return null;
-                },
-                decoration: const InputDecoration(
-                  labelText: 'List Name',
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: TextFormField(
+                    validator: (String? value) {
+                      if (value == null || value.isEmpty || cover == "") {
+                        return 'Please select a movie';
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'Name of The Movie You\'d Like as Cover',
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchTermMovie = value;
+                        searchData(_searchTermMovie);
+                      });
+                    },
+                  ),
                 ),
-                onChanged: (value) {
-                  _listName = value;
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: TextFormField(
-                validator: (String? value) {
-                  if (value == null || value.isEmpty || cover == "") {
-                    return 'Please select a movie';
-                  }
-                  return null;
-                },
-                decoration: const InputDecoration(
-                  labelText: 'Name of The Movie You\'d Like as Cover',
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchTermMovie = value;
-                    searchData(_searchTermMovie);
-                  });
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Container(
-                height: 150,
-                width: MediaQuery.of(context).size.width * 0.7,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                ),
-                child: FutureBuilder<List>(
-                  future: searchData(
-                      _searchTermMovie), // Replace 'Your Search Term' with your actual search term
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    } else if (snapshot.hasError) {
-                      return Center(
-                        child: Text('Error: ${snapshot.error}'),
-                      );
-                    } else {
-                      // Data is ready, build the GridView
-                      return ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: snapshot.data?.length,
-                        itemBuilder: (context, index) {
-                          // You can customize the item here
-                          Map<String, dynamic> item = snapshot.data?[index];
-                          return Container(
-                            width: 100, // Adjust the width as needed
-                            margin: const EdgeInsets.symmetric(horizontal: 5),
-                            child: GridTile(
-                              child: GestureDetector(
-                                onTap: () =>
-                                    cover = img + item["backdrop_path"],
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    image: DecorationImage(
-                                      image: NetworkImage(
-                                          img + item['poster_path']),
-                                      fit: BoxFit.cover,
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Container(
+                    height: 150,
+                    width: MediaQuery.of(context).size.width * 0.7,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                    ),
+                    child: FutureBuilder<List>(
+                      future: searchData(_searchTermMovie),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        } else if (snapshot.hasError) {
+                          return Center(
+                            child: Text('Error: ${snapshot.error}'),
+                          );
+                        } else {
+                          return ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: snapshot.data?.length,
+                            itemBuilder: (context, index) {
+                              Map<String, dynamic> item = snapshot.data?[index];
+                              bool isSelected = index == _selectedIndex;
+                              if (isSelected) {
+                                cover = img + item["backdrop_path"];
+                              }
+                              return Container(
+                                width: 100,
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 5),
+                                child: GridTile(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedIndex = index;
+                                        cover = img + item["backdrop_path"];
+                                      });
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        image: DecorationImage(
+                                          image: NetworkImage(
+                                              img + item['poster_path']),
+                                          fit: BoxFit.cover,
+                                        ),
+                                        border: isSelected
+                                            ? Border.all(
+                                                color: Colors.blue, width: 3)
+                                            : null,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ),
+                              );
+                            },
                           );
+                        }
+                      },
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Access Code For Other People',
+                    ),
+                    onChanged: (value) {
+                      _accessCode = value;
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context);
                         },
-                      );
-                    }
-                  },
-                ),
-              ),
-            ),
-
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'Access Code For Other People',
-                ),
-                onChanged: (value) {
-                  _accessCode = value;
-                },
-              ),
-            ),
-            Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        addListSubmit();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors
-                            .green, // Change the background color of the button
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[900],
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.cancel, color: Colors.red),
+                              SizedBox(width: 10),
+                              Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      child: const Text('Add'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors
-                            .red, // Change the background color of the button
+                      GestureDetector(
+                        onTap: () {
+                          addListSubmit();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[900],
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.check, color: Colors.green),
+                              SizedBox(width: 10),
+                              Text(
+                                'Add',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      child: const Text('Cancel'),
-                    ),
-                  ],
-                )),
-          ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }

@@ -31,17 +31,10 @@ class Friends extends StatefulWidget {
 class _FriendsState extends State<Friends> {
   final TextEditingController _usernameController = TextEditingController();
   Future<void> _refreshFriends() async {
-    await FirebaseFirestore.instance
-        .collection(uid)
-        .get()
-        .then((QuerySnapshot querySnapshot) {
-      for (var doc in querySnapshot.docs) {
-        if (doc.id == "Friends" && friends.isEmpty) {
-          Map f = doc.data() as Map;
-          friends = f["friends"];
-        }
-      }
-    });
+    var FriendsDoc =
+        await FirebaseFirestore.instance.collection(uid).doc("Friends").get();
+    Map<String, dynamic> data = FriendsDoc.data() as Map<String, dynamic>;
+    friends = data["friends"];
     setState(() {
       friends = friends;
     });
@@ -82,74 +75,84 @@ class _FriendsState extends State<Friends> {
 
     void addFriend() {
       showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Add Friend'),
-            content: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _usernameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Username',
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              title: const Text(
+                'Add Friend',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              content: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _usernameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Username',
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () async {
+                      String inputUsername = _usernameController.text.trim();
+                      if (inputUsername.isNotEmpty) {
+                        QuerySnapshot query = await FirebaseFirestore.instance
+                            .collection('usernames')
+                            .where('username', isEqualTo: inputUsername)
+                            .get();
+
+                        if (query.docs.isNotEmpty) {
+                          String friendUid = query.docs[0].get("uid");
+
+                          sendFriendRequest(friendUid);
+                          Navigator.of(context).pop();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Username does not exist'),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 5, vertical: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.check, color: Colors.green),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
+                  },
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.check),
-                  onPressed: () async {
-                    String inputUsername = _usernameController.text.trim();
-                    if (inputUsername.isNotEmpty) {
-                      // Check if the username exists
-                      QuerySnapshot query = await FirebaseFirestore.instance
-                          .collection('usernames')
-                          .where('username', isEqualTo: inputUsername)
-                          .get();
-
-                      if (query.docs.isNotEmpty) {
-                        // Username exists, get the UID
-                        String friendUid = query.docs[0].get("uid");
-
-                        // Add the UID to the current user's friends list
-                        // Replace 'currentUserUid' with the UID of the current user
-                        sendFriendRequest(friendUid);
-                        // var userFriendsRef = FirebaseFirestore.instance
-                        //     .collection(uid)
-                        //     .doc('Friends');
-
-                        // await userFriendsRef.update({
-                        //   'friends': FieldValue.arrayUnion([friendUid])
-                        // });
-
-                        Navigator.of(context).pop(); // Close the dialog
-                        // setState(() {
-                        //   friends.add(friendUid);
-                        // }); // Refresh the UI
-                      } else {
-                        // Username does not exist
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Username does not exist'),
-                          ),
-                        );
-                      }
-                    }
-                  },
-                ),
               ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Close the dialog
-                },
-                child: const Text('Cancel'),
-              ),
-            ],
-          );
-        },
-      );
+            );
+          });
     }
 
     return Scaffold(
@@ -249,10 +252,8 @@ class _FriendsState extends State<Friends> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            IconButton(
-                              icon:
-                                  const Icon(Icons.person, color: Colors.blue),
-                              onPressed: () {
+                            GestureDetector(
+                              onTap: () {
                                 // Navigate to Profile Page
                                 friendUid = friends[friendIndex];
                                 Navigator.push(
@@ -263,11 +264,31 @@ class _FriendsState extends State<Friends> {
                                   ),
                                 );
                               },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[900],
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.person, color: Colors.blue),
+                                    SizedBox(width: 5),
+                                    Text(
+                                      'Profile',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.calendar_today,
-                                  color: Colors.green),
-                              onPressed: () {
+                            GestureDetector(
+                              onTap: () {
                                 // Navigate to Calendar Page
                                 friendUid = friends[friendIndex];
                                 Navigator.push(
@@ -278,11 +299,32 @@ class _FriendsState extends State<Friends> {
                                   ),
                                 );
                               },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[900],
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.calendar_today,
+                                        color: Colors.green),
+                                    SizedBox(width: 5),
+                                    Text(
+                                      'Calendar',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.remove_circle,
-                                  color: Colors.red),
-                              onPressed: () async {
+                            GestureDetector(
+                              onTap: () async {
                                 bool confirmed = await showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
@@ -337,6 +379,29 @@ class _FriendsState extends State<Friends> {
                                   });
                                 }
                               },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[900],
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.remove_circle,
+                                        color: Colors.red),
+                                    SizedBox(width: 5),
+                                    Text(
+                                      'Remove',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -351,9 +416,11 @@ class _FriendsState extends State<Friends> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: addFriend,
-        backgroundColor: Colors.lightGreen, // Function to open the dialog
+        backgroundColor: Colors.grey[900],
         child: const Icon(
           Icons.add,
+          color: Colors.green,
+          size: 30,
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
