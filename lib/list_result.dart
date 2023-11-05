@@ -26,46 +26,100 @@ class InfoButtonDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
       child: Container(
         decoration: BoxDecoration(
+          color: Colors.grey[900],
           borderRadius: BorderRadius.circular(10.0),
         ),
         padding: const EdgeInsets.all(25.0),
-        child: SizedBox(
-          width: 20,
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
             Text(
               "AccessCode: ${list_result['AccessCode']}",
-              style: const TextStyle(fontSize: 18),
+              style: const TextStyle(
+                fontSize: 18,
+                color: Colors.white,
+              ),
             ),
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () {
-                cover = list_result["Backdrop"];
-                originalListName = list_result["Name"];
-                originalAccessCode = list_result["AccessCode"];
-                listName = list_result["Name"];
-                accessCode = list_result["AccessCode"];
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    cover = list_result["Backdrop"];
+                    originalListName = list_result["Name"];
+                    originalAccessCode = list_result["AccessCode"];
+                    listName = list_result["Name"];
+                    accessCode = list_result["AccessCode"];
 
-                showDialog(
-                  context: context,
-                  builder: (context) => ListEditDialogue(),
-                );
-                print("EDIT");
-              },
+                    showDialog(
+                      context: context,
+                      builder: (context) => ListEditDialogue(),
+                    );
+                    print("EDIT");
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.edit, color: Colors.blue),
+                        SizedBox(width: 10),
+                        Text(
+                          'Edit',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertButtonDialogue(),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.delete, color: Colors.red),
+                        SizedBox(width: 10),
+                        Text(
+                          'Delete',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-            IconButton(
-              icon: const Icon(Icons.delete),
-              color: Colors.red,
-              onPressed: () {
-                Navigator.pop(context);
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertButtonDialogue(),
-                );
-              },
-            ),
-          ]),
+          ],
         ),
       ),
     );
@@ -135,7 +189,12 @@ bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
   return false;
 }
 
-class ListResult extends StatelessWidget {
+class ListResult extends StatefulWidget {
+  @override
+  _ListResultState createState() => _ListResultState();
+}
+
+class _ListResultState extends State<ListResult> {
   Map list = list_result;
   List<Map<String, dynamic>> moviesList = [];
   final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
@@ -171,6 +230,10 @@ class ListResult extends StatelessWidget {
       throw Exception('Failed to load movie details');
     }
     return data;
+  }
+
+  Future<void> _refreshListResults() async {
+    setState(() {});
   }
 
   @override
@@ -286,8 +349,8 @@ class ListResult extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                IconButton(
-                  onPressed: () {
+                GestureDetector(
+                  onTap: () {
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
@@ -295,11 +358,34 @@ class ListResult extends StatelessWidget {
                       },
                     );
                   },
-                  icon: const Icon(Icons.movie),
-                  color: Colors.green,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.movie, color: Colors.green),
+                        SizedBox(width: 10),
+                        Text(
+                          'Add Movie',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                IconButton(
-                  onPressed: () {
+                const SizedBox(
+                    width:
+                        20), // Optional: To add some space between the buttons
+                GestureDetector(
+                  onTap: () {
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
@@ -307,8 +393,28 @@ class ListResult extends StatelessWidget {
                       },
                     );
                   },
-                  icon: const Icon(Icons.tv),
-                  color: Colors.green,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.tv, color: Colors.green),
+                        SizedBox(width: 10),
+                        Text(
+                          'Add TV Show',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),

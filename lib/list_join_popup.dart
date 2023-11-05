@@ -46,80 +46,140 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Contents of the Add List panel
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 40, 20, 5),
-              child: Text(
-                'Join List',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: TextFormField(
-                validator: (String? value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a list name';
-                  }
-                  return null;
-                },
-                decoration: const InputDecoration(
-                  labelText: 'List Name',
-                ),
-                onChanged: (value) {
-                  _listName = value;
-                },
-              ),
-            ),
-
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'Access Code For Other People',
-                ),
-                onChanged: (value) {
-                  _accessCode = value;
-                },
-              ),
-            ),
-            Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        joinList();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors
-                            .green, // Change the background color of the button
-                      ),
-                      child: const Text('Add'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors
-                            .red, // Change the background color of the button
-                      ),
-                      child: const Text('Cancel'),
-                    ),
-                  ],
-                )),
-          ],
-        ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15), // Add rounded corners
       ),
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      child: contentBox(context),
+    );
+  }
+
+  contentBox(BuildContext context) {
+    return Stack(
+      children: <Widget>[
+        Container(
+          padding:
+              const EdgeInsets.only(left: 20, top: 10, right: 20, bottom: 20),
+          decoration: BoxDecoration(
+            shape: BoxShape.rectangle,
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: const [
+              BoxShadow(
+                  color: Colors.black, offset: Offset(0, 10), blurRadius: 10),
+            ],
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                // Contents of the Add List panel
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(20, 40, 20, 5),
+                  child: Text(
+                    'Join List',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: TextFormField(
+                    validator: (String? value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a list name';
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'List Name',
+                    ),
+                    onChanged: (value) {
+                      _listName = value;
+                    },
+                  ),
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Access Code',
+                    ),
+                    onChanged: (value) {
+                      _accessCode = value;
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[900],
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.cancel, color: Colors.red),
+                              SizedBox(width: 10),
+                              Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          joinList();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[900],
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.check, color: Colors.green),
+                              SizedBox(width: 10),
+                              Text(
+                                'Add',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

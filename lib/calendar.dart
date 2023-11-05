@@ -115,9 +115,7 @@ class _CalendarState extends State<Calendar> {
       if (date.month == focusedDay.month && date.year == focusedDay.year) {
         for (var movie in calendar[key]) {
           totalRuntime += movie['runtime'] ?? 0;
-          totalRating += (movie["rating"] != "N/A")
-              ? movie['rating']
-              : 0;
+          totalRating += (movie["rating"] != "N/A") ? movie['rating'] : 0;
           movieCount++;
         }
       }
@@ -409,9 +407,11 @@ class _CalendarState extends State<Calendar> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openDatePickerDialog,
-        backgroundColor: Colors.lightGreen, // Function to open the dialog
+        backgroundColor: Colors.grey[900],
         child: const Icon(
           Icons.add,
+          color: Colors.green,
+          size: 30,
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -578,11 +578,13 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Contents of the Add List panel
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 40, 20, 5),
               child: Text(
@@ -590,10 +592,10 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.all(10.0),
               child: TextFormField(
@@ -605,6 +607,10 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                 },
                 decoration: const InputDecoration(
                   labelText: 'Name of The Movie You\'d Like to Add',
+                  labelStyle: TextStyle(color: Colors.white),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white),
+                  ),
                 ),
                 onChanged: (value) {
                   setState(() {
@@ -620,30 +626,32 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                 height: MediaQuery.of(context).size.width * 0.5,
                 width: MediaQuery.of(context).size.width * 0.7,
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: FutureBuilder<List>(
-                  future: searchData(
-                      _searchTermMovie), // Replace 'Your Search Term' with your actual search term
+                  future: searchData(_searchTermMovie),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
-                        child: CircularProgressIndicator(),
+                        child: CircularProgressIndicator(
+                          color: Colors.green,
+                        ),
                       );
                     } else if (snapshot.hasError) {
                       return Center(
-                        child: Text('Error: ${snapshot.error}'),
+                        child: Text(
+                          'Error: ${snapshot.error}',
+                          style: const TextStyle(color: Colors.red),
+                        ),
                       );
                     } else {
-                      // Data is ready, build the GridView
                       return ListView.builder(
                         scrollDirection: Axis.horizontal,
                         itemCount: snapshot.data?.length,
                         itemBuilder: (context, index) {
-                          // You can customize the item here
                           Map<String, dynamic> item = snapshot.data?[index];
                           return Container(
-                            width: 100, // Adjust the width as needed
+                            width: 100,
                             margin: const EdgeInsets.symmetric(horizontal: 5),
                             child: GridTile(
                               child: GestureDetector(
@@ -676,22 +684,35 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
               ),
             ),
             Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
+              padding: const EdgeInsets.all(10.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors
-                            .red, // Change the background color of the button
+                        primary: Colors.grey[900],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                      child: const Text('Cancel'),
-                    ),
-                  ],
-                )),
+                      child: const Row(
+                        children: [
+                          Icon(
+                            Icons.cancel,
+                            color: Colors.red,
+                          ),
+                          SizedBox(
+                            width: 10,
+                          ),
+                          Text("Cancel")
+                        ],
+                      )),
+                ],
+              ),
+            ),
           ],
         ),
       ),

@@ -142,185 +142,231 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
       child: Container(
         decoration: BoxDecoration(
-          // change the color of dialog window here
           borderRadius: BorderRadius.circular(10.0),
         ),
         padding: const EdgeInsets.all(25.0),
         child: SizedBox(
           width: 20,
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text(
-              "Country You're Viewing in",
-              style: TextStyle(fontSize: 18),
-            ),
-            DropdownButton<Country>(
-              value: selectedCountryObject,
-              onChanged: (Country? newValue) async {
-                await updateCountry(newValue as Country);
-                setState(() {
-                  selectedCountry = newValue.isoCode;
-                  selectedCountryObject = newValue;
-                });
-              },
-              items:
-                  countries.map<DropdownMenuItem<Country>>((Country country) {
-                return DropdownMenuItem<Country>(
-                  value: country,
-                  child: Text(country.englishName),
-                );
-              }).toList(),
-
-              isExpanded: true, // Make the dropdown list take full width
-              underline: Container(), // Remove the default underline
-            ),
-            Center(
-              child: Consumer<ThemeProvider>(
-                builder: (context, themeProvider, child) {
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.wb_sunny, color: Colors.yellow),
-                      const SizedBox(width: 16),
-                      Switch(
-                        value: themeProvider.isDarkMode,
-                        onChanged: (value) {
-                          themeProvider.toggleDarkMode();
-                          updateSettings("darkMode", themeProvider.isDarkMode);
-                        },
-                      ),
-                      const SizedBox(
-                        width: 16,
-                      ),
-                      const Icon(Icons.nightlight_round,
-                          color: Colors.blueAccent),
-                    ],
-                  );
-                },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Country You're Viewing in",
+                style: TextStyle(fontSize: 18, color: Colors.white),
               ),
-            ),
-            const SizedBox(
-              width: 20,
-            ),
-            const Text(
-              '"Did you watch this movie today?" reminders',
-              style: TextStyle(fontSize: 18),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.check_box, color: Colors.yellow),
-                const SizedBox(width: 16),
-                Switch(
-                  value: dontAskCalendar,
-                  onChanged: (value) {
-                    setState(() {
-                      dontAskCalendar = !dontAskCalendar;
-                      updateSettings("dontAskCalendar", dontAskCalendar);
-                    });
-                  },
+              DropdownButton<Country>(
+                value: selectedCountryObject,
+                onChanged: (Country? newValue) async {
+                  await updateCountry(newValue as Country);
+                  setState(() {
+                    selectedCountry = newValue.isoCode;
+                    selectedCountryObject = newValue;
+                  });
+                },
+                items:
+                    countries.map<DropdownMenuItem<Country>>((Country country) {
+                  return DropdownMenuItem<Country>(
+                    value: country,
+                    child: Text(country.englishName),
+                  );
+                }).toList(),
+                isExpanded: true,
+                underline: Container(
+                  height: 2,
+                  color: Colors.white,
                 ),
-                const SizedBox(
-                  width: 16,
-                ),
-                const Icon(Icons.disabled_by_default, color: Colors.redAccent),
-              ],
-            ),
-            const Text(
-              'Your Providers',
-              style: TextStyle(fontSize: 18),
-            ),
-            Container(
-              height: MediaQuery.of(context).size.height * 0.18,
-              child: Padding(
-                padding:
-                    const EdgeInsets.all(5.0), // Add padding here as needed
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    crossAxisSpacing: 8.0,
-                    mainAxisSpacing: 8.0,
-                  ),
-                  itemCount: allProviders.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    Provider provider = allProviders[index];
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          provider.isSelected = !provider.isSelected;
-                          if (provider.isSelected) {
-                            settings["providers"].add(provider.id.toString());
-                          } else {
-                            settings["providers"]
-                                .remove(provider.id.toString());
-                          }
-                          updateSettings("providers", settings["providers"]);
-                        });
-                      },
-                      child: Stack(
-                        children: [
-                          Image.network(
-                            imgLink + provider.image,
-                            width: double.infinity,
-                            height: 150.0, // Adjust the height as needed
-                            fit: BoxFit.cover,
-                          ),
-                          Positioned(
-                            bottom: 0.0,
-                            left: 4.0,
-                            child: Text(
-                              provider.name,
-                              // style: const TextStyle(color: Colors.white),
-                            ),
-                          ),
-                          if (provider.isSelected)
-                            const Positioned(
-                              bottom: 4.0,
-                              right: 4.0,
-                              child: Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                                size: 24.0,
-                              ),
-                            ),
-                        ],
-                      ),
+              ),
+              Center(
+                child: Consumer<ThemeProvider>(
+                  builder: (context, themeProvider, child) {
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.wb_sunny, color: Colors.yellow),
+                        const SizedBox(width: 16),
+                        Switch(
+                          value: themeProvider.isDarkMode,
+                          onChanged: (value) {
+                            themeProvider.toggleDarkMode();
+                            updateSettings(
+                                "darkMode", themeProvider.isDarkMode);
+                          },
+                          activeColor: Colors.green,
+                        ),
+                        const SizedBox(width: 16),
+                        const Icon(Icons.nightlight_round,
+                            color: Colors.blueAccent),
+                      ],
                     );
                   },
                 ),
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.logout_outlined),
-              color: const Color.fromARGB(255, 232, 85, 75),
-              onPressed: () async {
-                await FirebaseAuth.instance.signOut();
-                email = "";
-                Navigator.pop(context);
-                Navigator.popUntil(context, (route) => route.isFirst);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => Login()),
-                );
-              },
-            ),
-            ElevatedButton(
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all<Color>(
-                      const Color.fromARGB(255, 242, 111, 102)),
+              const SizedBox(width: 20),
+              const Text(
+                '"Did you watch this movie today?" reminders',
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.check_box, color: Colors.yellow),
+                  const SizedBox(width: 16),
+                  Switch(
+                    value: dontAskCalendar,
+                    onChanged: (value) {
+                      setState(() {
+                        dontAskCalendar = !dontAskCalendar;
+                        updateSettings("dontAskCalendar", dontAskCalendar);
+                      });
+                    },
+                    activeColor: Colors.green,
+                  ),
+                  const SizedBox(width: 16),
+                  const Icon(Icons.disabled_by_default,
+                      color: Colors.redAccent),
+                ],
+              ),
+              const Text(
+                'Your Providers',
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.18,
+                child: Padding(
+                  padding: const EdgeInsets.all(5.0),
+                  child: GridView.builder(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      crossAxisSpacing: 8.0,
+                      mainAxisSpacing: 8.0,
+                    ),
+                    itemCount: allProviders.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      Provider provider = allProviders[index];
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            provider.isSelected = !provider.isSelected;
+                            if (provider.isSelected) {
+                              settings["providers"].add(provider.id.toString());
+                            } else {
+                              settings["providers"]
+                                  .remove(provider.id.toString());
+                            }
+                            updateSettings("providers", settings["providers"]);
+                          });
+                        },
+                        child: Stack(
+                          children: [
+                            Image.network(
+                              imgLink + provider.image,
+                              width: double.infinity,
+                              height: 150.0,
+                              fit: BoxFit.cover,
+                            ),
+                            Positioned(
+                              bottom: 0.0,
+                              left: 4.0,
+                              child: Text(
+                                provider.name,
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
+                            if (provider.isSelected)
+                              const Positioned(
+                                bottom: 4.0,
+                                right: 4.0,
+                                child: Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green,
+                                  size: 24.0,
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertButtonDialogue(),
-                  );
-                },
-                child: const Text(
-                  'Delete Account',
-                  style: TextStyle(color: Color.fromARGB(255, 130, 9, 0)),
-                )),
-          ]),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Logout Button
+                  GestureDetector(
+                    onTap: () async {
+                      await FirebaseAuth.instance.signOut();
+                      email = "";
+                      Navigator.pop(context);
+                      Navigator.popUntil(context, (route) => route.isFirst);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => Login()),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.logout_outlined, color: Colors.white),
+                          SizedBox(width: 10),
+                          Text(
+                            'Logout',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Delete Button
+                  GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertButtonDialogue(),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.delete, color: Colors.red),
+                          SizedBox(width: 10),
+                          Text(
+                            'Delete',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
         ),
       ),
     );
