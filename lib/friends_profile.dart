@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/profile.dart';
+import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'friends.dart';
 import 'playlists.dart';
@@ -244,15 +245,7 @@ class _FriendProfileState extends State<FriendProfile> {
     }
     if (gotData) {
       return Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          title: Center(
-            child: Image.asset(
-              'assets/logo_character.png',
-              height: 54,
-            ),
-          ),
-        ),
+        appBar: CustomAppBar(),
         body: Stack(
           children: [
             SingleChildScrollView(

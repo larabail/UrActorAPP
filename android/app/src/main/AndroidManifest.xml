@@ -2,7 +2,7 @@
     package="com.example.uractor"> 
     <uses-permission android:name="android.permission.INTERNET" />  
    <application
-        android:label="uractor"
+        android:label="UrActor"
         android:name="${applicationName}"
         android:icon="@mipmap/round_logo">
         <activity

@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'friends.dart';
 import 'playlists.dart';
@@ -235,15 +236,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
     if (gotData) {
       return Scaffold(
         backgroundColor: const Color(0xFF121212),
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          backgroundColor: const Color(0xFF121212),
-          title: Center(
-              child: Image.asset(
-            'assets/logo_character.png',
-            height: 54,
-          )),
-        ),
+        appBar: CustomAppBar(),
         body: SingleChildScrollView(
           child: Column(
             children: [

@@ -1,6 +1,7 @@
 // ignore_for_file: must_be_immutable
 
 import 'package:flutter/material.dart';
+import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'friends.dart';
 import 'playlists.dart';
@@ -33,15 +34,7 @@ class Favorites extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Center(
-          child: Image.asset(
-            'assets/logo_character.png',
-            height: 54,
-          ),
-        ),
-      ),
+      appBar: CustomAppBar(),
       body: Column(children: [
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 10.0),
