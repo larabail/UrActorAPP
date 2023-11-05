@@ -3,13 +3,11 @@
 import 'package:flutter/material.dart';
 import 'bottom_app_bar.dart';
 import 'friends.dart';
-import 'movie_result.dart';
 import 'playlists.dart';
 import 'profile.dart';
 import 'search.dart';
 import 'main.dart';
 import 'tabView.dart';
-import 'tvshow_result.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
