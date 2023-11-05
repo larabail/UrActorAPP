@@ -513,7 +513,12 @@ class _MovieResultState extends State<MovieResult> {
         String link2 = 'https://www.omdbapi.com/?i=$imdbId&apikey=***REMOVED***';
         final r = await http.get(Uri.parse(link2));
         if (r.statusCode == 200) {
-          json['imdb_rating'] = jsonDecode(r.body)['imdbRating'];
+          if (jsonDecode(r.body)["imdbRating"] != null &&
+              jsonDecode(r.body)["imdbRating"] != "N/A") {
+            json["imdb_rating"] = jsonDecode(r.body)["imdbRating"];
+          } else {
+            json["imdb_rating"] = "0.0";
+          }
           json['year'] = jsonDecode(r.body)['Year'];
           final r2 = await http
               .get(Uri.parse('$link${movieData[0]}-$name$watch_providers'));
@@ -607,7 +612,7 @@ class _MovieResultState extends State<MovieResult> {
           throw Exception('Failed to load movie details');
         }
       } else {
-        json['imdb_rating'] = "None";
+        json['imdb_rating'] = "0.0";
         json['year'] = "None";
         final r2 = await http
             .get(Uri.parse('$link${movieData[0]}-$name$watch_providers'));
