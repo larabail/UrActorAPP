@@ -8,15 +8,12 @@ import 'package:marquee/marquee.dart';
 import 'bottom_app_bar.dart';
 import 'calendar.dart';
 import 'favorites.dart';
-import 'friends.dart';
 import 'list_result.dart';
 import 'login.dart';
 import 'explore.dart';
 import 'movie_result.dart';
 import 'playlists.dart';
-import 'profile.dart';
 import 'reviews.dart';
-import 'search.dart';
 import 'seen.dart';
 import 'watchlist.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -364,23 +361,6 @@ class _MyHomePageState extends State<MyHomePage> {
       return data;
     }
 
-    final List<Widget> pages = [
-      MyApp(),
-      Playlists(),
-      Search(),
-      Friends(),
-      Profile(),
-      // Add more pages here
-    ];
-
-    void _onItemTapped(int index) {
-      selectedIndex = index;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
-      );
-    }
-
     if (gotData) {
       return Scaffold(
         appBar: AppBar(
@@ -530,6 +510,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       list_result["Name"] = value;
                       list_result["AccessCode"] = accessCode;
                       list_result["id"] = key;
+                      list_result["Users"] = playlists[key]["Users"];
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => ListResult()),

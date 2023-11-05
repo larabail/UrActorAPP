@@ -23,9 +23,26 @@ String accessCode = "";
 String originalListName = "";
 String originalAccessCode = "";
 
-class InfoButtonDialog extends StatelessWidget {
+class InfoButtonDialog extends StatefulWidget {
+  @override
+  _InfoButtonDialogState createState() => _InfoButtonDialogState();
+}
+
+class _InfoButtonDialogState extends State<InfoButtonDialog> {
+  Future<Map<String, dynamic>> getUserData(String uid) async {
+    DocumentSnapshot doc =
+        await FirebaseFirestore.instance.collection(uid).doc("Settings").get();
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    data["uid"] = uid;
+    return data;
+  }
+
   @override
   Widget build(BuildContext context) {
+    Map userCurrent = list_result['Users'].firstWhere(
+        (item) => item.containsKey(uid) as bool,
+        orElse: () => null);
+    String role = userCurrent[uid];
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10.0),
@@ -47,6 +64,100 @@ class InfoButtonDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
+            const Text(
+              'Users with access:',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 10),
+            FutureBuilder(
+              future: Future.wait((list_result['Users'] as List<dynamic>)
+                  .map((user) => getUserData(user.keys.toList()[0]))),
+              builder: (context,
+                  AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const CircularProgressIndicator();
+                } else if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Text('No users have access.');
+                } else {
+                  return Column(
+                    children: snapshot.data!.map((userData) {
+                      return Row(
+                        children: [
+                          ClipOval(
+                            child: userData["profile_photo"] != ""
+                                ? Image.network(
+                                    userData["profile_photo"],
+                                    height: 40,
+                                    width: 40,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.asset(
+                                    'assets/main_profile.png',
+                                    height: 40,
+                                    width: 40,
+                                    fit: BoxFit.cover,
+                                  ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            userData['username'],
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          if (role == "Owner")
+                            IconButton(
+                              icon: const Icon(Icons.remove_circle,
+                                  color: Colors.red),
+                              onPressed: () async {
+                                Map itemToRemove = list_result['Users']
+                                    .firstWhere(
+                                        (item) =>
+                                            item.containsKey(userData["uid"])
+                                                as bool,
+                                        orElse: () => null);
+                                if (itemToRemove != null) {
+                                  FirebaseFirestore.instance
+                                      .collection('Watchlists')
+                                      .doc(list_result["id"])
+                                      .update({
+                                    'Users':
+                                        FieldValue.arrayRemove([itemToRemove])
+                                  });
+                                  await FirebaseFirestore.instance
+                                      .collection("Watchlists")
+                                      .get()
+                                      .then((QuerySnapshot querySnapshot) {
+                                    for (var doc in querySnapshot.docs) {
+                                      Map keysOfDoc = doc.data() as Map;
+                                      List users = keysOfDoc['Users'] as List;
+                                      for (var element in users) {
+                                        Map el = element as Map;
+                                        if (el.keys.contains(uid)) {
+                                          Map docData = doc.data() as Map;
+                                          docData["id"] = doc.id;
+                                          playlists[doc.id] = docData;
+                                        }
+                                      }
+                                    }
+                                  });
+                                  setState(() {
+                                    list_result["Users"] =
+                                        playlists[list_result["id"]]["Users"];
+                                  });
+                                }
+                              },
+                            ),
+                        ],
+                      );
+                    }).toList(),
+                  );
+                }
+              },
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -88,12 +199,48 @@ class InfoButtonDialog extends StatelessWidget {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertButtonDialogue(),
-                    );
+                  onTap: () async {
+                    if (role == "Owner") {
+                      Navigator.pop(context);
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertButtonDialogue(),
+                      );
+                    } else {
+                      Map itemToRemove = list_result['Users'].firstWhere(
+                          (item) => item.containsKey(uid) as bool,
+                          orElse: () => null);
+                      if (itemToRemove != null) {
+                        FirebaseFirestore.instance
+                            .collection('Watchlists')
+                            .doc(list_result["id"])
+                            .update({
+                          'Users': FieldValue.arrayRemove([itemToRemove])
+                        });
+                        playlists = {};
+                        await FirebaseFirestore.instance
+                            .collection("Watchlists")
+                            .get()
+                            .then((QuerySnapshot querySnapshot) {
+                          for (var doc in querySnapshot.docs) {
+                            Map keysOfDoc = doc.data() as Map;
+                            List users = keysOfDoc['Users'] as List;
+                            for (var element in users) {
+                              Map el = element as Map;
+                              if (el.keys.contains(uid)) {
+                                Map docData = doc.data() as Map;
+                                docData["id"] = doc.id;
+                                playlists[doc.id] = docData;
+                              }
+                            }
+                          }
+                        });
+                        Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => Playlists()));
+                      }
+                    }
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -102,13 +249,14 @@ class InfoButtonDialog extends StatelessWidget {
                       color: Colors.grey[900],
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.delete, color: Colors.red),
-                        SizedBox(width: 10),
+                        Icon(role == "Owner" ? Icons.delete : Icons.exit_to_app,
+                            color: Colors.red),
+                        const SizedBox(width: 10),
                         Text(
-                          'Delete',
-                          style: TextStyle(
+                          role == "Owner" ? 'Delete' : 'Leave',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
