@@ -115,7 +115,9 @@ class _CalendarState extends State<Calendar> {
       if (date.month == focusedDay.month && date.year == focusedDay.year) {
         for (var movie in calendar[key]) {
           totalRuntime += movie['runtime'] ?? 0;
-          totalRating += movie['rating'] ?? 0;
+          totalRating += (movie["rating"] != "N/A")
+              ? movie['rating']
+              : 0;
           movieCount++;
         }
       }
@@ -497,7 +499,11 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
             final omdbData = await http.get(Uri.parse(omdbLink));
             if (response2.statusCode == 200) {
               final json3 = jsonDecode(omdbData.body);
-              json2["imdbRating"] = json3["imdbRating"];
+              if (json3["imdbRating"] != null && json3["imdbRating"] != "N/A") {
+                json2["imdbRating"] = json3["imdbRating"];
+              } else {
+                json2["imdbRating"] = "0.0";
+              }
               if (json2["poster_path"] != "" && json2["poster_path"] != null) {
                 results.add(json2);
               }

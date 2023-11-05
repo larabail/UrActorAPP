@@ -986,7 +986,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                     'Your Rating: ${review["Rating"]}',
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 15,
                                       wordSpacing: 2,
                                       height: 1.5,
                                     ),
