@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'bottom_app_bar.dart';
 import 'friends.dart';
 import 'profile.dart';
 import 'search.dart';
@@ -1149,43 +1150,7 @@ class _TVShowResultState extends State<TVShowResult> {
           }
         },
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.grey,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.library_books_rounded),
-            label: 'Library',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          const BottomNavigationBarItem(
-            label: 'Friends',
-            icon: Icon(Icons.contacts),
-          ),
-          BottomNavigationBarItem(
-            label: 'Profile',
-            icon: settings["profile_photo"] != ""
-                ? ClipOval(
-                    child: Image.network(
-                    settings["profile_photo"],
-                    height: 27,
-                    width: 27,
-                    fit: BoxFit.cover,
-                  ))
-                : const Icon(Icons.person),
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-      ),
+      bottomNavigationBar: CommonBottomAppBar(-1),
     );
   }
 }
