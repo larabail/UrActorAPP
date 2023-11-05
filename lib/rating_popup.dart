@@ -98,8 +98,7 @@ class _RatingDialogState extends State<RatingDialog> {
       backgroundColor: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color.fromARGB(
-              255, 23, 20, 20), // change the color of dialog window here
+          color: Colors.grey[900],
           borderRadius: BorderRadius.circular(10.0),
         ),
         padding: const EdgeInsets.all(25.0),
@@ -111,25 +110,38 @@ class _RatingDialogState extends State<RatingDialog> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
               TextField(
                 controller: myController,
                 style: const TextStyle(
                   fontSize: 16,
+                  color: Colors.white,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Enter your opinion',
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+                  enabledBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white),
+                  ),
+                  focusedBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white),
+                  ),
                 ),
                 onChanged: (value) {
                   setState(() {
                     opinion = value;
                   });
                 },
-              ), // Text input field
+              ),
               const SizedBox(height: 10),
               const Text(
                 'Your Rating',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
               Wrap(
@@ -147,26 +159,66 @@ class _RatingDialogState extends State<RatingDialog> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  ElevatedButton(
-                    onPressed: () {
+                  GestureDetector(
+                    onTap: () {
                       submit();
                     },
-                    child: const Text('Submit'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[900],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.check, color: Colors.green),
+                          SizedBox(width: 5),
+                          Text(
+                            'Submit',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
+                  GestureDetector(
+                    onTap: () {
                       Navigator.pop(context);
                     },
-                    child: const Text('Not now'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[900],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.close, color: Colors.red),
+                          SizedBox(width: 5),
+                          Text(
+                            'Not now',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
-              )
+              ),
             ],
           ),
         ),

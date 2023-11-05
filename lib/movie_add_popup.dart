@@ -96,22 +96,29 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      child: SingleChildScrollView(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        padding: const EdgeInsets.all(25.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Contents of the Add List panel
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 40, 20, 5),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 5),
               child: Text(
                 'Add a movie to "${list_result["Name"]}"',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.all(10.0),
               child: TextFormField(
@@ -123,7 +130,15 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
                 },
                 decoration: const InputDecoration(
                   labelText: 'Name of The Movie You\'d Like to Add',
+                  labelStyle: TextStyle(color: Colors.white),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.blue),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey),
+                  ),
                 ),
+                style: const TextStyle(color: Colors.white),
                 onChanged: (value) {
                   setState(() {
                     _searchTermMovie = value;
@@ -137,9 +152,12 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
               child: Container(
                 height: MediaQuery.of(context).size.width * 0.5,
                 width: MediaQuery.of(context).size.width * 0.7,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: FutureBuilder<List>(
-                  future: searchData(
-                      _searchTermMovie), // Replace 'Your Search Term' with your actual search term
+                  future: searchData(_searchTermMovie),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
@@ -147,18 +165,19 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
                       );
                     } else if (snapshot.hasError) {
                       return Center(
-                        child: Text('Error: ${snapshot.error}'),
+                        child: Text(
+                          'Error: ${snapshot.error}',
+                          style: const TextStyle(color: Colors.white),
+                        ),
                       );
                     } else {
-                      // Data is ready, build the GridView
                       return ListView.builder(
                         scrollDirection: Axis.horizontal,
                         itemCount: snapshot.data?.length,
                         itemBuilder: (context, index) {
-                          // You can customize the item here
                           Map<String, dynamic> item = snapshot.data?[index];
                           return Container(
-                            width: 100, // Adjust the width as needed
+                            width: 100,
                             margin: const EdgeInsets.symmetric(horizontal: 5),
                             child: GridTile(
                               child: GestureDetector(
@@ -187,22 +206,40 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
               ),
             ),
             Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors
-                            .red, // Change the background color of the button
+              padding: const EdgeInsets.all(10.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[900],
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Text('Cancel'),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.cancel, color: Colors.red),
+                          SizedBox(width: 10),
+                          Text(
+                            'Cancel',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                )),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
