@@ -24,6 +24,7 @@ class _PlaylistsState extends State<Playlists> {
   bool isAddListPanelOpen = false;
 
   Future<void> _refreshPlaylists() async {
+    playlists = {};
     await FirebaseFirestore.instance
         .collection("Watchlists")
         .get()
@@ -177,6 +178,7 @@ class _PlaylistsState extends State<Playlists> {
                           list_result["Name"] = value;
                           list_result["AccessCode"] = accessCode;
                           list_result["id"] = key;
+                          list_result["Users"] = playlists[key]["Users"];
                           Navigator.push(
                             context,
                             MaterialPageRoute(
