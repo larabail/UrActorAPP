@@ -112,8 +112,8 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
           padding:
               const EdgeInsets.only(left: 20, top: 10, right: 20, bottom: 20),
           decoration: BoxDecoration(
-            shape: BoxShape.rectangle,
-            borderRadius: BorderRadius.circular(15),
+            color: Colors.grey[900],
+            borderRadius: BorderRadius.circular(10.0),
           ),
           child: SingleChildScrollView(
             child: Column(
