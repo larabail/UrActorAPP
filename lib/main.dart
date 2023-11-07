@@ -471,7 +471,6 @@ class _MyHomePageState extends State<MyHomePage> {
                             const Icon(Icons.library_books,
                                 color: Colors.white, size: 20),
                             const SizedBox(width: 10),
-                            // "See All" Text
                             Column(
                               children: [
                                 const Text(
@@ -498,116 +497,145 @@ class _MyHomePageState extends State<MyHomePage> {
                   }
 
                   return GestureDetector(
-                    onTap: () {
-                      list_result["Movies"] = movies;
-                      list_result["TVShows"] = tvshows;
-                      list_result["Backdrop"] = image;
-                      list_result["Name"] = value;
-                      list_result["AccessCode"] = accessCode;
-                      list_result["id"] = key;
-                      list_result["Users"] = playlists[key]["Users"];
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => ListResult()),
-                      );
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[900],
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.all(10),
-                      child: Row(
-                        children: [
-                          // Cover Image
-                          Container(
-                            height: 20,
-                            width: 20,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(5),
-                              image: DecorationImage(
-                                image: NetworkImage(image),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          // Title and Content Count
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    final text = TextSpan(
-                                      text: value,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    );
-                                    final textPainter = TextPainter(
-                                      text: text,
-                                      textDirection: TextDirection.ltr,
-                                      maxLines: 1,
-                                    )..layout(maxWidth: constraints.maxWidth);
-
-                                    if (textPainter.didExceedMaxLines) {
-                                      // Text is too long, use Marquee
-                                      return SizedBox(
-                                        height: 20,
-                                        child: Marquee(
-                                          text: value,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          scrollAxis: Axis.horizontal,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          blankSpace: 20.0,
-                                          velocity: 25.0,
-                                          pauseAfterRound:
-                                              const Duration(seconds: 1),
-                                          startPadding: 0.0,
-                                          accelerationDuration:
-                                              const Duration(seconds: 1),
-                                          accelerationCurve: Curves.linear,
-                                          decelerationDuration:
-                                              const Duration(milliseconds: 500),
-                                          decelerationCurve: Curves.easeOut,
-                                        ),
-                                      );
-                                    } else {
-                                      // Text fits, use Text
-                                      return Text(
-                                        value,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      );
-                                    }
-                                  },
-                                ),
-                                Text(
-                                  '$totalContent items',
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
+                      onTap: () {
+                        list_result["Movies"] = movies;
+                        list_result["TVShows"] = tvshows;
+                        list_result["Backdrop"] = image;
+                        list_result["Name"] = value;
+                        list_result["AccessCode"] = accessCode;
+                        list_result["id"] = key;
+                        list_result["Users"] = playlists[key]["Users"];
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ListResult()),
+                        );
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[900],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.all(10),
+                        child: IntrinsicHeight(
+                          // This widget will give its child the full height of its own constraints
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment
+                                .stretch, // Align children to stretch to fill the row height
+                            children: [
+                              // Cover Image
+                              AspectRatio(
+                                // Use AspectRatio to ensure the image is square
+                                aspectRatio: 1, // Equal width and height
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(5),
+                                    image: DecorationImage(
+                                      image: NetworkImage(image),
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(
+                                  width:
+                                      10), // You can remove this if you don't want any space between the image and the text
+                              // Title and Content Count
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          LayoutBuilder(
+                                            builder: (context, constraints) {
+                                              final text = TextSpan(
+                                                text: value,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              );
+                                              final textPainter = TextPainter(
+                                                text: text,
+                                                textDirection:
+                                                    TextDirection.ltr,
+                                                maxLines: 1,
+                                              )..layout(
+                                                  maxWidth:
+                                                      constraints.maxWidth);
+
+                                              if (textPainter
+                                                  .didExceedMaxLines) {
+                                                // Text is too long, use Marquee
+                                                return SizedBox(
+                                                  height: 20,
+                                                  child: Marquee(
+                                                    text: value,
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                    scrollAxis: Axis.horizontal,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    blankSpace: 20.0,
+                                                    velocity: 25.0,
+                                                    pauseAfterRound:
+                                                        const Duration(
+                                                            seconds: 1),
+                                                    startPadding: 0.0,
+                                                    accelerationDuration:
+                                                        const Duration(
+                                                            seconds: 1),
+                                                    accelerationCurve:
+                                                        Curves.linear,
+                                                    decelerationDuration:
+                                                        const Duration(
+                                                            milliseconds: 500),
+                                                    decelerationCurve:
+                                                        Curves.easeOut,
+                                                  ),
+                                                );
+                                              } else {
+                                                // Text fits, use Text
+                                                return Text(
+                                                  value,
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                          ),
+                                          Text(
+                                            '$totalContent items',
+                                            style: const TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
-                  );
+                        ),
+                      ));
                 },
               ),
               Container(

@@ -80,10 +80,9 @@ class _SearchResultState extends State<Search> {
         child: Column(
           children: [
             SingleChildScrollView(
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height * 0.75,
+              child: Container(
                 child: Container(
-                  height: MediaQuery.of(context).size.height,
+                  height: MediaQuery.of(context).size.height - 176,
                   margin: const EdgeInsets.all(10.0),
                   child: Column(
                     children: [
