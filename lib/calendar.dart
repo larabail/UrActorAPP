@@ -218,9 +218,12 @@ class _CalendarState extends State<Calendar> {
       movies = [];
       moviesOnDay.forEach((element) async {
         String id = element['id'];
-        String name = element['title'];
+        String name = element['title']
+            .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
+            .replaceAll(" ", "-");
         final response =
             await http.get(Uri.parse('${link}${id}-${name}${api_key_actor}'));
+        print('${link}${id}-${name}${api_key_actor}');
         if (response.statusCode == 200) {
           dynamic json = jsonDecode(response.body);
           if (!containsMap(movies, json)) {
