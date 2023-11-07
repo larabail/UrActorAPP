@@ -131,7 +131,7 @@ class _PersonResultState extends State<PersonResult> {
               if (!countedTVShowsActor.contains(element["id"].toString())) {
                 stats_tv += 1;
                 if (containsMap(
-                    favTVShows, ['Movies', element["id"].toString()])) {
+                    favTVShows, ['TVShows', element["id"].toString()])) {
                   scoreActor += 3;
                 } else {
                   scoreActor += 2;
@@ -139,7 +139,7 @@ class _PersonResultState extends State<PersonResult> {
                 countedTVShowsActor.add(element["id"].toString());
               }
             } else if (containsMap(
-                    watchlistTVShows, ['Movies', element["id"].toString()]) &&
+                    watchlistTVShows, ['TVShows', element["id"].toString()]) &&
                 !countedTVShowsActor.contains(element["id"].toString())) {
               scoreActor += 1;
               countedTVShowsActor.add(element["id"].toString());
