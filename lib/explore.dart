@@ -1749,7 +1749,6 @@ class _ExploreState extends State<Explore> {
             height: isFilterOpen ? MediaQuery.of(context).size.height * 0.7 : 0,
             width: MediaQuery.of(context).size.width,
             decoration: const BoxDecoration(
-              // color: Color.fromARGB(255, 7, 7, 7),
               borderRadius: BorderRadius.vertical(top: Radius.circular(40.0)),
             ),
             child: Column(
