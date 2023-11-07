@@ -853,18 +853,21 @@ class _MovieResultState extends State<MovieResult> {
                                             MediaQuery.of(context).size.height *
                                                 0.18,
                                         // Use Align to position the text
-                                        child: Align(
-                                          alignment: Alignment.bottomRight,
-                                          child: Text(
-                                            valueLeft,
-                                            style: const TextStyle(
-                                              color: Colors
-                                                  .white, // Make sure the text is visible on the gradient
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 1.25,
-                                              wordSpacing: 1.75,
-                                              height: 1.5,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Align(
+                                            alignment: Alignment.bottomRight,
+                                            child: Text(
+                                              valueLeft,
+                                              style: const TextStyle(
+                                                color: Colors
+                                                    .white, // Make sure the text is visible on the gradient
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                                letterSpacing: 1.25,
+                                                wordSpacing: 1.75,
+                                                height: 1.5,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -935,19 +938,20 @@ class _MovieResultState extends State<MovieResult> {
                                         height:
                                             MediaQuery.of(context).size.height *
                                                 0.18,
-                                        // Use Align to position the text
-                                        child: Align(
-                                          alignment: Alignment.bottomRight,
-                                          child: Text(
-                                            valueRight,
-                                            style: const TextStyle(
-                                              color: Colors
-                                                  .white, // Make sure the text is visible on the gradient
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 1.25,
-                                              wordSpacing: 1.75,
-                                              height: 1.5,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Align(
+                                            alignment: Alignment.bottomRight,
+                                            child: Text(
+                                              valueRight,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                                letterSpacing: 1.25,
+                                                wordSpacing: 1.75,
+                                                height: 1.5,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -1133,45 +1137,63 @@ class _MovieResultState extends State<MovieResult> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Column(
-                          children: [
-                            Container(
-                              height: 30,
-                              margin:
-                                  const EdgeInsets.fromLTRB(5.0, 5.0, 5.0, 0.0),
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 5, horizontal: 10),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                color: const Color.fromARGB(255, 255, 254, 201)
-                                    .withOpacity(0.3),
+                        Container(
+                          height: 30,
+                          margin: const EdgeInsets.fromLTRB(5.0, 5.0, 5.0, 0.0),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 5, horizontal: 10),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color: Colors.grey[
+                                900], // Adjust the background color opacity as needed
+                          ),
+                          child: Row(
+                            mainAxisSize:
+                                MainAxisSize.min, // Use min to wrap content
+                            children: [
+                              const Icon(Icons.access_time,
+                                  color: Colors
+                                      .white), // Replace with your desired icon
+                              const SizedBox(width: 5),
+                              Text(
+                                '${snapshot.data!['runtime']} min',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              child: Text(
-                                'Runtime: ${snapshot.data!['runtime']} min',
-                                style: const TextStyle(fontSize: 18),
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                        Column(
-                          children: [
-                            Container(
-                              height: 30,
-                              margin:
-                                  const EdgeInsets.fromLTRB(5.0, 5.0, 5.0, 0.0),
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 5, horizontal: 10),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                color: const Color.fromARGB(255, 255, 254, 201)
-                                    .withOpacity(0.3),
+                        Container(
+                          height: 30,
+                          margin: const EdgeInsets.fromLTRB(5.0, 5.0, 5.0, 0.0),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 5, horizontal: 10),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color: Colors.grey[
+                                900], // Adjust the background color opacity as needed
+                          ),
+                          child: Row(
+                            mainAxisSize:
+                                MainAxisSize.min, // Use min to wrap content
+                            children: [
+                              const Icon(Icons.star,
+                                  color: Colors
+                                      .white), // Replace with your desired icon
+                              const SizedBox(width: 5),
+                              Text(
+                                'IMDB: ${snapshot.data!["imdb_rating"]}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              child: Text(
-                                'IMDB Rating: ${snapshot.data!["imdb_rating"]}',
-                                style: const TextStyle(fontSize: 18),
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -1247,15 +1269,21 @@ class _MovieResultState extends State<MovieResult> {
                   ),
                   if (reviewed)
                     ExpansionTile(
-                        title: const Text(
-                          "Your Review",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontSize: 15,
-                            wordSpacing: 2,
-                            height: 1.5,
-                          ),
+                        title: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.reviews),
+                            SizedBox(width: 8),
+                            Text(
+                              "Your Review",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 15,
+                                wordSpacing: 2,
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
                         ),
                         children: <Widget>[
                           Padding(
@@ -1376,46 +1404,77 @@ class _MovieResultState extends State<MovieResult> {
                       ],
                     ),
                   Container(
-                    margin: const EdgeInsets.all(10.0), // set margin here
-                    child: const Text(
-                      "Where to Watch?",
-                      style: TextStyle(fontSize: 18),
+                    margin: const EdgeInsets.all(20.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10.0, vertical: 10.0),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  ),
-                  if (snapshot.data!['providers'].length != 0)
-                    Container(
-                      height: 30, // fixed height
-                      margin: const EdgeInsets.fromLTRB(30.0, 5.0, 0, 5.0),
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: snapshot.data!['providers'].length,
-                        itemBuilder: (BuildContext context, int index) {
-                          return Container(
-                            margin: const EdgeInsets.only(right: 10),
-                            height: 40,
-                            width: 40,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              image: DecorationImage(
-                                image: NetworkImage(
-                                  imgLink +
-                                      snapshot.data!['providers'][index][1],
-                                ),
-                                fit: BoxFit.cover,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.play_circle_fill, color: Colors.white),
+                            SizedBox(width: 10),
+                            Text(
+                              "Where to Watch?",
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          );
-                        },
-                      ),
+                          ],
+                        ),
+                        if (snapshot.data!['providers'].length != 0)
+                          Container(
+                            height: 30, // fixed height
+                            margin: const EdgeInsets.fromLTRB(5.0, 5.0, 0, 5.0),
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: snapshot.data!['providers'].length,
+                              itemBuilder: (BuildContext context, int index) {
+                                return Container(
+                                  margin: const EdgeInsets.only(right: 10),
+                                  height: 40,
+                                  width: 40,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    image: DecorationImage(
+                                      image: NetworkImage(
+                                        imgLink +
+                                            snapshot.data!['providers'][index]
+                                                [1],
+                                      ),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        if (snapshot.data!['providers'].length == 0)
+                          Container(
+                            margin: const EdgeInsets.all(10.0),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10.0, vertical: 5.0),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[900],
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text(
+                              "Nowhere at the moment",
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                  if (snapshot.data!['providers'].length == 0)
-                    Container(
-                      margin: const EdgeInsets.all(10.0), // set margin here
-                      child: const Text(
-                        "Nowhere at the moment",
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    ),
+                  ),
                   SizedBox(
                     width: 200,
                     child: TextField(
@@ -1438,18 +1497,18 @@ class _MovieResultState extends State<MovieResult> {
                       },
                     ),
                   ),
+                  const SizedBox(height: 10),
                   if (containsMap(seenMovies, ['Movies', movieResult[0]]))
                     ExpansionTile(
                       title: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.history, color: Colors.blue),
+                          Icon(Icons.history),
                           SizedBox(width: 8),
                           Text(
                             "Watching History",
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: Colors.blue,
                               fontSize: 15,
                               wordSpacing: 2,
                               height: 1.5,
@@ -1552,6 +1611,7 @@ class _MovieResultState extends State<MovieResult> {
                               : 10,
                           itemBuilder: (BuildContext context, int index) {
                             Map person = snapshot.data!['cast'][index];
+                            print(person);
                             if (person['profile_path'] == null) {
                               person['profile_path'] =
                                   "https://cdn-icons-png.flaticon.com/512/3088/3088765.png";
@@ -1559,7 +1619,10 @@ class _MovieResultState extends State<MovieResult> {
                               person['profile_path'] =
                                   imgLink + person['profile_path'];
                             }
-                            return GestureDetector(
+                            return Padding(
+                              padding: const EdgeInsets.fromLTRB(5.0, 0.0, 5.0,
+                                  0.0),
+                              child: GestureDetector(
                                 onTap: () {
                                   personResult = person;
                                   Navigator.push(
@@ -1574,7 +1637,7 @@ class _MovieResultState extends State<MovieResult> {
                                       margin: const EdgeInsets.fromLTRB(
                                           10.0, 10.0, 5.0, 0),
                                       width: MediaQuery.of(context).size.width *
-                                          0.18,
+                                          0.25,
                                       height:
                                           MediaQuery.of(context).size.height *
                                               0.18,
@@ -1590,11 +1653,17 @@ class _MovieResultState extends State<MovieResult> {
                                         height:
                                             10), // optional: to give some space between image and text
                                     Text(
-                                      person["name"],
+                                      '${person["name"]}',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                    Text(
+                                      '(${person["character"]})',
                                       style: const TextStyle(fontSize: 10),
                                     ),
                                   ],
-                                ));
+                                ),
+                              ),
+                            );
                           },
                         ),
                       ),
@@ -1616,11 +1685,60 @@ class _MovieResultState extends State<MovieResult> {
                               ? snapshot.data!['crew'].length
                               : 5,
                           itemBuilder: (BuildContext context, int index) {
-                            Map person = snapshot.data!['crew'][index];
-                            return Text(
-                              "${person['job']}: ${person['name']}",
-                              style: const TextStyle(fontSize: 15),
+                            // Find the director in the crew list
+                            var director = snapshot.data!['crew'].firstWhere(
+                              (person) => person['job'] == 'Director',
+                              orElse: () => null,
                             );
+
+                            // If we're at the first index and a director exists, return the director
+                            if (index == 0 && director != null) {
+                              return GestureDetector(
+                                  onTap: () {
+                                    personResult = director;
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => PersonResult()),
+                                    );
+                                  },
+                                  child: Text(
+                                    "Director: ${director['name']}",
+                                    style: const TextStyle(fontSize: 15),
+                                  ));
+                            }
+
+                            // Adjust the index if the director is present
+                            int adjustedIndex =
+                                director != null ? index - 1 : index;
+
+                            // Skip the director since it's already shown
+                            if (director != null &&
+                                snapshot.data!['crew'][adjustedIndex] ==
+                                    director) {
+                              adjustedIndex++;
+                            }
+
+                            // Make sure we don't go out of bounds after adjustments
+                            if (adjustedIndex < snapshot.data!['crew'].length) {
+                              Map person =
+                                  snapshot.data!['crew'][adjustedIndex];
+                              return GestureDetector(
+                                  onTap: () {
+                                    personResult = person;
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => PersonResult()),
+                                    );
+                                  },
+                                  child: Text(
+                                    "${person['job']}: ${person['name']}",
+                                    style: const TextStyle(fontSize: 15),
+                                  ));
+                            } else {
+                              return Container(); // Return an empty container to avoid errors
+                            }
                           },
                         ),
                       ),

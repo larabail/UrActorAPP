@@ -882,18 +882,21 @@ class _ExploreState extends State<Explore> {
                                             MediaQuery.of(context).size.height *
                                                 0.18,
                                         // Use Align to position the text
-                                        child: Align(
-                                          alignment: Alignment.bottomRight,
-                                          child: Text(
-                                            valueLeft,
-                                            style: const TextStyle(
-                                              color: Colors
-                                                  .white, // Make sure the text is visible on the gradient
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 1.25,
-                                              wordSpacing: 1.75,
-                                              height: 1.5,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Align(
+                                            alignment: Alignment.bottomRight,
+                                            child: Text(
+                                              valueLeft,
+                                              style: const TextStyle(
+                                                color: Colors
+                                                    .white, // Make sure the text is visible on the gradient
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                                letterSpacing: 1.25,
+                                                wordSpacing: 1.75,
+                                                height: 1.5,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -964,19 +967,20 @@ class _ExploreState extends State<Explore> {
                                         height:
                                             MediaQuery.of(context).size.height *
                                                 0.18,
-                                        // Use Align to position the text
-                                        child: Align(
-                                          alignment: Alignment.bottomRight,
-                                          child: Text(
-                                            valueRight,
-                                            style: const TextStyle(
-                                              color: Colors
-                                                  .white, // Make sure the text is visible on the gradient
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 1.25,
-                                              wordSpacing: 1.75,
-                                              height: 1.5,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Align(
+                                            alignment: Alignment.bottomRight,
+                                            child: Text(
+                                              valueRight,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                                letterSpacing: 1.25,
+                                                wordSpacing: 1.75,
+                                                height: 1.5,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -1354,14 +1358,12 @@ class _ExploreState extends State<Explore> {
           .doc("monthlyPerson")
           .get();
       Map actsWeek = snapshot2.data() as Map;
-      print(actsWeek);
       List keys = [];
       for (var element in actsWeek.keys) {
         keys.add(element);
       }
       actor_of_the_week = keys[0];
       Map json = {};
-      print(Uri.parse('$linkPerson$actor_of_the_week$api_key'));
       final response =
           await http.get(Uri.parse('$linkPerson$actor_of_the_week$api_key'));
       json = jsonDecode(response.body);
@@ -1391,7 +1393,7 @@ class _ExploreState extends State<Explore> {
           }
           json['movie_credits_cast'] = movieCast;
           movieCast.forEach((element) {
-            if (containsMap(seenMovies, ["Movies", element["id"]])) {
+            if (containsMap(seenMovies, ["Movies", element["id"].toString()])) {
               if (!countedMoviesActor.contains(element["id"].toString())) {
                 stats += 1;
                 if (containsMap(
@@ -1435,19 +1437,20 @@ class _ExploreState extends State<Explore> {
             }
             json['tv_credits_cast'] = tvCast;
             tvCast.forEach((element) {
-              if (containsMap(seenTVShows, ["TVShows", element["id"]])) {
+              if (containsMap(
+                  seenTVShows, ["TVShows", element["id"].toString()])) {
                 if (!countedTVShowsActor.contains(element["id"].toString())) {
                   stats_tv += 1;
                   if (containsMap(
-                      favTVShows, ['Movies', element["id"].toString()])) {
+                      favTVShows, ['TVShows', element["id"].toString()])) {
                     scoreActor += 3;
                   } else {
                     scoreActor += 2;
                   }
                   countedTVShowsActor.add(element["id"].toString());
                 }
-              } else if (containsMap(
-                      watchlistTVShows, ['Movies', element["id"].toString()]) &&
+              } else if (containsMap(watchlistTVShows,
+                      ['TVShows', element["id"].toString()]) &&
                   !countedTVShowsActor.contains(element["id"].toString())) {
                 scoreActor += 1;
                 countedTVShowsActor.add(element["id"].toString());
