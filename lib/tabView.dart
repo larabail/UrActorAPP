@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'main.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
 import 'package:http/http.dart' as http;
@@ -45,6 +46,19 @@ class ItemCard extends StatelessWidget {
           return GestureDetector(
             onTap: () {
               // Handle the click event here
+              if (snapshot.data!['type'] == "Movies") {
+                movieResult = [
+                  snapshot.data!['id'],
+                  snapshot.data!['title'],
+                  snapshot.data!['type'],
+                ];
+              } else {
+                tvShowResult = [
+                  snapshot.data!['id'],
+                  snapshot.data!['title'],
+                  snapshot.data!['type'],
+                ];
+              }
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -104,6 +118,8 @@ Future<Map<String, dynamic>> getData(id, type) async {
     }
     data['id'] = json['id'];
     data['type'] = type;
+    print(data['type']);
+    print(data['title']);
     if (!containsMap(movies, data)) {
       movies.add(data);
     }

@@ -511,6 +511,9 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
       ];
     }
     for (var friend in friendsWatchedWith.keys) {
+      myObject["friends"] = [
+        uid,
+      ];
       if (friendsWatchedWith[friend] == true) {
         // Update Calendar
         var userDoc =
