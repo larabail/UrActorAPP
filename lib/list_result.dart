@@ -164,12 +164,10 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                     originalAccessCode = list_result["AccessCode"];
                     listName = list_result["Name"];
                     accessCode = list_result["AccessCode"];
-
                     showDialog(
                       context: context,
                       builder: (context) => ListEditDialogue(),
                     );
-                    print("EDIT");
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(

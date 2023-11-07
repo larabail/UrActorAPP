@@ -2,13 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
-import 'friends.dart';
-import 'profile.dart';
-import 'search.dart';
 import 'main.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'playlists.dart';
 import 'person_result.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
@@ -331,6 +327,7 @@ class _TVShowResultState extends State<TVShowResult> {
         .replaceAll(" ", "-");
     final response =
         await http.get(Uri.parse('$link${movieData[0]}-$name$api_key_actor'));
+    print('$link${movieData[0]}-$name$api_key_actor');
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
@@ -446,8 +443,6 @@ class _TVShowResultState extends State<TVShowResult> {
   Widget build(BuildContext context) {
     check();
 
-    int _selectedIndex = 0;
-
     void _onTap(String type, String id, String title) {
       setState(
         () {
@@ -483,7 +478,7 @@ class _TVShowResultState extends State<TVShowResult> {
                 showModalBottomSheet(
                   context: context,
                   builder: (_) {
-                    return Container(
+                    return SizedBox(
                       height: 300, // set the height here
                       child: ListView.builder(
                         itemCount: (playlists.length / 2).ceil(),
@@ -525,50 +520,31 @@ class _TVShowResultState extends State<TVShowResult> {
                                           id, keyLeft, moviesLeft, context);
                                     }
                                   },
-                                  child: Container(
-                                    margin: const EdgeInsets.fromLTRB(
-                                        10.0, 10.0, 5.0, 0),
-                                    width: MediaQuery.of(context).size.width *
-                                        0.45,
-                                    height: MediaQuery.of(context).size.height *
-                                        0.18,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(27),
-                                    ),
-                                    child: Stack(
-                                      children: [
-                                        Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.45,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.18,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            image: DecorationImage(
-                                              image: NetworkImage(
-                                                imageLeft,
-                                              ),
-                                              fit: BoxFit.cover,
-                                            ),
+                                  child: Stack(
+                                    children: [
+                                      Container(
+                                        margin: const EdgeInsets.fromLTRB(
+                                            10.0, 10.0, 5.0, 0),
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.45,
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.18,
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(27),
+                                          image: DecorationImage(
+                                            image: NetworkImage(imageLeft),
+                                            fit: BoxFit.cover,
                                           ),
                                         ),
-                                        Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.45,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.18,
+                                      ),
+                                      Positioned.fill(
+                                        child: Container(
                                           decoration: BoxDecoration(
                                             borderRadius:
-                                                BorderRadius.circular(10),
+                                                BorderRadius.circular(27),
                                             gradient: LinearGradient(
                                               begin: Alignment.topCenter,
                                               end: Alignment.bottomCenter,
@@ -579,24 +555,44 @@ class _TVShowResultState extends State<TVShowResult> {
                                             ),
                                           ),
                                         ),
-                                        Padding(
+                                      ),
+                                      Container(
+                                        margin: const EdgeInsets.fromLTRB(
+                                            5.0, 10.0, 10.0, 0),
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.45,
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.18,
+                                        // Use Align to position the text
+                                        child: Padding(
                                           padding: const EdgeInsets.all(16.0),
                                           child: Align(
-                                            alignment: Alignment.bottomLeft,
+                                            alignment: Alignment.bottomRight,
                                             child: Text(
                                               valueLeft,
                                               style: const TextStyle(
-                                                fontSize: 10,
+                                                color: Colors
+                                                    .white, // Make sure the text is visible on the gradient
+                                                fontSize: 12,
                                                 fontWeight: FontWeight.bold,
-                                                letterSpacing: 1.5,
-                                                wordSpacing: 2,
+                                                letterSpacing: 1.25,
+                                                wordSpacing: 1.75,
                                                 height: 1.5,
                                               ),
                                             ),
                                           ),
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                      if (moviesLeft.contains(id))
+                                        const Positioned(
+                                          top: 10,
+                                          right: 10,
+                                          child: Icon(Icons.check_circle,
+                                              color: Colors.green),
+                                        ),
+                                    ],
                                   ),
                                 ),
                               if (keyRight != null)
@@ -610,50 +606,31 @@ class _TVShowResultState extends State<TVShowResult> {
                                           id, keyRight, moviesRight, context);
                                     }
                                   },
-                                  child: Container(
-                                    margin: const EdgeInsets.fromLTRB(
-                                        5.0, 10.0, 10.0, 0),
-                                    width: MediaQuery.of(context).size.width *
-                                        0.45,
-                                    height: MediaQuery.of(context).size.height *
-                                        0.18,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(27),
-                                    ),
-                                    child: Stack(
-                                      children: [
-                                        Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.45,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.18,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            image: DecorationImage(
-                                              image: NetworkImage(
-                                                imageRight,
-                                              ),
-                                              fit: BoxFit.cover,
-                                            ),
+                                  child: Stack(
+                                    children: [
+                                      Container(
+                                        margin: const EdgeInsets.fromLTRB(
+                                            5.0, 10.0, 10.0, 0),
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.45,
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.18,
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(27),
+                                          image: DecorationImage(
+                                            image: NetworkImage(imageRight),
+                                            fit: BoxFit.cover,
                                           ),
                                         ),
-                                        Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.45,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.18,
+                                      ),
+                                      Positioned.fill(
+                                        child: Container(
                                           decoration: BoxDecoration(
                                             borderRadius:
-                                                BorderRadius.circular(10),
+                                                BorderRadius.circular(27),
                                             gradient: LinearGradient(
                                               begin: Alignment.topCenter,
                                               end: Alignment.bottomCenter,
@@ -664,24 +641,42 @@ class _TVShowResultState extends State<TVShowResult> {
                                             ),
                                           ),
                                         ),
-                                        Padding(
+                                      ),
+                                      Container(
+                                        margin: const EdgeInsets.fromLTRB(
+                                            5.0, 10.0, 10.0, 0),
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.45,
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.18,
+                                        child: Padding(
                                           padding: const EdgeInsets.all(16.0),
                                           child: Align(
-                                            alignment: Alignment.bottomLeft,
+                                            alignment: Alignment.bottomRight,
                                             child: Text(
                                               valueRight,
                                               style: const TextStyle(
-                                                fontSize: 10,
+                                                color: Colors.white,
+                                                fontSize: 12,
                                                 fontWeight: FontWeight.bold,
-                                                letterSpacing: 1.5,
-                                                wordSpacing: 2,
+                                                letterSpacing: 1.25,
+                                                wordSpacing: 1.75,
                                                 height: 1.5,
                                               ),
                                             ),
                                           ),
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                      if (moviesRight.contains(id))
+                                        const Positioned(
+                                          top: 10,
+                                          right: 10,
+                                          child: Icon(Icons.check_circle,
+                                              color: Colors.green),
+                                        ),
+                                    ],
                                   ),
                                 ),
                             ],
@@ -707,28 +702,12 @@ class _TVShowResultState extends State<TVShowResult> {
       );
     }
 
-    final List<Widget> pages = [
-      MyApp(),
-      Playlists(),
-      Search(),
-      Friends(),
-      Profile(),
-      // Add more pages here
-    ];
-
-    void _onItemTapped(int index) {
-      _selectedIndex = index;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => pages[_selectedIndex]),
-      );
-    }
-
     return Scaffold(
       appBar: CustomAppBar(),
       body: FutureBuilder<Map>(
         future: getMovieData(),
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
+          // print(snapshot.data);
           if (snapshot.hasData) {
             return SingleChildScrollView(
               child: Column(
@@ -848,55 +827,70 @@ class _TVShowResultState extends State<TVShowResult> {
                       },
                     ),
                   ),
-                  Container(
-                    height: 45,
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Column(
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        height: 30,
+                        margin: const EdgeInsets.fromLTRB(5.0, 5.0, 5.0, 0.0),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 5, horizontal: 10),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: Colors.grey[
+                              900], // Adjust the background color opacity as needed
+                        ),
+                        child: Row(
+                          mainAxisSize:
+                              MainAxisSize.min, // Use min to wrap content
                           children: [
-                            Container(
-                              height: 30,
-                              margin:
-                                  const EdgeInsets.fromLTRB(5.0, 5.0, 5.0, 0.0),
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 5, horizontal: 10),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                color: const Color.fromARGB(255, 255, 254, 201)
-                                    .withOpacity(0.3),
-                              ),
-                              child: Text(
-                                'Runtime: ${snapshot.data!['runtime']} min',
-                                style: const TextStyle(fontSize: 18),
+                            const Icon(Icons.access_time,
+                                color: Colors
+                                    .white), // Replace with your desired icon
+                            const SizedBox(width: 5),
+                            Text(
+                              snapshot.data!['seasons'].length > 1
+                                  ? '${snapshot.data!['seasons'].length} seasons'
+                                  : '${snapshot.data!['seasons'].length} season',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
                         ),
-                        Column(
+                      ),
+                      Container(
+                        height: 30,
+                        margin: const EdgeInsets.fromLTRB(5.0, 5.0, 5.0, 0.0),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 5, horizontal: 10),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: Colors.grey[
+                              900], // Adjust the background color opacity as needed
+                        ),
+                        child: Row(
+                          mainAxisSize:
+                              MainAxisSize.min, // Use min to wrap content
                           children: [
-                            Container(
-                              height: 30,
-                              margin:
-                                  const EdgeInsets.fromLTRB(5.0, 5.0, 5.0, 0.0),
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 5, horizontal: 10),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                color: const Color.fromARGB(255, 255, 254, 201)
-                                    .withOpacity(0.3),
-                              ),
-                              child: Text(
-                                'IMDB Rating: ${snapshot.data!["imdb_rating"]}',
-                                style: const TextStyle(fontSize: 18),
+                            const Icon(Icons.star,
+                                color: Colors
+                                    .white), // Replace with your desired icon
+                            const SizedBox(width: 5),
+                            Text(
+                              'IMDB: ${snapshot.data!["imdb_rating"]}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -960,62 +954,134 @@ class _TVShowResultState extends State<TVShowResult> {
                     ],
                   ),
                   Container(
-                    margin: const EdgeInsets.all(10.0), // set margin here
-                    child: const Text(
-                      "Where to Watch?",
-                      style: TextStyle(fontSize: 18),
+                    margin: const EdgeInsets.all(20.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10.0, vertical: 10.0),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  ),
-                  if (snapshot.data!['providers'].length != 0)
-                    Container(
-                      height: 30, // fixed height
-                      margin: const EdgeInsets.fromLTRB(30.0, 5.0, 0, 5.0),
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: snapshot.data!['providers'].length,
-                        itemBuilder: (BuildContext context, int index) {
-                          return Container(
-                            margin: const EdgeInsets.only(right: 10),
-                            height: 40,
-                            width: 40,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              image: DecorationImage(
-                                image: NetworkImage(
-                                  imgLink +
-                                      snapshot.data!['providers'][index][1],
-                                ),
-                                fit: BoxFit.cover,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.play_circle_fill, color: Colors.white),
+                            SizedBox(width: 10),
+                            Text(
+                              "Where to Watch?",
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          );
-                        },
-                      ),
-                    ),
-                  if (snapshot.data!['providers'].length == 0)
-                    Container(
-                      margin: const EdgeInsets.all(10.0), // set margin here
-                      child: const Text(
-                        "Nowhere at the moment",
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    ),
-                  SizedBox(
-                    width: 200,
-                    child: TextField(
-                      controller: TextEditingController(),
-                      decoration: const InputDecoration(
-                        labelText: 'Times Seen',
-                        hintStyle: TextStyle(color: Colors.grey),
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey),
+                          ],
                         ),
-                        labelStyle: TextStyle(color: Colors.grey),
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
+                        if (snapshot.data!['providers'].length != 0)
+                          Container(
+                            height: 30, // fixed height
+                            margin: const EdgeInsets.fromLTRB(5.0, 5.0, 0, 5.0),
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: snapshot.data!['providers'].length,
+                              itemBuilder: (BuildContext context, int index) {
+                                return Container(
+                                  margin: const EdgeInsets.only(right: 10),
+                                  height: 40,
+                                  width: 40,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    image: DecorationImage(
+                                      image: NetworkImage(
+                                        imgLink +
+                                            snapshot.data!['providers'][index]
+                                                [1],
+                                      ),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        if (snapshot.data!['providers'].length == 0)
+                          Container(
+                            margin: const EdgeInsets.all(10.0),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10.0, vertical: 5.0),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[900],
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text(
+                              "Nowhere at the moment",
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
+                  // Container(
+                  //   margin: const EdgeInsets.all(10.0), // set margin here
+                  //   child: const Text(
+                  //     "Where to Watch?",
+                  //     style: TextStyle(fontSize: 18),
+                  //   ),
+                  // ),
+                  // if (snapshot.data!['providers'].length != 0)
+                  //   Container(
+                  //     height: 30, // fixed height
+                  //     margin: const EdgeInsets.fromLTRB(30.0, 5.0, 0, 5.0),
+                  //     child: ListView.builder(
+                  //       scrollDirection: Axis.horizontal,
+                  //       itemCount: snapshot.data!['providers'].length,
+                  //       itemBuilder: (BuildContext context, int index) {
+                  //         return Container(
+                  //           margin: const EdgeInsets.only(right: 10),
+                  //           height: 40,
+                  //           width: 40,
+                  //           decoration: BoxDecoration(
+                  //             borderRadius: BorderRadius.circular(10),
+                  //             image: DecorationImage(
+                  //               image: NetworkImage(
+                  //                 imgLink +
+                  //                     snapshot.data!['providers'][index][1],
+                  //               ),
+                  //               fit: BoxFit.cover,
+                  //             ),
+                  //           ),
+                  //         );
+                  //       },
+                  //     ),
+                  //   ),
+                  // if (snapshot.data!['providers'].length == 0)
+                  //   Container(
+                  //     margin: const EdgeInsets.all(10.0), // set margin here
+                  //     child: const Text(
+                  //       "Nowhere at the moment",
+                  //       style: TextStyle(fontSize: 18),
+                  //     ),
+                  //   ),
+                  // SizedBox(
+                  //   width: 200,
+                  //   child: TextField(
+                  //     controller: TextEditingController(),
+                  //     decoration: const InputDecoration(
+                  //       labelText: 'Times Seen',
+                  //       hintStyle: TextStyle(color: Colors.grey),
+                  //       enabledBorder: UnderlineInputBorder(
+                  //         borderSide: BorderSide(color: Colors.grey),
+                  //       ),
+                  //       labelStyle: TextStyle(color: Colors.grey),
+                  //       border: OutlineInputBorder(),
+                  //     ),
+                  //     keyboardType: TextInputType.number,
+                  //   ),
+                  // ),
                   const Row(
                     children: [],
                   ),
@@ -1031,7 +1097,7 @@ class _TVShowResultState extends State<TVShowResult> {
                       ),
                       Container(
                         width: MediaQuery.of(context).size.width,
-                        height: 100,
+                        height: MediaQuery.of(context).size.height * 0.25,
                         margin: const EdgeInsets.fromLTRB(30.0, 5.0, 30.0, 5.0),
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
@@ -1040,6 +1106,7 @@ class _TVShowResultState extends State<TVShowResult> {
                               : 10,
                           itemBuilder: (BuildContext context, int index) {
                             Map person = snapshot.data!['cast'][index];
+                            print(person);
                             if (person['profile_path'] == null) {
                               person['profile_path'] =
                                   "https://cdn-icons-png.flaticon.com/512/3088/3088765.png";
@@ -1047,59 +1114,80 @@ class _TVShowResultState extends State<TVShowResult> {
                               person['profile_path'] =
                                   imgLink + person['profile_path'];
                             }
-                            return GestureDetector(
-                              onTap: () {
-                                personResult = person;
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => PersonResult()),
-                                );
-                              },
-                              child: Container(
-                                margin: const EdgeInsets.fromLTRB(
-                                    10.0, 10.0, 5.0, 0),
-                                width: MediaQuery.of(context).size.width * 0.18,
-                                height:
-                                    MediaQuery.of(context).size.height * 0.18,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(27),
-                                  image: DecorationImage(
-                                    image: NetworkImage(person['profile_path']),
-                                    fit: BoxFit.fitWidth,
-                                  ),
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.fromLTRB(5.0, 0.0, 5.0, 0.0),
+                              child: GestureDetector(
+                                onTap: () {
+                                  personResult = person;
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => PersonResult()),
+                                  );
+                                },
+                                child: Column(
+                                  children: <Widget>[
+                                    Container(
+                                      margin: const EdgeInsets.fromLTRB(
+                                          10.0, 10.0, 5.0, 0),
+                                      width: MediaQuery.of(context).size.width *
+                                          0.25,
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              0.18,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(27),
+                                        child: Image.network(
+                                          person['profile_path'],
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(
+                                        height:
+                                            10), // optional: to give some space between image and text
+                                    Text(
+                                      '${person["name"]}',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                    Text(
+                                      '(${person["character"]})',
+                                      style: const TextStyle(fontSize: 10),
+                                    ),
+                                  ],
                                 ),
                               ),
                             );
                           },
                         ),
                       ),
-                      Container(
-                        width: MediaQuery.of(context).size.width,
-                        margin: const EdgeInsets.fromLTRB(30.0, 20.0, 0, 5.0),
-                        child: const Text(
-                          "Main Crew:",
-                          style: TextStyle(fontSize: 18),
-                        ),
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 1,
-                        height: 100,
-                        margin: const EdgeInsets.fromLTRB(30.0, 5.0, 0, 5.0),
-                        child: ListView.builder(
-                          scrollDirection: Axis.vertical,
-                          itemCount: snapshot.data!['crew'].length < 5
-                              ? snapshot.data!['crew'].length
-                              : 5,
-                          itemBuilder: (BuildContext context, int index) {
-                            Map person = snapshot.data!['crew'][index];
-                            return Text(
-                              "${person['job']}: ${person['name']}",
-                              style: const TextStyle(fontSize: 15),
-                            );
-                          },
-                        ),
-                      ),
+                      // Container(
+                      //   width: MediaQuery.of(context).size.width,
+                      //   margin: const EdgeInsets.fromLTRB(30.0, 20.0, 0, 5.0),
+                      //   child: const Text(
+                      //     "Main Crew:",
+                      //     style: TextStyle(fontSize: 18),
+                      //   ),
+                      // ),
+                      // Container(
+                      //   width: MediaQuery.of(context).size.width * 1,
+                      //   height: 100,
+                      //   margin: const EdgeInsets.fromLTRB(30.0, 5.0, 0, 5.0),
+                      //   child: ListView.builder(
+                      //     scrollDirection: Axis.vertical,
+                      //     itemCount: snapshot.data!['crew'].length < 5
+                      //         ? snapshot.data!['crew'].length
+                      //         : 5,
+                      //     itemBuilder: (BuildContext context, int index) {
+                      //       Map person = snapshot.data!['crew'][index];
+                      //       return Text(
+                      //         "${person['job']}: ${person['name']}",
+                      //         style: const TextStyle(fontSize: 15),
+                      //       );
+                      //     },
+                      //   ),
+                      // ),
                     ],
                   ),
                   Builder(
