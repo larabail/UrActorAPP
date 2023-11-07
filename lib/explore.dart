@@ -80,7 +80,7 @@ class Genre {
 bool containsMap(List list, List map) {
   for (int i = 0; i < list.length; i++) {
     if ((list[i][1]).toString() == map[1].toString() &&
-        (list[i][0]) as String == "Movies") {
+        (list[i][0]).toString() == map[0].toString()) {
       return true;
     }
   }
@@ -1437,9 +1437,12 @@ class _ExploreState extends State<Explore> {
             }
             json['tv_credits_cast'] = tvCast;
             tvCast.forEach((element) {
+              print(seenTVShows);
+              print(["TVShows", element["id"].toString()]);
               if (containsMap(
                   seenTVShows, ["TVShows", element["id"].toString()])) {
                 if (!countedTVShowsActor.contains(element["id"].toString())) {
+                  print(stats_tv);
                   stats_tv += 1;
                   if (containsMap(
                       favTVShows, ['TVShows', element["id"].toString()])) {
