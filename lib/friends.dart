@@ -2,26 +2,13 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:uractor/profile.dart';
-import 'package:uractor/tabView.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'friends_calendar.dart';
 import 'friends_profile.dart';
 import 'inbox.dart';
-import 'playlists.dart';
-import 'search.dart';
 import 'main.dart';
 
-// import 'person_result.dart';
-// import 'movie_result.dart';
-// import 'login.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:http/http.dart' as http;
-// import 'package:fl_chart/fl_chart.dart';
-// import 'dart:convert';
-// import 'package:provider/provider.dart';
-// import 'theme_provider.dart';
 String friendUid = "";
 
 class Friends extends StatefulWidget {
