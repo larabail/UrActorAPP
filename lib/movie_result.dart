@@ -827,6 +827,48 @@ class _MovieResultState extends State<MovieResult> {
                                           ),
                                         ),
                                       ),
+                                      Positioned.fill(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(27),
+                                            gradient: LinearGradient(
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                              colors: [
+                                                Colors.transparent,
+                                                Colors.black.withOpacity(1),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Container(
+                                        margin: const EdgeInsets.fromLTRB(
+                                            5.0, 10.0, 10.0, 0),
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.45,
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.18,
+                                        // Use Align to position the text
+                                        child: Align(
+                                          alignment: Alignment.bottomRight,
+                                          child: Text(
+                                            valueLeft,
+                                            style: const TextStyle(
+                                              color: Colors
+                                                  .white, // Make sure the text is visible on the gradient
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 1.25,
+                                              wordSpacing: 1.75,
+                                              height: 1.5,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                       if (moviesLeft.contains(id))
                                         const Positioned(
                                           top: 10,
@@ -865,6 +907,48 @@ class _MovieResultState extends State<MovieResult> {
                                           image: DecorationImage(
                                             image: NetworkImage(imageRight),
                                             fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned.fill(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(27),
+                                            gradient: LinearGradient(
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                              colors: [
+                                                Colors.transparent,
+                                                Colors.black.withOpacity(1),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Container(
+                                        margin: const EdgeInsets.fromLTRB(
+                                            5.0, 10.0, 10.0, 0),
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.45,
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.18,
+                                        // Use Align to position the text
+                                        child: Align(
+                                          alignment: Alignment.bottomRight,
+                                          child: Text(
+                                            valueRight,
+                                            style: const TextStyle(
+                                              color: Colors
+                                                  .white, // Make sure the text is visible on the gradient
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 1.25,
+                                              wordSpacing: 1.75,
+                                              height: 1.5,
+                                            ),
                                           ),
                                         ),
                                       ),

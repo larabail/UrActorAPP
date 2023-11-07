@@ -249,7 +249,6 @@ class _CalendarState extends State<Calendar> {
                               fontSize: 20, fontWeight: FontWeight.bold),
                         ),
                         Expanded(
-                          // height: MediaQuery.of(context).size.height * 0.3,
                           child: ListView(
                             scrollDirection: Axis.horizontal,
                             children: [
@@ -258,7 +257,6 @@ class _CalendarState extends State<Calendar> {
                                         children: [
                                           GestureDetector(
                                             onTap: () {
-                                              // Handle the click event here
                                               movieResult = [
                                                 event['id'],
                                                 event['title'],

@@ -4,13 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
-import 'friends.dart';
 import 'playlists.dart';
-import 'profile.dart';
 import 'main.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
-import 'search.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -120,36 +117,34 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                                             item.containsKey(userData["uid"])
                                                 as bool,
                                         orElse: () => null);
-                                if (itemToRemove != null) {
-                                  FirebaseFirestore.instance
-                                      .collection('Watchlists')
-                                      .doc(list_result["id"])
-                                      .update({
-                                    'Users':
-                                        FieldValue.arrayRemove([itemToRemove])
-                                  });
-                                  await FirebaseFirestore.instance
-                                      .collection("Watchlists")
-                                      .get()
-                                      .then((QuerySnapshot querySnapshot) {
-                                    for (var doc in querySnapshot.docs) {
-                                      Map keysOfDoc = doc.data() as Map;
-                                      List users = keysOfDoc['Users'] as List;
-                                      for (var element in users) {
-                                        Map el = element as Map;
-                                        if (el.keys.contains(uid)) {
-                                          Map docData = doc.data() as Map;
-                                          docData["id"] = doc.id;
-                                          playlists[doc.id] = docData;
-                                        }
+                                FirebaseFirestore.instance
+                                    .collection('Watchlists')
+                                    .doc(list_result["id"])
+                                    .update({
+                                  'Users':
+                                      FieldValue.arrayRemove([itemToRemove])
+                                });
+                                await FirebaseFirestore.instance
+                                    .collection("Watchlists")
+                                    .get()
+                                    .then((QuerySnapshot querySnapshot) {
+                                  for (var doc in querySnapshot.docs) {
+                                    Map keysOfDoc = doc.data() as Map;
+                                    List users = keysOfDoc['Users'] as List;
+                                    for (var element in users) {
+                                      Map el = element as Map;
+                                      if (el.keys.contains(uid)) {
+                                        Map docData = doc.data() as Map;
+                                        docData["id"] = doc.id;
+                                        playlists[doc.id] = docData;
                                       }
                                     }
-                                  });
-                                  setState(() {
-                                    list_result["Users"] =
-                                        playlists[list_result["id"]]["Users"];
-                                  });
-                                }
+                                  }
+                                });
+                                setState(() {
+                                  list_result["Users"] =
+                                      playlists[list_result["id"]]["Users"];
+                                });
                               },
                             ),
                         ],
@@ -211,36 +206,32 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                       Map itemToRemove = list_result['Users'].firstWhere(
                           (item) => item.containsKey(uid) as bool,
                           orElse: () => null);
-                      if (itemToRemove != null) {
-                        FirebaseFirestore.instance
-                            .collection('Watchlists')
-                            .doc(list_result["id"])
-                            .update({
-                          'Users': FieldValue.arrayRemove([itemToRemove])
-                        });
-                        playlists = {};
-                        await FirebaseFirestore.instance
-                            .collection("Watchlists")
-                            .get()
-                            .then((QuerySnapshot querySnapshot) {
-                          for (var doc in querySnapshot.docs) {
-                            Map keysOfDoc = doc.data() as Map;
-                            List users = keysOfDoc['Users'] as List;
-                            for (var element in users) {
-                              Map el = element as Map;
-                              if (el.keys.contains(uid)) {
-                                Map docData = doc.data() as Map;
-                                docData["id"] = doc.id;
-                                playlists[doc.id] = docData;
-                              }
+                      FirebaseFirestore.instance
+                          .collection('Watchlists')
+                          .doc(list_result["id"])
+                          .update({
+                        'Users': FieldValue.arrayRemove([itemToRemove])
+                      });
+                      playlists = {};
+                      await FirebaseFirestore.instance
+                          .collection("Watchlists")
+                          .get()
+                          .then((QuerySnapshot querySnapshot) {
+                        for (var doc in querySnapshot.docs) {
+                          Map keysOfDoc = doc.data() as Map;
+                          List users = keysOfDoc['Users'] as List;
+                          for (var element in users) {
+                            Map el = element as Map;
+                            if (el.keys.contains(uid)) {
+                              Map docData = doc.data() as Map;
+                              docData["id"] = doc.id;
+                              playlists[doc.id] = docData;
                             }
                           }
-                        });
-                        Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => Playlists()));
-                      }
+                        }
+                      });
+                      Navigator.pushReplacement(context,
+                          MaterialPageRoute(builder: (context) => Playlists()));
                     }
                   },
                   child: Container(
@@ -382,31 +373,8 @@ class _ListResultState extends State<ListResult> {
     return data;
   }
 
-  Future<void> _refreshListResults() async {
-    setState(() {});
-  }
-
   @override
   Widget build(BuildContext context) {
-    int selectedIndex = 0;
-
-    final List<Widget> pages = [
-      MyApp(),
-      Playlists(),
-      Search(),
-      Friends(),
-      Profile(),
-      // Add more pages here
-    ];
-
-    void _onItemTapped(int index) {
-      selectedIndex = index;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
-      );
-    }
-
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -466,14 +434,12 @@ class _ListResultState extends State<ListResult> {
                     child: Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(100),
-                          color: Colors.black.withOpacity(
-                              0.5), // Add black background with opacity
+                          color: Colors.black.withOpacity(0.5),
                         ),
                         child:
                             Column(mainAxisSize: MainAxisSize.min, children: [
                           IconButton(
                             onPressed: () {
-                              // Show the dialog when the info button is tapped
                               showDialog(
                                 context: context,
                                 builder: (context) => InfoButtonDialog(),
@@ -573,7 +539,16 @@ class _ListResultState extends State<ListResult> {
                       ],
                     ),
                     Container(
-                      height: MediaQuery.of(context).size.height * 0.425,
+                      height: MediaQuery.of(context).size.height -
+                          MediaQuery.of(context)
+                              .padding
+                              .top - // Top padding or SafeArea height
+                          MediaQuery.of(context)
+                              .padding
+                              .bottom - // Bottom padding or SafeArea height
+                          155 -
+                          60 -
+                          MediaQuery.of(context).size.height * 0.25,
                       child: TabBarView(
                         children: [
                           if (list["Movies"].length != 0)
