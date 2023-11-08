@@ -46,6 +46,7 @@ List tvShowResult = [];
 Map reviews = {};
 Map rewatchedMovies = {};
 Map playlists = {};
+Map seenWith = {};
 Map personResult = {};
 Map oscars = {};
 bool gotData = false;
@@ -155,6 +156,7 @@ class _MyHomePageState extends State<MyHomePage> {
     favMovies = [];
     favTVShows = [];
     seenMovies = [];
+    seenWith = {};
     idsExplorePage = [];
     seenTVShows = [];
     watchlist = [];
@@ -220,6 +222,42 @@ class _MyHomePageState extends State<MyHomePage> {
               ];
             });
           });
+        } // Assuming doc is a DocumentSnapshot from Firestore
+        else if (doc.id == "SeenWith") {
+          Map data = doc.data() as Map;
+          seenWith = {};
+          print(data.keys);
+          // Iterate over each movie ID in the document
+          for (String movieId in data["Movies"].keys) {
+            // Get the list of friends who have seen this movie
+            List friendsWhoHaveSeenThisMovie =
+                data["Movies"][movieId]["friends"];
+
+            // Iterate over each friend UID
+            for (String friendUid in friendsWhoHaveSeenThisMovie) {
+              // If the friend UID is not already a key in seenWith, add it with an empty list
+              if (!seenWith.containsKey(friendUid)) {
+                seenWith[friendUid] = {"Movies": [], "TVShows": []};
+              }
+              // Add the current movie ID to the friend's list of seen movies
+              seenWith[friendUid]["Movies"].add(movieId);
+            }
+          }
+          for (String movieId in data["TVShows"].keys) {
+            // Get the list of friends who have seen this movie
+            List friendsWhoHaveSeenThisMovie =
+                data["TVShows"][movieId]["friends"];
+
+            // Iterate over each friend UID
+            for (String friendUid in friendsWhoHaveSeenThisMovie) {
+              // If the friend UID is not already a key in seenWith, add it with an empty list
+              if (!seenWith.containsKey(friendUid)) {
+                seenWith[friendUid] = {"Movies": [], "TVShows": []};
+              }
+              // Add the current movie ID to the friend's list of seen movies
+              seenWith[friendUid]["TVShows"].add(movieId);
+            }
+          }
         } else if (doc.id == "Settings") {
           settings = doc.data() as Map;
           dontAskCalendar = settings["dontAskCalendar"];

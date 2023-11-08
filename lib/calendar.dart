@@ -223,7 +223,7 @@ class _CalendarState extends State<Calendar> {
             .replaceAll(" ", "-");
         final response =
             await http.get(Uri.parse('${link}${id}-${name}${api_key_actor}'));
-        print('${link}${id}-${name}${api_key_actor}');
+        // print('${link}${id}-${name}${api_key_actor}');
         if (response.statusCode == 200) {
           dynamic json = jsonDecode(response.body);
           if (!containsMap(movies, json)) {
@@ -504,6 +504,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
           .where((key) => friendsWatchedWith[key] == true)
           .toList(),
     };
+    print(friendsWatchedWith);
     if (calendar.keys.toList().contains(dateForMap)) {
       calendar[dateForMap].add(myObject);
     } else {
@@ -511,11 +512,19 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
         myObject,
       ];
     }
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
     for (var friend in friendsWatchedWith.keys) {
       myObject["friends"] = [
         uid,
       ];
       if (friendsWatchedWith[friend] == true) {
+        if (seenWith.containsKey(friend) &&
+            !seenWith[friend]["Movies"].contains(id.toString())) {
+          seenWith[friend]["Movies"].add(id.toString());
+        } else if (!seenWith.containsKey(friend)) {
+          seenWith[friend] = {"Movies": [], "TVShows": []};
+          seenWith[friend]["Movies"].add(id.toString());
+        }
         // Update Calendar
         var userDoc =
             FirebaseFirestore.instance.collection(friend).doc("Calendar");
@@ -527,6 +536,56 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
         userDoc = FirebaseFirestore.instance.collection(friend).doc("Movies");
         await userDoc.update({
           'Seen': FieldValue.arrayUnion([id])
+        });
+
+        DocumentReference userDoc2 =
+            firestore.collection(friend).doc("SeenWith");
+        Map<String, dynamic> item = {};
+        List<dynamic> watchedWithList = friendsWatchedWith.keys
+            .where((key) => friendsWatchedWith[key] == true)
+            .toList();
+        item[id] = watchedWithList;
+
+        // Run a transaction to ensure atomic updates
+        await firestore.runTransaction((transaction) async {
+          // Get the document snapshot
+          DocumentSnapshot snapshot = await transaction.get(userDoc2);
+
+          if (!snapshot.exists) {
+            throw Exception("Document does not exist!");
+          }
+
+          Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+
+          if (data.containsKey('Movies') &&
+              data['Movies'] is Map<String, dynamic>) {
+            Map<String, dynamic> moviesMap = data['Movies'];
+
+            if (moviesMap.containsKey(id)) {
+              List existingList = moviesMap[id]["friends"];
+              for (String person in watchedWithList) {
+                if (!existingList.contains(person)) {
+                  existingList.add(person);
+                }
+              }
+              moviesMap[id] = {"friends": existingList};
+              transaction.update(userDoc2, {"Movies": moviesMap});
+            } else {
+              moviesMap[id] = {"friends": watchedWithList};
+              transaction.update(userDoc2, {"Movies": moviesMap});
+            }
+          } else {
+            transaction.set(
+                userDoc2,
+                {
+                  'Movies': {
+                    id: {"friends": watchedWithList}
+                  }
+                },
+                SetOptions(merge: true));
+          }
+        }).catchError((error) {
+          print("Failed to update document: $error");
         });
 
         // Update Rewatched
@@ -545,6 +604,62 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
         }
       }
     }
+
+    DocumentReference userDoc2 = firestore.collection(uid).doc("SeenWith");
+    Map<String, dynamic> item = {};
+    List<dynamic> watchedWithList = friendsWatchedWith.keys
+        .where((key) => friendsWatchedWith[key] == true)
+        .toList();
+    item[id] = watchedWithList;
+    myObject["friends"] = watchedWithList;
+
+    // Run a transaction to ensure atomic updates
+    firestore.runTransaction((transaction) async {
+      // Get the document snapshot
+      DocumentSnapshot snapshot = await transaction.get(userDoc2);
+
+      if (!snapshot.exists) {
+        throw Exception("Document does not exist!");
+      }
+
+      // Get the current data
+      Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+
+      // Check if 'Movies' map exists and if the 'id' is already a key in the 'Movies' map
+      if (data.containsKey('Movies') &&
+          data['Movies'] is Map<String, dynamic>) {
+        Map<String, dynamic> moviesMap = data['Movies'];
+
+        // Check if the 'id' already exists in the 'Movies' map
+        if (moviesMap.containsKey(id)) {
+          // If it exists, append the new list to the existing one
+          List existingList = moviesMap[id]["friends"];
+          for (String person in watchedWithList) {
+            if (!existingList.contains(person)) {
+              existingList.add(person);
+            }
+          }
+          moviesMap[id] = {"friends": existingList};
+        } else {
+          // If the 'id' doesn't exist, add the new key-value pair
+          moviesMap[id] = {"friends": watchedWithList};
+        }
+        // Update the 'Movies' map
+        transaction.update(userDoc2, {'Movies': moviesMap});
+      } else {
+        // If 'Movies' map doesn't exist, create it and add the 'id' and list
+        transaction.set(
+            userDoc2,
+            {
+              'Movies': {
+                id: {"friends": watchedWithList}
+              }
+            },
+            SetOptions(merge: true));
+      }
+    }).catchError((error) {
+      print("Failed to update document: $error");
+    });
     var userDoc = db.collection(uid).doc("Calendar");
     Map<Object, Object> updatedCalendar = {};
     for (String key in calendar.keys) {

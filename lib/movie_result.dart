@@ -1,11 +1,13 @@
-// ignore_for_file: non_constant_identifier_names
+// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' as intl;
+import 'package:marquee/marquee.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'friends.dart';
+import 'friends_profile.dart';
 import 'profile.dart';
 import 'search.dart';
 import 'main.dart';
@@ -422,6 +424,25 @@ class _MovieResultState extends State<MovieResult> {
     });
   }
 
+  Future<List<String>> getProfilePhotos(List uids) async {
+    List<String> profilePhotos = [];
+
+    for (String tempUid in uids) {
+      var document = await FirebaseFirestore.instance
+          .collection(tempUid)
+          .doc("Settings")
+          .get();
+      if (document.exists && document.data()!.containsKey('profile_photo')) {
+        print(tempUid);
+        profilePhotos.add(document.data()!['profile_photo']);
+      } else {
+        profilePhotos.add(""); //eplace with your default image URL
+      }
+    }
+
+    return profilePhotos;
+  }
+
   void addToList(String id, String listId, List moviesinList, context) async {
     moviesinList.add(id);
     final userDoc = FirebaseFirestore.instance
@@ -501,12 +522,19 @@ class _MovieResultState extends State<MovieResult> {
       for (String key in calendar.keys) {
         for (var movie in calendar[key]) {
           if (movie['id'] == movieData[0].toString()) {
-            json["seen_dates"].add(key);
+            json["seen_dates"].add([key, movie["friends"]]);
           }
         }
       }
-      json["seen_dates"]
-          .sort((a, b) => DateTime.parse(b).compareTo(DateTime.parse(a)));
+      json["seen_dates"].sort((a, b) {
+        // Assuming 'a' and 'b' are lists where the first item is the date string.
+        // Parse the date strings to DateTime objects for comparison.
+        var dateA = DateTime.parse(a[0]);
+        var dateB = DateTime.parse(b[0]);
+        // Use compareTo for comparison and multiply by -1 to get descending order.
+        return dateB.compareTo(dateA);
+      });
+
       if (json["backdrop_path"] == null) {
         json["backdrop_path"] = "";
       }
@@ -1517,26 +1545,26 @@ class _MovieResultState extends State<MovieResult> {
                         ],
                       ),
                       children: [
-                        if ((snapshot.data!['seen_dates'] as List).isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Row(
-                              children: [
-                                const SizedBox(
-                                    width: 16), // Added margin to the left
-                                const Icon(Icons.access_time,
-                                    color: Colors.green),
-                                const SizedBox(width: 8),
-                                Text(
-                                  "Last watched: ${DateFormat('dd MMMM, yyyy').format(DateTime.parse(snapshot.data!['seen_dates'].first))}",
-                                  style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.green),
-                                ),
-                              ],
-                            ),
-                          ),
+                        // if ((snapshot.data!['seen_dates'] as List).isNotEmpty)
+                        //   Padding(
+                        //     padding: const EdgeInsets.all(12.0),
+                        //     child: Row(
+                        //       children: [
+                        //         const SizedBox(
+                        //             width: 16), // Added margin to the left
+                        //         const Icon(Icons.access_time,
+                        //             color: Colors.green),
+                        //         const SizedBox(width: 8),
+                        //         Text(
+                        //           "Last watched: ${intl.DateFormat('dd MMMM, yyyy').format(DateTime.parse(snapshot.data!['seen_dates'][0][0]))}",
+                        //           style: const TextStyle(
+                        //               fontSize: 16,
+                        //               fontWeight: FontWeight.bold,
+                        //               color: Colors.green),
+                        //         ),
+                        //       ],
+                        //     ),
+                        //   ),
                         // Rest of the dates in a smaller font
                         if ((snapshot.data!['seen_dates'] as List).isNotEmpty)
                           Padding(
@@ -1545,8 +1573,10 @@ class _MovieResultState extends State<MovieResult> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: (snapshot.data!['seen_dates'] as List)
-                                  .skip(1)
                                   .map<Widget>((date) {
+                                // Assuming date[1] is a list of friend UIDs who watched the movie on this date
+                                List friendsWhoWatched =
+                                    date[1] == null ? [] : date[1];
                                 return Padding(
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 2.0),
@@ -1559,11 +1589,79 @@ class _MovieResultState extends State<MovieResult> {
                                           size: 16, color: Colors.grey),
                                       const SizedBox(width: 8),
                                       Text(
-                                        DateFormat('dd MMMM, yyyy')
-                                            .format(DateTime.parse(date)),
+                                        intl.DateFormat('dd MMMM, yyyy')
+                                            .format(DateTime.parse(date[0])),
                                         style: TextStyle(
                                             fontSize: 14,
                                             color: Colors.grey[700]),
+                                      ),
+                                      const SizedBox(
+                                        width: 5,
+                                      ),
+                                      Expanded(
+                                        child: FutureBuilder<List<String>>(
+                                          // Assuming getProfilePhotos returns a Future of List<String> where each String is a URL
+                                          future: getProfilePhotos(
+                                              friendsWhoWatched),
+                                          builder: (context, snapshot) {
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.waiting) {
+                                              return const SizedBox(
+                                                height:
+                                                    32.0, // Adjust the size as needed
+                                                child: Center(
+                                                    child:
+                                                        CircularProgressIndicator()),
+                                              );
+                                            } else if (snapshot.hasError) {
+                                              return const SizedBox(
+                                                height:
+                                                    32.0, // Adjust the size as needed
+                                                child: Center(
+                                                    child: Text(
+                                                        'Error loading images')),
+                                              );
+                                            } else if (snapshot.hasData) {
+                                              var images = snapshot.data!;
+                                              return SizedBox(
+                                                height:
+                                                    32.0, // Adjust the size as needed
+                                                child: Stack(
+                                                  children: List.generate(
+                                                      images.length, (index) {
+                                                    // Calculate the left offset for each photo
+                                                    double offset = index *
+                                                        10.0; // Adjust the multiplier as needed for the desired overlap
+                                                    return Positioned(
+                                                      left: offset,
+                                                      child: ClipOval(
+                                                        child: images[index] !=
+                                                                ""
+                                                            ? Image.network(
+                                                                images[index],
+                                                                height: 25,
+                                                                width: 25,
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                              )
+                                                            : Image.asset(
+                                                                'assets/main_profile.png',
+                                                                height: 25,
+                                                                width: 25,
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                              ),
+                                                      ),
+                                                    );
+                                                  }),
+                                                ),
+                                              );
+                                            } else {
+                                              // In case there's no data yet (which shouldn't happen since we're checking ConnectionState above)
+                                              return const SizedBox.shrink();
+                                            }
+                                          },
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -1585,6 +1683,265 @@ class _MovieResultState extends State<MovieResult> {
                                   color: Colors.red),
                             ),
                           ),
+                        if (seenWith.entries
+                            .where((entry) =>
+                                entry.value["Movies"]
+                                    ?.contains(movieResult[0].toString()) ??
+                                false)
+                            .isNotEmpty)
+                          const Text("People watched with",
+                              style: TextStyle(
+                                fontSize: 16,
+                              )),
+                        FutureBuilder(
+                          future: Future.wait(
+                            seenWith.entries
+                                .where((entry) =>
+                                    entry.value["Movies"]
+                                        ?.contains(movieResult[0].toString()) ??
+                                    false)
+                                .map((entry) => FirebaseFirestore.instance
+                                    .collection(entry.key)
+                                    .doc("Settings")
+                                    .get()),
+                          ),
+                          builder: (BuildContext context,
+                              AsyncSnapshot<List> snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            } else if (snapshot.hasError) {
+                              return const Padding(
+                                padding: EdgeInsets.all(12.0),
+                                child: Text(
+                                  "Failed to load friends' profiles.",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              );
+                            } else if (snapshot.hasData) {
+                              // Now you have a list of DocumentSnapshots for each friend who watched the movie
+                              return GridView.builder(
+                                shrinkWrap: true,
+                                physics:
+                                    const NeverScrollableScrollPhysics(), // to disable GridView's scrolling
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  childAspectRatio: 3 / 1,
+                                ),
+                                itemCount: snapshot.data!.length,
+                                itemBuilder: (context, index) {
+                                  var doc = snapshot.data![index];
+                                  var userData =
+                                      doc.data() as Map<String, dynamic>;
+                                  var profilePhoto = userData['profile_photo'];
+                                  var username =
+                                      userData['username'] ?? 'Unknown';
+
+                                  return GestureDetector(
+                                      onTap: () async {
+                                        // Navigate to Profile Page
+                                        var querySnapshot =
+                                            await FirebaseFirestore.instance
+                                                .collection('usernames')
+                                                .where('username',
+                                                    isEqualTo: username)
+                                                .limit(1)
+                                                .get();
+
+                                        friendUid = querySnapshot.docs.first
+                                            .data()['uid'];
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => FriendProfile(
+                                                friendUID: friendUid),
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        margin: const EdgeInsets.all(7),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[900],
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        padding: const EdgeInsets.all(10),
+                                        child: IntrinsicHeight(
+                                          child: Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.stretch,
+                                            children: [
+                                              ClipOval(
+                                                child: profilePhoto != ""
+                                                    ? Image.network(
+                                                        profilePhoto,
+                                                        height: 25,
+                                                        width: 25,
+                                                        fit: BoxFit.cover,
+                                                      )
+                                                    : Image.asset(
+                                                        'assets/main_profile.png',
+                                                        height: 25,
+                                                        width: 25,
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Text(
+                                                      username,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                    // ... other text elements if needed ...
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ));
+                                },
+                              );
+                            } else {
+                              return const SizedBox();
+                            }
+                          },
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                Map<String, Map> selectedFriends =
+                                    {}; // Maps friend UID to selection status
+                                return StatefulBuilder(
+                                  builder: (context, setState) {
+                                    List friendsList =
+                                        friends; // List of friend UIDs
+
+                                    // Function to fetch friend data and update the selectedFriends map
+                                    Future<void> fetchFriendData(
+                                        String friendUid) async {
+                                      var doc = await FirebaseFirestore.instance
+                                          .collection(friendUid)
+                                          .doc("Settings")
+                                          .get();
+                                      var data = doc.data();
+                                      if (data != null) {
+                                        String username = data['username'];
+                                        String profilePhoto =
+                                            data['profile_photo'];
+                                        // Initialize the selection status to false
+                                        selectedFriends[friendUid] = {
+                                          "username": username,
+                                          "profile_photo": profilePhoto,
+                                        };
+
+                                        // Update the UI
+                                      }
+                                    }
+
+                                    // Fetch friend data for all friends
+                                    for (var friendUid in friendsList) {
+                                      fetchFriendData(friendUid);
+                                    }
+
+                                    return AlertDialog(
+                                      title:
+                                          const Text('Add Friends Who Watched'),
+                                      content: Container(
+                                        width: double.maxFinite,
+                                        child: ListView.builder(
+                                          shrinkWrap: true,
+                                          itemCount: friendsList.length,
+                                          itemBuilder: (context, index) {
+                                            String friendUid =
+                                                friendsList[index];
+                                            bool isSelected =
+                                                selectedFriends[friendUid]
+                                                        ?["selected"] ??
+                                                    false;
+                                            String username =
+                                                ''; // Placeholder for the username
+                                            String profilePhoto =
+                                                ''; // Placeholder for the profile photo
+
+                                            // Check if friend data has been fetched
+                                            if (selectedFriends
+                                                .containsKey(friendUid)) {
+                                              username =
+                                                  selectedFriends[friendUid]
+                                                      ?['username'];
+                                              profilePhoto =
+                                                  selectedFriends[friendUid]
+                                                      ?['profile_photo'];
+                                            }
+
+                                            return CheckboxListTile(
+                                              value: isSelected,
+                                              title: Text(username),
+                                              secondary: (profilePhoto
+                                                      .isNotEmpty)
+                                                  ? CircleAvatar(
+                                                      backgroundImage:
+                                                          NetworkImage(
+                                                              profilePhoto))
+                                                  : const CircleAvatar(
+                                                      child:
+                                                          Icon(Icons.person)),
+                                              onChanged: (bool? value) {
+                                                setState(() {
+                                                  selectedFriends[friendUid]
+                                                      ?["status"] = value!;
+                                                });
+                                              },
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          child: const Text('Cancel'),
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                        ),
+                                        TextButton(
+                                          child: const Text('Apply'),
+                                          onPressed: () {
+                                            // TODO: Update the Firebase database with the selected friends
+                                            // Implement the logic to update the 'seenWith' document for both the current user and the selected friends
+                                            Navigator.of(context).pop();
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                            );
+                          },
+                          child: const Text('Add Watching Friends'),
+                        ),
                       ],
                     ),
                   const Row(
@@ -1620,8 +1977,8 @@ class _MovieResultState extends State<MovieResult> {
                                   imgLink + person['profile_path'];
                             }
                             return Padding(
-                              padding: const EdgeInsets.fromLTRB(5.0, 0.0, 5.0,
-                                  0.0),
+                              padding:
+                                  const EdgeInsets.fromLTRB(5.0, 0.0, 5.0, 0.0),
                               child: GestureDetector(
                                 onTap: () {
                                   personResult = person;
