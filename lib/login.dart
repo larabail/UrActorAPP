@@ -28,6 +28,7 @@ class Login extends StatelessWidget {
     playlists = {};
     personResult = {};
     oscars = {};
+    seenWith = {};
     favsPage = [];
     settings = {};
     friends = [];

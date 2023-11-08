@@ -140,6 +140,10 @@ class SignUp extends StatelessWidget {
                             const Map<String, dynamic> Friends = {
                               "friends": []
                             };
+                            const Map<String, dynamic> SeenWith = {
+                              "Movies": {},
+                              "TVShows": {}
+                            };
                             const Map<String, dynamic> Settings = {
                               "darkMode": true,
                               "dontAskCalendar": false,
@@ -155,6 +159,10 @@ class SignUp extends StatelessWidget {
                                 .collection(credential.user!.uid)
                                 .doc("TVShows")
                                 .set(tvshows);
+                            FirebaseFirestore.instance
+                                .collection(credential.user!.uid)
+                                .doc("SeenWith")
+                                .set(SeenWith);
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("Reviews")
