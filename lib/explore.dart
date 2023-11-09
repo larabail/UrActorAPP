@@ -423,7 +423,7 @@ void check(id) {
 final GlobalKey<CarouselSliderState> _sliderKey = GlobalKey();
 
 class Explore extends StatefulWidget {
-  Explore();
+  const Explore({super.key});
 
   @override
   _ExploreState createState() => _ExploreState();
@@ -436,7 +436,7 @@ class _ExploreState extends State<Explore> {
   List<Map<String, dynamic>> movies = [];
   bool isGridMode = false;
   List genres = [];
-  ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = ScrollController();
   bool _inMyProviders = false;
 
   bool isFilterOpen = false;
@@ -737,11 +737,11 @@ class _ExploreState extends State<Explore> {
     int selectedIndex = 0;
 
     final List<Widget> pages = [
-      MyApp(),
-      Playlists(),
-      Search(),
-      Friends(),
-      Profile(),
+      const MyApp(),
+      const Playlists(),
+      const Search(),
+      const Friends(),
+      const Profile(),
       // Add more pages here
     ];
 
@@ -794,7 +794,7 @@ class _ExploreState extends State<Explore> {
                 showModalBottomSheet(
                   context: context,
                   builder: (_) {
-                    return Container(
+                    return SizedBox(
                       height: 300,
                       child: ListView.builder(
                         itemCount: (playlists.length / 2).ceil(),
@@ -1093,7 +1093,7 @@ class _ExploreState extends State<Explore> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => MovieResult()),
+                                    builder: (context) => const MovieResult()),
                               );
                             },
                             child: Container(
@@ -1242,7 +1242,7 @@ class _ExploreState extends State<Explore> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => MovieResult()),
+                              builder: (context) => const MovieResult()),
                         );
                       },
                       child: Container(
@@ -1392,7 +1392,7 @@ class _ExploreState extends State<Explore> {
             }
           }
           json['movie_credits_cast'] = movieCast;
-          movieCast.forEach((element) {
+          for (var element in movieCast) {
             if (containsMap(seenMovies, ["Movies", element["id"].toString()])) {
               if (!countedMoviesActor.contains(element["id"].toString())) {
                 stats += 1;
@@ -1419,7 +1419,7 @@ class _ExploreState extends State<Explore> {
               scoreActor += 1;
               countedMoviesActor.add(element["id"].toString());
             }
-          });
+          }
           final r3 = await http
               .get(Uri.parse('$linkPerson$actor_of_the_week$api_key_tv'));
           if (r3.statusCode == 200) {
@@ -1436,7 +1436,7 @@ class _ExploreState extends State<Explore> {
               }
             }
             json['tv_credits_cast'] = tvCast;
-            tvCast.forEach((element) {
+            for (var element in tvCast) {
               print(seenTVShows);
               print(["TVShows", element["id"].toString()]);
               if (containsMap(
@@ -1458,7 +1458,7 @@ class _ExploreState extends State<Explore> {
                 scoreActor += 1;
                 countedTVShowsActor.add(element["id"].toString());
               }
-            });
+            }
           } else {
             throw Exception('Failed to load movie details');
           }
@@ -1469,7 +1469,7 @@ class _ExploreState extends State<Explore> {
             }
           }
           json['movie_credits_crew'] = movieCrew;
-          movieCrew.forEach((element) {
+          for (var element in movieCrew) {
             if (containsMap(seenMovies, ["Movies", element["id"].toString()])) {
               if (element["job"] == "Director" &&
                   !countedMoviesDirector.contains(element["id"].toString())) {
@@ -1496,7 +1496,7 @@ class _ExploreState extends State<Explore> {
             if (element["job"] == "Director") {
               allDirMovies += 1;
             }
-          });
+          }
           final r4 = await http
               .get(Uri.parse('$linkPerson$actor_of_the_week$api_key_tv'));
           if (r4.statusCode == 200) {
@@ -1507,7 +1507,7 @@ class _ExploreState extends State<Explore> {
               }
             }
             json['tv_credits_crew'] = tvCrew;
-            tvCrew.forEach((element) {
+            for (var element in tvCrew) {
               if (containsMap(
                   seenTVShows, ["TVShows", element["id"].toString()])) {
                 if (element["job"] == "Director" &&
@@ -1533,7 +1533,7 @@ class _ExploreState extends State<Explore> {
               if (element["job"] == "Director") {
                 allDirMovies += 1;
               }
-            });
+            }
             // Map oscars = await parseJSONFile();
             // if (oscars.keys
             //     .contains(actor_of_the_week.split("-")[0].toString())) {
@@ -1601,7 +1601,7 @@ class _ExploreState extends State<Explore> {
     }
 
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: const CustomAppBar(),
       body: Column(
         children: [
           const Padding(
@@ -1618,7 +1618,7 @@ class _ExploreState extends State<Explore> {
                 return SingleChildScrollView(
                     child: Column(children: [
                   Center(
-                    child: Container(
+                    child: SizedBox(
                       width: MediaQuery.of(context).size.width * 0.25,
                       height: MediaQuery.of(context).size.width * 0.38,
                       child: ListView.builder(
@@ -1631,7 +1631,7 @@ class _ExploreState extends State<Explore> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => PersonResult()),
+                                    builder: (context) => const PersonResult()),
                               );
                             },
                             child: Container(

@@ -8,6 +8,8 @@ import 'main.dart';
 final myController = TextEditingController(text: "");
 
 class RatingDialog extends StatefulWidget {
+  const RatingDialog({super.key});
+
   @override
   _RatingDialogState createState() => _RatingDialogState();
 }
@@ -51,7 +53,7 @@ class _RatingDialogState extends State<RatingDialog> {
     });
     reviewInfo = {};
     Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => MovieResult()));
+        context, MaterialPageRoute(builder: (context) => const MovieResult()));
   }
 
   Future<void> deleteReview(id, context) async {

@@ -167,7 +167,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                       accessCode = list_result["AccessCode"];
                       showDialog(
                         context: context,
-                        builder: (context) => ListEditDialogue(),
+                        builder: (context) => const ListEditDialogue(),
                       );
                     },
                     child: Container(
@@ -230,7 +230,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                         }
                       });
                       Navigator.pushReplacement(context,
-                          MaterialPageRoute(builder: (context) => Playlists()));
+                          MaterialPageRoute(builder: (context) => const Playlists()));
                     }
                   },
                   child: Container(
@@ -301,7 +301,7 @@ class AlertButtonDialogue extends StatelessWidget {
             });
             Navigator.pop(context);
             Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (context) => Playlists()));
+                context, MaterialPageRoute(builder: (context) => const Playlists()));
           },
           style: ButtonStyle(
             backgroundColor: MaterialStateProperty.all(Colors.red),
@@ -377,7 +377,7 @@ class _ListResultState extends State<ListResult> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: CustomAppBar(),
+        appBar: const CustomAppBar(),
         body: Column(
           children: [
             Container(
@@ -462,7 +462,7 @@ class _ListResultState extends State<ListResult> {
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
-                        return MovieAddDialogue();
+                        return const MovieAddDialogue();
                       },
                     );
                   },
@@ -497,7 +497,7 @@ class _ListResultState extends State<ListResult> {
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
-                        return TvAddDialogue();
+                        return const TvAddDialogue();
                       },
                     );
                   },
@@ -537,7 +537,7 @@ class _ListResultState extends State<ListResult> {
                         Tab(text: 'TV Shows'),
                       ],
                     ),
-                    Container(
+                    SizedBox(
                       height: MediaQuery.of(context).size.height -
                           MediaQuery.of(context)
                               .padding
@@ -603,8 +603,8 @@ class _ListResultState extends State<ListResult> {
                                                           snapshot.data![
                                                                       'type'] ==
                                                                   "Movies"
-                                                              ? MovieResult()
-                                                              : TVShowResult()),
+                                                              ? const MovieResult()
+                                                              : const TVShowResult()),
                                                 );
                                               },
                                               child: Container(
@@ -674,8 +674,8 @@ class _ListResultState extends State<ListResult> {
                                                           snapshot.data![
                                                                       'type'] ==
                                                                   "Movies"
-                                                              ? MovieResult()
-                                                              : TVShowResult()),
+                                                              ? const MovieResult()
+                                                              : const TVShowResult()),
                                                 );
                                               },
                                               child: Container(
@@ -745,8 +745,8 @@ class _ListResultState extends State<ListResult> {
                                                           snapshot.data![
                                                                       'type'] ==
                                                                   "Movies"
-                                                              ? MovieResult()
-                                                              : TVShowResult()),
+                                                              ? const MovieResult()
+                                                              : const TVShowResult()),
                                                 );
                                               },
                                               child: Container(
@@ -843,8 +843,8 @@ class _ListResultState extends State<ListResult> {
                                                           snapshot.data![
                                                                       'type'] ==
                                                                   "Movies"
-                                                              ? MovieResult()
-                                                              : TVShowResult()),
+                                                              ? const MovieResult()
+                                                              : const TVShowResult()),
                                                 );
                                               },
                                               child: Container(
@@ -915,8 +915,8 @@ class _ListResultState extends State<ListResult> {
                                                           snapshot.data![
                                                                       'type'] ==
                                                                   "Movies"
-                                                              ? MovieResult()
-                                                              : TVShowResult()),
+                                                              ? const MovieResult()
+                                                              : const TVShowResult()),
                                                 );
                                               },
                                               child: Container(
@@ -986,8 +986,8 @@ class _ListResultState extends State<ListResult> {
                                                           snapshot.data![
                                                                       'type'] ==
                                                                   "Movies"
-                                                              ? MovieResult()
-                                                              : TVShowResult()),
+                                                              ? const MovieResult()
+                                                              : const TVShowResult()),
                                                 );
                                               },
                                               child: Container(
@@ -1038,7 +1038,7 @@ class _ListResultState extends State<ListResult> {
                 ),
               ),
             if (list["Movies"].length > 0 && list["TVShows"].length == 0)
-              Container(
+              SizedBox(
                 height: MediaQuery.of(context).size.height * 0.475,
                 child: ListView.builder(
                   itemCount: (list["Movies"].length / 3).ceil(),
@@ -1086,8 +1086,8 @@ class _ListResultState extends State<ListResult> {
                                       MaterialPageRoute(
                                           builder: (context) =>
                                               snapshot.data!['type'] == "Movies"
-                                                  ? MovieResult()
-                                                  : TVShowResult()),
+                                                  ? const MovieResult()
+                                                  : const TVShowResult()),
                                     );
                                   },
                                   child: Container(
@@ -1146,8 +1146,8 @@ class _ListResultState extends State<ListResult> {
                                       MaterialPageRoute(
                                           builder: (context) =>
                                               snapshot.data!['type'] == "Movies"
-                                                  ? MovieResult()
-                                                  : TVShowResult()),
+                                                  ? const MovieResult()
+                                                  : const TVShowResult()),
                                     );
                                   },
                                   child: Container(
@@ -1206,8 +1206,8 @@ class _ListResultState extends State<ListResult> {
                                       MaterialPageRoute(
                                           builder: (context) =>
                                               snapshot.data!['type'] == "Movies"
-                                                  ? MovieResult()
-                                                  : TVShowResult()),
+                                                  ? const MovieResult()
+                                                  : const TVShowResult()),
                                     );
                                   },
                                   child: Container(
@@ -1245,7 +1245,7 @@ class _ListResultState extends State<ListResult> {
                 ),
               ),
             if (list["TVShows"].length > 0 && list["Movies"].length == 0)
-              Container(
+              SizedBox(
                   height: MediaQuery.of(context).size.height * 0.475,
                   child: ListView.builder(
                     itemCount: (list["TVShows"].length / 3).ceil(),
@@ -1296,8 +1296,8 @@ class _ListResultState extends State<ListResult> {
                                             builder: (context) =>
                                                 snapshot.data!['type'] ==
                                                         "Movies"
-                                                    ? MovieResult()
-                                                    : TVShowResult()),
+                                                    ? const MovieResult()
+                                                    : const TVShowResult()),
                                       );
                                     },
                                     child: Container(
@@ -1358,8 +1358,8 @@ class _ListResultState extends State<ListResult> {
                                             builder: (context) =>
                                                 snapshot.data!['type'] ==
                                                         "Movies"
-                                                    ? MovieResult()
-                                                    : TVShowResult()),
+                                                    ? const MovieResult()
+                                                    : const TVShowResult()),
                                       );
                                     },
                                     child: Container(
@@ -1420,8 +1420,8 @@ class _ListResultState extends State<ListResult> {
                                             builder: (context) =>
                                                 snapshot.data!['type'] ==
                                                         "Movies"
-                                                    ? MovieResult()
-                                                    : TVShowResult()),
+                                                    ? const MovieResult()
+                                                    : const TVShowResult()),
                                       );
                                     },
                                     child: Container(

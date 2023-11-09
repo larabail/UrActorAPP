@@ -13,7 +13,7 @@ Future<String> _loadJSONFile() async {
 }
 
 Future<List<Map<String, dynamic>>> parseJSONFile() async {
-  if (oscarsPage.length == 0) {
+  if (oscarsPage.isEmpty) {
     List<Map<String, dynamic>> people = [];
     String jsonString = await _loadJSONFile();
     Map items = jsonDecode(jsonString);
@@ -21,7 +21,7 @@ Future<List<Map<String, dynamic>>> parseJSONFile() async {
     for (String person_id in items.keys) {
       link = 'https://api.themoviedb.org/3/person/';
       final response = await http.get(
-          Uri.parse('${link}${items[person_id]['tmdb_id']}${api_key_actor}'));
+          Uri.parse('$link${items[person_id]['tmdb_id']}$api_key_actor'));
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         if (json['profile_path'] != null) {
@@ -57,28 +57,30 @@ bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
   return false;
 }
 
-final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-final String imgLink = 'https://image.tmdb.org/t/p/w500/';
+const String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
+const String imgLink = 'https://image.tmdb.org/t/p/w500/';
 String link = "https://api.themoviedb.org/3/person/";
 
 class Oscars extends StatelessWidget {
+  const Oscars({super.key});
+
   @override
   Widget build(BuildContext context) {
-    int _selectedIndex = 0;
+    int selectedIndex = 0;
 
-    final List<Widget> _pages = [
-      MyApp(),
-      Search(),
-      Playlists(),
-      Profile(),
+    final List<Widget> pages = [
+      const MyApp(),
+      const Search(),
+      const Playlists(),
+      const Profile(),
       // Add more pages here
     ];
 
     void _onItemTapped(int index) {
-      _selectedIndex = index;
+      selectedIndex = index;
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => _pages[_selectedIndex]),
+        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
       );
     }
 
@@ -135,7 +137,7 @@ class Oscars extends StatelessWidget {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => PersonResult()),
+                                        builder: (context) => const PersonResult()),
                                   );
                                 },
                                 child: Stack(
@@ -171,7 +173,7 @@ class Oscars extends StatelessWidget {
                                           Padding(
                                             padding: const EdgeInsets.fromLTRB(
                                                 15, 0, 0, 0),
-                                            child: Container(
+                                            child: SizedBox(
                                               height: 20.0,
                                               width: MediaQuery.of(context)
                                                       .size
@@ -208,7 +210,7 @@ class Oscars extends StatelessWidget {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => PersonResult()),
+                                        builder: (context) => const PersonResult()),
                                   );
                                 },
                                 child: Stack(
@@ -244,7 +246,7 @@ class Oscars extends StatelessWidget {
                                           Padding(
                                             padding: const EdgeInsets.fromLTRB(
                                                 15, 0, 0, 0),
-                                            child: Container(
+                                            child: SizedBox(
                                               height: 20.0,
                                               width: MediaQuery.of(context)
                                                       .size
@@ -281,7 +283,7 @@ class Oscars extends StatelessWidget {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => PersonResult()),
+                                        builder: (context) => const PersonResult()),
                                   );
                                 },
                                 child: Stack(
@@ -317,7 +319,7 @@ class Oscars extends StatelessWidget {
                                           Padding(
                                             padding: const EdgeInsets.fromLTRB(
                                                 15, 0, 0, 0),
-                                            child: Container(
+                                            child: SizedBox(
                                               height: 20.0,
                                               width: MediaQuery.of(context)
                                                       .size
@@ -392,7 +394,7 @@ class Oscars extends StatelessWidget {
             icon: Icon(Icons.person),
           ),
         ],
-        currentIndex: _selectedIndex,
+        currentIndex: selectedIndex,
         onTap: _onItemTapped,
       ),
     );

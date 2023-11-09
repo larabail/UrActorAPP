@@ -24,6 +24,8 @@ String _searchTermMovie = '';
 FirebaseFirestore db = FirebaseFirestore.instance;
 
 class ListEditDialogue extends StatefulWidget {
+  const ListEditDialogue({super.key});
+
   @override
   _ListEditDialogueState createState() => _ListEditDialogueState();
 }

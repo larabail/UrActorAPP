@@ -17,11 +17,11 @@ class Favorites extends StatelessWidget {
     int selectedIndex = 0;
 
     final List<Widget> pages = [
-      MyApp(),
-      Playlists(),
-      Search(),
-      Friends(),
-      Profile(),
+      const MyApp(),
+      const Playlists(),
+      const Search(),
+      const Friends(),
+      const Profile(),
       // Add more pages here
     ];
 
@@ -34,7 +34,7 @@ class Favorites extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: const CustomAppBar(),
       body: Column(children: [
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 10.0),
@@ -56,7 +56,7 @@ class Favorites extends StatelessWidget {
                   Tab(text: 'TV Shows'),
                 ],
               ),
-              Container(
+              SizedBox(
                 height: MediaQuery.of(context).size.height * 0.7,
                 child: TabBarView(
                   children: [

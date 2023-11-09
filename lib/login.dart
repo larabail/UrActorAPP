@@ -6,6 +6,8 @@ import 'main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class Login extends StatelessWidget {
+  const Login({super.key});
+
   @override
   Widget build(BuildContext context) {
     uid = '';
@@ -178,7 +180,7 @@ class Login extends StatelessWidget {
                               .then((_) {
                             Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(builder: (context) => MyApp()),
+                              MaterialPageRoute(builder: (context) => const MyApp()),
                             );
                           });
                         } on FirebaseAuthException catch (e) {
@@ -198,7 +200,7 @@ class Login extends StatelessWidget {
                     ),
                     onTap: () {
                       Navigator.pushReplacement(context,
-                          MaterialPageRoute(builder: (context) => SignUp()));
+                          MaterialPageRoute(builder: (context) => const SignUp()));
                     },
                   ),
                   const SizedBox(height: 20),

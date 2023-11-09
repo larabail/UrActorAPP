@@ -32,7 +32,7 @@ Map reviewInfo = {};
 final myController = TextEditingController(text: "");
 
 class MovieResult extends StatefulWidget {
-  MovieResult();
+  const MovieResult({super.key});
 
   @override
   _MovieResultState createState() => _MovieResultState();
@@ -153,7 +153,7 @@ class _MovieResultState extends State<MovieResult> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return RatingDialog();
+        return const RatingDialog();
       },
     );
   }
@@ -164,7 +164,7 @@ class _MovieResultState extends State<MovieResult> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return RatingDialog();
+        return const RatingDialog();
       },
     );
   }
@@ -792,7 +792,7 @@ class _MovieResultState extends State<MovieResult> {
                 showModalBottomSheet(
                   context: context,
                   builder: (_) {
-                    return Container(
+                    return SizedBox(
                       height: 300,
                       child: ListView.builder(
                         itemCount: (playlists.length / 2).ceil(),
@@ -1017,11 +1017,11 @@ class _MovieResultState extends State<MovieResult> {
     }
 
     final List<Widget> pages = [
-      MyApp(),
-      Playlists(),
-      Search(),
-      Friends(),
-      Profile(),
+      const MyApp(),
+      const Playlists(),
+      const Search(),
+      const Friends(),
+      const Profile(),
       // Add more pages here
     ];
 
@@ -1034,7 +1034,7 @@ class _MovieResultState extends State<MovieResult> {
     }
 
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: const CustomAppBar(),
       body: FutureBuilder<Map>(
         future: getMovieData(),
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
@@ -1575,7 +1575,7 @@ class _MovieResultState extends State<MovieResult> {
                                   .map<Widget>((date) {
                                 // Assuming date[1] is a list of friend UIDs who watched the movie on this date
                                 List friendsWhoWatched =
-                                    date[1] == null ? [] : date[1];
+                                    date[1] ?? [];
                                 return Padding(
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 2.0),
@@ -2178,7 +2178,7 @@ class _MovieResultState extends State<MovieResult> {
                             ),
                           ),
                         ),
-                        SizedBox(
+                        const SizedBox(
                           height: 10,
                         ),
                       ],
@@ -2224,7 +2224,7 @@ class _MovieResultState extends State<MovieResult> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => PersonResult()),
+                                        builder: (context) => const PersonResult()),
                                   );
                                 },
                                 child: Column(
@@ -2295,7 +2295,7 @@ class _MovieResultState extends State<MovieResult> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => PersonResult()),
+                                          builder: (context) => const PersonResult()),
                                     );
                                   },
                                   child: Text(
@@ -2325,7 +2325,7 @@ class _MovieResultState extends State<MovieResult> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => PersonResult()),
+                                          builder: (context) => const PersonResult()),
                                     );
                                   },
                                   child: Text(

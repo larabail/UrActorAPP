@@ -61,27 +61,27 @@ class Watchlist extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    int _selectedIndex = 0;
+    int selectedIndex = 0;
 
     final List<Widget> pages = [
-      MyApp(),
-      Playlists(),
-      Search(),
-      Friends(),
-      Profile(),
+      const MyApp(),
+      const Playlists(),
+      const Search(),
+      const Friends(),
+      const Profile(),
       // Add more pages here
     ];
 
     void _onItemTapped(int index) {
-      _selectedIndex = index;
+      selectedIndex = index;
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => pages[_selectedIndex]),
+        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
       );
     }
 
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: const CustomAppBar(),
       body: Column(
         children: [
           const Padding(
@@ -104,7 +104,7 @@ class Watchlist extends StatelessWidget {
                     Tab(text: 'TV Shows'),
                   ],
                 ),
-                Container(
+                SizedBox(
                   height: MediaQuery.of(context).size.height * 0.7,
                   child: TabBarView(
                     children: [

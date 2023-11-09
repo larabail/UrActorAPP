@@ -11,7 +11,7 @@ import 'main.dart';
 String friendUid = "";
 
 class Friends extends StatefulWidget {
-  Friends();
+  const Friends();
 
   @override
   _FriendsState createState() => _FriendsState();
@@ -128,7 +128,7 @@ class _FriendsState extends State<Friends> {
     }
 
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: const CustomAppBar(),
       body: RefreshIndicator(
         onRefresh: _refreshFriends,
         child: ListView.builder(
