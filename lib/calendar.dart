@@ -504,7 +504,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
           .where((key) => friendsWatchedWith[key] == true)
           .toList(),
     };
-    print(friendsWatchedWith);
+    // print(friendsWatchedWith);
     if (calendar.keys.toList().contains(dateForMap)) {
       calendar[dateForMap].add(myObject);
     } else {

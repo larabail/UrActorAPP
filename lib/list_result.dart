@@ -157,41 +157,42 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                GestureDetector(
-                  onTap: () {
-                    cover = list_result["Backdrop"];
-                    originalListName = list_result["Name"];
-                    originalAccessCode = list_result["AccessCode"];
-                    listName = list_result["Name"];
-                    accessCode = list_result["AccessCode"];
-                    showDialog(
-                      context: context,
-                      builder: (context) => ListEditDialogue(),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[900],
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.edit, color: Colors.blue),
-                        SizedBox(width: 10),
-                        Text(
-                          'Edit',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                if (role == "Owner")
+                  GestureDetector(
+                    onTap: () {
+                      cover = list_result["Backdrop"];
+                      originalListName = list_result["Name"];
+                      originalAccessCode = list_result["AccessCode"];
+                      listName = list_result["Name"];
+                      accessCode = list_result["AccessCode"];
+                      showDialog(
+                        context: context,
+                        builder: (context) => ListEditDialogue(),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[900],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.edit, color: Colors.blue),
+                          SizedBox(width: 10),
+                          Text(
+                            'Edit',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
                 GestureDetector(
                   onTap: () async {
                     if (role == "Owner") {
