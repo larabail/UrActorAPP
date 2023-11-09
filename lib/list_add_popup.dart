@@ -23,6 +23,8 @@ String _accessCode = "";
 FirebaseFirestore db = FirebaseFirestore.instance;
 
 class ListAddDialogue extends StatefulWidget {
+  const ListAddDialogue({super.key});
+
   @override
   _ListAddDialogueState createState() => _ListAddDialogueState();
 }
@@ -113,7 +115,7 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
 
     Navigator.pop(context);
     Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => Playlists()));
+        context, MaterialPageRoute(builder: (context) => const Playlists()));
   }
 
   @override

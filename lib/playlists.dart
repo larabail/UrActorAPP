@@ -16,6 +16,8 @@ import 'list_join_popup.dart';
 Map list_result = {};
 
 class Playlists extends StatefulWidget {
+  const Playlists({super.key});
+
   @override
   _PlaylistsState createState() => _PlaylistsState();
 }
@@ -50,7 +52,7 @@ class _PlaylistsState extends State<Playlists> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return ListJoinDialogue();
+        return const ListJoinDialogue();
       },
     );
   }
@@ -59,7 +61,7 @@ class _PlaylistsState extends State<Playlists> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return ListAddDialogue();
+        return const ListAddDialogue();
       },
     );
   }
@@ -69,11 +71,11 @@ class _PlaylistsState extends State<Playlists> {
     int selectedIndex = 0;
 
     final List<Widget> pages = [
-      MyApp(),
-      Playlists(),
-      Search(),
-      Friends(),
-      Profile(),
+      const MyApp(),
+      const Playlists(),
+      const Search(),
+      const Friends(),
+      const Profile(),
       // Add more pages here
     ];
 
@@ -86,7 +88,7 @@ class _PlaylistsState extends State<Playlists> {
     }
 
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: const CustomAppBar(),
       body: SingleChildScrollView(
         child: Column(
           children: [

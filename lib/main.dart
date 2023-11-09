@@ -63,10 +63,12 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -265,11 +267,11 @@ class _MyHomePageState extends State<MyHomePage> {
         } else if (doc.id == "Reviews" && reviews.keys.isEmpty) {
           Map reviewsMap = doc.data() as Map;
           List reviewsList = reviewsMap["Seen"];
-          reviewsList.forEach((element) {
+          for (var element in reviewsList) {
             element = element as Map;
             reviews[element.keys.toList()[0]] =
                 element[element.keys.toList()[0]];
-          });
+          }
         } else if (doc.id == "Rewatched") {
           rewatchedMovies = doc.data() as Map;
         } else if (doc.id == "TVShows") {
@@ -342,7 +344,7 @@ class _MyHomePageState extends State<MyHomePage> {
       Future.delayed(Duration.zero, () {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => Login()),
+          MaterialPageRoute(builder: (context) => const Login()),
         );
       });
     } else {
@@ -402,7 +404,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     if (gotData) {
       return Scaffold(
-        appBar: CustomAppBar(),
+        appBar: const CustomAppBar(),
         body: RefreshIndicator(
           onRefresh: _refreshMain,
           child: SingleChildScrollView(
@@ -414,7 +416,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => Calendar()),
+                        MaterialPageRoute(builder: (context) => const Calendar()),
                       );
                     },
                     child: Container(
@@ -442,7 +444,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => Explore()),
+                        MaterialPageRoute(builder: (context) => const Explore()),
                       );
                     },
                     child: Container(
@@ -495,7 +497,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => Playlists()),
+                          MaterialPageRoute(builder: (context) => const Playlists()),
                         );
                       },
                       child: Container(
@@ -743,7 +745,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => MovieResult()),
+                                          builder: (context) => const MovieResult()),
                                     );
                                   },
                                   child: Container(
@@ -844,7 +846,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => MovieResult()),
+                                          builder: (context) => const MovieResult()),
                                     );
                                   },
                                   child: Container(
@@ -945,7 +947,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => MovieResult()),
+                                          builder: (context) => const MovieResult()),
                                     );
                                   },
                                   child: Container(
@@ -1004,7 +1006,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => Reviews()),
+                                  builder: (context) => const Reviews()),
                             );
                           },
                           child: Center(
@@ -1048,7 +1050,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => MovieResult()),
+                                          builder: (context) => const MovieResult()),
                                     );
                                   },
                                   child: Column(children: [

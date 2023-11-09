@@ -26,7 +26,7 @@ bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
 }
 
 class Reviews extends StatefulWidget {
-  Reviews();
+  const Reviews();
 
   @override
   _ReviewsState createState() => _ReviewsState();
@@ -43,7 +43,7 @@ class _ReviewsState extends State<Reviews> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return RatingDialog();
+        return const RatingDialog();
       },
     );
   }
@@ -180,8 +180,8 @@ class _ReviewsState extends State<Reviews> {
                           MaterialPageRoute(
                               builder: (context) =>
                                   snapshot.data!['type'] == "Movies"
-                                      ? MovieResult()
-                                      : TVShowResult()),
+                                      ? const MovieResult()
+                                      : const TVShowResult()),
                         );
                       },
                     ),
@@ -264,11 +264,11 @@ class _ReviewsState extends State<Reviews> {
     int selectedIndex = 0;
 
     final List<Widget> pages = [
-      MyApp(),
-      Playlists(),
-      Search(),
-      Friends(),
-      Profile(),
+      const MyApp(),
+      const Playlists(),
+      const Search(),
+      const Friends(),
+      const Profile(),
       // Add more pages here
     ];
 
@@ -281,7 +281,7 @@ class _ReviewsState extends State<Reviews> {
     }
 
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: const CustomAppBar(),
       body: ListView.builder(
         itemCount: (reviews.keys.toList().length / 2).ceil(),
         itemBuilder: (BuildContext context, int index) {

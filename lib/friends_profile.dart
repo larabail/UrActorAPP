@@ -37,7 +37,7 @@ final months = [
 ];
 
 class FriendProfile extends StatefulWidget {
-  FriendProfile({required String friendUID});
+  const FriendProfile({super.key, required String friendUID});
 
   @override
   _FriendProfileState createState() => _FriendProfileState();
@@ -175,7 +175,7 @@ class _FriendProfileState extends State<FriendProfile> {
       for (List item in friendFavActors) {
         if (i < 9) {
           final response =
-              await http.get(Uri.parse('${link}${item[1]}${api_key_actor}'));
+              await http.get(Uri.parse('$link${item[1]}$api_key_actor'));
           if (response.statusCode == 200) {
             final json = jsonDecode(response.body);
             if (json['profile_path'] == null) {
@@ -203,7 +203,7 @@ class _FriendProfileState extends State<FriendProfile> {
       for (List item in friendFavDirectors) {
         if (i < 9) {
           final response =
-              await http.get(Uri.parse('${link}${item[1]}${api_key_actor}'));
+              await http.get(Uri.parse('$link${item[1]}$api_key_actor'));
           if (response.statusCode == 200) {
             final json = jsonDecode(response.body);
             if (json['profile_path'] == null) {
@@ -225,11 +225,11 @@ class _FriendProfileState extends State<FriendProfile> {
     }
 
     final List<Widget> pages = [
-      MyApp(),
-      Playlists(),
-      Search(),
-      Friends(),
-      Profile(),
+      const MyApp(),
+      const Playlists(),
+      const Search(),
+      const Friends(),
+      const Profile(),
       // Add more pages here
     ];
 
@@ -277,7 +277,7 @@ class _FriendProfileState extends State<FriendProfile> {
     }
     if (gotData) {
       return Scaffold(
-        appBar: CustomAppBar(),
+        appBar: const CustomAppBar(),
         body: SingleChildScrollView(
           child: Column(
             children: [
@@ -361,7 +361,7 @@ class _FriendProfileState extends State<FriendProfile> {
                         friends.remove(friendUid);
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (context) => Friends()),
+                          MaterialPageRoute(builder: (context) => const Friends()),
                         );
                       }
                     },
@@ -494,7 +494,7 @@ class _FriendProfileState extends State<FriendProfile> {
                                         context,
                                         MaterialPageRoute(
                                             builder: (context) =>
-                                                MovieResult()),
+                                                const MovieResult()),
                                       );
                                     },
                                     child: Container(
@@ -693,7 +693,7 @@ class _FriendProfileState extends State<FriendProfile> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => MovieResult()),
+                                          builder: (context) => const MovieResult()),
                                     );
                                   },
                                   child: Container(
@@ -771,7 +771,7 @@ class _FriendProfileState extends State<FriendProfile> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => PersonResult()),
+                                          builder: (context) => const PersonResult()),
                                     );
                                   },
                                   child: Container(
@@ -849,7 +849,7 @@ class _FriendProfileState extends State<FriendProfile> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => PersonResult()),
+                                          builder: (context) => const PersonResult()),
                                     );
                                   },
                                   child: Container(

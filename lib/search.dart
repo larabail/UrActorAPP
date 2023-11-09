@@ -13,7 +13,7 @@ import 'dart:convert';
 String _searchTermActor = '';
 
 class Search extends StatefulWidget {
-  Search();
+  const Search({super.key});
 
   @override
   _SearchResultState createState() => _SearchResultState();
@@ -74,7 +74,7 @@ class _SearchResultState extends State<Search> {
     }
 
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: const CustomAppBar(),
       body: DefaultTabController(
         length: 3,
         child: Column(
@@ -185,7 +185,7 @@ class _SearchResultState extends State<Search> {
                                                   context,
                                                   MaterialPageRoute(
                                                       builder: (context) =>
-                                                          MovieResult()),
+                                                          const MovieResult()),
                                                 );
                                               } else if (leftPerson.keys
                                                       .contains(
@@ -201,7 +201,7 @@ class _SearchResultState extends State<Search> {
                                                   context,
                                                   MaterialPageRoute(
                                                       builder: (context) =>
-                                                          TVShowResult()),
+                                                          const TVShowResult()),
                                                 );
                                               } else {
                                                 personResult = leftPerson;
@@ -209,7 +209,7 @@ class _SearchResultState extends State<Search> {
                                                   context,
                                                   MaterialPageRoute(
                                                       builder: (context) =>
-                                                          PersonResult()),
+                                                          const PersonResult()),
                                                 );
                                               }
                                             },
@@ -252,7 +252,7 @@ class _SearchResultState extends State<Search> {
                                                   context,
                                                   MaterialPageRoute(
                                                       builder: (context) =>
-                                                          MovieResult()),
+                                                          const MovieResult()),
                                                 );
                                               } else if (middlePerson.keys
                                                       .contains(
@@ -268,7 +268,7 @@ class _SearchResultState extends State<Search> {
                                                   context,
                                                   MaterialPageRoute(
                                                       builder: (context) =>
-                                                          TVShowResult()),
+                                                          const TVShowResult()),
                                                 );
                                               } else {
                                                 personResult = middlePerson;
@@ -276,7 +276,7 @@ class _SearchResultState extends State<Search> {
                                                   context,
                                                   MaterialPageRoute(
                                                       builder: (context) =>
-                                                          PersonResult()),
+                                                          const PersonResult()),
                                                 );
                                               }
                                             },
@@ -321,7 +321,7 @@ class _SearchResultState extends State<Search> {
                                                   context,
                                                   MaterialPageRoute(
                                                       builder: (context) =>
-                                                          MovieResult()),
+                                                          const MovieResult()),
                                                 );
                                               } else if (rightPerson.keys
                                                       .contains(
@@ -337,7 +337,7 @@ class _SearchResultState extends State<Search> {
                                                   context,
                                                   MaterialPageRoute(
                                                       builder: (context) =>
-                                                          TVShowResult()),
+                                                          const TVShowResult()),
                                                 );
                                               } else {
                                                 personResult = rightPerson;
@@ -345,7 +345,7 @@ class _SearchResultState extends State<Search> {
                                                   context,
                                                   MaterialPageRoute(
                                                       builder: (context) =>
-                                                          PersonResult()),
+                                                          const PersonResult()),
                                                 );
                                               }
                                             },

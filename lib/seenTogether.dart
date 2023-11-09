@@ -18,7 +18,7 @@ class SeenTogether extends StatelessWidget {
   String link = "https://api.themoviedb.org/3/movie/";
   List<Map<String, dynamic>> movies = [];
 
-  SeenTogether({required this.friendSettings});
+  SeenTogether({super.key, required this.friendSettings});
 
   Future<Map<String, dynamic>> getData(id, type) async {
     Map<String, dynamic> data = {};
@@ -54,7 +54,7 @@ class SeenTogether extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: const CustomAppBar(),
       body: Column(
         children: [
           Padding(
@@ -77,7 +77,7 @@ class SeenTogether extends StatelessWidget {
                     Tab(text: 'TV Shows'),
                   ],
                 ),
-                Container(
+                SizedBox(
                   height: MediaQuery.of(context).size.height * 0.65,
                   child: TabBarView(
                     children: [

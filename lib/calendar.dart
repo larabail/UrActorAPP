@@ -14,7 +14,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-final String imgLink = 'https://image.tmdb.org/t/p/w500/';
+const String imgLink = 'https://image.tmdb.org/t/p/w500/';
 DateTime selectedDate = DateTime.now();
 
 String _selectedDay = '';
@@ -31,6 +31,8 @@ bool containsMap(List list, Map map) {
 }
 
 class Calendar extends StatefulWidget {
+  const Calendar({super.key});
+
   @override
   _CalendarState createState() => _CalendarState();
 }
@@ -150,11 +152,11 @@ class _CalendarState extends State<Calendar> {
     int selectedIndex = 0;
 
     final List<Widget> pages = [
-      MyApp(),
-      Playlists(),
-      Search(),
-      Friends(),
-      Profile(),
+      const MyApp(),
+      const Playlists(),
+      const Search(),
+      const Friends(),
+      const Profile(),
       // Add more pages here
     ];
 
@@ -191,7 +193,7 @@ class _CalendarState extends State<Calendar> {
         showDialog(
           context: context,
           builder: (BuildContext context) {
-            return CalendarAddDialogue();
+            return const CalendarAddDialogue();
           },
         );
       }
@@ -237,7 +239,7 @@ class _CalendarState extends State<Calendar> {
             context: context,
             builder: (_) {
               return SingleChildScrollView(
-                child: Container(
+                child: SizedBox(
                   height: MediaQuery.of(context).size.height * 0.375,
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
@@ -266,7 +268,7 @@ class _CalendarState extends State<Calendar> {
                                                 context,
                                                 MaterialPageRoute(
                                                   builder: (context) =>
-                                                      MovieResult(),
+                                                      const MovieResult(),
                                                 ),
                                               );
                                             },
@@ -330,11 +332,11 @@ class _CalendarState extends State<Calendar> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
-      appBar: CustomAppBar(),
+      appBar: const CustomAppBar(),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            Container(
+            SizedBox(
               height:
                   MediaQuery.of(context).size.height * 0.5, // Adjust as needed
 
@@ -440,6 +442,8 @@ String _movie = "";
 FirebaseFirestore db = FirebaseFirestore.instance;
 
 class CalendarAddDialogue extends StatefulWidget {
+  const CalendarAddDialogue({super.key});
+
   @override
   _CalendarAddDialogueState createState() => _CalendarAddDialogueState();
 }
@@ -529,7 +533,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
         var userDoc =
             FirebaseFirestore.instance.collection(friend).doc("Calendar");
         await userDoc.update({
-          '$dateForMap': FieldValue.arrayUnion([myObject])
+          dateForMap: FieldValue.arrayUnion([myObject])
         });
 
         // Update Seen movies
@@ -833,7 +837,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
               ),
               Padding(
                 padding: const EdgeInsets.all(10.0),
-                child: Container(
+                child: SizedBox(
                   height: 125, // Set your desired height here
                   child: ListView.builder(
                     shrinkWrap: true,
@@ -915,7 +919,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                           Navigator.pop(context);
                         },
                         style: ElevatedButton.styleFrom(
-                          primary: Colors.grey[900],
+                          backgroundColor: Colors.grey[900],
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
