@@ -78,15 +78,23 @@ class SeenTogether extends StatelessWidget {
                   ],
                 ),
                 Container(
-                  height: MediaQuery.of(context).size.height * 0.7,
+                  height: MediaQuery.of(context).size.height * 0.65,
                   child: TabBarView(
                     children: [
                       MyTabView(favItems: [
-                        for (String movieId in seenWith[friendUid]["Movies"])
+                        for (String movieId
+                            in (seenWith[friendUid]["Movies"] as List<dynamic>?)
+                                    ?.reversed
+                                    .toList() ??
+                                [])
                           ["Movies", movieId]
                       ]),
                       MyTabView(favItems: [
-                        for (String movieId in seenWith[friendUid]["TVShows"])
+                        for (String movieId in (seenWith[friendUid]["TVShows"]
+                                    as List<dynamic>?)
+                                ?.reversed
+                                .toList() ??
+                            [])
                           ["TVShows", movieId]
                       ]),
                     ],

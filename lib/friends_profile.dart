@@ -276,7 +276,6 @@ class _FriendProfileState extends State<FriendProfile> {
       }
     }
     if (gotData) {
-      print(seenWith);
       return Scaffold(
         appBar: CustomAppBar(),
         body: SingleChildScrollView(
@@ -674,63 +673,59 @@ class _FriendProfileState extends State<FriendProfile> {
                     ),
                     SizedBox(
                       height: MediaQuery.of(context).size.height * 0.22,
-                      child: Expanded(
-                        child: FutureBuilder<List<Map>>(
-                          future: topMovies(),
-                          builder: (context, snapshot) {
-                            if (snapshot.hasData) {
-                              final movies = snapshot.data!;
-                              return ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: movies.length,
-                                itemBuilder: (context, index) {
-                                  final movie = movies[index];
-                                  return GestureDetector(
-                                    onTap: () {
-                                      movieResult = [
-                                        movie['id'],
-                                        movie['title'],
-                                        "Movies"
-                                      ];
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                MovieResult()),
-                                      );
-                                    },
-                                    child: Container(
-                                      margin: const EdgeInsets.fromLTRB(
-                                          5.0, 10.0, 10.0, 0),
-                                      width: MediaQuery.of(context).size.width *
-                                          0.28,
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              0.18,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(27),
-                                        image: DecorationImage(
-                                          image: NetworkImage(
-                                            imgLink + movie['poster_path'],
-                                          ),
-                                          fit: BoxFit.fitWidth,
+                      child: FutureBuilder<List<Map>>(
+                        future: topMovies(),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData) {
+                            final movies = snapshot.data!;
+                            return ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: movies.length,
+                              itemBuilder: (context, index) {
+                                final movie = movies[index];
+                                return GestureDetector(
+                                  onTap: () {
+                                    movieResult = [
+                                      movie['id'],
+                                      movie['title'],
+                                      "Movies"
+                                    ];
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => MovieResult()),
+                                    );
+                                  },
+                                  child: Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        5.0, 10.0, 10.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.28,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.18,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(27),
+                                      image: DecorationImage(
+                                        image: NetworkImage(
+                                          imgLink + movie['poster_path'],
                                         ),
+                                        fit: BoxFit.fitWidth,
                                       ),
                                     ),
-                                  );
-                                },
-                              );
-                            } else if (snapshot.hasError) {
-                              return const Center(
-                                child: Text("Failed to load movie details"),
-                              );
-                            } else {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            }
-                          },
-                        ),
+                                  ),
+                                );
+                              },
+                            );
+                          } else if (snapshot.hasError) {
+                            return const Center(
+                              child: Text("Failed to load movie details"),
+                            );
+                          } else {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                        },
                       ),
                     ),
                   ],
@@ -760,59 +755,55 @@ class _FriendProfileState extends State<FriendProfile> {
                     ),
                     SizedBox(
                       height: MediaQuery.of(context).size.height * 0.22,
-                      child: Expanded(
-                        child: FutureBuilder<List<Map>>(
-                          future: actorData(),
-                          builder: (context, snapshot) {
-                            if (snapshot.hasData) {
-                              final persons = snapshot.data!;
-                              return ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: persons.length,
-                                itemBuilder: (context, index) {
-                                  final person = persons[index];
-                                  return GestureDetector(
-                                    onTap: () {
-                                      personResult = person;
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                PersonResult()),
-                                      );
-                                    },
-                                    child: Container(
-                                      margin: const EdgeInsets.fromLTRB(
-                                          5.0, 10.0, 10.0, 0),
-                                      width: MediaQuery.of(context).size.width *
-                                          0.28,
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              0.18,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(27),
-                                        image: DecorationImage(
-                                          image: NetworkImage(
-                                            imgLink + person['profile_path'],
-                                          ),
-                                          fit: BoxFit.fitWidth,
+                      child: FutureBuilder<List<Map>>(
+                        future: actorData(),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData) {
+                            final persons = snapshot.data!;
+                            return ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: persons.length,
+                              itemBuilder: (context, index) {
+                                final person = persons[index];
+                                return GestureDetector(
+                                  onTap: () {
+                                    personResult = person;
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => PersonResult()),
+                                    );
+                                  },
+                                  child: Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        5.0, 10.0, 10.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.28,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.18,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(27),
+                                      image: DecorationImage(
+                                        image: NetworkImage(
+                                          imgLink + person['profile_path'],
                                         ),
+                                        fit: BoxFit.fitWidth,
                                       ),
                                     ),
-                                  );
-                                },
-                              );
-                            } else if (snapshot.hasError) {
-                              return const Center(
-                                child: Text("Failed to load movie details"),
-                              );
-                            } else {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            }
-                          },
-                        ),
+                                  ),
+                                );
+                              },
+                            );
+                          } else if (snapshot.hasError) {
+                            return const Center(
+                              child: Text("Failed to load movie details"),
+                            );
+                          } else {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                        },
                       ),
                     ),
                   ],
@@ -842,59 +833,55 @@ class _FriendProfileState extends State<FriendProfile> {
                     ),
                     SizedBox(
                       height: MediaQuery.of(context).size.height * 0.22,
-                      child: Expanded(
-                        child: FutureBuilder<List<Map>>(
-                          future: dirData(),
-                          builder: (context, snapshot) {
-                            if (snapshot.hasData) {
-                              final persons = snapshot.data!;
-                              return ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: persons.length,
-                                itemBuilder: (context, index) {
-                                  final person = persons[index];
-                                  return GestureDetector(
-                                    onTap: () {
-                                      personResult = person;
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                PersonResult()),
-                                      );
-                                    },
-                                    child: Container(
-                                      margin: const EdgeInsets.fromLTRB(
-                                          5.0, 10.0, 10.0, 0),
-                                      width: MediaQuery.of(context).size.width *
-                                          0.28,
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              0.18,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(27),
-                                        image: DecorationImage(
-                                          image: NetworkImage(
-                                            imgLink + person['profile_path'],
-                                          ),
-                                          fit: BoxFit.fitWidth,
+                      child: FutureBuilder<List<Map>>(
+                        future: dirData(),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData) {
+                            final persons = snapshot.data!;
+                            return ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: persons.length,
+                              itemBuilder: (context, index) {
+                                final person = persons[index];
+                                return GestureDetector(
+                                  onTap: () {
+                                    personResult = person;
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => PersonResult()),
+                                    );
+                                  },
+                                  child: Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        5.0, 10.0, 10.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.28,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.18,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(27),
+                                      image: DecorationImage(
+                                        image: NetworkImage(
+                                          imgLink + person['profile_path'],
                                         ),
+                                        fit: BoxFit.fitWidth,
                                       ),
                                     ),
-                                  );
-                                },
-                              );
-                            } else if (snapshot.hasError) {
-                              return const Center(
-                                child: Text("Failed to load movie details"),
-                              );
-                            } else {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            }
-                          },
-                        ),
+                                  ),
+                                );
+                              },
+                            );
+                          } else if (snapshot.hasError) {
+                            return const Center(
+                              child: Text("Failed to load movie details"),
+                            );
+                          } else {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                        },
                       ),
                     ),
                   ],
