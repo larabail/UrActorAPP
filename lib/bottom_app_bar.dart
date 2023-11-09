@@ -14,11 +14,11 @@ class CommonBottomAppBar extends StatelessWidget {
   }
 
   final List<Widget> pages = [
-    MyApp(),
-    Playlists(),
+    const MyApp(),
+    const Playlists(),
     // Search(),
-    Friends(),
-    Profile(),
+    const Friends(),
+    const Profile(),
     // Add more pages here
   ];
 
@@ -34,7 +34,7 @@ class CommonBottomAppBar extends StatelessWidget {
 
     return BottomNavigationBar(
       selectedItemColor:
-          _selectedIndex >= 0 ? Color.fromARGB(250, 224, 190, 78) : Colors.grey,
+          _selectedIndex >= 0 ? const Color.fromARGB(250, 224, 190, 78) : Colors.grey,
       unselectedItemColor: Colors.grey,
       type: BottomNavigationBarType.fixed,
       items: [

@@ -6,7 +6,7 @@ import 'main.dart';
 class FriendRequestsPage extends StatefulWidget {
   final String currentUserUID;
 
-  FriendRequestsPage({required this.currentUserUID});
+  const FriendRequestsPage({super.key, required this.currentUserUID});
 
   @override
   _FriendRequestsPageState createState() => _FriendRequestsPageState();

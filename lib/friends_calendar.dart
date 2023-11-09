@@ -14,7 +14,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-final String imgLink = 'https://image.tmdb.org/t/p/w500/';
+const String imgLink = 'https://image.tmdb.org/t/p/w500/';
 DateTime selectedDate = DateTime.now();
 
 String _selectedDay = '';
@@ -31,7 +31,7 @@ bool containsMap(List list, Map map) {
 }
 
 class FriendCalendar extends StatefulWidget {
-  FriendCalendar({required String friendUid});
+  const FriendCalendar({super.key, required String friendUid});
   @override
   _FriendCalendarState createState() => _FriendCalendarState();
 }
@@ -96,11 +96,11 @@ class _FriendCalendarState extends State<FriendCalendar> {
     int selectedIndex = 0;
 
     final List<Widget> pages = [
-      MyApp(),
-      Playlists(),
-      Search(),
-      Friends(),
-      Profile(),
+      const MyApp(),
+      const Playlists(),
+      const Search(),
+      const Friends(),
+      const Profile(),
       // Add more pages here
     ];
 
@@ -131,14 +131,14 @@ class _FriendCalendarState extends State<FriendCalendar> {
         moviesOnDay = [];
       }
       String link = 'https://api.themoviedb.org/3/movie/';
-      String api_key_actor = '?api_key=700cd4fab994df56eb41b34d38c4762a';
+      String apiKeyActor = '?api_key=700cd4fab994df56eb41b34d38c4762a';
       int i = 0;
       movies = [];
       moviesOnDay.forEach((element) async {
         String id = element['id'];
         String name = element['title'];
         final response =
-            await http.get(Uri.parse('${link}${id}-${name}${api_key_actor}'));
+            await http.get(Uri.parse('$link$id-$name$apiKeyActor'));
         if (response.statusCode == 200) {
           dynamic json = jsonDecode(response.body);
           if (!containsMap(movies, json)) {
@@ -152,14 +152,14 @@ class _FriendCalendarState extends State<FriendCalendar> {
             context: context,
             builder: (_) {
               return SingleChildScrollView(
-                child: Container(
+                child: SizedBox(
                   height: MediaQuery.of(context).size.height * 0.375,
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
                     child: Column(
                       children: [
                         Text(
-                          "Movies seen on ${_selectedDay}",
+                          "Movies seen on $_selectedDay",
                           style: const TextStyle(
                               fontSize: 20, fontWeight: FontWeight.bold),
                         ),
@@ -183,7 +183,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
                                                 context,
                                                 MaterialPageRoute(
                                                   builder: (context) =>
-                                                      MovieResult(),
+                                                      const MovieResult(),
                                                 ),
                                               );
                                             },
@@ -236,11 +236,11 @@ class _FriendCalendarState extends State<FriendCalendar> {
     if (gotData) {
       return Scaffold(
         backgroundColor: const Color(0xFF121212),
-        appBar: CustomAppBar(),
+        appBar: const CustomAppBar(),
         body: SingleChildScrollView(
           child: Column(
             children: [
-              Container(
+              SizedBox(
                 height: MediaQuery.of(context).size.height *
                     0.5, // Adjust as needed
 

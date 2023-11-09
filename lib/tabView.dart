@@ -9,7 +9,7 @@ import 'dart:convert';
 class MyTabView extends StatelessWidget {
   final List<dynamic> favItems;
 
-  MyTabView({required this.favItems});
+  const MyTabView({super.key, required this.favItems});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +24,7 @@ class MyTabView extends StatelessWidget {
               final item = favItems.reversed.toList()[itemIndex];
               return ItemCard(item: item);
             }
-            return SizedBox.shrink(); // Return an empty widget if no item
+            return const SizedBox.shrink(); // Return an empty widget if no item
           }),
         );
       },
@@ -35,7 +35,7 @@ class MyTabView extends StatelessWidget {
 class ItemCard extends StatelessWidget {
   final List<dynamic> item;
 
-  ItemCard({required this.item});
+  const ItemCard({super.key, required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -63,8 +63,8 @@ class ItemCard extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => snapshot.data!['type'] == "Movies"
-                      ? MovieResult()
-                      : TVShowResult(),
+                      ? const MovieResult()
+                      : const TVShowResult(),
                 ),
               );
             },
@@ -91,8 +91,8 @@ class ItemCard extends StatelessWidget {
   }
 }
 
-final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-final String imgLink = 'https://image.tmdb.org/t/p/w500/';
+const String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
+const String imgLink = 'https://image.tmdb.org/t/p/w500/';
 String link = "https://api.themoviedb.org/3/movie/";
 List<Map<String, dynamic>> movies = [];
 

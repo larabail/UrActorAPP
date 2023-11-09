@@ -21,6 +21,8 @@ String _movie = "";
 FirebaseFirestore db = FirebaseFirestore.instance;
 
 class TvAddDialogue extends StatefulWidget {
+  const TvAddDialogue({super.key});
+
   @override
   _TvAddDialogueState createState() => _TvAddDialogueState();
 }

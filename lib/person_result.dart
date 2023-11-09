@@ -13,8 +13,8 @@ import 'dart:convert';
 import 'playlists.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
-final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-final String imgLink = 'https://image.tmdb.org/t/p/w500/';
+const String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
+const String imgLink = 'https://image.tmdb.org/t/p/w500/';
 String api_key_movie =
     '/movie_credits?api_key=700cd4fab994df56eb41b34d38c4762a';
 String api_key_tv = '/tv_credits?api_key=700cd4fab994df56eb41b34d38c4762a';
@@ -45,7 +45,7 @@ bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
 }
 
 class PersonResult extends StatefulWidget {
-  PersonResult();
+  const PersonResult({super.key});
 
   @override
   _PersonResultState createState() => _PersonResultState();
@@ -65,7 +65,7 @@ class _PersonResultState extends State<PersonResult> {
       final r2 = await http
           .get(Uri.parse('$link${presult["id"]}-$name$api_key_movie'));
       if (r2.statusCode == 200) {
-        List movie_cast = [];
+        List movieCast = [];
         for (Map movie in jsonDecode(r2.body)['cast']) {
           if (movie["poster_path"] != null) {
             if (!movie["character"].toString().toLowerCase().contains("self") &&
@@ -78,12 +78,12 @@ class _PersonResultState extends State<PersonResult> {
                     .toLowerCase()
                     .contains("uncredited") &&
                 movie["character"].toString() != "") {
-              movie_cast.add(movie);
+              movieCast.add(movie);
             }
           }
         }
-        json['movie_credits_cast'] = movie_cast;
-        movie_cast.forEach((element) {
+        json['movie_credits_cast'] = movieCast;
+        for (var element in movieCast) {
           if (containsMap(seenMovies, ["Movies", element["id"]])) {
             if (!countedMoviesActor.contains(element["id"].toString())) {
               stats += 1;
@@ -109,11 +109,11 @@ class _PersonResultState extends State<PersonResult> {
             scoreActor += 1;
             countedMoviesActor.add(element["id"].toString());
           }
-        });
+        }
         final r3 =
             await http.get(Uri.parse('$link${presult["id"]}-$name$api_key_tv'));
         if (r3.statusCode == 200) {
-          List tv_cast = [];
+          List tvCast = [];
           for (Map show in jsonDecode(r3.body)['cast']) {
             if (show["poster_path"] != null) {
               if (!show["character"]
@@ -121,12 +121,12 @@ class _PersonResultState extends State<PersonResult> {
                       .toLowerCase()
                       .contains("self") &&
                   show["character"].toString() != "") {
-                tv_cast.add(show);
+                tvCast.add(show);
               }
             }
           }
-          json['tv_credits_cast'] = tv_cast;
-          tv_cast.forEach((element) {
+          json['tv_credits_cast'] = tvCast;
+          for (var element in tvCast) {
             if (containsMap(seenTVShows, ["TVShows", element["id"]])) {
               if (!countedTVShowsActor.contains(element["id"].toString())) {
                 stats_tv += 1;
@@ -144,18 +144,18 @@ class _PersonResultState extends State<PersonResult> {
               scoreActor += 1;
               countedTVShowsActor.add(element["id"].toString());
             }
-          });
+          }
         } else {
           throw Exception('Failed to load movie details');
         }
-        List movie_crew = [];
+        List movieCrew = [];
         for (Map movie in jsonDecode(r2.body)['crew']) {
           if (movie["poster_path"] != null && movie["job"] != "Thanks") {
-            movie_crew.add(movie);
+            movieCrew.add(movie);
           }
         }
-        json['movie_credits_crew'] = movie_crew;
-        movie_crew.forEach((element) {
+        json['movie_credits_crew'] = movieCrew;
+        for (var element in movieCrew) {
           if (containsMap(seenMovies, ["Movies", element["id"].toString()])) {
             if (element["job"] == "Director" &&
                 !countedMoviesDirector.contains(element["id"].toString())) {
@@ -182,18 +182,18 @@ class _PersonResultState extends State<PersonResult> {
           if (element["job"] == "Director") {
             allDirMovies += 1;
           }
-        });
+        }
         final r4 =
             await http.get(Uri.parse('$link${presult["id"]}-$name$api_key_tv'));
         if (r4.statusCode == 200) {
-          List tv_crew = [];
+          List tvCrew = [];
           for (Map show in jsonDecode(r4.body)['crew']) {
             if (show["poster_path"] != null) {
-              tv_crew.add(show);
+              tvCrew.add(show);
             }
           }
-          json['tv_credits_crew'] = tv_crew;
-          tv_crew.forEach((element) {
+          json['tv_credits_crew'] = tvCrew;
+          for (var element in tvCrew) {
             if (containsMap(
                 seenTVShows, ["TVShows", element["id"].toString()])) {
               if (element["job"] == "Director" &&
@@ -218,7 +218,7 @@ class _PersonResultState extends State<PersonResult> {
             if (element["job"] == "Director") {
               allDirMovies += 1;
             }
-          });
+          }
           // Map oscars = await parseJSONFile();
           if (oscars.keys.contains(presult["id"])) {
             json['num_oscars'] = oscars[presult["id"]]['num_oscars'];
@@ -319,11 +319,11 @@ class _PersonResultState extends State<PersonResult> {
     int selectedIndex = 0;
 
     final List<Widget> pages = [
-      MyApp(),
-      Playlists(),
-      Search(),
-      Friends(),
-      Profile(),
+      const MyApp(),
+      const Playlists(),
+      const Search(),
+      const Friends(),
+      const Profile(),
       // Add more pages here
     ];
 
@@ -336,7 +336,7 @@ class _PersonResultState extends State<PersonResult> {
     }
 
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: const CustomAppBar(),
       body: FutureBuilder<Map>(
         future: getPersonData(),
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
@@ -346,14 +346,14 @@ class _PersonResultState extends State<PersonResult> {
                 children: [
                   if (snapshot.data!['num_oscars'] != 0)
                     Center(
-                      child: Container(
+                      child: SizedBox(
                         height: MediaQuery.of(context).size.height * 0.06,
                         child: Center(
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: List.generate(
                               snapshot.data!['num_oscars'],
-                              (index) => Container(
+                              (index) => SizedBox(
                                 height:
                                     MediaQuery.of(context).size.height * 0.06,
                                 child: Image.asset("assets/oscar2.png"),
@@ -570,7 +570,7 @@ class _PersonResultState extends State<PersonResult> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => MovieResult()),
+                                    builder: (context) => const MovieResult()),
                               );
                             },
                             child: seen(context, leftMovie, "Movies"),
@@ -588,7 +588,7 @@ class _PersonResultState extends State<PersonResult> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => MovieResult()),
+                                    builder: (context) => const MovieResult()),
                               );
                             },
                             child: seen(context, middleMovie, "Movies"),
@@ -606,7 +606,7 @@ class _PersonResultState extends State<PersonResult> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => MovieResult()),
+                                    builder: (context) => const MovieResult()),
                               );
                             },
                             child: seen(context, rightMovie, "Movies"),
@@ -650,7 +650,7 @@ class _PersonResultState extends State<PersonResult> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => TVShowResult()),
+                                    builder: (context) => const TVShowResult()),
                               );
                             },
                             child: seen(context, leftMovie, "TVShows"),
@@ -668,7 +668,7 @@ class _PersonResultState extends State<PersonResult> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => TVShowResult()),
+                                    builder: (context) => const TVShowResult()),
                               );
                             },
                             child: seen(context, middleMovie, "TVShows"),
@@ -686,7 +686,7 @@ class _PersonResultState extends State<PersonResult> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => TVShowResult()),
+                                    builder: (context) => const TVShowResult()),
                               );
                             },
                             child: seen(context, rightMovie, "TVShows"),
@@ -752,7 +752,7 @@ class _PersonResultState extends State<PersonResult> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => MovieResult()),
+                                    builder: (context) => const MovieResult()),
                               );
                             },
                             child: seenCrew(context, leftMovie, "Movies"),
@@ -770,7 +770,7 @@ class _PersonResultState extends State<PersonResult> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => MovieResult()),
+                                    builder: (context) => const MovieResult()),
                               );
                             },
                             child: seenCrew(context, middleMovie, "Movies"),
@@ -788,7 +788,7 @@ class _PersonResultState extends State<PersonResult> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => MovieResult()),
+                                    builder: (context) => const MovieResult()),
                               );
                             },
                             child: seenCrew(context, rightMovie, "Movies"),
@@ -832,7 +832,7 @@ class _PersonResultState extends State<PersonResult> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => TVShowResult()),
+                                    builder: (context) => const TVShowResult()),
                               );
                             },
                             child: seenCrew(context, leftMovie, "TVShows"),
@@ -850,7 +850,7 @@ class _PersonResultState extends State<PersonResult> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => TVShowResult()),
+                                    builder: (context) => const TVShowResult()),
                               );
                             },
                             child: seenCrew(context, middleMovie, "TVShows"),
@@ -868,7 +868,7 @@ class _PersonResultState extends State<PersonResult> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => TVShowResult()),
+                                    builder: (context) => const TVShowResult()),
                               );
                             },
                             child: seenCrew(context, rightMovie, "TVShows"),
@@ -921,7 +921,7 @@ class _PersonResultState extends State<PersonResult> {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
-                  child: Container(
+                  child: SizedBox(
                     height: 20.0,
                     width: MediaQuery.of(context).size.width * 0.26,
                     child: SingleChildScrollView(
@@ -1004,7 +1004,7 @@ class _PersonResultState extends State<PersonResult> {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
-                  child: Container(
+                  child: SizedBox(
                     height: 20.0,
                     width: MediaQuery.of(context).size.width * 0.26,
                     child: SingleChildScrollView(
@@ -1057,7 +1057,7 @@ class _PersonResultState extends State<PersonResult> {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
-                  child: Container(
+                  child: SizedBox(
                     height: 20.0,
                     width: MediaQuery.of(context).size.width * 0.26,
                     child: SingleChildScrollView(
@@ -1140,7 +1140,7 @@ class _PersonResultState extends State<PersonResult> {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
-                  child: Container(
+                  child: SizedBox(
                     height: 20.0,
                     width: MediaQuery.of(context).size.width * 0.26,
                     child: SingleChildScrollView(

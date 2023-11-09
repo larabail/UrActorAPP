@@ -71,7 +71,7 @@ Future<void> deleteFromWatchedConfirmation(
             ];
           }
           Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (context) => TVShowResult()));
+              context, MaterialPageRoute(builder: (context) => const TVShowResult()));
         }
       });
     });
@@ -107,7 +107,7 @@ void markWatched(String id, String title, BuildContext context) async {
   });
 
   Navigator.pushReplacement(
-      context, MaterialPageRoute(builder: (context) => TVShowResult()));
+      context, MaterialPageRoute(builder: (context) => const TVShowResult()));
 }
 
 void favorite(String id, context) async {
@@ -132,7 +132,7 @@ void favorite(String id, context) async {
     }
   });
   Navigator.pushReplacement(
-      context, MaterialPageRoute(builder: (context) => TVShowResult()));
+      context, MaterialPageRoute(builder: (context) => const TVShowResult()));
 }
 
 void unfavorite(String id, context) async {
@@ -158,7 +158,7 @@ void unfavorite(String id, context) async {
           ];
         });
         Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => TVShowResult()));
+            context, MaterialPageRoute(builder: (context) => const TVShowResult()));
       }
     }
   });
@@ -186,7 +186,7 @@ void bookmark(String id, context) async {
     }
   });
   Navigator.pushReplacement(
-      context, MaterialPageRoute(builder: (context) => TVShowResult()));
+      context, MaterialPageRoute(builder: (context) => const TVShowResult()));
 }
 
 void unbookmark(String id, context) async {
@@ -206,13 +206,13 @@ void unbookmark(String id, context) async {
             FirebaseFirestore.instance.collection(uid).doc("Watchlist");
         await userDoc.update({'TVShows': tvShowinWatchlist});
         watchlistTVShows = [];
-        tvShowinWatchlist.forEach((element) {
+        for (var element in tvShowinWatchlist) {
           watchlistTVShows += [
             ["TVShows", element]
           ];
-        });
+        }
         Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => TVShowResult()));
+            context, MaterialPageRoute(builder: (context) => const TVShowResult()));
       }
     }
   });
@@ -241,7 +241,7 @@ void addToList(String id, String listId, List tvshowsInList, context) async {
     }
   });
   Navigator.pushReplacement(
-      context, MaterialPageRoute(builder: (context) => TVShowResult()));
+      context, MaterialPageRoute(builder: (context) => const TVShowResult()));
 }
 
 void deleteFromList(
@@ -268,11 +268,11 @@ void deleteFromList(
     }
   });
   Navigator.pushReplacement(
-      context, MaterialPageRoute(builder: (context) => TVShowResult()));
+      context, MaterialPageRoute(builder: (context) => const TVShowResult()));
 }
 
 class TVShowResult extends StatefulWidget {
-  TVShowResult();
+  const TVShowResult({super.key});
 
   @override
   _TVShowResultState createState() => _TVShowResultState();
@@ -705,7 +705,7 @@ class _TVShowResultState extends State<TVShowResult> {
     }
 
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: const CustomAppBar(),
       body: FutureBuilder<Map>(
         future: getMovieData(),
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
@@ -1616,7 +1616,7 @@ class _TVShowResultState extends State<TVShowResult> {
                             ),
                           ),
                         ),
-                        SizedBox(
+                        const SizedBox(
                           height: 10,
                         ),
                       ],
@@ -1663,7 +1663,7 @@ class _TVShowResultState extends State<TVShowResult> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => PersonResult()),
+                                        builder: (context) => const PersonResult()),
                                   );
                                 },
                                 child: Column(

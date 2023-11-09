@@ -68,7 +68,7 @@ class Provider {
 }
 
 class InfoButtonDialog extends StatefulWidget {
-  InfoButtonDialog();
+  const InfoButtonDialog();
 
   @override
   _InfoButtonDialogState createState() => _InfoButtonDialogState();
@@ -310,7 +310,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                       Navigator.popUntil(context, (route) => route.isFirst);
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => Login()),
+                        MaterialPageRoute(builder: (context) => const Login()),
                       );
                     },
                     child: Container(
@@ -468,7 +468,7 @@ class AlertButtonDialogue extends StatelessWidget {
             Navigator.popUntil(context, (route) => route.isFirst);
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => Login()),
+              MaterialPageRoute(builder: (context) => const Login()),
             );
           },
           style: ButtonStyle(
@@ -488,14 +488,14 @@ class AlertButtonDialogue extends StatelessWidget {
 }
 
 class Profile extends StatefulWidget {
-  Profile();
+  const Profile();
 
   @override
   _ProfileState createState() => _ProfileState();
 }
 
 class _ProfileState extends State<Profile> {
-  TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
   String? currentUsername;
   @override
   void initState() {
@@ -572,7 +572,7 @@ class _ProfileState extends State<Profile> {
       for (List item in favActors) {
         if (i < 9) {
           final response =
-              await http.get(Uri.parse('${link}${item[1]}${api_key_actor}'));
+              await http.get(Uri.parse('$link${item[1]}$api_key_actor'));
           if (response.statusCode == 200) {
             final json = jsonDecode(response.body);
             if (json['profile_path'] == null) {
@@ -645,7 +645,7 @@ class _ProfileState extends State<Profile> {
       for (List item in favDirectors) {
         if (i < 9) {
           final response =
-              await http.get(Uri.parse('${link}${item[1]}${api_key_actor}'));
+              await http.get(Uri.parse('$link${item[1]}$api_key_actor'));
           if (response.statusCode == 200) {
             final json = jsonDecode(response.body);
             if (json['profile_path'] == null) {
@@ -667,11 +667,11 @@ class _ProfileState extends State<Profile> {
     }
 
     final List<Widget> pages = [
-      MyApp(),
-      Playlists(),
-      Search(),
-      Friends(),
-      Profile(),
+      const MyApp(),
+      const Playlists(),
+      const Search(),
+      const Friends(),
+      const Profile(),
       // Add more pages here
     ];
 
@@ -730,7 +730,7 @@ class _ProfileState extends State<Profile> {
     }
 
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: const CustomAppBar(),
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -1045,7 +1045,7 @@ class _ProfileState extends State<Profile> {
                                                       context,
                                                       MaterialPageRoute(
                                                           builder: (context) =>
-                                                              PersonResult()),
+                                                              const PersonResult()),
                                                     );
                                                   },
                                                   child: Container(
@@ -1083,7 +1083,7 @@ class _ProfileState extends State<Profile> {
                                                       context,
                                                       MaterialPageRoute(
                                                           builder: (context) =>
-                                                              PersonResult()),
+                                                              const PersonResult()),
                                                     );
                                                   },
                                                   child: Container(
@@ -1122,7 +1122,7 @@ class _ProfileState extends State<Profile> {
                                                       context,
                                                       MaterialPageRoute(
                                                           builder: (context) =>
-                                                              PersonResult()),
+                                                              const PersonResult()),
                                                     );
                                                   },
                                                   child: Container(
@@ -1206,7 +1206,7 @@ class _ProfileState extends State<Profile> {
                                                       context,
                                                       MaterialPageRoute(
                                                           builder: (context) =>
-                                                              PersonResult()),
+                                                              const PersonResult()),
                                                     );
                                                   },
                                                   child: Container(
@@ -1244,7 +1244,7 @@ class _ProfileState extends State<Profile> {
                                                       context,
                                                       MaterialPageRoute(
                                                           builder: (context) =>
-                                                              PersonResult()),
+                                                              const PersonResult()),
                                                     );
                                                   },
                                                   child: Container(
@@ -1283,7 +1283,7 @@ class _ProfileState extends State<Profile> {
                                                       context,
                                                       MaterialPageRoute(
                                                           builder: (context) =>
-                                                              PersonResult()),
+                                                              const PersonResult()),
                                                     );
                                                   },
                                                   child: Container(
@@ -1371,7 +1371,7 @@ class _ProfileState extends State<Profile> {
                                                       context,
                                                       MaterialPageRoute(
                                                           builder: (context) =>
-                                                              MovieResult()),
+                                                              const MovieResult()),
                                                     );
                                                   },
                                                   child: Container(
@@ -1414,7 +1414,7 @@ class _ProfileState extends State<Profile> {
                                                       context,
                                                       MaterialPageRoute(
                                                           builder: (context) =>
-                                                              MovieResult()),
+                                                              const MovieResult()),
                                                     );
                                                   },
                                                   child: Container(
@@ -1458,7 +1458,7 @@ class _ProfileState extends State<Profile> {
                                                       context,
                                                       MaterialPageRoute(
                                                           builder: (context) =>
-                                                              MovieResult()),
+                                                              const MovieResult()),
                                                     );
                                                   },
                                                   child: Container(
@@ -1527,7 +1527,7 @@ class _ProfileState extends State<Profile> {
               onPressed: () {
                 showDialog(
                   context: context,
-                  builder: (context) => InfoButtonDialog(),
+                  builder: (context) => const InfoButtonDialog(),
                 );
               },
             ),

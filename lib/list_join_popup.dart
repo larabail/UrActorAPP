@@ -12,6 +12,8 @@ String _accessCode = "";
 final myController = TextEditingController(text: "");
 
 class ListJoinDialogue extends StatefulWidget {
+  const ListJoinDialogue({super.key});
+
   @override
   _ListJoinDialogueState createState() => _ListJoinDialogueState();
 }
@@ -35,7 +37,7 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
             });
             Navigator.pop(context);
             Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (context) => Playlists()));
+                context, MaterialPageRoute(builder: (context) => const Playlists()));
           }
         }
       }
