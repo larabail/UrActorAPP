@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
+import 'friends.dart';
+import 'friends_profile.dart';
 import 'main.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -1082,6 +1084,544 @@ class _TVShowResultState extends State<TVShowResult> {
                   //     keyboardType: TextInputType.number,
                   //   ),
                   // ),
+                  if (containsMap(seenTVShows, ['TVShows', tvShowResult[0]]))
+                    ExpansionTile(
+                      title: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.history),
+                          SizedBox(width: 8),
+                          Text(
+                            "Watching History",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 15,
+                              wordSpacing: 2,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                      children: [
+                        // if ((snapshot.data!['seen_dates'] as List).isNotEmpty)
+                        //   Padding(
+                        //     padding: const EdgeInsets.all(12.0),
+                        //     child: Row(
+                        //       children: [
+                        //         const SizedBox(
+                        //             width: 16), // Added margin to the left
+                        //         const Icon(Icons.access_time,
+                        //             color: Colors.green),
+                        //         const SizedBox(width: 8),
+                        //         Text(
+                        //           "Last watched: ${intl.DateFormat('dd MMMM, yyyy').format(DateTime.parse(snapshot.data!['seen_dates'][0][0]))}",
+                        //           style: const TextStyle(
+                        //               fontSize: 16,
+                        //               fontWeight: FontWeight.bold,
+                        //               color: Colors.green),
+                        //         ),
+                        //       ],
+                        //     ),
+                        //   ),
+                        // Rest of the dates in a smaller font
+
+                        FutureBuilder(
+                          future: Future.wait(
+                            seenWith.entries
+                                .where((entry) =>
+                                    entry.value["TVShows"]?.contains(
+                                        tvShowResult[0].toString()) ??
+                                    false)
+                                .map((entry) => FirebaseFirestore.instance
+                                    .collection(entry.key)
+                                    .doc("Settings")
+                                    .get()),
+                          ),
+                          builder: (BuildContext context,
+                              AsyncSnapshot<List> snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            } else if (snapshot.hasError) {
+                              return const Padding(
+                                padding: EdgeInsets.all(12.0),
+                                child: Text(
+                                  "Failed to load friends' profiles.",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              );
+                            } else if (snapshot.hasData) {
+                              // Now you have a list of DocumentSnapshots for each friend who watched the movie
+                              return GridView.builder(
+                                shrinkWrap: true,
+                                physics:
+                                    const NeverScrollableScrollPhysics(), // to disable GridView's scrolling
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  childAspectRatio: 3 / 1,
+                                ),
+                                itemCount: snapshot.data!.length,
+                                itemBuilder: (context, index) {
+                                  var doc = snapshot.data![index];
+                                  var userData =
+                                      doc.data() as Map<String, dynamic>;
+                                  var profilePhoto = userData['profile_photo'];
+                                  var username =
+                                      userData['username'] ?? 'Unknown';
+
+                                  return GestureDetector(
+                                      onTap: () async {
+                                        // Navigate to Profile Page
+                                        var querySnapshot =
+                                            await FirebaseFirestore.instance
+                                                .collection('usernames')
+                                                .where('username',
+                                                    isEqualTo: username)
+                                                .limit(1)
+                                                .get();
+
+                                        friendUid = querySnapshot.docs.first
+                                            .data()['uid'];
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => FriendProfile(
+                                                friendUID: friendUid),
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        margin: const EdgeInsets.all(7),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[900],
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        padding: const EdgeInsets.all(10),
+                                        child: IntrinsicHeight(
+                                          child: Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.stretch,
+                                            children: [
+                                              ClipOval(
+                                                child: profilePhoto != ""
+                                                    ? Image.network(
+                                                        profilePhoto,
+                                                        height: 25,
+                                                        width: 25,
+                                                        fit: BoxFit.cover,
+                                                      )
+                                                    : Image.asset(
+                                                        'assets/main_profile.png',
+                                                        height: 25,
+                                                        width: 25,
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Text(
+                                                      username,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                    // ... other text elements if needed ...
+                                                  ],
+                                                ),
+                                              ),
+                                              // IconButton(
+                                              //   icon: Icon(
+                                              //       Icons
+                                              //           .remove_circle_outline_outlined,
+                                              //       color: Colors.red),
+                                              //   onPressed: () async {},
+                                              // ),
+                                            ],
+                                          ),
+                                        ),
+                                      ));
+                                },
+                              );
+                            } else {
+                              return const SizedBox();
+                            }
+                          },
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                Map<String, bool> selectedFriends =
+                                    {}; // Maps friend UID to selection status
+                                return StatefulBuilder(
+                                  builder: (context, setState) {
+                                    return AlertDialog(
+                                      title:
+                                          const Text('Add Friends Who Watched'),
+                                      content: SizedBox(
+                                        height:
+                                            250, // Set your desired height here
+                                        child: SingleChildScrollView(
+                                          child: Column(
+                                            children: List.generate(
+                                              friends.length,
+                                              (friendIndex) {
+                                                return FutureBuilder<
+                                                    DocumentSnapshot>(
+                                                  future: FirebaseFirestore
+                                                      .instance
+                                                      .collection(
+                                                          friends[friendIndex])
+                                                      .doc('Settings')
+                                                      .get(),
+                                                  builder: (context, snapshot) {
+                                                    if (snapshot
+                                                            .connectionState ==
+                                                        ConnectionState
+                                                            .waiting) {
+                                                      return const Center(
+                                                          child:
+                                                              CircularProgressIndicator());
+                                                    } else if (snapshot
+                                                        .hasError) {
+                                                      return Text(
+                                                          'Error: ${snapshot.error}');
+                                                    } else if (!snapshot
+                                                            .hasData ||
+                                                        !snapshot
+                                                            .data!.exists) {
+                                                      return const Text(
+                                                          'No data found');
+                                                    } else {
+                                                      var data =
+                                                          snapshot.data!.data()
+                                                              as Map<String,
+                                                                  dynamic>;
+                                                      String userName =
+                                                          data['username'] ??
+                                                              '';
+                                                      String profilePath = data[
+                                                              'profile_photo'] ??
+                                                          '';
+                                                      return CheckboxListTile(
+                                                        title: Row(
+                                                          children: [
+                                                            ClipOval(
+                                                              child: profilePath !=
+                                                                      ""
+                                                                  ? Image
+                                                                      .network(
+                                                                      profilePath,
+                                                                      height:
+                                                                          25,
+                                                                      width: 25,
+                                                                      fit: BoxFit
+                                                                          .cover,
+                                                                    )
+                                                                  : Image.asset(
+                                                                      'assets/main_profile.png',
+                                                                      height:
+                                                                          25,
+                                                                      width: 25,
+                                                                      fit: BoxFit
+                                                                          .cover,
+                                                                    ),
+                                                            ),
+                                                            const SizedBox(
+                                                                width: 16.0),
+                                                            Expanded(
+                                                              child: Text(
+                                                                userName,
+                                                                style: const TextStyle(
+                                                                    fontSize:
+                                                                        16.0),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        value: selectedFriends
+                                                                .keys
+                                                                .toList()
+                                                                .contains(friends[
+                                                                    friendIndex])
+                                                            ? selectedFriends[
+                                                                friends[
+                                                                    friendIndex]]
+                                                            : false,
+                                                        onChanged:
+                                                            (bool? value) {
+                                                          setState(() {
+                                                            selectedFriends[friends[
+                                                                    friendIndex]] =
+                                                                value!;
+                                                          });
+                                                        },
+                                                      );
+                                                    }
+                                                  },
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          child: const Text('Cancel'),
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                        ),
+                                        TextButton(
+                                          child: const Text('Apply'),
+                                          onPressed: () async {
+                                            String id =
+                                                tvShowResult[0].toString();
+                                            FirebaseFirestore firestore =
+                                                FirebaseFirestore.instance;
+                                            for (String friend
+                                                in selectedFriends.keys
+                                                    .toList()) {
+                                              var userDoc = FirebaseFirestore
+                                                  .instance
+                                                  .collection(friend)
+                                                  .doc("TVShows");
+                                              await userDoc.update({
+                                                'Seen':
+                                                    FieldValue.arrayUnion([id])
+                                              });
+                                              if (seenWith
+                                                      .containsKey(friend) &&
+                                                  !seenWith[friend]["TVShows"]
+                                                      .contains(
+                                                          id.toString())) {
+                                                seenWith[friend]["TVShows"]
+                                                    .add(id.toString());
+                                              } else if (!seenWith
+                                                  .containsKey(friend)) {
+                                                seenWith[friend] = {
+                                                  "Movies": [],
+                                                  "TVShows": []
+                                                };
+                                                seenWith[friend]["TVShows"]
+                                                    .add(id.toString());
+                                              }
+                                              DocumentReference userDoc2 =
+                                                  firestore
+                                                      .collection(friend)
+                                                      .doc("SeenWith");
+                                              Map<String, dynamic> item = {};
+                                              List<dynamic> watchedWithList = [
+                                                uid
+                                              ];
+                                              item[id] = watchedWithList;
+                                              await firestore.runTransaction(
+                                                  (transaction) async {
+                                                // Get the document snapshot
+                                                DocumentSnapshot snapshot =
+                                                    await transaction
+                                                        .get(userDoc2);
+
+                                                if (!snapshot.exists) {
+                                                  throw Exception(
+                                                      "Document does not exist!");
+                                                }
+
+                                                Map<String, dynamic> data =
+                                                    snapshot.data()
+                                                        as Map<String, dynamic>;
+
+                                                if (data.containsKey(
+                                                        'TVShows') &&
+                                                    data['TVShows'] is Map<
+                                                        String, dynamic>) {
+                                                  Map<String, dynamic>
+                                                      moviesMap =
+                                                      data['TVShows'];
+
+                                                  if (moviesMap
+                                                      .containsKey(id)) {
+                                                    List existingList =
+                                                        moviesMap[id]
+                                                            ["friends"];
+                                                    for (String person
+                                                        in watchedWithList) {
+                                                      if (!existingList
+                                                          .contains(person)) {
+                                                        existingList
+                                                            .add(person);
+                                                      }
+                                                    }
+                                                    moviesMap[id] = {
+                                                      "friends": existingList
+                                                    };
+                                                    transaction.update(userDoc2,
+                                                        {"TVShows": moviesMap});
+                                                  } else {
+                                                    moviesMap[id] = {
+                                                      "friends": watchedWithList
+                                                    };
+                                                    transaction.update(userDoc2,
+                                                        {"TVShows": moviesMap});
+                                                  }
+                                                } else {
+                                                  transaction.set(
+                                                      userDoc2,
+                                                      {
+                                                        'TVShows': {
+                                                          id: {
+                                                            "friends":
+                                                                watchedWithList
+                                                          }
+                                                        }
+                                                      },
+                                                      SetOptions(merge: true));
+                                                }
+                                              }).catchError((error) {
+                                                print(
+                                                    "Failed to update document: $error");
+                                              });
+                                            }
+                                            DocumentReference userDoc2 =
+                                                firestore
+                                                    .collection(uid)
+                                                    .doc("SeenWith");
+
+                                            Map<String, dynamic> item = {};
+                                            List<dynamic> watchedWithList =
+                                                selectedFriends.keys
+                                                    .where((key) =>
+                                                        selectedFriends[key] ==
+                                                        true)
+                                                    .toList();
+                                            item[id] = watchedWithList;
+                                            firestore.runTransaction(
+                                                (transaction) async {
+                                              // Get the document snapshot
+                                              DocumentSnapshot snapshot =
+                                                  await transaction
+                                                      .get(userDoc2);
+
+                                              if (!snapshot.exists) {
+                                                throw Exception(
+                                                    "Document does not exist!");
+                                              }
+
+                                              // Get the current data
+                                              Map<String, dynamic> data =
+                                                  snapshot.data()
+                                                      as Map<String, dynamic>;
+
+                                              // Check if 'Movies' map exists and if the 'id' is already a key in the 'Movies' map
+                                              if (data.containsKey('TVShows') &&
+                                                  data['TVShows']
+                                                      is Map<String, dynamic>) {
+                                                Map<String, dynamic> moviesMap =
+                                                    data['TVShows'];
+
+                                                // Check if the 'id' already exists in the 'Movies' map
+                                                if (moviesMap.containsKey(id)) {
+                                                  // If it exists, append the new list to the existing one
+                                                  List existingList =
+                                                      moviesMap[id]["friends"];
+                                                  for (String person
+                                                      in watchedWithList) {
+                                                    if (!existingList
+                                                        .contains(person)) {
+                                                      existingList.add(person);
+                                                    }
+                                                  }
+                                                  moviesMap[id] = {
+                                                    "friends": existingList
+                                                  };
+                                                } else {
+                                                  // If the 'id' doesn't exist, add the new key-value pair
+                                                  moviesMap[id] = {
+                                                    "friends": watchedWithList
+                                                  };
+                                                }
+                                                // Update the 'Movies' map
+                                                transaction.update(userDoc2,
+                                                    {'TVShows': moviesMap});
+                                              } else {
+                                                // If 'Movies' map doesn't exist, create it and add the 'id' and list
+                                                transaction.set(
+                                                    userDoc2,
+                                                    {
+                                                      'TVShows': {
+                                                        id: {
+                                                          "friends":
+                                                              watchedWithList
+                                                        }
+                                                      }
+                                                    },
+                                                    SetOptions(merge: true));
+                                              }
+                                            }).catchError((error) {
+                                              print(
+                                                  "Failed to update document: $error");
+                                            });
+                                            Navigator.of(context).pop();
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                            ).then((_) {
+                              setState(() {});
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 10),
+                            width: 145,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[900],
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.person_add, color: Colors.green),
+                                SizedBox(width: 10),
+                                Text(
+                                  'Add Friends',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          height: 10,
+                        ),
+                      ],
+                    ),
+
                   const Row(
                     children: [],
                   ),
@@ -1234,5 +1774,24 @@ class _TVShowResultState extends State<TVShowResult> {
       ),
       bottomNavigationBar: CommonBottomAppBar(-1),
     );
+  }
+
+  Future<List<String>> getProfilePhotos(List uids) async {
+    List<String> profilePhotos = [];
+
+    for (String tempUid in uids) {
+      var document = await FirebaseFirestore.instance
+          .collection(tempUid)
+          .doc("Settings")
+          .get();
+      if (document.exists && document.data()!.containsKey('profile_photo')) {
+        print(tempUid);
+        profilePhotos.add(document.data()!['profile_photo']);
+      } else {
+        profilePhotos.add(""); //eplace with your default image URL
+      }
+    }
+
+    return profilePhotos;
   }
 }
