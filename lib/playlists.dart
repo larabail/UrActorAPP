@@ -54,7 +54,9 @@ class _PlaylistsState extends State<Playlists> {
       builder: (BuildContext context) {
         return const ListJoinDialogue();
       },
-    );
+    ).then((_) {
+      setState(() {});
+    });
   }
 
   void _toggleAddListPanel() {
@@ -63,7 +65,9 @@ class _PlaylistsState extends State<Playlists> {
       builder: (BuildContext context) {
         return const ListAddDialogue();
       },
-    );
+    ).then((_) {
+      setState(() {});
+    });
   }
 
   @override

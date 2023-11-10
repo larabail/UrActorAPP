@@ -88,8 +88,6 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
             list_result["Name"] = listName;
             list_result["Backdrop"] = cover;
             Navigator.pop(context);
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (context) => ListResult()));
           }
         }
       }
