@@ -521,6 +521,13 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
       myObject["friends"] = [
         uid,
       ];
+      for (var friend2 in friendsWatchedWith.keys) {
+        if (friendsWatchedWith[friend] == true) {
+          if (!myObject["friends"].contains(friend2) && friend != friend2) {
+            myObject["friends"].add(friend2);
+          }
+        }
+      }
       if (friendsWatchedWith[friend] == true) {
         if (seenWith.containsKey(friend) &&
             !seenWith[friend]["Movies"].contains(id.toString())) {
@@ -568,13 +575,18 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
             if (moviesMap.containsKey(id)) {
               List existingList = moviesMap[id]["friends"];
               for (String person in watchedWithList) {
-                if (!existingList.contains(person)) {
+                if (!existingList.contains(person) && person != friend) {
                   existingList.add(person);
                 }
+              }
+              if (!existingList.contains(uid)) {
+                existingList.add(uid);
               }
               moviesMap[id] = {"friends": existingList};
               transaction.update(userDoc2, {"Movies": moviesMap});
             } else {
+              watchedWithList.remove(friend);
+              watchedWithList.add(uid);
               moviesMap[id] = {"friends": watchedWithList};
               transaction.update(userDoc2, {"Movies": moviesMap});
             }

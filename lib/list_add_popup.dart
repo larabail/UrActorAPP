@@ -114,8 +114,6 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
     });
 
     Navigator.pop(context);
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => const Playlists()));
   }
 
   @override
