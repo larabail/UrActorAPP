@@ -2,6 +2,8 @@
 
 import 'dart:convert';
 
+import 'common/utils.dart';
+import 'common/constants.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
@@ -354,31 +356,17 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    bool containsMap(
-        List<Map<String, dynamic>> list, Map<String, dynamic> map) {
-      String jsonString = json.encode(map);
-      for (int i = 0; i < list.length; i++) {
-        if (json.encode(list[i]) == jsonString) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    const String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-    const String imgLink = 'https://image.tmdb.org/t/p/w500/';
-    String link = "https://api.themoviedb.org/3/movie/";
     List<Map<String, dynamic>> movies = [];
     int selectedIndex = 0;
 
     Future<Map<String, dynamic>> getData(id, type) async {
       Map<String, dynamic> data = {};
       if (type == "TVShows") {
-        link = 'https://api.themoviedb.org/3/tv/';
+        link = MOVIE_LINK;
       } else {
-        link = 'https://api.themoviedb.org/3/movie/';
+        link = TV_SHOW_LINK;
       }
-      final response = await http.get(Uri.parse('$link$id$api_key_actor'));
+      final response = await http.get(Uri.parse('$link$id$API_KEY'));
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         if (type == "TVShows") {
@@ -389,11 +377,11 @@ class _MyHomePageState extends State<MyHomePage> {
         if (json['poster_path'] == null) {
           data['poster'] = 'assets/question_mark.png';
         } else {
-          data['poster'] = imgLink + json['poster_path'];
+          data['poster'] = IMG_LINK + json['poster_path'];
         }
         data['id'] = json['id'];
         data['type'] = type;
-        if (!containsMap(movies, data)) {
+        if (!Utils.containsMap(movies, data)) {
           movies.add(data);
         }
       } else {
@@ -416,7 +404,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const Calendar()),
+                        MaterialPageRoute(
+                            builder: (context) => const Calendar()),
                       );
                     },
                     child: Container(
@@ -444,7 +433,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const Explore()),
+                        MaterialPageRoute(
+                            builder: (context) => const Explore()),
                       );
                     },
                     child: Container(
@@ -497,7 +487,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const Playlists()),
+                          MaterialPageRoute(
+                              builder: (context) => const Playlists()),
                         );
                       },
                       child: Container(
@@ -745,7 +736,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => const MovieResult()),
+                                          builder: (context) =>
+                                              const MovieResult()),
                                     );
                                   },
                                   child: Container(
@@ -846,7 +838,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => const MovieResult()),
+                                          builder: (context) =>
+                                              const MovieResult()),
                                     );
                                   },
                                   child: Container(
@@ -947,7 +940,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => const MovieResult()),
+                                          builder: (context) =>
+                                              const MovieResult()),
                                     );
                                   },
                                   child: Container(
@@ -1050,7 +1044,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => const MovieResult()),
+                                          builder: (context) =>
+                                              const MovieResult()),
                                     );
                                   },
                                   child: Column(children: [
