@@ -15,6 +15,9 @@ import 'list_result.dart';
 import 'login.dart';
 import 'explore.dart';
 import 'movie_result.dart';
+import 'objects/Media.dart';
+import 'objects/Movie.dart';
+import 'objects/TVShow.dart';
 import 'playlists.dart';
 import 'reviews.dart';
 import 'seen.dart';
@@ -356,38 +359,38 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> movies = [];
     int selectedIndex = 0;
-
-    Future<Map<String, dynamic>> getData(id, type) async {
-      Map<String, dynamic> data = {};
+    Future<MediaItem> getData(id, type) async {
+      MediaItem item;
       if (type == "TVShows") {
-        link = MOVIE_LINK;
-      } else {
         link = TV_SHOW_LINK;
+      } else {
+        link = MOVIE_LINK;
       }
       final response = await http.get(Uri.parse('$link$id$API_KEY'));
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
-        if (type == "TVShows") {
-          data['title'] = json['name'];
-        } else {
-          data['title'] = json['title'];
-        }
+        String coverPath = "";
         if (json['poster_path'] == null) {
-          data['poster'] = 'assets/question_mark.png';
+          coverPath = 'assets/question_mark.png';
         } else {
-          data['poster'] = IMG_LINK + json['poster_path'];
+          coverPath = IMG_LINK + json['poster_path'];
         }
-        data['id'] = json['id'];
-        data['type'] = type;
-        if (!Utils.containsMap(movies, data)) {
-          movies.add(data);
+        if (type == "TVShows") {
+          item = TVShow(
+              id: json['id'].toString(),
+              title: json['name'],
+              coverPhoto: coverPath);
+        } else {
+          item = Movie(
+              id: json['id'].toString(),
+              title: json['title'],
+              coverPhoto: coverPath);
         }
       } else {
         throw Exception('Failed to load movie details');
       }
-      return data;
+      return item;
     }
 
     if (gotData) {
@@ -719,19 +722,19 @@ class _MyHomePageState extends State<MyHomePage> {
                         scrollDirection: Axis.horizontal,
                         itemCount: watchlist.length > 6 ? 6 : watchlist.length,
                         itemBuilder: (context, index) {
-                          return FutureBuilder<Map<String, dynamic>>(
+                          return FutureBuilder<MediaItem>(
                             future: getData(
                                 watchlist.reversed.toList()[index][1],
                                 'Movies'),
                             builder: (BuildContext context,
-                                AsyncSnapshot<Map> snapshot) {
+                                AsyncSnapshot<MediaItem> snapshot) {
                               if (snapshot.hasData) {
                                 return GestureDetector(
                                   onTap: () {
                                     movieResult = [
-                                      snapshot.data!['id'],
-                                      snapshot.data!['title'],
-                                      snapshot.data!['type'],
+                                      snapshot.data!.id,
+                                      snapshot.data!.title,
+                                      snapshot.data!.runtimeType,
                                     ];
                                     Navigator.push(
                                       context,
@@ -749,7 +752,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       borderRadius: BorderRadius.circular(27),
                                       image: DecorationImage(
                                         image: NetworkImage(
-                                            snapshot.data!['poster']),
+                                            snapshot.data!.coverPhoto),
                                         fit: BoxFit.fitWidth,
                                       ),
                                     ),
@@ -821,19 +824,19 @@ class _MyHomePageState extends State<MyHomePage> {
                         scrollDirection: Axis.horizontal,
                         itemCount: favMovies.length > 6 ? 6 : favMovies.length,
                         itemBuilder: (context, index) {
-                          return FutureBuilder<Map<String, dynamic>>(
+                          return FutureBuilder<MediaItem>(
                             future: getData(
                                 favMovies.reversed.toList()[index][1],
                                 'Movies'),
                             builder: (BuildContext context,
-                                AsyncSnapshot<Map> snapshot) {
+                                AsyncSnapshot<MediaItem> snapshot) {
                               if (snapshot.hasData) {
                                 return GestureDetector(
                                   onTap: () {
                                     movieResult = [
-                                      snapshot.data!['id'],
-                                      snapshot.data!['title'],
-                                      snapshot.data!['type'],
+                                      snapshot.data!.id,
+                                      snapshot.data!.title,
+                                      snapshot.data!.runtimeType,
                                     ];
                                     Navigator.push(
                                       context,
@@ -851,7 +854,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       borderRadius: BorderRadius.circular(27),
                                       image: DecorationImage(
                                         image: NetworkImage(
-                                            snapshot.data!['poster']),
+                                            snapshot.data!.coverPhoto),
                                         fit: BoxFit.fitWidth,
                                       ),
                                     ),
@@ -923,19 +926,19 @@ class _MyHomePageState extends State<MyHomePage> {
                         itemCount:
                             seenMovies.length > 6 ? 6 : seenMovies.length,
                         itemBuilder: (context, index) {
-                          return FutureBuilder<Map<String, dynamic>>(
+                          return FutureBuilder<MediaItem>(
                             future: getData(
                                 seenMovies.reversed.toList()[index][1],
                                 'Movies'),
                             builder: (BuildContext context,
-                                AsyncSnapshot<Map> snapshot) {
+                                AsyncSnapshot<MediaItem> snapshot) {
                               if (snapshot.hasData) {
                                 return GestureDetector(
                                   onTap: () {
                                     movieResult = [
-                                      snapshot.data!['id'],
-                                      snapshot.data!['title'],
-                                      snapshot.data!['type'],
+                                      snapshot.data!.id,
+                                      snapshot.data!.title,
+                                      snapshot.data!.runtimeType,
                                     ];
                                     Navigator.push(
                                       context,
@@ -953,7 +956,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       borderRadius: BorderRadius.circular(27),
                                       image: DecorationImage(
                                         image: NetworkImage(
-                                            snapshot.data!['poster']),
+                                            snapshot.data!.coverPhoto),
                                         fit: BoxFit.fitWidth,
                                       ),
                                     ),
@@ -1027,19 +1030,19 @@ class _MyHomePageState extends State<MyHomePage> {
                         itemBuilder: (context, index) {
                           final review = reviews[
                               reviews.keys.toList().reversed.toList()[index]];
-                          return FutureBuilder<Map<String, dynamic>>(
+                          return FutureBuilder<MediaItem>(
                             future: getData(
                                 reviews.keys.toList().reversed.toList()[index],
                                 "Movies"),
                             builder: (BuildContext context,
-                                AsyncSnapshot<Map> snapshot) {
+                                AsyncSnapshot<MediaItem> snapshot) {
                               if (snapshot.hasData) {
                                 return GestureDetector(
                                   onTap: () {
                                     movieResult = [
-                                      snapshot.data!['id'],
-                                      snapshot.data!['title'],
-                                      snapshot.data!['type'],
+                                      snapshot.data!.id,
+                                      snapshot.data!.title,
+                                      snapshot.data!.runtimeType,
                                     ];
                                     Navigator.push(
                                       context,
@@ -1061,7 +1064,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                         borderRadius: BorderRadius.circular(27),
                                         image: DecorationImage(
                                           image: NetworkImage(
-                                              snapshot.data!['poster']),
+                                              snapshot.data!.coverPhoto),
                                           fit: BoxFit.fitWidth,
                                         ),
                                       ),
