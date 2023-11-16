@@ -1,0 +1,9 @@
+// ignore_for_file: constant_identifier_names
+
+const String API_KEY = "?api_key=700cd4fab994df56eb41b34d38c4762a";
+const String IMG_LINK = 'https://image.tmdb.org/t/p/w500/';
+const String MOVIE_LINK = "https://api.themoviedb.org/3/movie/";
+const String TV_SHOW_LINK = "https://api.themoviedb.org/3/tv/";
+const String CREDITS_LINK = "/credits$API_KEY";
+const String WATCH_PROVIDERS_LINK = "/watch/providers$API_KEY";
+const String VIDEOS_LINK = "/videos$API_KEY";
