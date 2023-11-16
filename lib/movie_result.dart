@@ -1,5 +1,7 @@
-// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously
+// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, no_leading_underscores_for_local_identifiers
 
+import 'common/utils.dart';
+import 'common/constants.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' as intl;
@@ -7,12 +9,9 @@ import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'friends.dart';
 import 'friends_profile.dart';
-import 'profile.dart';
-import 'search.dart';
 import 'main.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'playlists.dart';
 import 'rating_popup.dart';
 import 'person_result.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
@@ -77,14 +76,6 @@ void check() {
 }
 
 class _MovieResultState extends State<MovieResult> {
-  final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-  String credits = "/credits?api_key=700cd4fab994df56eb41b34d38c4762a";
-  final String imgLink = 'https://image.tmdb.org/t/p/w500';
-  String link = "https://api.themoviedb.org/3/movie/";
-  String watch_providers =
-      "/watch/providers?api_key=700cd4fab994df56eb41b34d38c4762a";
-  String video = "/videos?api_key=700cd4fab994df56eb41b34d38c4762a";
-
   Future<void> deleteFromWatchedConfirmation(
       String id, BuildContext context) async {
     // Display a dialog box for confirmation. You will have to create a custom dialog for this.
@@ -506,12 +497,11 @@ class _MovieResultState extends State<MovieResult> {
     if (reviewed) {
       movieData[4] = (reviews[movieData[0].toString()] as Map);
     }
-    // myController.text = movieData[3].toString();
     String name = movieData[1]
         .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
         .replaceAll(" ", "-");
     final response =
-        await http.get(Uri.parse('$link${movieData[0]}-$name$api_key_actor'));
+        await http.get(Uri.parse('$MOVIE_LINK${movieData[0]}-$name$API_KEY'));
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
@@ -526,11 +516,8 @@ class _MovieResultState extends State<MovieResult> {
         }
       }
       json["seen_dates"].sort((a, b) {
-        // Assuming 'a' and 'b' are lists where the first item is the date string.
-        // Parse the date strings to DateTime objects for comparison.
         var dateA = DateTime.parse(a[0]);
         var dateB = DateTime.parse(b[0]);
-        // Use compareTo for comparison and multiply by -1 to get descending order.
         return dateB.compareTo(dateA);
       });
 
@@ -549,8 +536,8 @@ class _MovieResultState extends State<MovieResult> {
             json["imdb_rating"] = "0.0";
           }
           json['year'] = jsonDecode(r.body)['Year'];
-          final r2 = await http
-              .get(Uri.parse('$link${movieData[0]}-$name$watch_providers'));
+          final r2 = await http.get(Uri.parse(
+              '$MOVIE_LINK${movieData[0]}-$name$WATCH_PROVIDERS_LINK'));
           if (r2.statusCode == 200) {
             json['providers'] = [];
             if (jsonDecode(r2.body)["results"].keys.contains(country)) {
@@ -558,17 +545,17 @@ class _MovieResultState extends State<MovieResult> {
                 jsonDecode(r2.body)["results"][country]['flatrate'].forEach(
                   (provider) async {
                     String name = provider['provider_name'];
-                    String photo = imgLink + provider['logo_path'];
+                    String photo = IMG_LINK + provider['logo_path'];
                     json['providers'].add([name, photo]);
                   },
                 );
-                final r3 = await http
-                    .get(Uri.parse('$link${movieData[0]}-$name$credits'));
+                final r3 = await http.get(
+                    Uri.parse('$MOVIE_LINK${movieData[0]}-$name$CREDITS_LINK'));
                 if (r3.statusCode == 200) {
                   json['cast'] = jsonDecode(r3.body)["cast"];
                   json['crew'] = jsonDecode(r3.body)["crew"];
-                  final r4 = await http
-                      .get(Uri.parse('$link${movieData[0]}-$name$video'));
+                  final r4 = await http.get(Uri.parse(
+                      '$MOVIE_LINK${movieData[0]}-$name$VIDEOS_LINK'));
                   if (r4.statusCode == 200) {
                     bool got = false;
                     jsonDecode(r4.body)['results'].forEach((element) {
@@ -586,13 +573,13 @@ class _MovieResultState extends State<MovieResult> {
                 throw Exception('Failed to load movie details');
               } else {
                 json['providers'] = [];
-                final r3 = await http
-                    .get(Uri.parse('$link${movieData[0]}-$name$credits'));
+                final r3 = await http.get(
+                    Uri.parse('$MOVIE_LINK${movieData[0]}-$name$CREDITS_LINK'));
                 if (r3.statusCode == 200) {
                   json['cast'] = jsonDecode(r3.body)["cast"];
                   json['crew'] = jsonDecode(r3.body)["crew"];
-                  final r4 = await http
-                      .get(Uri.parse('$link${movieData[0]}-$name$video'));
+                  final r4 = await http.get(Uri.parse(
+                      '$MOVIE_LINK${movieData[0]}-$name$VIDEOS_LINK'));
                   if (r4.statusCode == 200) {
                     bool got = false;
                     jsonDecode(r4.body)['results'].forEach((element) {
@@ -611,13 +598,13 @@ class _MovieResultState extends State<MovieResult> {
               }
             } else {
               json['providers'] = [];
-              final r3 = await http
-                  .get(Uri.parse('$link${movieData[0]}-$name$credits'));
+              final r3 = await http.get(
+                  Uri.parse('$MOVIE_LINK${movieData[0]}-$name$CREDITS_LINK'));
               if (r3.statusCode == 200) {
                 json['cast'] = jsonDecode(r3.body)["cast"];
                 json['crew'] = jsonDecode(r3.body)["crew"];
-                final r4 = await http
-                    .get(Uri.parse('$link${movieData[0]}-$name$video'));
+                final r4 = await http.get(
+                    Uri.parse('$MOVIE_LINK${movieData[0]}-$name$VIDEOS_LINK'));
                 if (r4.statusCode == 200) {
                   bool got = false;
                   jsonDecode(r4.body)['results'].forEach((element) {
@@ -643,8 +630,8 @@ class _MovieResultState extends State<MovieResult> {
       } else {
         json['imdb_rating'] = "0.0";
         json['year'] = "None";
-        final r2 = await http
-            .get(Uri.parse('$link${movieData[0]}-$name$watch_providers'));
+        final r2 = await http.get(
+            Uri.parse('$MOVIE_LINK${movieData[0]}-$name$WATCH_PROVIDERS_LINK'));
         if (r2.statusCode == 200) {
           json['providers'] = [];
           if (jsonDecode(r2.body)["results"].keys.contains(country)) {
@@ -652,17 +639,17 @@ class _MovieResultState extends State<MovieResult> {
               jsonDecode(r2.body)["results"][country]['flatrate'].forEach(
                 (provider) async {
                   String name = provider['provider_name'];
-                  String photo = imgLink + provider['logo_path'];
+                  String photo = IMG_LINK + provider['logo_path'];
                   json['providers'].add([name, photo]);
                 },
               );
-              final r3 = await http
-                  .get(Uri.parse('$link${movieData[0]}-$name$credits'));
+              final r3 = await http.get(
+                  Uri.parse('$MOVIE_LINK${movieData[0]}-$name$CREDITS_LINK'));
               if (r3.statusCode == 200) {
                 json['cast'] = jsonDecode(r3.body)["cast"];
                 json['crew'] = jsonDecode(r3.body)["crew"];
-                final r4 = await http
-                    .get(Uri.parse('$link${movieData[0]}-$name$video'));
+                final r4 = await http.get(
+                    Uri.parse('$MOVIE_LINK${movieData[0]}-$name$VIDEOS_LINK'));
                 if (r4.statusCode == 200) {
                   bool got = false;
                   jsonDecode(r4.body)['results'].forEach((element) {
@@ -680,13 +667,13 @@ class _MovieResultState extends State<MovieResult> {
               throw Exception('Failed to load movie details');
             } else {
               json['providers'] = [];
-              final r3 = await http
-                  .get(Uri.parse('$link${movieData[0]}-$name$credits'));
+              final r3 = await http.get(
+                  Uri.parse('$MOVIE_LINK${movieData[0]}-$name$CREDITS_LINK'));
               if (r3.statusCode == 200) {
                 json['cast'] = jsonDecode(r3.body)["cast"];
                 json['crew'] = jsonDecode(r3.body)["crew"];
-                final r4 = await http
-                    .get(Uri.parse('$link${movieData[0]}-$name$video'));
+                final r4 = await http.get(
+                    Uri.parse('$MOVIE_LINK${movieData[0]}-$name$VIDEOS_LINK'));
                 if (r4.statusCode == 200) {
                   bool got = false;
                   jsonDecode(r4.body)['results'].forEach((element) {
@@ -705,13 +692,13 @@ class _MovieResultState extends State<MovieResult> {
             }
           } else {
             json['providers'] = [];
-            final r3 =
-                await http.get(Uri.parse('$link${movieData[0]}-$name$credits'));
+            final r3 = await http.get(
+                Uri.parse('$MOVIE_LINK${movieData[0]}-$name$CREDITS_LINK'));
             if (r3.statusCode == 200) {
               json['cast'] = jsonDecode(r3.body)["cast"];
               json['crew'] = jsonDecode(r3.body)["crew"];
-              final r4 =
-                  await http.get(Uri.parse('$link${movieData[0]}-$name$video'));
+              final r4 = await http.get(
+                  Uri.parse('$MOVIE_LINK${movieData[0]}-$name$VIDEOS_LINK'));
               if (r4.statusCode == 200) {
                 bool got = false;
                 jsonDecode(r4.body)['results'].forEach((element) {
@@ -742,8 +729,6 @@ class _MovieResultState extends State<MovieResult> {
     reviewed = false;
     check();
 
-    int selectedIndex = 0;
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (rewatchedMovies.keys.toList().contains(movieResult[0].toString())) {
         myController.text =
@@ -755,7 +740,6 @@ class _MovieResultState extends State<MovieResult> {
       }
     });
 
-    // ignore: no_leading_underscores_for_local_identifiers
     void _onTap(
         String type, String id, String title, int runtime, double rating) {
       setState(
@@ -1016,23 +1000,6 @@ class _MovieResultState extends State<MovieResult> {
       );
     }
 
-    final List<Widget> pages = [
-      const MyApp(),
-      const Playlists(),
-      const Search(),
-      const Friends(),
-      const Profile(),
-      // Add more pages here
-    ];
-
-    void _onItemTapped(int index) {
-      selectedIndex = index;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
-      );
-    }
-
     return Scaffold(
       appBar: const CustomAppBar(),
       body: FutureBuilder<Map>(
@@ -1056,7 +1023,7 @@ class _MovieResultState extends State<MovieResult> {
                               borderRadius: BorderRadius.circular(10),
                               image: DecorationImage(
                                 image: NetworkImage(
-                                  imgLink + snapshot.data!['backdrop_path'],
+                                  IMG_LINK + snapshot.data!['backdrop_path'],
                                 ),
                                 fit: BoxFit.cover,
                               ),
@@ -1471,7 +1438,7 @@ class _MovieResultState extends State<MovieResult> {
                                     borderRadius: BorderRadius.circular(10),
                                     image: DecorationImage(
                                       image: NetworkImage(
-                                        imgLink +
+                                        IMG_LINK +
                                             snapshot.data!['providers'][index]
                                                 [1],
                                       ),
@@ -1574,8 +1541,7 @@ class _MovieResultState extends State<MovieResult> {
                               children: (snapshot.data!['seen_dates'] as List)
                                   .map<Widget>((date) {
                                 // Assuming date[1] is a list of friend UIDs who watched the movie on this date
-                                List friendsWhoWatched =
-                                    date[1] ?? [];
+                                List friendsWhoWatched = date[1] ?? [];
                                 return Padding(
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 2.0),
@@ -2213,7 +2179,7 @@ class _MovieResultState extends State<MovieResult> {
                                   "https://cdn-icons-png.flaticon.com/512/3088/3088765.png";
                             } else {
                               person['profile_path'] =
-                                  imgLink + person['profile_path'];
+                                  IMG_LINK + person['profile_path'];
                             }
                             return Padding(
                               padding:
@@ -2224,7 +2190,8 @@ class _MovieResultState extends State<MovieResult> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => const PersonResult()),
+                                        builder: (context) =>
+                                            const PersonResult()),
                                   );
                                 },
                                 child: Column(
@@ -2295,7 +2262,8 @@ class _MovieResultState extends State<MovieResult> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => const PersonResult()),
+                                          builder: (context) =>
+                                              const PersonResult()),
                                     );
                                   },
                                   child: Text(
@@ -2325,7 +2293,8 @@ class _MovieResultState extends State<MovieResult> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => const PersonResult()),
+                                          builder: (context) =>
+                                              const PersonResult()),
                                     );
                                   },
                                   child: Text(
