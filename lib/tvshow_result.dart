@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'appbar.dart';
@@ -50,7 +52,7 @@ Future<void> deleteFromWatchedConfirmation(
   if (confirmed) {
     List w;
     await FirebaseFirestore.instance
-        .collection(uid)
+        .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) {
       querySnapshot.docs.forEach((doc) async {
@@ -62,12 +64,13 @@ Future<void> deleteFromWatchedConfirmation(
           if (index > -1) {
             w.removeAt(index);
           }
-          var userDoc =
-              FirebaseFirestore.instance.collection(uid).doc("TVShows");
+          var userDoc = FirebaseFirestore.instance
+              .collection(currentUser.uid)
+              .doc("TVShows");
           await userDoc.update({'Seen': w});
-          seenTVShows = [];
+          currentUser.seenTVShows = [];
           for (var element in w) {
-            seenTVShows += [
+            currentUser.seenTVShows += [
               ["TVShows", element]
             ];
           }
@@ -80,7 +83,8 @@ Future<void> deleteFromWatchedConfirmation(
 }
 
 void markWatched(String id, String title, BuildContext context) async {
-  final userDoc = FirebaseFirestore.instance.collection(uid).doc('TVShows');
+  final userDoc =
+      FirebaseFirestore.instance.collection(currentUser.uid).doc('TVShows');
   id = id.toString();
   await userDoc.update({
     'Seen': FieldValue.arrayUnion([id])
@@ -88,16 +92,16 @@ void markWatched(String id, String title, BuildContext context) async {
   // store id in shared preferences or another way
   List w;
   await FirebaseFirestore.instance
-      .collection(uid)
+      .collection(currentUser.uid)
       .get()
       .then((QuerySnapshot querySnapshot) {
     querySnapshot.docs.forEach((doc) async {
       if (doc.id == "TVShows") {
         Map tvshowResult = doc.data() as Map;
         w = tvshowResult["Seen"];
-        seenTVShows = [];
+        currentUser.seenTVShows = [];
         for (var element in w) {
-          seenTVShows += [
+          currentUser.seenTVShows += [
             ["TVShows", element]
           ];
         }
@@ -107,20 +111,21 @@ void markWatched(String id, String title, BuildContext context) async {
 }
 
 void favorite(String id, context) async {
-  final userDoc = FirebaseFirestore.instance.collection(uid).doc("Favorites");
+  final userDoc =
+      FirebaseFirestore.instance.collection(currentUser.uid).doc("Favorites");
   await userDoc.update({
     'TVShows': FieldValue.arrayUnion([id])
   });
-  favTVShows = [];
+  currentUser.favTVShows = [];
   await FirebaseFirestore.instance
-      .collection(uid)
+      .collection(currentUser.uid)
       .get()
       .then((QuerySnapshot querySnapshot) {
     for (var doc in querySnapshot.docs) {
       if (doc.id == "Favorites") {
         Map allFavs = doc.data() as Map;
         allFavs["TVShows"].forEach((element) {
-          favTVShows += [
+          currentUser.favTVShows += [
             ["TVShows", element]
           ];
         });
@@ -131,7 +136,7 @@ void favorite(String id, context) async {
 
 void unfavorite(String id, context) async {
   await FirebaseFirestore.instance
-      .collection(uid)
+      .collection(currentUser.uid)
       .get()
       .then((QuerySnapshot querySnapshot) async {
     for (var doc in querySnapshot.docs) {
@@ -142,12 +147,13 @@ void unfavorite(String id, context) async {
         if (index > -1) {
           tvshowsInFavs.removeAt(index);
         }
-        final userDoc =
-            FirebaseFirestore.instance.collection(uid).doc("Favorites");
+        final userDoc = FirebaseFirestore.instance
+            .collection(currentUser.uid)
+            .doc("Favorites");
         await userDoc.update({'TVShows': tvshowsInFavs});
-        favTVShows = [];
+        currentUser.favTVShows = [];
         allFavs["TVShows"].forEach((element) {
-          favTVShows += [
+          currentUser.favTVShows += [
             ["TVShows", element]
           ];
         });
@@ -157,20 +163,21 @@ void unfavorite(String id, context) async {
 }
 
 void bookmark(String id, context) async {
-  final userDoc = FirebaseFirestore.instance.collection(uid).doc("Watchlist");
+  final userDoc =
+      FirebaseFirestore.instance.collection(currentUser.uid).doc("Watchlist");
   await userDoc.update({
     'TVShows': FieldValue.arrayUnion([id])
   });
-  watchlistTVShows = [];
+  currentUser.watchlistTVShows = [];
   await FirebaseFirestore.instance
-      .collection(uid)
+      .collection(currentUser.uid)
       .get()
       .then((QuerySnapshot querySnapshot) {
     for (var doc in querySnapshot.docs) {
       if (doc.id == "Watchlist") {
         Map watchlistAll = doc.data() as Map;
         watchlistAll["TVShows"].forEach((element) {
-          watchlistTVShows += [
+          currentUser.watchlistTVShows += [
             ["TVShows", element]
           ];
         });
@@ -181,7 +188,7 @@ void bookmark(String id, context) async {
 
 void unbookmark(String id, context) async {
   await FirebaseFirestore.instance
-      .collection(uid)
+      .collection(currentUser.uid)
       .get()
       .then((QuerySnapshot querySnapshot) async {
     for (var doc in querySnapshot.docs) {
@@ -192,12 +199,13 @@ void unbookmark(String id, context) async {
         if (index > -1) {
           tvShowinWatchlist.removeAt(index);
         }
-        final userDoc =
-            FirebaseFirestore.instance.collection(uid).doc("Watchlist");
+        final userDoc = FirebaseFirestore.instance
+            .collection(currentUser.uid)
+            .doc("Watchlist");
         await userDoc.update({'TVShows': tvShowinWatchlist});
-        watchlistTVShows = [];
+        currentUser.watchlistTVShows = [];
         for (var element in tvShowinWatchlist) {
-          watchlistTVShows += [
+          currentUser.watchlistTVShows += [
             ["TVShows", element]
           ];
         }
@@ -212,7 +220,7 @@ void addToList(String id, String listId, List tvshowsInList, context) async {
       .collection("Watchlists")
       .doc(listId.toString());
   await userDoc.update({'TV Shows': tvshowsInList});
-  playlists = {};
+  currentUser.playlists = {};
   await FirebaseFirestore.instance
       .collection("Watchlists")
       .get()
@@ -222,8 +230,8 @@ void addToList(String id, String listId, List tvshowsInList, context) async {
       List users = keysOfDoc['Users'] as List;
       for (var element in users) {
         Map el = element as Map;
-        if (el.keys.contains(uid)) {
-          playlists[doc.id] = doc.data();
+        if (el.keys.contains(currentUser.uid)) {
+          currentUser.playlists[doc.id] = doc.data();
         }
       }
     }
@@ -237,7 +245,7 @@ void deleteFromList(
       .collection("Watchlists")
       .doc(listId.toString());
   await userDoc.update({'TV Shows': tvshowsInList});
-  playlists = {};
+  currentUser.playlists = {};
   await FirebaseFirestore.instance
       .collection("Watchlists")
       .get()
@@ -247,8 +255,8 @@ void deleteFromList(
       List users = keysOfDoc['Users'] as List;
       for (var element in users) {
         Map el = element as Map;
-        if (el.keys.contains(uid)) {
-          playlists[doc.id] = doc.data();
+        if (el.keys.contains(currentUser.uid)) {
+          currentUser.playlists[doc.id] = doc.data();
         }
       }
     }
@@ -286,21 +294,22 @@ class _TVShowResultState extends State<TVShowResult> {
   String video = "/videos?api_key=700cd4fab994df56eb41b34d38c4762a";
 
   void check() {
-    if (containsMap(seenTVShows, ['TVShows', widget.tvshow.id])) {
+    if (containsMap(currentUser.seenTVShows, ['TVShows', widget.tvshow.id])) {
       _isTappedSeen = true;
       _imageProviderSeen = 'assets/seen_after.png';
     } else {
       _isTappedSeen = false;
       _imageProviderSeen = 'assets/seen_before.png';
     }
-    if (containsMap(watchlistTVShows, ['TVShows', widget.tvshow.id])) {
+    if (containsMap(
+        currentUser.watchlistTVShows, ['TVShows', widget.tvshow.id])) {
       _isTappedWatchlist = true;
       _imageProviderWatchlist = 'assets/watchlist_after.png';
     } else {
       _isTappedWatchlist = false;
       _imageProviderWatchlist = 'assets/watchlist_before.png';
     }
-    if (containsMap(favTVShows, ['TVShows', widget.tvshow.id])) {
+    if (containsMap(currentUser.favTVShows, ['TVShows', widget.tvshow.id])) {
       _isTappedFav = true;
       _imageProviderFav = 'assets/fav_after.png';
     } else {
@@ -333,9 +342,14 @@ class _TVShowResultState extends State<TVShowResult> {
               .get(Uri.parse('$link${movieData[0]}-$name$watch_providers'));
           if (r2.statusCode == 200) {
             json['providers'] = [];
-            if (jsonDecode(r2.body)["results"].keys.contains(country)) {
-              if (jsonDecode(r2.body)["results"][country]['flatrate'] != null) {
-                jsonDecode(r2.body)["results"][country]['flatrate'].forEach(
+            if (jsonDecode(r2.body)["results"]
+                .keys
+                .contains(currentUser.country)) {
+              if (jsonDecode(r2.body)["results"][currentUser.country]
+                      ['flatrate'] !=
+                  null) {
+                jsonDecode(r2.body)["results"][currentUser.country]['flatrate']
+                    .forEach(
                   (provider) async {
                     String name = provider['provider_name'];
                     String photo = imgLink + provider['logo_path'];
@@ -470,16 +484,20 @@ class _TVShowResultState extends State<TVShowResult> {
                     return SizedBox(
                       height: 300, // set the height here
                       child: ListView.builder(
-                        itemCount: (playlists.length / 2).ceil(),
+                        itemCount: (currentUser.playlists.length / 2).ceil(),
                         itemBuilder: (context, index) {
                           final leftMovieIndex = index * 2;
                           final rightMovieIndex = index * 2 + 1;
-                          final keyLeft = (leftMovieIndex < playlists.length)
-                              ? playlists.keys.elementAt(leftMovieIndex)
-                              : null;
-                          final keyRight = (rightMovieIndex < playlists.length)
-                              ? playlists.keys.elementAt(rightMovieIndex)
-                              : null;
+                          final keyLeft =
+                              (leftMovieIndex < currentUser.playlists.length)
+                                  ? currentUser.playlists.keys
+                                      .elementAt(leftMovieIndex)
+                                  : null;
+                          final keyRight =
+                              (rightMovieIndex < currentUser.playlists.length)
+                                  ? currentUser.playlists.keys
+                                      .elementAt(rightMovieIndex)
+                                  : null;
                           dynamic valueLeft,
                               imageLeft,
                               moviesLeft,
@@ -487,14 +505,19 @@ class _TVShowResultState extends State<TVShowResult> {
                               imageRight,
                               moviesRight;
                           if (keyLeft != null) {
-                            valueLeft = playlists[keyLeft]['Name'];
-                            imageLeft = playlists[keyLeft]['CoverPhoto'];
-                            moviesLeft = playlists[keyLeft]['TV Shows'];
+                            valueLeft = currentUser.playlists[keyLeft]['Name'];
+                            imageLeft =
+                                currentUser.playlists[keyLeft]['CoverPhoto'];
+                            moviesLeft =
+                                currentUser.playlists[keyLeft]['TV Shows'];
                           }
                           if (keyRight != null) {
-                            valueRight = playlists[keyRight]['Name'];
-                            imageRight = playlists[keyRight]['CoverPhoto'];
-                            moviesRight = playlists[keyRight]['TV Shows'];
+                            valueRight =
+                                currentUser.playlists[keyRight]['Name'];
+                            imageRight =
+                                currentUser.playlists[keyRight]['CoverPhoto'];
+                            moviesRight =
+                                currentUser.playlists[keyRight]['TV Shows'];
                           }
                           return Row(
                             children: [
@@ -1071,7 +1094,8 @@ class _TVShowResultState extends State<TVShowResult> {
                   //     keyboardType: TextInputType.number,
                   //   ),
                   // ),
-                  if (containsMap(seenTVShows, ['TVShows', widget.tvshow.id]))
+                  if (containsMap(
+                      currentUser.seenTVShows, ['TVShows', widget.tvshow.id]))
                     ExpansionTile(
                       title: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -1114,7 +1138,7 @@ class _TVShowResultState extends State<TVShowResult> {
 
                         FutureBuilder(
                           future: Future.wait(
-                            seenWith.entries
+                            currentUser.seenWith.entries
                                 .where((entry) =>
                                     entry.value["TVShows"]?.contains(
                                         widget.tvshow.id.toString()) ??
@@ -1270,14 +1294,14 @@ class _TVShowResultState extends State<TVShowResult> {
                                         child: SingleChildScrollView(
                                           child: Column(
                                             children: List.generate(
-                                              friends.length,
+                                              currentUser.friends.length,
                                               (friendIndex) {
                                                 return FutureBuilder<
                                                     DocumentSnapshot>(
                                                   future: FirebaseFirestore
                                                       .instance
-                                                      .collection(
-                                                          friends[friendIndex])
+                                                      .collection(currentUser
+                                                          .friends[friendIndex])
                                                       .doc('Settings')
                                                       .get(),
                                                   builder: (context, snapshot) {
@@ -1348,16 +1372,19 @@ class _TVShowResultState extends State<TVShowResult> {
                                                         value: selectedFriends
                                                                 .keys
                                                                 .toList()
-                                                                .contains(friends[
+                                                                .contains(currentUser
+                                                                        .friends[
                                                                     friendIndex])
                                                             ? selectedFriends[
-                                                                friends[
+                                                                currentUser
+                                                                        .friends[
                                                                     friendIndex]]
                                                             : false,
                                                         onChanged:
                                                             (bool? value) {
                                                           setState(() {
-                                                            selectedFriends[friends[
+                                                            selectedFriends[currentUser
+                                                                        .friends[
                                                                     friendIndex]] =
                                                                 value!;
                                                           });
@@ -1396,20 +1423,23 @@ class _TVShowResultState extends State<TVShowResult> {
                                                 'Seen':
                                                     FieldValue.arrayUnion([id])
                                               });
-                                              if (seenWith
+                                              if (currentUser.seenWith
                                                       .containsKey(friend) &&
-                                                  !seenWith[friend]["TVShows"]
+                                                  !currentUser.seenWith[friend]
+                                                          ["TVShows"]
                                                       .contains(
                                                           id.toString())) {
-                                                seenWith[friend]["TVShows"]
+                                                currentUser.seenWith[friend]
+                                                        ["TVShows"]
                                                     .add(id.toString());
-                                              } else if (!seenWith
+                                              } else if (!currentUser.seenWith
                                                   .containsKey(friend)) {
-                                                seenWith[friend] = {
+                                                currentUser.seenWith[friend] = {
                                                   "Movies": [],
                                                   "TVShows": []
                                                 };
-                                                seenWith[friend]["TVShows"]
+                                                currentUser.seenWith[friend]
+                                                        ["TVShows"]
                                                     .add(id.toString());
                                               }
                                               DocumentReference userDoc2 =
@@ -1418,7 +1448,7 @@ class _TVShowResultState extends State<TVShowResult> {
                                                       .doc("SeenWith");
                                               Map<String, dynamic> item = {};
                                               List<dynamic> watchedWithList = [
-                                                uid
+                                                currentUser.uid
                                               ];
                                               item[id] = watchedWithList;
                                               await firestore.runTransaction(
@@ -1490,7 +1520,7 @@ class _TVShowResultState extends State<TVShowResult> {
                                             }
                                             DocumentReference userDoc2 =
                                                 firestore
-                                                    .collection(uid)
+                                                    .collection(currentUser.uid)
                                                     .doc("SeenWith");
 
                                             Map<String, dynamic> item = {};
@@ -1633,7 +1663,6 @@ class _TVShowResultState extends State<TVShowResult> {
                               : 10,
                           itemBuilder: (BuildContext context, int index) {
                             Map person = snapshot.data!['cast'][index];
-                            print(person);
                             if (person['profile_path'] == null) {
                               person['profile_path'] =
                                   "https://cdn-icons-png.flaticon.com/512/3088/3088765.png";
@@ -1773,7 +1802,6 @@ class _TVShowResultState extends State<TVShowResult> {
           .doc("Settings")
           .get();
       if (document.exists && document.data()!.containsKey('profile_photo')) {
-        print(tempUid);
         profilePhotos.add(document.data()!['profile_photo']);
       } else {
         profilePhotos.add(""); //eplace with your default image URL

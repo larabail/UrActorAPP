@@ -10,36 +10,7 @@ class Login extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    uid = '';
-    country = '';
-    calendar = {};
-    allMovies = [];
-    favActors = [];
-    favDirectors = [];
-    favMovies = [];
-    favTVShows = [];
-    seenMovies = [];
-    idsExplorePage = [];
-    seenTVShows = [];
-    watchlist = [];
-    watchlistTVShows = [];
-    // movieResult = [];
-    // tvShowResult = [];
-    reviews = {};
-    rewatchedMovies = {};
-    playlists = {};
-    personResult = {};
-    oscars = {};
-    seenWith = {};
-    favsPage = [];
-    settings = {};
-    friends = [];
-    favsPageTVShows = [];
-    seenPage = [];
-    seenPageTVShows = [];
-    watchPageTVShows = [];
-    watchPage = [];
-    oscarsPage = [];
+    currentUser.clearUser();
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     late String email, password;
 

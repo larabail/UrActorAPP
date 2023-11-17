@@ -91,7 +91,7 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
     await userDoc.update({"TV Shows": []});
     await userDoc.update({"Name": _listName});
 
-    Map<String, dynamic> users = {uid: "Owner"};
+    Map<String, dynamic> users = {currentUser.uid: "Owner"};
     await userDoc.update({
       "Users": FieldValue.arrayUnion([users])
     });
@@ -105,8 +105,8 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
         List users = keysOfDoc['Users'] as List;
         for (var element in users) {
           Map el = element as Map;
-          if (el.keys.contains(uid)) {
-            playlists[doc.id] = doc.data();
+          if (el.keys.contains(currentUser.uid)) {
+            currentUser.playlists[doc.id] = doc.data();
           }
         }
       }

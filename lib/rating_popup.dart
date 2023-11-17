@@ -30,22 +30,22 @@ class _RatingDialogState extends State<RatingDialog> {
       },
     };
     reviewInfo = information;
-    var userDoc = firestore.collection(uid).doc('Reviews');
+    var userDoc = firestore.collection(currentUser.uid).doc('Reviews');
     await userDoc.update({
       'Seen': FieldValue.arrayUnion([information])
     });
-    reviews = {};
+    currentUser.reviews = {};
     await FirebaseFirestore.instance
-        .collection(uid)
+        .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) {
       for (var doc in querySnapshot.docs) {
-        if (doc.id == "Reviews" && reviews.keys.isEmpty) {
+        if (doc.id == "Reviews" && currentUser.reviews.keys.isEmpty) {
           Map reviewsMap = doc.data() as Map;
           List reviewsList = reviewsMap["Seen"];
           for (var element in reviewsList) {
             element = element as Map;
-            reviews[element.keys.toList()[0]] =
+            currentUser.reviews[element.keys.toList()[0]] =
                 element[element.keys.toList()[0]];
           }
         }
@@ -56,10 +56,10 @@ class _RatingDialogState extends State<RatingDialog> {
   }
 
   Future<void> deleteReview(id, context) async {
-    reviews.remove(id.toString());
+    currentUser.reviews.remove(id.toString());
     reviewed = false;
     await FirebaseFirestore.instance
-        .collection(uid)
+        .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) async {
       for (var doc in querySnapshot.docs) {
@@ -73,8 +73,9 @@ class _RatingDialogState extends State<RatingDialog> {
               tempReviewsInList.add(element);
             }
           }
-          final userDoc =
-              FirebaseFirestore.instance.collection(uid).doc("Reviews");
+          final userDoc = FirebaseFirestore.instance
+              .collection(currentUser.uid)
+              .doc("Reviews");
           await userDoc.update({'Seen': tempReviewsInList});
         }
       }

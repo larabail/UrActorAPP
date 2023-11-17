@@ -24,7 +24,7 @@ class Movie extends MediaItem {
     return {};
   }
 
-  Future<Map> getMovieData() async {
+  Future<Map> getExtendedMovieData() async {
     final String movieId = this.id.toString();
     final String name =
         'Movies'.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "-");
@@ -32,13 +32,16 @@ class Movie extends MediaItem {
     Map json = await ApiUtils.fetchMovieDetails(movieId, name);
 
     // Handle seen times and review
-    json["times_seen"] = rewatchedMovies.containsKey(movieId)
-        ? rewatchedMovies[movieId]
-        : (containsMap(seenMovies, ['Movies', this.id.toString()]) ? 1 : 0);
-    json["review"] = reviewed ? (reviews[movieId] as Map?) : null;
+    json["times_seen"] = currentUser.rewatchedMovies.containsKey(movieId)
+        ? currentUser.rewatchedMovies[movieId]
+        : (containsMap(currentUser.seenMovies, ['Movies', this.id.toString()])
+            ? 1
+            : 0);
+    json["review"] = reviewed ? (currentUser.reviews[movieId] as Map?) : null;
 
     // Process seen dates
-    json["seen_dates"] = ApiUtils.processSeenDates(calendar, movieId);
+    json["seen_dates"] =
+        ApiUtils.processSeenDates(currentUser.calendar, movieId);
 
     // Default values for missing data
     json["backdrop_path"] = json["backdrop_path"] ?? "";

@@ -27,7 +27,7 @@ class _PlaylistsState extends State<Playlists> {
   bool isAddListPanelOpen = false;
 
   Future<void> _refreshPlaylists() async {
-    playlists = {};
+    currentUser.playlists = {};
     await FirebaseFirestore.instance
         .collection("Watchlists")
         .get()
@@ -37,10 +37,10 @@ class _PlaylistsState extends State<Playlists> {
         List users = keysOfDoc['Users'] as List;
         for (var element in users) {
           Map el = element as Map;
-          if (el.keys.contains(uid)) {
+          if (el.keys.contains(currentUser.uid)) {
             Map docData = doc.data() as Map;
             docData["id"] = doc.id;
-            playlists[doc.id] = docData;
+            currentUser.playlists[doc.id] = docData;
           }
         }
       }
@@ -161,14 +161,14 @@ class _PlaylistsState extends State<Playlists> {
                 height: MediaQuery.of(context).size.height * 0.75,
                 child: Center(
                   child: ListView.builder(
-                    itemCount: playlists.length,
+                    itemCount: currentUser.playlists.length,
                     itemBuilder: (context, index) {
-                      String key = playlists.keys.elementAt(index);
-                      dynamic value = playlists[key]['Name'];
-                      dynamic image = playlists[key]['CoverPhoto'];
-                      dynamic movies = playlists[key]['Movies'];
-                      dynamic tvshows = playlists[key]['TV Shows'];
-                      dynamic accessCode = playlists[key]['AccessCode'];
+                      String key = currentUser.playlists.keys.elementAt(index);
+                      dynamic value = currentUser.playlists[key]['Name'];
+                      dynamic image = currentUser.playlists[key]['CoverPhoto'];
+                      dynamic movies = currentUser.playlists[key]['Movies'];
+                      dynamic tvshows = currentUser.playlists[key]['TV Shows'];
+                      dynamic accessCode = currentUser.playlists[key]['AccessCode'];
                       return GestureDetector(
                         onTap: () {
                           // Handle the click event here
@@ -178,7 +178,7 @@ class _PlaylistsState extends State<Playlists> {
                           list_result["Name"] = value;
                           list_result["AccessCode"] = accessCode;
                           list_result["id"] = key;
-                          list_result["Users"] = playlists[key]["Users"];
+                          list_result["Users"] = currentUser.playlists[key]["Users"];
                           Navigator.push(
                             context,
                             MaterialPageRoute(

@@ -60,8 +60,8 @@ class Favorites extends StatelessWidget {
                 height: MediaQuery.of(context).size.height * 0.7,
                 child: TabBarView(
                   children: [
-                    MyTabView(favItems: favMovies),
-                    MyTabView(favItems: favTVShows),
+                    MyTabView(favItems: currentUser.favMovies),
+                    MyTabView(favItems: currentUser.favTVShows),
                   ],
                 ),
               ),

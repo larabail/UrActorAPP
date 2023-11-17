@@ -20,12 +20,14 @@ class Friends extends StatefulWidget {
 class _FriendsState extends State<Friends> {
   final TextEditingController _usernameController = TextEditingController();
   Future<void> _refreshFriends() async {
-    var FriendsDoc =
-        await FirebaseFirestore.instance.collection(uid).doc("Friends").get();
+    var FriendsDoc = await FirebaseFirestore.instance
+        .collection(currentUser.uid)
+        .doc("Friends")
+        .get();
     Map<String, dynamic> data = FriendsDoc.data() as Map<String, dynamic>;
-    friends = data["friends"];
+    currentUser.friends = data["friends"];
     setState(() {
-      friends = friends;
+      currentUser.friends = currentUser.friends;
     });
   }
 
@@ -38,9 +40,9 @@ class _FriendsState extends State<Friends> {
           .collection(recipientUID)
           .doc('Friends')
           .collection('FriendRequests')
-          .doc(uid)
+          .doc(currentUser.uid)
           .set({
-        'senderUID': uid,
+        'senderUID': currentUser.uid,
         'status': 'pending',
       });
     }
@@ -132,7 +134,7 @@ class _FriendsState extends State<Friends> {
       body: RefreshIndicator(
         onRefresh: _refreshFriends,
         child: ListView.builder(
-          itemCount: friends.length + 1, // Increase itemCount by 1
+          itemCount: currentUser.friends.length + 1, // Increase itemCount by 1
           itemBuilder: (context, index) {
             if (index == 0) {
               // Add a custom ListTile at the beginning
@@ -157,7 +159,7 @@ class _FriendsState extends State<Friends> {
                     context,
                     MaterialPageRoute(
                       builder: (context) =>
-                          FriendRequestsPage(currentUserUID: uid),
+                          FriendRequestsPage(currentUserUID: currentUser.uid),
                     ),
                   );
                 },
@@ -168,7 +170,7 @@ class _FriendsState extends State<Friends> {
 
               return FutureBuilder<DocumentSnapshot>(
                 future: FirebaseFirestore.instance
-                    .collection(friends[friendIndex])
+                    .collection(currentUser.friends[friendIndex])
                     .doc('Settings')
                     .get(),
                 builder: (context, snapshot) {
@@ -185,7 +187,7 @@ class _FriendsState extends State<Friends> {
                     return GestureDetector(
                       onTap: () {
                         // Navigate to Profile Page
-                        friendUid = friends[friendIndex];
+                        friendUid = currentUser.friends[friendIndex];
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -224,216 +226,6 @@ class _FriendsState extends State<Friends> {
                           ],
                         ),
                       ),
-                      //   children: [
-                      //     Row(
-                      //       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      //       children: [
-                      //         GestureDetector(
-                      //           onTap: () {
-                      //             // Navigate to Profile Page
-                      //             friendUid = friends[friendIndex];
-                      //             Navigator.push(
-                      //               context,
-                      //               MaterialPageRoute(
-                      //                 builder: (context) =>
-                      //                     FriendProfile(friendUID: friendUid),
-                      //               ),
-                      //             );
-                      //           },
-                      //           child: Container(
-                      //             padding: const EdgeInsets.symmetric(
-                      //                 horizontal: 16, vertical: 10),
-                      //             decoration: BoxDecoration(
-                      //               borderRadius: BorderRadius.circular(10),
-                      //             ),
-                      //             child: const Row(
-                      //               children: [
-                      //                 Icon(Icons.person, color: Colors.blue),
-                      //                 SizedBox(width: 5),
-                      //                 Text(
-                      //                   'Profile',
-                      //                   style: TextStyle(
-                      //                     color: Colors.white,
-                      //                     fontSize: 12,
-                      //                     fontWeight: FontWeight.bold,
-                      //                   ),
-                      //                 ),
-                      //               ],
-                      //             ),
-                      //           ),
-                      //         ),
-                      //         GestureDetector(
-                      //           onTap: () {
-                      //             // Navigate to Calendar Page
-                      //             friendUid = friends[friendIndex];
-                      //             Navigator.push(
-                      //               context,
-                      //               MaterialPageRoute(
-                      //                 builder: (context) =>
-                      //                     FriendCalendar(friendUid: friendUid),
-                      //               ),
-                      //             );
-                      //           },
-                      //           child: Container(
-                      //             padding: const EdgeInsets.symmetric(
-                      //                 horizontal: 16, vertical: 10),
-                      //             decoration: BoxDecoration(
-                      //               borderRadius: BorderRadius.circular(10),
-                      //             ),
-                      //             child: const Row(
-                      //               children: [
-                      //                 Icon(Icons.calendar_today,
-                      //                     color: Colors.green),
-                      //                 SizedBox(width: 5),
-                      //                 Text(
-                      //                   'Calendar',
-                      //                   style: TextStyle(
-                      //                     color: Colors.white,
-                      //                     fontSize: 12,
-                      //                     fontWeight: FontWeight.bold,
-                      //                   ),
-                      //                 ),
-                      //               ],
-                      //             ),
-                      //           ),
-                      //         ),
-                      //         GestureDetector(
-                      //           onTap: () async {
-                      //             bool confirmed = await showDialog(
-                      //               context: context,
-                      //               builder: (BuildContext context) {
-                      //                 return AlertDialog(
-                      //                   title: const Text('Confirmation'),
-                      //                   content: const Text(
-                      //                       'Are you sure you want to remove this friend?'),
-                      //                   actions: <Widget>[
-                      //                     TextButton(
-                      //                       child: const Text('No'),
-                      //                       onPressed: () {
-                      //                         Navigator.of(context).pop(false);
-                      //                       },
-                      //                     ),
-                      //                     TextButton(
-                      //                       child: const Text('Yes'),
-                      //                       onPressed: () {
-                      //                         Navigator.of(context).pop(true);
-                      //                       },
-                      //                     ),
-                      //                   ],
-                      //                 );
-                      //               },
-                      //             );
-                      //             if (confirmed) {
-                      //               String friendUID = friends[friendIndex];
-                      //               // Reference to the Firestore instance
-                      //               FirebaseFirestore firestore =
-                      //                   FirebaseFirestore.instance;
-                      //               // Remove friend from current user's friend list
-                      //               await firestore
-                      //                   .collection(friendUID)
-                      //                   .doc("Friends")
-                      //                   .update({
-                      //                 'friends': FieldValue.arrayRemove([uid])
-                      //               });
-                      //               // Remove current user from friend's friend list
-                      //               await firestore
-                      //                   .collection(uid)
-                      //                   .doc("Friends")
-                      //                   .update({
-                      //                 'friends':
-                      //                     FieldValue.arrayRemove([friendUID])
-                      //               });
-                      //               setState(() {
-                      //                 friends.remove(friendUID);
-                      //               });
-                      //             }
-                      //           },
-                      //           child: Container(
-                      //             padding: const EdgeInsets.symmetric(
-                      //                 horizontal: 16, vertical: 10),
-                      //             decoration: BoxDecoration(
-                      //               borderRadius: BorderRadius.circular(10),
-                      //             ),
-                      //             child: const Row(
-                      //               children: [
-                      //                 Icon(Icons.remove_circle,
-                      //                     color: Colors.red),
-                      //                 SizedBox(width: 5),
-                      //                 Text(
-                      //                   'Remove',
-                      //                   style: TextStyle(
-                      //                     color: Colors.white,
-                      //                     fontSize: 12,
-                      //                     fontWeight: FontWeight.bold,
-                      //                   ),
-                      //                 ),
-                      //               ],
-                      //             ),
-                      //           ),
-                      //         ),
-                      //       ],
-                      //     ),
-                      //     const SizedBox(
-                      //         height:
-                      //             10), // Optional: to add some space between the row and the list
-                      //     FutureBuilder<DocumentSnapshot>(
-                      //       future: FirebaseFirestore.instance
-                      //           .collection(uid)
-                      //           .doc('Calendar')
-                      //           .get(),
-                      //       builder: (context, snapshot) {
-                      //         if (snapshot.connectionState ==
-                      //             ConnectionState.waiting) {
-                      //           return const Center(
-                      //               child: CircularProgressIndicator());
-                      //         } else if (snapshot.hasError) {
-                      //           return Text('Error: ${snapshot.error}');
-                      //         } else if (!snapshot.hasData ||
-                      //             !snapshot.data!.exists) {
-                      //           return const Text('No data found');
-                      //         } else {
-                      //           var calendar = snapshot.data!.data() as Map;
-                      //           List moviesSeenTogether = [];
-                      //           for (var date in calendar.keys) {
-                      //             for (var movie in calendar[date]) {
-                      //               if (movie.containsKey("friends")) {
-                      //                 if (movie['friends']
-                      //                     .contains(friends[friendIndex])) {
-                      //                   moviesSeenTogether.add(movie["title"]);
-                      //                 }
-                      //               }
-                      //             }
-                      //           }
-                      //           if (moviesSeenTogether.length > 0) {
-                      //             return Column(children: [
-                      //               Text(moviesSeenTogether.length > 1
-                      //                   ? "You have seen ${moviesSeenTogether.length} movies together"
-                      //                   : "You have seen ${moviesSeenTogether.length} movie together"),
-                      //               Container(
-                      //                 height: 125,
-                      //                 child: ListView.builder(
-                      //                   itemCount: moviesSeenTogether.length,
-                      //                   itemBuilder: (context, index) {
-                      //                     return ListTile(
-                      //                       title: Text(
-                      //                         '${index + 1}. ${moviesSeenTogether[index]}',
-                      //                         style: const TextStyle(
-                      //                             color: Colors.white,
-                      //                             fontSize: 16),
-                      //                       ),
-                      //                     );
-                      //                   },
-                      //                 ),
-                      //               )
-                      //             ]);
-                      //           } else {
-                      //             return const Text(
-                      //                 "You haven't watched any movies together yet");
-                      //           }
-                      //         }
-                      //       },
-                      //     ),
-                      //   ],
                     );
                   }
                 },
