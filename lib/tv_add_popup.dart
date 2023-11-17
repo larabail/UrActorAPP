@@ -81,15 +81,15 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
         List users = keysOfDoc['Users'] as List;
         for (var element in users) {
           Map el = element as Map;
-          if (el.keys.contains(uid)) {
-            playlists[doc.id] = doc.data();
+          if (el.keys.contains(currentUser.uid)) {
+            currentUser.playlists[doc.id] = doc.data();
           }
         }
       }
     });
 
     list_result["TVShows"] =
-        playlists[list_result["id"].toString()]["TV Shows"];
+        currentUser.playlists[list_result["id"].toString()]["TV Shows"];
 
     Navigator.pop(context);
     Navigator.pushReplacement(

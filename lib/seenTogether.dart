@@ -83,14 +83,14 @@ class SeenTogether extends StatelessWidget {
                     children: [
                       MyTabView(favItems: [
                         for (String movieId
-                            in (seenWith[friendUid]["Movies"] as List<dynamic>?)
+                            in (currentUser.seenWith[friendUid]["Movies"] as List<dynamic>?)
                                     ?.reversed
                                     .toList() ??
                                 [])
                           ["Movies", movieId]
                       ]),
                       MyTabView(favItems: [
-                        for (String movieId in (seenWith[friendUid]["TVShows"]
+                        for (String movieId in (currentUser.seenWith[friendUid]["TVShows"]
                                     as List<dynamic>?)
                                 ?.reversed
                                 .toList() ??

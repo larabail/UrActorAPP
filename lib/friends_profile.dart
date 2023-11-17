@@ -352,14 +352,17 @@ class _FriendProfileState extends State<FriendProfile> {
                             .collection(friendUid)
                             .doc("Friends")
                             .update({
-                          'friends': FieldValue.arrayRemove([uid])
+                          'friends': FieldValue.arrayRemove([currentUser.uid])
                         });
 
                         // Remove current user from friend's friend list
-                        await firestore.collection(uid).doc("Friends").update({
+                        await firestore
+                            .collection(currentUser.uid)
+                            .doc("Friends")
+                            .update({
                           'friends': FieldValue.arrayRemove([friendUid])
                         });
-                        friends.remove(friendUid);
+                        currentUser.friends.remove(friendUid);
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
@@ -440,7 +443,7 @@ class _FriendProfileState extends State<FriendProfile> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        if (seenWith.containsKey(friendUid))
+                        if (currentUser.seenWith.containsKey(friendUid))
                           GestureDetector(
                             onTap: () {
                               Navigator.push(
@@ -455,7 +458,7 @@ class _FriendProfileState extends State<FriendProfile> {
                               child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Text(
-                                  'See All (${seenWith[friendUid]["Movies"].length} items)',
+                                  'See All (${currentUser.seenWith[friendUid]["Movies"].length} items)',
                                   style: const TextStyle(
                                     color: Colors.grey,
                                     fontSize: 12,
@@ -468,19 +471,22 @@ class _FriendProfileState extends State<FriendProfile> {
                     ),
                     const SizedBox(height: 10),
 
-                    if (seenWith.containsKey(friendUid))
+                    if (currentUser.seenWith.containsKey(friendUid))
                       SizedBox(
                         height: 150, // Adjust the height as needed
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
-                          itemCount: seenWith[friendUid]["Movies"].length > 10
-                              ? 10
-                              : seenWith[friendUid]["Movies"]
-                                  .length, // Limit to first 10 movies
+                          itemCount:
+                              currentUser.seenWith[friendUid]["Movies"].length >
+                                      10
+                                  ? 10
+                                  : currentUser.seenWith[friendUid]["Movies"]
+                                      .length, // Limit to first 10 movies
                           itemBuilder: (context, index) {
                             return FutureBuilder<Map<String, dynamic>>(
                               future: getData(
-                                  seenWith[friendUid]["Movies"][index],
+                                  currentUser.seenWith[friendUid]["Movies"]
+                                      [index],
                                   'Movies'),
                               builder: (BuildContext context,
                                   AsyncSnapshot<Map> snapshot) {
@@ -529,7 +535,7 @@ class _FriendProfileState extends State<FriendProfile> {
                         ),
                       ),
 
-                    if (!seenWith.containsKey(friendUid))
+                    if (!currentUser.seenWith.containsKey(friendUid))
                       const Text("Haven't watched any movies together yet"),
                     //   FutureBuilder<DocumentSnapshot>(
                     //     future: FirebaseFirestore.instance

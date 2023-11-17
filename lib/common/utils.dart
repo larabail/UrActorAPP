@@ -54,7 +54,7 @@ class FirebaseUtils {
     if (confirmed) {
       List w;
       await FirebaseFirestore.instance
-          .collection(uid)
+          .collection(currentUser.uid)
           .get()
           .then((QuerySnapshot querySnapshot) {
         querySnapshot.docs.forEach((doc) async {
@@ -66,12 +66,13 @@ class FirebaseUtils {
             if (index > -1) {
               w.removeAt(index);
             }
-            var userDoc =
-                FirebaseFirestore.instance.collection(uid).doc("Movies");
+            var userDoc = FirebaseFirestore.instance
+                .collection(currentUser.uid)
+                .doc("Movies");
             await userDoc.update({'Seen': w});
-            seenMovies = [];
+            currentUser.seenMovies = [];
             for (var element in w) {
-              seenMovies += [
+              currentUser.seenMovies += [
                 ["Movies", element]
               ];
             }
@@ -100,7 +101,7 @@ class FirebaseUtils {
     reviewId = id.toString();
 
     Completer<bool> completer = Completer();
-    reviewInfo = reviews[id.toString()];
+    reviewInfo = currentUser.reviews[id.toString()];
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -112,20 +113,22 @@ class FirebaseUtils {
 
   static void incrementWatched(String value, String id) {
     if (value != "") {
-      var userDoc = FirebaseFirestore.instance.collection(uid).doc("Rewatched");
+      var userDoc = FirebaseFirestore.instance
+          .collection(currentUser.uid)
+          .doc("Rewatched");
       Map<String, int> doc = {};
-      rewatchedMovies[id] = int.parse(value);
+      currentUser.rewatchedMovies[id] = int.parse(value);
       doc[id] = int.parse(value);
       userDoc.update(doc);
     }
   }
 
   static Future<bool> deleteReview(id, context) async {
-    reviews.remove(id.toString());
+    currentUser.reviews.remove(id.toString());
     reviewInfo = {};
     reviewed = false;
     await FirebaseFirestore.instance
-        .collection(uid)
+        .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) async {
       for (var doc in querySnapshot.docs) {
@@ -139,13 +142,14 @@ class FirebaseUtils {
               tempReviewsInList.add(element);
             }
           }
-          final userDoc =
-              FirebaseFirestore.instance.collection(uid).doc("Reviews");
+          final userDoc = FirebaseFirestore.instance
+              .collection(currentUser.uid)
+              .doc("Reviews");
           await userDoc.update({'Seen': tempReviewsInList});
-          reviews = {};
+          currentUser.reviews = {};
           for (var element in tempReviewsInList) {
             element = element as Map;
-            reviews[element.keys.toList()[0]] =
+            currentUser.reviews[element.keys.toList()[0]] =
                 element[element.keys.toList()[0]];
           }
         }
@@ -156,7 +160,8 @@ class FirebaseUtils {
 
   static Future<bool> markWatched(String id, String title, int runtime,
       double rating, BuildContext context) async {
-    final userDoc = FirebaseFirestore.instance.collection(uid).doc('Movies');
+    final userDoc =
+        FirebaseFirestore.instance.collection(currentUser.uid).doc('Movies');
     id = id.toString();
     await userDoc.update({
       'Seen': FieldValue.arrayUnion([id])
@@ -164,16 +169,16 @@ class FirebaseUtils {
     // store id in shared preferences or another way
     List w;
     await FirebaseFirestore.instance
-        .collection(uid)
+        .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) {
       querySnapshot.docs.forEach((doc) async {
         if (doc.id == "Movies") {
           Map movies_result = doc.data() as Map;
           w = movies_result["Seen"];
-          seenMovies = [];
+          currentUser.seenMovies = [];
           for (var element in w) {
-            seenMovies += [
+            currentUser.seenMovies += [
               ["Movies", element]
             ];
           }
@@ -183,10 +188,11 @@ class FirebaseUtils {
 
     final today = DateTime.now();
 
-    final snapshot = await FirebaseFirestore.instance.collection(uid).get();
+    final snapshot =
+        await FirebaseFirestore.instance.collection(currentUser.uid).get();
     for (var doc in snapshot.docs) {
       if (doc.id == 'Calendar') {
-        if (!dontAskCalendar) {
+        if (!currentUser.dontAskCalendar) {
           await addtoCalendar(id, title, runtime, rating, today, context);
         }
       }
@@ -227,17 +233,18 @@ class FirebaseUtils {
         ])
       };
 
-      final userDoc =
-          FirebaseFirestore.instance.collection(uid).doc('Calendar');
+      final userDoc = FirebaseFirestore.instance
+          .collection(currentUser.uid)
+          .doc('Calendar');
       await userDoc.update(myObject);
-      calendar = {};
+      currentUser.calendar = {};
       await FirebaseFirestore.instance
-          .collection(uid)
+          .collection(currentUser.uid)
           .get()
           .then((QuerySnapshot querySnapshot) {
         querySnapshot.docs.forEach((doc) async {
           if (doc.id == "Calendar") {
-            calendar = doc.data() as Map;
+            currentUser.calendar = doc.data() as Map;
           }
         });
       });
@@ -247,20 +254,21 @@ class FirebaseUtils {
   }
 
   static Future<bool> favorite(String id, context) async {
-    final userDoc = FirebaseFirestore.instance.collection(uid).doc("Favorites");
+    final userDoc =
+        FirebaseFirestore.instance.collection(currentUser.uid).doc("Favorites");
     await userDoc.update({
       'Movies': FieldValue.arrayUnion([id])
     });
-    favMovies = [];
+    currentUser.favMovies = [];
     await FirebaseFirestore.instance
-        .collection(uid)
+        .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) {
       for (var doc in querySnapshot.docs) {
         if (doc.id == "Favorites") {
           Map allFavs = doc.data() as Map;
           allFavs["Movies"].forEach((element) {
-            favMovies += [
+            currentUser.favMovies += [
               ["Movies", element]
             ];
           });
@@ -272,7 +280,7 @@ class FirebaseUtils {
 
   static Future<bool> unfavorite(String id, context) async {
     await FirebaseFirestore.instance
-        .collection(uid)
+        .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) async {
       for (var doc in querySnapshot.docs) {
@@ -283,12 +291,13 @@ class FirebaseUtils {
           if (index > -1) {
             movieInFavs.removeAt(index);
           }
-          final userDoc =
-              FirebaseFirestore.instance.collection(uid).doc("Favorites");
+          final userDoc = FirebaseFirestore.instance
+              .collection(currentUser.uid)
+              .doc("Favorites");
           await userDoc.update({'Movies': movieInFavs});
-          favMovies = [];
+          currentUser.favMovies = [];
           allFavs["Movies"].forEach((element) {
-            favMovies += [
+            currentUser.favMovies += [
               ["Movies", element]
             ];
           });
@@ -299,20 +308,21 @@ class FirebaseUtils {
   }
 
   static Future<bool> bookmark(String id, context) async {
-    final userDoc = FirebaseFirestore.instance.collection(uid).doc("Watchlist");
+    final userDoc =
+        FirebaseFirestore.instance.collection(currentUser.uid).doc("Watchlist");
     await userDoc.update({
       'Movies': FieldValue.arrayUnion([id])
     });
-    watchlist = [];
+    currentUser.watchlist = [];
     await FirebaseFirestore.instance
-        .collection(uid)
+        .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) {
       for (var doc in querySnapshot.docs) {
         if (doc.id == "Watchlist") {
           Map watchlistAll = doc.data() as Map;
           watchlistAll["Movies"].forEach((element) {
-            watchlist += [
+            currentUser.watchlist += [
               ["Movies", element]
             ];
           });
@@ -324,7 +334,7 @@ class FirebaseUtils {
 
   static Future<bool> unbookmark(String id, context) async {
     await FirebaseFirestore.instance
-        .collection(uid)
+        .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) async {
       for (var doc in querySnapshot.docs) {
@@ -335,12 +345,13 @@ class FirebaseUtils {
           if (index > -1) {
             movieInWatchlist.removeAt(index);
           }
-          final userDoc =
-              FirebaseFirestore.instance.collection(uid).doc("Watchlist");
+          final userDoc = FirebaseFirestore.instance
+              .collection(currentUser.uid)
+              .doc("Watchlist");
           await userDoc.update({'Movies': movieInWatchlist});
-          watchlist = [];
+          currentUser.watchlist = [];
           watchlistAll["Movies"].forEach((element) {
-            watchlist += [
+            currentUser.watchlist += [
               ["Movies", element]
             ];
           });
@@ -359,7 +370,7 @@ class FirebaseUtils {
           .doc("Settings")
           .get();
       if (document.exists && document.data()!.containsKey('profile_photo')) {
-        print(tempUid);
+        // print(tempUid);
         profilePhotos.add(document.data()!['profile_photo']);
       } else {
         profilePhotos.add(""); //eplace with your default image URL
@@ -376,7 +387,7 @@ class FirebaseUtils {
         .collection("Watchlists")
         .doc(listId.toString());
     await userDoc.update({'Movies': moviesinList});
-    playlists = {};
+    currentUser.playlists = {};
     await FirebaseFirestore.instance
         .collection("Watchlists")
         .get()
@@ -386,8 +397,8 @@ class FirebaseUtils {
         List users = keysOfDoc['Users'] as List;
         for (var element in users) {
           Map el = element as Map;
-          if (el.keys.contains(uid)) {
-            playlists[doc.id] = doc.data();
+          if (el.keys.contains(currentUser.uid)) {
+            currentUser.playlists[doc.id] = doc.data();
           }
         }
       }
@@ -402,7 +413,7 @@ class FirebaseUtils {
         .collection("Watchlists")
         .doc(listId.toString());
     await userDoc.update({'Movies': moviesinList});
-    playlists = {};
+    currentUser.playlists = {};
     await FirebaseFirestore.instance
         .collection("Watchlists")
         .get()
@@ -412,8 +423,8 @@ class FirebaseUtils {
         List users = keysOfDoc['Users'] as List;
         for (var element in users) {
           Map el = element as Map;
-          if (el.keys.contains(uid)) {
-            playlists[doc.id] = doc.data();
+          if (el.keys.contains(currentUser.uid)) {
+            currentUser.playlists[doc.id] = doc.data();
           }
         }
       }
@@ -506,7 +517,8 @@ class ApiUtils {
       additionalData['year'] = "None";
     }
 
-    additionalData['providers'] = await fetchProviders(movieId, name, country);
+    additionalData['providers'] =
+        await fetchProviders(movieId, name, currentUser.country);
     additionalData.addAll(await fetchCreditsAndTrailer(movieId, name));
 
     return additionalData;

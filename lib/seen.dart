@@ -108,8 +108,8 @@ class Seen extends StatelessWidget {
                   height: MediaQuery.of(context).size.height * 0.7,
                   child: TabBarView(
                     children: [
-                      MyTabView(favItems: seenMovies),
-                      MyTabView(favItems: seenTVShows),
+                      MyTabView(favItems: currentUser.seenMovies),
+                      MyTabView(favItems: currentUser.seenTVShows),
                     ],
                   ),
                 ),

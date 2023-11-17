@@ -81,14 +81,14 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
         List users = keysOfDoc['Users'] as List;
         for (var element in users) {
           Map el = element as Map;
-          if (el.keys.contains(uid)) {
-            playlists[doc.id] = doc.data();
+          if (el.keys.contains(currentUser.uid)) {
+            currentUser.playlists[doc.id] = doc.data();
           }
         }
       }
     });
 
-    list_result["Movies"] = playlists[list_result["id"].toString()]["Movies"];
+    list_result["Movies"] = currentUser.playlists[list_result["id"].toString()]["Movies"];
 
     Navigator.pop(context);
     Navigator.pushReplacement(
