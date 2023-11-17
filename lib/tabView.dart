@@ -67,7 +67,7 @@ class ItemCard extends StatelessWidget {
                 //   snapshot.data!['type'],
                 // ];
                 tempMediaItem = TVShow(
-                    id: snapshot.data!['id'],
+                    id: snapshot.data!['id'].toString(),
                     title: snapshot.data!['title'],
                     coverPhoto: snapshot.data!['poster_path']);
               }

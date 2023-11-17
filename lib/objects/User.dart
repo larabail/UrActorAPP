@@ -36,6 +36,7 @@ class AppUser {
   }
 
   Future<bool> getFirebaseData() async {
+    clearUserData();
     await FirebaseFirestore.instance
         .collection(uid)
         .get()
@@ -179,8 +180,7 @@ class AppUser {
     return true;
   }
 
-  void clearUser() {
-    uid = '';
+  void clearUserData() {
     country = '';
     calendar = {};
     allMovies = [];
@@ -198,5 +198,9 @@ class AppUser {
     seenWith = {};
     settings = {};
     friends = [];
+  }
+
+  void clearUser() {
+    uid = '';
   }
 }

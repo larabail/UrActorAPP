@@ -16,7 +16,7 @@ class Movie extends MediaItem {
 
   @override
   Future<Map> getData() async {
-    final response = await http.get(Uri.parse('$MOVIE_LINK${this.id}$API_KEY'));
+    final response = await http.get(Uri.parse('$MOVIE_LINK$id$API_KEY'));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       return json as Map;
@@ -25,7 +25,7 @@ class Movie extends MediaItem {
   }
 
   Future<Map> getExtendedMovieData() async {
-    final String movieId = this.id.toString();
+    final String movieId = id.toString();
     final String name =
         'Movies'.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "-");
 
@@ -34,9 +34,7 @@ class Movie extends MediaItem {
     // Handle seen times and review
     json["times_seen"] = currentUser.rewatchedMovies.containsKey(movieId)
         ? currentUser.rewatchedMovies[movieId]
-        : (containsMap(currentUser.seenMovies, ['Movies', this.id.toString()])
-            ? 1
-            : 0);
+        : (isSeen() ? 1 : 0);
     json["review"] = reviewed ? (currentUser.reviews[movieId] as Map?) : null;
 
     // Process seen dates
@@ -54,5 +52,17 @@ class Movie extends MediaItem {
     json.addAll(additionalData);
 
     return json;
+  }
+
+  bool isSeen() {
+    return Utils.contains(currentUser.seenMovies, ['Movies', id]);
+  }
+
+  bool isBookmarked() {
+    return Utils.contains(currentUser.watchlist, ['Movies', id]);
+  }
+
+  bool isFavorite() {
+    return Utils.contains(currentUser.favMovies, ['Movies', id]);
   }
 }
