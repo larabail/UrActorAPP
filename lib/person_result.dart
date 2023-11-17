@@ -86,27 +86,25 @@ class _PersonResultState extends State<PersonResult> {
         }
         json['movie_credits_cast'] = movieCast;
         for (var element in movieCast) {
-          if (containsMap(seenMovies, ["Movies", element["id"]])) {
+          if (containsMap(currentUser.seenMovies, ["Movies", element["id"]])) {
             if (!countedMoviesActor.contains(element["id"].toString())) {
               stats += 1;
-              if (containsMap(
-                  favMovies, ['Movies', element["id"].toString()])) {
+              if (containsMap(currentUser.favMovies,
+                  ['Movies', element["id"].toString()])) {
                 scoreActor += 3;
               }
-              print(rewatchedMovies.keys
-                  .toList()
-                  .contains(element["id"].toString()));
-              if (rewatchedMovies.keys
+              if (currentUser.rewatchedMovies.keys
                   .toList()
                   .contains(element["id"].toString())) {
-                scoreActor += rewatchedMovies[element["id"].toString()] as int;
+                scoreActor += currentUser
+                    .rewatchedMovies[element["id"].toString()] as int;
               } else {
                 scoreActor += 2;
               }
               countedMoviesActor.add(element["id"].toString());
             }
-          } else if (containsMap(
-                  watchlist, ['Movies', element["id"].toString()]) &&
+          } else if (containsMap(currentUser.watchlist,
+                  ['Movies', element["id"].toString()]) &&
               !countedMoviesActor.contains(element["id"].toString())) {
             scoreActor += 1;
             countedMoviesActor.add(element["id"].toString());
@@ -129,19 +127,20 @@ class _PersonResultState extends State<PersonResult> {
           }
           json['tv_credits_cast'] = tvCast;
           for (var element in tvCast) {
-            if (containsMap(seenTVShows, ["TVShows", element["id"]])) {
+            if (containsMap(
+                currentUser.seenTVShows, ["TVShows", element["id"]])) {
               if (!countedTVShowsActor.contains(element["id"].toString())) {
                 stats_tv += 1;
-                if (containsMap(
-                    favTVShows, ['TVShows', element["id"].toString()])) {
+                if (containsMap(currentUser.favTVShows,
+                    ['TVShows', element["id"].toString()])) {
                   scoreActor += 3;
                 } else {
                   scoreActor += 2;
                 }
                 countedTVShowsActor.add(element["id"].toString());
               }
-            } else if (containsMap(
-                    watchlistTVShows, ['TVShows', element["id"].toString()]) &&
+            } else if (containsMap(currentUser.watchlistTVShows,
+                    ['TVShows', element["id"].toString()]) &&
                 !countedTVShowsActor.contains(element["id"].toString())) {
               scoreActor += 1;
               countedTVShowsActor.add(element["id"].toString());
@@ -158,24 +157,27 @@ class _PersonResultState extends State<PersonResult> {
         }
         json['movie_credits_crew'] = movieCrew;
         for (var element in movieCrew) {
-          if (containsMap(seenMovies, ["Movies", element["id"].toString()])) {
+          if (containsMap(
+              currentUser.seenMovies, ["Movies", element["id"].toString()])) {
             if (element["job"] == "Director" &&
                 !countedMoviesDirector.contains(element["id"].toString())) {
               stats_dir += 1;
-              if (containsMap(
-                  favMovies, ['Movies', element["id"].toString()])) {
+              if (containsMap(currentUser.favMovies,
+                  ['Movies', element["id"].toString()])) {
                 scoreDirector += 3;
               }
-              if (rewatchedMovies.keys.toList().contains(element["id"])) {
-                scoreDirector +=
-                    int.parse(rewatchedMovies[element["id"].toString()]);
+              if (currentUser.rewatchedMovies.keys
+                  .toList()
+                  .contains(element["id"])) {
+                scoreDirector += int.parse(
+                    currentUser.rewatchedMovies[element["id"].toString()]);
               } else {
                 scoreDirector += 2;
               }
               countedMoviesDirector.add(element["id"].toString());
             }
-          } else if (containsMap(
-                  watchlist, ['Movies', element["id"].toString()]) &&
+          } else if (containsMap(currentUser.watchlist,
+                  ['Movies', element["id"].toString()]) &&
               element["job"] == "Director" &&
               !countedMoviesDirector.contains(element["id"].toString())) {
             scoreDirector += 1;
@@ -196,21 +198,21 @@ class _PersonResultState extends State<PersonResult> {
           }
           json['tv_credits_crew'] = tvCrew;
           for (var element in tvCrew) {
-            if (containsMap(
-                seenTVShows, ["TVShows", element["id"].toString()])) {
+            if (containsMap(currentUser.seenTVShows,
+                ["TVShows", element["id"].toString()])) {
               if (element["job"] == "Director" &&
                   !countedTVShowsDirector.contains(element["id"].toString())) {
                 stats_dir += 1;
-                if (containsMap(
-                    favTVShows, ['TVShows', element["id"].toString()])) {
+                if (containsMap(currentUser.favTVShows,
+                    ['TVShows', element["id"].toString()])) {
                   scoreDirector += 3;
                 } else {
                   scoreDirector += 1;
                 }
                 countedTVShowsDirector.add(element["id"].toString());
               }
-            } else if (containsMap(
-                    watchlistTVShows, ['TVShows', element["id"].toString()]) &&
+            } else if (containsMap(currentUser.watchlistTVShows,
+                    ['TVShows', element["id"].toString()]) &&
                 element["job"] == "Director" &&
                 !countedTVShowsDirector.contains(element["id"].toString())) {
               scoreDirector += 1;
@@ -227,8 +229,9 @@ class _PersonResultState extends State<PersonResult> {
           } else {
             json['num_oscars'] = 0;
           }
-          var userDoc =
-              FirebaseFirestore.instance.collection(uid).doc("FavDirectors");
+          var userDoc = FirebaseFirestore.instance
+              .collection(currentUser.uid)
+              .doc("FavDirectors");
           Map<Object, Object?> directorStats = {};
           directorStats[personResult['id'].toString()] = scoreDirector;
           await userDoc.update(directorStats);
@@ -251,8 +254,9 @@ class _PersonResultState extends State<PersonResult> {
             json["director_ranking"] = num;
             json["allDirMovies"] = allDirMovies;
           });
-          var ActorDoc =
-              FirebaseFirestore.instance.collection(uid).doc("FavActors");
+          var ActorDoc = FirebaseFirestore.instance
+              .collection(currentUser.uid)
+              .doc("FavActors");
           Map<Object, Object?> actorStats = {};
           actorStats[personResult['id'].toString()] = scoreActor;
           await ActorDoc.update(actorStats);
@@ -274,25 +278,26 @@ class _PersonResultState extends State<PersonResult> {
             }
             json["actor_ranking"] = num;
           });
-          favActors = [];
-          favDirectors = [];
+          currentUser.favActors = [];
+          currentUser.favDirectors = [];
           await FirebaseFirestore.instance
-              .collection(uid)
+              .collection(currentUser.uid)
               .get()
               .then((QuerySnapshot querySnapshot) {
             for (var doc in querySnapshot.docs) {
-              if (doc.id == "FavActors" && favActors.isEmpty) {
+              if (doc.id == "FavActors" && currentUser.favActors.isEmpty) {
                 Map tempFavActors = doc.data() as Map;
-                favActors = tempFavActors.entries
+                currentUser.favActors = tempFavActors.entries
                     .map((entry) => [entry.value, entry.key])
                     .toList();
-                favActors.sort((a, b) => b[0].compareTo(a[0]));
-              } else if (doc.id == "FavDirectors" && favDirectors.isEmpty) {
+                currentUser.favActors.sort((a, b) => b[0].compareTo(a[0]));
+              } else if (doc.id == "FavDirectors" &&
+                  currentUser.favDirectors.isEmpty) {
                 Map tempFavDirectors = doc.data() as Map;
-                favDirectors = tempFavDirectors.entries
+                currentUser.favDirectors = tempFavDirectors.entries
                     .map((entry) => [entry.value, entry.key])
                     .toList();
-                favDirectors.sort((a, b) => b[0].compareTo(a[0]));
+                currentUser.favDirectors.sort((a, b) => b[0].compareTo(a[0]));
               }
             }
           });
@@ -628,402 +633,6 @@ class _PersonResultState extends State<PersonResult> {
     );
   }
 
-  // cast(BuildContext context, data) {
-  //   return DefaultTabController(
-  //     length: 2,
-  //     child: Column(
-  //       children: [
-  //         const TabBar(
-  //           tabs: [
-  //             Tab(text: 'Movies'),
-  //             Tab(text: 'TV Shows'),
-  //           ],
-  //         ),
-  //         Expanded(
-  //           child: TabBarView(
-  //             children: [
-  //               ListView.builder(
-  //                 scrollDirection: Axis.vertical,
-  //                 itemCount: (data!['movie_credits_cast'].length / 3).ceil(),
-  //                 itemBuilder: (context, index) {
-  //                   final leftMovieIndex = index * 3;
-  //                   final middleMovieIndex = index * 3 + 1;
-  //                   final rightMovieIndex = index * 3 + 2;
-  //                   final leftMovie =
-  //                       (leftMovieIndex < data!['movie_credits_cast'].length)
-  //                           ? data!['movie_credits_cast'][leftMovieIndex]
-  //                           : null;
-  //                   final middleMovie =
-  //                       (middleMovieIndex < data!['movie_credits_cast'].length)
-  //                           ? data!['movie_credits_cast'][middleMovieIndex]
-  //                           : null;
-  //                   final rightMovie =
-  //                       (rightMovieIndex < data!['movie_credits_cast'].length)
-  //                           ? data!['movie_credits_cast'][rightMovieIndex]
-  //                           : null;
-  //                   return Row(
-  //                     mainAxisAlignment: MainAxisAlignment.spaceAround,
-  //                     children: [
-  //                       if (leftMovie != null &&
-  //                           leftMovie["poster_path"] != null)
-  //                         GestureDetector(
-  //                           onTap: () {
-  //                             // Handle the click event here
-  //                             Movie tempMovie = Movie(
-  //                                 id: leftMovie['id'],
-  //                                 title: leftMovie['title'],
-  //                                 coverPhoto: leftMovie['poster_path']);
-  //                             Navigator.push(
-  //                               context,
-  //                               MaterialPageRoute(
-  //                                   builder: (context) => MovieResult(
-  //                                         movie: tempMovie,
-  //                                       )),
-  //                             );
-  //                           },
-  //                           child: seen(context, leftMovie, "Movies"),
-  //                         ),
-  //                       if (middleMovie != null &&
-  //                           middleMovie["poster_path"] != null)
-  //                         GestureDetector(
-  //                           onTap: () {
-  //                             // Handle the click event here
-  //                             Movie tempMovie = Movie(
-  //                                 id: middleMovie['id'],
-  //                                 title: middleMovie['title'],
-  //                                 coverPhoto: middleMovie['poster_path']);
-  //                             Navigator.push(
-  //                               context,
-  //                               MaterialPageRoute(
-  //                                   builder: (context) => MovieResult(
-  //                                         movie: tempMovie,
-  //                                       )),
-  //                             );
-  //                           },
-  //                           child: seen(context, middleMovie, "Movies"),
-  //                         ),
-  //                       if (rightMovie != null &&
-  //                           rightMovie["poster_path"] != null)
-  //                         GestureDetector(
-  //                           onTap: () {
-  //                             // Handle the click event here
-  //                             Movie tempMovie = Movie(
-  //                                 id: rightMovie['id'],
-  //                                 title: rightMovie['title'],
-  //                                 coverPhoto: rightMovie['poster_path']);
-  //                             Navigator.push(
-  //                               context,
-  //                               MaterialPageRoute(
-  //                                   builder: (context) => MovieResult(
-  //                                         movie: tempMovie,
-  //                                       )),
-  //                             );
-  //                           },
-  //                           child: seen(context, rightMovie, "Movies"),
-  //                         ),
-  //                     ],
-  //                   );
-  //                 },
-  //               ),
-  //               ListView.builder(
-  //                 scrollDirection: Axis.vertical,
-  //                 itemCount: (data!['tv_credits_cast'].length / 3).ceil(),
-  //                 itemBuilder: (context, index) {
-  //                   final leftMovieIndex = index * 3;
-  //                   final middleMovieIndex = index * 3 + 1;
-  //                   final rightMovieIndex = index * 3 + 2;
-  //                   final leftMovie =
-  //                       (leftMovieIndex < data!['tv_credits_cast'].length)
-  //                           ? data!['tv_credits_cast'][leftMovieIndex]
-  //                           : null;
-  //                   final middleMovie =
-  //                       (middleMovieIndex < data!['tv_credits_cast'].length)
-  //                           ? data!['tv_credits_cast'][middleMovieIndex]
-  //                           : null;
-  //                   final rightMovie =
-  //                       (rightMovieIndex < data!['tv_credits_cast'].length)
-  //                           ? data!['tv_credits_cast'][rightMovieIndex]
-  //                           : null;
-  //                   return Row(
-  //                     mainAxisAlignment: MainAxisAlignment.spaceAround,
-  //                     children: [
-  //                       if (leftMovie != null &&
-  //                           leftMovie["poster_path"] != null)
-  //                         GestureDetector(
-  //                           onTap: () {
-  //                             // Handle the click event here
-  //                             TVShow tempTvShow = TVShow(
-  //                                 id: leftMovie['id'],
-  //                                 title: leftMovie['name'],
-  //                                 coverPhoto: leftMovie['poster_photo']);
-  //                             Navigator.push(
-  //                               context,
-  //                               MaterialPageRoute(
-  //                                   builder: (context) => TVShowResult(
-  //                                         tvshow: tempTvShow,
-  //                                       )),
-  //                             );
-  //                           },
-  //                           child: seen(context, leftMovie, "TVShows"),
-  //                         ),
-  //                       if (middleMovie != null &&
-  //                           middleMovie["poster_path"] != null)
-  //                         GestureDetector(
-  //                           onTap: () {
-  //                             // Handle the click event here
-  //                             TVShow tempTvShow = TVShow(
-  //                                 id: middleMovie['id'],
-  //                                 title: middleMovie['name'],
-  //                                 coverPhoto: middleMovie['poster_photo']);
-  //                             Navigator.push(
-  //                               context,
-  //                               MaterialPageRoute(
-  //                                   builder: (context) => TVShowResult(
-  //                                         tvshow: tempTvShow,
-  //                                       )),
-  //                             );
-  //                           },
-  //                           child: seen(context, middleMovie, "TVShows"),
-  //                         ),
-  //                       if (rightMovie != null &&
-  //                           rightMovie["poster_path"] != null)
-  //                         GestureDetector(
-  //                           onTap: () {
-  //                             // Handle the click event here
-  //                             TVShow tempTvShow = TVShow(
-  //                                 id: rightMovie['id'],
-  //                                 title: rightMovie['name'],
-  //                                 coverPhoto: rightMovie['poster_photo']);
-  //                             Navigator.push(
-  //                               context,
-  //                               MaterialPageRoute(
-  //                                   builder: (context) => TVShowResult(
-  //                                         tvshow: tempTvShow,
-  //                                       )),
-  //                             );
-  //                           },
-  //                           child: seen(context, rightMovie, "TVShows"),
-  //                         ),
-  //                     ],
-  //                   );
-  //                 },
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  // crew(BuildContext context, data) {
-  //   return DefaultTabController(
-  //     length: 2,
-  //     child: Column(
-  //       children: [
-  //         const TabBar(
-  //           tabs: [
-  //             Tab(text: 'Movies'),
-  //             Tab(text: 'TV Shows'),
-  //           ],
-  //         ),
-  //         Expanded(
-  //           child: TabBarView(
-  //             children: [
-  //               ListView.builder(
-  //                 scrollDirection: Axis.vertical,
-  //                 itemCount: (data!['movie_credits_crew'].length / 3).ceil(),
-  //                 itemBuilder: (context, index) {
-  //                   final leftMovieIndex = index * 3;
-  //                   final middleMovieIndex = index * 3 + 1;
-  //                   final rightMovieIndex = index * 3 + 2;
-  //                   final leftMovie =
-  //                       (leftMovieIndex < data!['movie_credits_crew'].length)
-  //                           ? data!['movie_credits_crew'][leftMovieIndex]
-  //                           : null;
-  //                   final middleMovie =
-  //                       (middleMovieIndex < data!['movie_credits_crew'].length)
-  //                           ? data!['movie_credits_crew'][middleMovieIndex]
-  //                           : null;
-  //                   final rightMovie =
-  //                       (rightMovieIndex < data!['movie_credits_crew'].length)
-  //                           ? data!['movie_credits_crew'][rightMovieIndex]
-  //                           : null;
-  //                   return Row(
-  //                     mainAxisAlignment: MainAxisAlignment.spaceAround,
-  //                     children: [
-  //                       if (leftMovie != null &&
-  //                           leftMovie["poster_path"] != null)
-  //                         GestureDetector(
-  //                           onTap: () {
-  //                             // Handle the click event here
-  //                             Movie tempMovie = Movie(
-  //                                 id: leftMovie['id'],
-  //                                 title: leftMovie['title'],
-  //                                 coverPhoto: leftMovie['poster_path']);
-  //                             Navigator.push(
-  //                               context,
-  //                               MaterialPageRoute(
-  //                                   builder: (context) => MovieResult(
-  //                                         movie: tempMovie,
-  //                                       )),
-  //                             );
-  //                           },
-  //                           child: seenCrew(context, leftMovie, "Movies"),
-  //                         ),
-  //                       if (middleMovie != null &&
-  //                           middleMovie["poster_path"] != null)
-  //                         GestureDetector(
-  //                           onTap: () {
-  //                             // Handle the click event here
-  //                             Movie tempMovie = Movie(
-  //                                 id: middleMovie['id'],
-  //                                 title: middleMovie['title'],
-  //                                 coverPhoto: middleMovie['poster_path']);
-  //                             Navigator.push(
-  //                               context,
-  //                               MaterialPageRoute(
-  //                                   builder: (context) => MovieResult(
-  //                                         movie: tempMovie,
-  //                                       )),
-  //                             );
-  //                           },
-  //                           child: seenCrew(context, middleMovie, "Movies"),
-  //                         ),
-  //                       if (rightMovie != null &&
-  //                           rightMovie["poster_path"] != null)
-  //                         GestureDetector(
-  //                           onTap: () {
-  //                             // Handle the click event here
-  //                             // movieResult = [
-  //                             //   rightMovie['id'],
-  //                             //   rightMovie['title'],
-  //                             //   "Movies",
-  //                             // ];
-  //                             Movie tempMovie = Movie(
-  //                                 id: rightMovie['id'],
-  //                                 title: rightMovie['title'],
-  //                                 coverPhoto: rightMovie['poster_path']);
-  //                             Navigator.push(
-  //                               context,
-  //                               MaterialPageRoute(
-  //                                   builder: (context) => MovieResult(
-  //                                         movie: tempMovie,
-  //                                       )),
-  //                             );
-  //                           },
-  //                           child: seenCrew(context, rightMovie, "Movies"),
-  //                         ),
-  //                     ],
-  //                   );
-  //                 },
-  //               ),
-  //               ListView.builder(
-  //                 scrollDirection: Axis.vertical,
-  //                 itemCount: (data!['tv_credits_crew'].length / 3).ceil(),
-  //                 itemBuilder: (context, index) {
-  //                   final leftMovieIndex = index * 3;
-  //                   final middleMovieIndex = index * 3 + 1;
-  //                   final rightMovieIndex = index * 3 + 2;
-  //                   final leftMovie =
-  //                       (leftMovieIndex < data!['tv_credits_crew'].length)
-  //                           ? data!['tv_credits_crew'][leftMovieIndex]
-  //                           : null;
-  //                   final middleMovie =
-  //                       (middleMovieIndex < data!['tv_credits_crew'].length)
-  //                           ? data!['tv_credits_crew'][middleMovieIndex]
-  //                           : null;
-  //                   final rightMovie =
-  //                       (rightMovieIndex < data!['tv_credits_crew'].length)
-  //                           ? data!['tv_credits_crew'][rightMovieIndex]
-  //                           : null;
-  //                   return Row(
-  //                     mainAxisAlignment: MainAxisAlignment.spaceAround,
-  //                     children: [
-  //                       if (leftMovie != null &&
-  //                           leftMovie["poster_path"] != null)
-  //                         GestureDetector(
-  //                           onTap: () {
-  //                             // Handle the click event here
-  //                             // tvShowResult = [
-  //                             //   leftMovie['id'],
-  //                             //   leftMovie['name'],
-  //                             //   "TVShows",
-  //                             // ];
-  //                             TVShow tempTvShow = TVShow(
-  //                                 id: leftMovie['id'],
-  //                                 title: leftMovie['name'],
-  //                                 coverPhoto: leftMovie['poster_photo']);
-  //                             Navigator.push(
-  //                               context,
-  //                               MaterialPageRoute(
-  //                                   builder: (context) => TVShowResult(
-  //                                         tvshow: tempTvShow,
-  //                                       )),
-  //                             );
-  //                           },
-  //                           child: seenCrew(context, leftMovie, "TVShows"),
-  //                         ),
-  //                       if (middleMovie != null &&
-  //                           middleMovie["poster_path"] != null)
-  //                         GestureDetector(
-  //                           onTap: () {
-  //                             // Handle the click event here
-  //                             // tvShowResult = [
-  //                             //   middleMovie['id'],
-  //                             //   middleMovie['name'],
-  //                             //   "TVShows",
-  //                             // ];
-  //                             TVShow tempTvShow = TVShow(
-  //                                 id: middleMovie['id'],
-  //                                 title: middleMovie['name'],
-  //                                 coverPhoto: middleMovie['poster_photo']);
-  //                             Navigator.push(
-  //                               context,
-  //                               MaterialPageRoute(
-  //                                   builder: (context) => TVShowResult(
-  //                                         tvshow: tempTvShow,
-  //                                       )),
-  //                             );
-  //                           },
-  //                           child: seenCrew(context, middleMovie, "TVShows"),
-  //                         ),
-  //                       if (rightMovie != null &&
-  //                           rightMovie["poster_path"] != null)
-  //                         GestureDetector(
-  //                           onTap: () {
-  //                             // Handle the click event here
-  //                             // tvShowResult = [
-  //                             //   rightMovie['id'],
-  //                             //   rightMovie['name'],
-  //                             //   "TVShows",
-  //                             // ];
-  //                             TVShow tempTvShow = TVShow(
-  //                                 id: rightMovie['id'],
-  //                                 title: rightMovie['name'],
-  //                                 coverPhoto: rightMovie['poster_photo']);
-  //                             Navigator.push(
-  //                               context,
-  //                               MaterialPageRoute(
-  //                                   builder: (context) => TVShowResult(
-  //                                         tvshow: tempTvShow,
-  //                                       )),
-  //                             );
-  //                           },
-  //                           child: seenCrew(context, rightMovie, "TVShows"),
-  //                         ),
-  //                     ],
-  //                   );
-  //                 },
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
   bool containsMap(List list, List map) {
     for (int i = 0; i < list.length; i++) {
       if ((list[i][1]).toString() == map[1].toString() &&
@@ -1035,8 +644,8 @@ class _PersonResultState extends State<PersonResult> {
   }
 
   seen(BuildContext context, movie, type) {
-    if (!containsMap(seenMovies, [type, movie['id']]) &&
-        !containsMap(seenTVShows, [type, movie['id']])) {
+    if (!containsMap(currentUser.seenMovies, [type, movie['id']]) &&
+        !containsMap(currentUser.seenTVShows, [type, movie['id']])) {
       return Stack(
         children: [
           Container(
@@ -1171,8 +780,8 @@ class _PersonResultState extends State<PersonResult> {
   }
 
   seenCrew(BuildContext context, movie, type) {
-    if (!containsMap(seenMovies, [type, movie['id']]) &&
-        !containsMap(seenTVShows, [type, movie['id']])) {
+    if (!containsMap(currentUser.seenMovies, [type, movie['id']]) &&
+        !containsMap(currentUser.seenTVShows, [type, movie['id']])) {
       return Stack(
         children: [
           Container(

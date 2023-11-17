@@ -48,28 +48,28 @@ bool containsMap(List list, List map) {
 
 class _MovieResultState extends State<MovieResult> {
   void check() {
-    if (containsMap(seenMovies, ['Movies', widget.movie.id])) {
+    if (containsMap(currentUser.seenMovies, ['Movies', widget.movie.id])) {
       _isTappedSeen = true;
       _imageProviderSeen = 'assets/seen_after.png';
     } else {
       _isTappedSeen = false;
       _imageProviderSeen = 'assets/seen_before.png';
     }
-    if (containsMap(watchlist, ['Movies', widget.movie.id])) {
+    if (containsMap(currentUser.watchlist, ['Movies', widget.movie.id])) {
       _isTappedWatchlist = true;
       _imageProviderWatchlist = 'assets/watchlist_after.png';
     } else {
       _isTappedWatchlist = false;
       _imageProviderWatchlist = 'assets/watchlist_before.png';
     }
-    if (containsMap(favMovies, ['Movies', widget.movie.id])) {
+    if (containsMap(currentUser.favMovies, ['Movies', widget.movie.id])) {
       _isTappedFav = true;
       _imageProviderFav = 'assets/fav_after.png';
     } else {
       _isTappedFav = false;
       _imageProviderFav = 'assets/fav_before.png';
     }
-    if (reviews.keys.toList().contains(widget.movie.id)) {
+    if (currentUser.reviews.keys.toList().contains(widget.movie.id)) {
       reviewed = true;
     }
   }
@@ -80,9 +80,11 @@ class _MovieResultState extends State<MovieResult> {
     check();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (rewatchedMovies.keys.toList().contains(widget.movie.id)) {
-        myController.text = (rewatchedMovies[widget.movie.id]).toString();
-      } else if (containsMap(seenMovies, ['Movies', widget.movie.id])) {
+      if (currentUser.rewatchedMovies.keys.toList().contains(widget.movie.id)) {
+        myController.text =
+            (currentUser.rewatchedMovies[widget.movie.id]).toString();
+      } else if (containsMap(
+          currentUser.seenMovies, ['Movies', widget.movie.id])) {
         myController.text = "1";
       } else {
         myController.text = "0";
@@ -99,13 +101,13 @@ class _MovieResultState extends State<MovieResult> {
             success = await FirebaseUtils.markWatched(
                 id, title, runtime, rating, context);
             setState(() {
-              seenMovies = seenMovies;
+              currentUser.seenMovies = currentUser.seenMovies;
             });
           } else {
             success =
                 await FirebaseUtils.deleteFromWatchedConfirmation(id, context);
             setState(() {
-              seenMovies = seenMovies;
+              currentUser.seenMovies = currentUser.seenMovies;
             });
           }
           break;
@@ -114,12 +116,12 @@ class _MovieResultState extends State<MovieResult> {
           if (_isTappedWatchlist) {
             success = await FirebaseUtils.bookmark(id, context);
             setState(() {
-              watchlist = watchlist;
+              currentUser.watchlist = currentUser.watchlist;
             });
           } else {
             success = await FirebaseUtils.unbookmark(id, context);
             setState(() {
-              watchlist = watchlist;
+              currentUser.watchlist = currentUser.watchlist;
             });
           }
           break;
@@ -128,12 +130,12 @@ class _MovieResultState extends State<MovieResult> {
           if (_isTappedFav) {
             success = await FirebaseUtils.favorite(id, context);
             setState(() {
-              favMovies = favMovies;
+              currentUser.favMovies = currentUser.favMovies;
             });
           } else {
             success = await FirebaseUtils.unfavorite(id, context);
             setState(() {
-              favMovies = favMovies;
+              currentUser.favMovies = currentUser.favMovies;
             });
           }
           break;
@@ -147,16 +149,19 @@ class _MovieResultState extends State<MovieResult> {
                 return SizedBox(
                   height: 300,
                   child: ListView.builder(
-                    itemCount: (playlists.length / 2).ceil(),
+                    itemCount: (currentUser.playlists.length / 2).ceil(),
                     itemBuilder: (context, index) {
                       final leftMovieIndex = index * 2;
                       final rightMovieIndex = index * 2 + 1;
-                      final keyLeft = (leftMovieIndex < playlists.length)
-                          ? playlists.keys.elementAt(leftMovieIndex)
+                      final keyLeft = (leftMovieIndex <
+                              currentUser.playlists.length)
+                          ? currentUser.playlists.keys.elementAt(leftMovieIndex)
                           : null;
-                      final keyRight = (rightMovieIndex < playlists.length)
-                          ? playlists.keys.elementAt(rightMovieIndex)
-                          : null;
+                      final keyRight =
+                          (rightMovieIndex < currentUser.playlists.length)
+                              ? currentUser.playlists.keys
+                                  .elementAt(rightMovieIndex)
+                              : null;
                       dynamic valueLeft,
                           imageLeft,
                           moviesLeft,
@@ -164,14 +169,16 @@ class _MovieResultState extends State<MovieResult> {
                           imageRight,
                           moviesRight;
                       if (keyLeft != null) {
-                        valueLeft = playlists[keyLeft]['Name'];
-                        imageLeft = playlists[keyLeft]['CoverPhoto'];
-                        moviesLeft = playlists[keyLeft]['Movies'];
+                        valueLeft = currentUser.playlists[keyLeft]['Name'];
+                        imageLeft =
+                            currentUser.playlists[keyLeft]['CoverPhoto'];
+                        moviesLeft = currentUser.playlists[keyLeft]['Movies'];
                       }
                       if (keyRight != null) {
-                        valueRight = playlists[keyRight]['Name'];
-                        imageRight = playlists[keyRight]['CoverPhoto'];
-                        moviesRight = playlists[keyRight]['Movies'];
+                        valueRight = currentUser.playlists[keyRight]['Name'];
+                        imageRight =
+                            currentUser.playlists[keyRight]['CoverPhoto'];
+                        moviesRight = currentUser.playlists[keyRight]['Movies'];
                       }
                       return Row(
                         children: [
@@ -361,7 +368,7 @@ class _MovieResultState extends State<MovieResult> {
     return Scaffold(
       appBar: const CustomAppBar(),
       body: FutureBuilder<Map>(
-        future: widget.movie.getMovieData(),
+        future: widget.movie.getExtendedMovieData(),
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
           if (snapshot.hasData) {
             return SingleChildScrollView(
@@ -765,7 +772,7 @@ class _MovieResultState extends State<MovieResult> {
                           ),
                         ]),
                   if (!reviewed &&
-                      containsMap(seenMovies,
+                      containsMap(currentUser.seenMovies,
                           ['Movies', snapshot.data!["id"].toString()]))
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -876,7 +883,8 @@ class _MovieResultState extends State<MovieResult> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  if (containsMap(seenMovies, ['Movies', widget.movie.id]))
+                  if (containsMap(
+                      currentUser.seenMovies, ['Movies', widget.movie.id]))
                     ExpansionTile(
                       title: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -1011,7 +1019,7 @@ class _MovieResultState extends State<MovieResult> {
                                   color: Colors.red),
                             ),
                           ),
-                        if (seenWith.entries
+                        if (currentUser.seenWith.entries
                             .where((entry) =>
                                 entry.value["Movies"]
                                     ?.contains(widget.movie.id) ??
@@ -1023,7 +1031,7 @@ class _MovieResultState extends State<MovieResult> {
                               )),
                         FutureBuilder(
                           future: Future.wait(
-                            seenWith.entries
+                            currentUser.seenWith.entries
                                 .where((entry) =>
                                     entry.value["Movies"]
                                         ?.contains(widget.movie.id) ??
@@ -1172,14 +1180,14 @@ class _MovieResultState extends State<MovieResult> {
                                         child: SingleChildScrollView(
                                           child: Column(
                                             children: List.generate(
-                                              friends.length,
+                                              currentUser.friends.length,
                                               (friendIndex) {
                                                 return FutureBuilder<
                                                     DocumentSnapshot>(
                                                   future: FirebaseFirestore
                                                       .instance
-                                                      .collection(
-                                                          friends[friendIndex])
+                                                      .collection(currentUser
+                                                          .friends[friendIndex])
                                                       .doc('Settings')
                                                       .get(),
                                                   builder: (context, snapshot) {
@@ -1250,16 +1258,19 @@ class _MovieResultState extends State<MovieResult> {
                                                         value: selectedFriends
                                                                 .keys
                                                                 .toList()
-                                                                .contains(friends[
+                                                                .contains(currentUser
+                                                                        .friends[
                                                                     friendIndex])
                                                             ? selectedFriends[
-                                                                friends[
+                                                                currentUser
+                                                                        .friends[
                                                                     friendIndex]]
                                                             : false,
                                                         onChanged:
                                                             (bool? value) {
                                                           setState(() {
-                                                            selectedFriends[friends[
+                                                            selectedFriends[currentUser
+                                                                        .friends[
                                                                     friendIndex]] =
                                                                 value!;
                                                           });
@@ -1297,20 +1308,23 @@ class _MovieResultState extends State<MovieResult> {
                                                 'Seen':
                                                     FieldValue.arrayUnion([id])
                                               });
-                                              if (seenWith
+                                              if (currentUser.seenWith
                                                       .containsKey(friend) &&
-                                                  !seenWith[friend]["Movies"]
+                                                  !currentUser.seenWith[friend]
+                                                          ["Movies"]
                                                       .contains(
                                                           id.toString())) {
-                                                seenWith[friend]["Movies"]
+                                                currentUser.seenWith[friend]
+                                                        ["Movies"]
                                                     .add(id.toString());
-                                              } else if (!seenWith
+                                              } else if (!currentUser.seenWith
                                                   .containsKey(friend)) {
-                                                seenWith[friend] = {
+                                                currentUser.seenWith[friend] = {
                                                   "Movies": [],
                                                   "TVShows": []
                                                 };
-                                                seenWith[friend]["Movies"]
+                                                currentUser.seenWith[friend]
+                                                        ["Movies"]
                                                     .add(id.toString());
                                               }
                                               DocumentReference userDoc2 =
@@ -1319,7 +1333,7 @@ class _MovieResultState extends State<MovieResult> {
                                                       .doc("SeenWith");
                                               Map<String, dynamic> item = {};
                                               List<dynamic> watchedWithList = [
-                                                uid
+                                                currentUser.uid
                                               ];
                                               item[id] = watchedWithList;
                                               await firestore.runTransaction(
@@ -1391,7 +1405,7 @@ class _MovieResultState extends State<MovieResult> {
                                             }
                                             DocumentReference userDoc2 =
                                                 firestore
-                                                    .collection(uid)
+                                                    .collection(currentUser.uid)
                                                     .doc("SeenWith");
 
                                             Map<String, dynamic> item = {};

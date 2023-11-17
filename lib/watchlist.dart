@@ -108,8 +108,8 @@ class Watchlist extends StatelessWidget {
                   height: MediaQuery.of(context).size.height * 0.7,
                   child: TabBarView(
                     children: [
-                      MyTabView(favItems: watchlist),
-                      MyTabView(favItems: watchlistTVShows),
+                      MyTabView(favItems: currentUser.watchlist),
+                      MyTabView(favItems: currentUser.watchlistTVShows),
                     ],
                   ),
                 ),

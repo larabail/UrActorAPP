@@ -42,7 +42,7 @@ class _ReviewsState extends State<Reviews> {
   List<Map<String, dynamic>> movies = [];
   void editReview(id, context) {
     reviewId = id.toString();
-    reviewInfo = reviews[id.toString()];
+    reviewInfo = currentUser.reviews[id.toString()];
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -52,11 +52,11 @@ class _ReviewsState extends State<Reviews> {
   }
 
   Future<void> deleteReview(id, context) async {
-    reviews.remove(id.toString());
+    currentUser.reviews.remove(id.toString());
     reviewInfo = {};
     reviewed = false;
     await FirebaseFirestore.instance
-        .collection(uid)
+        .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) async {
       for (var doc in querySnapshot.docs) {
@@ -71,16 +71,16 @@ class _ReviewsState extends State<Reviews> {
             }
           }
           final userDoc =
-              FirebaseFirestore.instance.collection(uid).doc("Reviews");
+              FirebaseFirestore.instance.collection(currentUser.uid).doc("Reviews");
           await userDoc.update({'Seen': tempReviewsInList});
-          reviews = {};
+          currentUser.reviews = {};
           for (var element in tempReviewsInList) {
             element = element as Map;
-            reviews[element.keys.toList()[0]] =
+            currentUser.reviews[element.keys.toList()[0]] =
                 element[element.keys.toList()[0]];
           }
           setState(() {
-            reviews = reviews;
+            currentUser.reviews = currentUser.reviews;
           });
         }
       }
@@ -299,21 +299,21 @@ class _ReviewsState extends State<Reviews> {
     return Scaffold(
       appBar: const CustomAppBar(),
       body: ListView.builder(
-        itemCount: (reviews.keys.toList().length / 2).ceil(),
+        itemCount: (currentUser.reviews.keys.toList().length / 2).ceil(),
         itemBuilder: (BuildContext context, int index) {
           final leftReviewIndex = index * 2;
           final rightReviewIndex = index * 2 + 1;
-          final leftReviewId = (leftReviewIndex < reviews.keys.toList().length)
-              ? reviews.keys.toList().reversed.toList()[leftReviewIndex]
+          final leftReviewId = (leftReviewIndex < currentUser.reviews.keys.toList().length)
+              ? currentUser.reviews.keys.toList().reversed.toList()[leftReviewIndex]
               : null;
           final rightReviewId =
-              (rightReviewIndex < reviews.keys.toList().length)
-                  ? reviews.keys.toList().reversed.toList()[rightReviewIndex]
+              (rightReviewIndex < currentUser.reviews.keys.toList().length)
+                  ? currentUser.reviews.keys.toList().reversed.toList()[rightReviewIndex]
                   : null;
           final leftReview =
-              (leftReviewId != null) ? (reviews[leftReviewId]) : null;
+              (leftReviewId != null) ? (currentUser.reviews[leftReviewId]) : null;
           final rightReview =
-              (rightReviewId != null) ? (reviews[rightReviewId]) : null;
+              (rightReviewId != null) ? (currentUser.reviews[rightReviewId]) : null;
           return Row(
             children: [
               if (leftReview != null)

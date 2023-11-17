@@ -60,7 +60,7 @@ class Provider {
       name: json['provider_name'],
       id: json['provider_id'].toString(),
       isSelected:
-          settings["providers"].contains(json['provider_id'].toString()),
+          currentUser.settings["providers"].contains(json['provider_id'].toString()),
     );
   }
 }
@@ -73,7 +73,7 @@ class InfoButtonDialog extends StatefulWidget {
 }
 
 class _InfoButtonDialogState extends State<InfoButtonDialog> {
-  String selectedCountry = country;
+  String selectedCountry = currentUser.country;
   List<Country> countries = [];
   List<Provider> allProviders = [];
   Country? selectedCountryObject;
@@ -107,7 +107,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
 
   Future<void> fetchProviders() async {
     final response = await http.get(Uri.parse(
-        "https://api.themoviedb.org/3/watch/providers/movie?api_key=700cd4fab994df56eb41b34d38c4762a&watch_region=$country"));
+        "https://api.themoviedb.org/3/watch/providers/movie?api_key=700cd4fab994df56eb41b34d38c4762a&watch_region=${currentUser.country}"));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       setState(() {
@@ -128,15 +128,15 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
   }
 
   Future<void> updateCountry(Country element) async {
-    var userDoc = FirebaseFirestore.instance.collection(uid).doc("Country");
+    var userDoc = FirebaseFirestore.instance.collection(currentUser.uid).doc("Country");
     await userDoc.update({'Country': element.isoCode});
-    country = element.isoCode;
+    currentUser.country = element.isoCode;
   }
 
   Future<void> updateSettings(element, newValue) async {
-    var userDoc = FirebaseFirestore.instance.collection(uid).doc("Settings");
-    settings[element] = newValue;
-    await userDoc.set(settings as Map<String, dynamic>);
+    var userDoc = FirebaseFirestore.instance.collection(currentUser.uid).doc("Settings");
+    currentUser.settings[element] = newValue;
+    await userDoc.set(currentUser.settings as Map<String, dynamic>);
   }
 
   @override
@@ -218,11 +218,11 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                   const Icon(Icons.check_box, color: Colors.yellow),
                   const SizedBox(width: 16),
                   Switch(
-                    value: dontAskCalendar,
+                    value: currentUser.dontAskCalendar,
                     onChanged: (value) {
                       setState(() {
-                        dontAskCalendar = !dontAskCalendar;
-                        updateSettings("dontAskCalendar", dontAskCalendar);
+                        currentUser.dontAskCalendar = !currentUser.dontAskCalendar;
+                        updateSettings("dontAskCalendar", currentUser.dontAskCalendar);
                       });
                     },
                     activeColor: Colors.green,
@@ -255,12 +255,12 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                           setState(() {
                             provider.isSelected = !provider.isSelected;
                             if (provider.isSelected) {
-                              settings["providers"].add(provider.id.toString());
+                              currentUser.settings["providers"].add(provider.id.toString());
                             } else {
-                              settings["providers"]
+                              currentUser.settings["providers"]
                                   .remove(provider.id.toString());
                             }
-                            updateSettings("providers", settings["providers"]);
+                            updateSettings("providers", currentUser.settings["providers"]);
                           });
                         },
                         child: Stack(
@@ -303,7 +303,6 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                   GestureDetector(
                     onTap: () async {
                       await FirebaseAuth.instance.signOut();
-                      email = "";
                       Navigator.pop(context);
                       Navigator.popUntil(context, (route) => route.isFirst);
                       Navigator.push(
@@ -419,7 +418,7 @@ class AlertButtonDialogue extends StatelessWidget {
         ElevatedButton(
           onPressed: () async {
             CollectionReference collectionRef =
-                FirebaseFirestore.instance.collection(uid);
+                FirebaseFirestore.instance.collection(currentUser.uid);
             QuerySnapshot snapshot = await collectionRef.get();
             for (DocumentSnapshot docSnapshot in snapshot.docs) {
               await docSnapshot.reference.delete();
@@ -434,7 +433,6 @@ class AlertButtonDialogue extends StatelessWidget {
 
             await user.delete();
 
-            email = "";
             Navigator.pop(context);
             Navigator.popUntil(context, (route) => route.isFirst);
             Navigator.push(
@@ -476,7 +474,7 @@ class _ProfileState extends State<Profile> {
 
   _loadCurrentUsername() async {
     DocumentSnapshot settingsDoc =
-        await FirebaseFirestore.instance.collection(uid).doc('Settings').get();
+        await FirebaseFirestore.instance.collection(currentUser.uid).doc('Settings').get();
     setState(() {
       currentUsername = settingsDoc['username'];
       _usernameController.text = currentUsername ?? '';
@@ -499,14 +497,14 @@ class _ProfileState extends State<Profile> {
     } else {
       // Update username in user's Settings document
       await FirebaseFirestore.instance
-          .collection(uid)
+          .collection(currentUser.uid)
           .doc('Settings')
           .update({'username': newUsername});
 
       // Add username to usernames collection
       await FirebaseFirestore.instance
           .collection('usernames')
-          .add({'username': newUsername, "uid": uid});
+          .add({'username': newUsername, "uid": currentUser.uid});
 
       // Optionally, remove old username from usernames collection
       if (currentUsername != null) {
@@ -539,7 +537,7 @@ class _ProfileState extends State<Profile> {
       List<Map<String, dynamic>> favActsData = [];
       const link = 'https://api.themoviedb.org/3/person/';
       int i = 0;
-      for (List item in favActors) {
+      for (List item in currentUser.favActors) {
         if (i < 9) {
           final response =
               await http.get(Uri.parse('$link${item[1]}$api_key_actor'));
@@ -568,7 +566,7 @@ class _ProfileState extends State<Profile> {
       List<Map<String, dynamic>> movies = [];
 
       List moviesTemp = [];
-      rewatchedMovies.forEach((key, value) {
+      currentUser.rewatchedMovies.forEach((key, value) {
         moviesTemp.add([value, key]);
       });
 
@@ -624,12 +622,12 @@ class _ProfileState extends State<Profile> {
       await uploadTask.whenComplete(() => null);
       String downloadUrl = await ref.getDownloadURL();
 
-      var userDoc = FirebaseFirestore.instance.collection(uid).doc("Settings");
+      var userDoc = FirebaseFirestore.instance.collection(currentUser.uid).doc("Settings");
       await userDoc.update({'profile_photo': downloadUrl});
-      settings["profile_photo"] = downloadUrl;
+      currentUser.settings["profile_photo"] = downloadUrl;
 
       setState(() {
-        settings = settings;
+        currentUser.settings = currentUser.settings;
       });
 
       return downloadUrl;
@@ -639,7 +637,7 @@ class _ProfileState extends State<Profile> {
       List<Map<String, dynamic>> favActsData = [];
       const link = 'https://api.themoviedb.org/3/person/';
       int i = 0;
-      for (List item in favDirectors) {
+      for (List item in currentUser.favDirectors) {
         if (i < 9) {
           final response =
               await http.get(Uri.parse('$link${item[1]}$api_key_actor'));
@@ -665,7 +663,7 @@ class _ProfileState extends State<Profile> {
 
     Map filteredData = {};
 
-    Map tempData = Map.fromEntries(calendar.entries.where((entry) {
+    Map tempData = Map.fromEntries(currentUser.calendar.entries.where((entry) {
       DateTime entryDate = DateTime.parse(entry.key);
       return entryDate.isAfter(startOfWeek.add(const Duration(days: -1))) &&
           entryDate.isBefore(endOfWeek);
@@ -703,7 +701,7 @@ class _ProfileState extends State<Profile> {
     }).toList();
 
     int maxMovies = 0;
-    for (var movies in calendar.values) {
+    for (var movies in currentUser.calendar.values) {
       if (movies.length > maxMovies) {
         maxMovies = movies.length;
       }
@@ -803,9 +801,9 @@ class _ProfileState extends State<Profile> {
                   alignment: Alignment.center,
                   children: [
                     ClipOval(
-                      child: settings["profile_photo"] != ""
+                      child: currentUser.settings["profile_photo"] != ""
                           ? Image.network(
-                              settings["profile_photo"],
+                              currentUser.settings["profile_photo"],
                               height: 200,
                               width: 200,
                               fit: BoxFit.cover,
@@ -1024,7 +1022,7 @@ class _ProfileState extends State<Profile> {
                                               const SizedBox(width: 10),
                                               Expanded(
                                                 child: Text(
-                                                  "Total Movies Ever Seen: ${seenMovies.length}",
+                                                  "Total Movies Ever Seen: ${currentUser.seenMovies.length}",
                                                   style: const TextStyle(
                                                       fontSize: 15),
                                                 ),
@@ -1039,7 +1037,7 @@ class _ProfileState extends State<Profile> {
                                               const SizedBox(width: 10),
                                               Expanded(
                                                 child: Text(
-                                                  "Total TV Shows Ever Seen: ${seenTVShows.length}",
+                                                  "Total TV Shows Ever Seen: ${currentUser.seenTVShows.length}",
                                                   style: const TextStyle(
                                                       fontSize: 15),
                                                 ),

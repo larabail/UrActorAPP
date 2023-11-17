@@ -41,9 +41,9 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
   @override
   Widget build(BuildContext context) {
     Map userCurrent = list_result['Users'].firstWhere(
-        (item) => item.containsKey(uid) as bool,
+        (item) => item.containsKey(currentUser.uid) as bool,
         orElse: () => null);
-    String role = userCurrent[uid];
+    String role = userCurrent[currentUser.uid];
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10.0),
@@ -136,17 +136,17 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                                     List users = keysOfDoc['Users'] as List;
                                     for (var element in users) {
                                       Map el = element as Map;
-                                      if (el.keys.contains(uid)) {
+                                      if (el.keys.contains(currentUser.uid)) {
                                         Map docData = doc.data() as Map;
                                         docData["id"] = doc.id;
-                                        playlists[doc.id] = docData;
+                                        currentUser.playlists[doc.id] = docData;
                                       }
                                     }
                                   }
                                 });
                                 setState(() {
-                                  list_result["Users"] =
-                                      playlists[list_result["id"]]["Users"];
+                                  list_result["Users"] = currentUser
+                                      .playlists[list_result["id"]]["Users"];
                                 });
                               },
                             ),
@@ -208,7 +208,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                       );
                     } else {
                       Map itemToRemove = list_result['Users'].firstWhere(
-                          (item) => item.containsKey(uid) as bool,
+                          (item) => item.containsKey(currentUser.uid) as bool,
                           orElse: () => null);
                       FirebaseFirestore.instance
                           .collection('Watchlists')
@@ -216,7 +216,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                           .update({
                         'Users': FieldValue.arrayRemove([itemToRemove])
                       });
-                      playlists = {};
+                      currentUser.playlists = {};
                       await FirebaseFirestore.instance
                           .collection("Watchlists")
                           .get()
@@ -226,10 +226,10 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                           List users = keysOfDoc['Users'] as List;
                           for (var element in users) {
                             Map el = element as Map;
-                            if (el.keys.contains(uid)) {
+                            if (el.keys.contains(currentUser.uid)) {
                               Map docData = doc.data() as Map;
                               docData["id"] = doc.id;
-                              playlists[doc.id] = docData;
+                              currentUser.playlists[doc.id] = docData;
                             }
                           }
                         }
@@ -286,7 +286,7 @@ class AlertButtonDialogue extends StatelessWidget {
         ElevatedButton(
           onPressed: () async {
             // Perform the delete operation here
-            playlists = {};
+            currentUser.playlists = {};
             await FirebaseFirestore.instance
                 .collection("Watchlists")
                 .doc(list_result["id"])
@@ -300,8 +300,8 @@ class AlertButtonDialogue extends StatelessWidget {
                 List users = keysOfDoc['Users'] as List;
                 for (var element in users) {
                   Map el = element as Map;
-                  if (el.keys.contains(uid)) {
-                    playlists[doc.id] = doc.data();
+                  if (el.keys.contains(currentUser.uid)) {
+                    currentUser.playlists[doc.id] = doc.data();
                   }
                 }
               }
