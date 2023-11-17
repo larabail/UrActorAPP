@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
+import 'common/constants.dart';
 import 'friends.dart';
 import 'friends_profile.dart';
 import 'main.dart';
@@ -284,53 +285,19 @@ bool containsMap(List list, List map) {
 }
 
 class _TVShowResultState extends State<TVShowResult> {
-  final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-  String credits = "/credits?api_key=700cd4fab994df56eb41b34d38c4762a";
-  final String imgLink = 'https://image.tmdb.org/t/p/w500';
-  String link = "https://api.themoviedb.org/3/tv/";
-  String id = "/external_ids?api_key=700cd4fab994df56eb41b34d38c4762a";
-  String watch_providers =
-      "/watch/providers?api_key=700cd4fab994df56eb41b34d38c4762a";
-  String video = "/videos?api_key=700cd4fab994df56eb41b34d38c4762a";
-
-  void check() {
-    if (containsMap(currentUser.seenTVShows, ['TVShows', widget.tvshow.id])) {
-      _isTappedSeen = true;
-      _imageProviderSeen = 'assets/seen_after.png';
-    } else {
-      _isTappedSeen = false;
-      _imageProviderSeen = 'assets/seen_before.png';
-    }
-    if (containsMap(
-        currentUser.watchlistTVShows, ['TVShows', widget.tvshow.id])) {
-      _isTappedWatchlist = true;
-      _imageProviderWatchlist = 'assets/watchlist_after.png';
-    } else {
-      _isTappedWatchlist = false;
-      _imageProviderWatchlist = 'assets/watchlist_before.png';
-    }
-    if (containsMap(currentUser.favTVShows, ['TVShows', widget.tvshow.id])) {
-      _isTappedFav = true;
-      _imageProviderFav = 'assets/fav_after.png';
-    } else {
-      _isTappedFav = false;
-      _imageProviderFav = 'assets/fav_before.png';
-    }
-  }
-
   Future<Map> getMovieData() async {
     List movieData = [widget.tvshow.id, "TVShows"];
     String name = movieData[1]
         .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
         .replaceAll(" ", "-");
     final response =
-        await http.get(Uri.parse('$link${movieData[0]}-$name$api_key_actor'));
-    print('$link${movieData[0]}-$name$api_key_actor');
+        await http.get(Uri.parse('$TV_SHOW_LINK${movieData[0]}-$name$API_KEY'));
+    print('$TV_SHOW_LINK${movieData[0]}-$name$API_KEY');
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
-      final response2 =
-          await http.get(Uri.parse('$link${movieData[0]}-$name$id'));
+      final response2 = await http.get(
+          Uri.parse('$TV_SHOW_LINK${movieData[0]}-$name$EXTERNAL_IDS_LINK'));
       if (response2.statusCode == 200) {
         String imdbId = jsonDecode(response2.body)['imdb_id'];
         String link2 = 'https://www.omdbapi.com/?i=$imdbId&apikey=768d2cf9';
@@ -338,8 +305,8 @@ class _TVShowResultState extends State<TVShowResult> {
         if (r.statusCode == 200) {
           json['imdb_rating'] = jsonDecode(r.body)['imdbRating'];
           json['year'] = jsonDecode(r.body)['Year'];
-          final r2 = await http
-              .get(Uri.parse('$link${movieData[0]}-$name$watch_providers'));
+          final r2 = await http.get(Uri.parse(
+              '$TV_SHOW_LINK${movieData[0]}-$name$WATCH_PROVIDERS_LINK'));
           if (r2.statusCode == 200) {
             json['providers'] = [];
             if (jsonDecode(r2.body)["results"]
@@ -352,17 +319,17 @@ class _TVShowResultState extends State<TVShowResult> {
                     .forEach(
                   (provider) async {
                     String name = provider['provider_name'];
-                    String photo = imgLink + provider['logo_path'];
+                    String photo = IMG_LINK + provider['logo_path'];
                     json['providers'].add([name, photo]);
                   },
                 );
-                final r3 = await http
-                    .get(Uri.parse('$link${movieData[0]}-$name$credits'));
+                final r3 = await http.get(Uri.parse(
+                    '$TV_SHOW_LINK${movieData[0]}-$name$CREDITS_LINK'));
                 if (r3.statusCode == 200) {
                   json['cast'] = jsonDecode(r3.body)["cast"];
                   json['crew'] = jsonDecode(r3.body)["crew"];
-                  final r4 = await http
-                      .get(Uri.parse('$link${movieData[0]}-$name$video'));
+                  final r4 = await http.get(Uri.parse(
+                      '$TV_SHOW_LINK${movieData[0]}-$name$VIDEOS_LINK'));
                   if (r4.statusCode == 200) {
                     bool got = false;
                     jsonDecode(r4.body)['results'].forEach((element) {
@@ -380,13 +347,13 @@ class _TVShowResultState extends State<TVShowResult> {
                 throw Exception('Failed to load movie details');
               } else {
                 json['providers'] = [];
-                final r3 = await http
-                    .get(Uri.parse('$link${movieData[0]}-$name$credits'));
+                final r3 = await http.get(Uri.parse(
+                    '$TV_SHOW_LINK${movieData[0]}-$name$CREDITS_LINK'));
                 if (r3.statusCode == 200) {
                   json['cast'] = jsonDecode(r3.body)["cast"];
                   json['crew'] = jsonDecode(r3.body)["crew"];
-                  final r4 = await http
-                      .get(Uri.parse('$link${movieData[0]}-$name$video'));
+                  final r4 = await http.get(Uri.parse(
+                      '$TV_SHOW_LINK${movieData[0]}-$name$VIDEOS_LINK'));
                   if (r4.statusCode == 200) {
                     bool got = false;
                     jsonDecode(r4.body)['results'].forEach((element) {
@@ -405,13 +372,13 @@ class _TVShowResultState extends State<TVShowResult> {
               }
             } else {
               json['providers'] = [];
-              final r3 = await http
-                  .get(Uri.parse('$link${movieData[0]}-$name$credits'));
+              final r3 = await http.get(
+                  Uri.parse('$TV_SHOW_LINK${movieData[0]}-$name$CREDITS_LINK'));
               if (r3.statusCode == 200) {
                 json['cast'] = jsonDecode(r3.body)["cast"];
                 json['crew'] = jsonDecode(r3.body)["crew"];
-                final r4 = await http
-                    .get(Uri.parse('$link${movieData[0]}-$name$video'));
+                final r4 = await http.get(Uri.parse(
+                    '$TV_SHOW_LINK${movieData[0]}-$name$VIDEOS_LINK'));
                 if (r4.statusCode == 200) {
                   bool got = false;
                   jsonDecode(r4.body)['results'].forEach((element) {
@@ -439,6 +406,30 @@ class _TVShowResultState extends State<TVShowResult> {
       }
     } else {
       throw Exception('Failed to load movie details');
+    }
+  }
+
+  void check() {
+    if (widget.tvshow.isSeen()) {
+      _isTappedSeen = true;
+      _imageProviderSeen = 'assets/seen_after.png';
+    } else {
+      _isTappedSeen = false;
+      _imageProviderSeen = 'assets/seen_before.png';
+    }
+    if (widget.tvshow.isBookmarked()) {
+      _isTappedWatchlist = true;
+      _imageProviderWatchlist = 'assets/watchlist_after.png';
+    } else {
+      _isTappedWatchlist = false;
+      _imageProviderWatchlist = 'assets/watchlist_before.png';
+    }
+    if (widget.tvshow.isFavorite()) {
+      _isTappedFav = true;
+      _imageProviderFav = 'assets/fav_after.png';
+    } else {
+      _isTappedFav = false;
+      _imageProviderFav = 'assets/fav_before.png';
     }
   }
 
@@ -738,7 +729,7 @@ class _TVShowResultState extends State<TVShowResult> {
                               borderRadius: BorderRadius.circular(10),
                               image: DecorationImage(
                                 image: NetworkImage(
-                                  imgLink + snapshot.data!['backdrop_path'],
+                                  IMG_LINK + snapshot.data!['backdrop_path'],
                                 ),
                                 fit: BoxFit.cover,
                               ),
@@ -1006,7 +997,7 @@ class _TVShowResultState extends State<TVShowResult> {
                                     borderRadius: BorderRadius.circular(10),
                                     image: DecorationImage(
                                       image: NetworkImage(
-                                        imgLink +
+                                        IMG_LINK +
                                             snapshot.data!['providers'][index]
                                                 [1],
                                       ),
@@ -1668,7 +1659,7 @@ class _TVShowResultState extends State<TVShowResult> {
                                   "https://cdn-icons-png.flaticon.com/512/3088/3088765.png";
                             } else {
                               person['profile_path'] =
-                                  imgLink + person['profile_path'];
+                                  IMG_LINK + person['profile_path'];
                             }
                             return Padding(
                               padding:

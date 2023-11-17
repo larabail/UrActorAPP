@@ -7,3 +7,4 @@ const String TV_SHOW_LINK = "https://api.themoviedb.org/3/tv/";
 const String CREDITS_LINK = "/credits$API_KEY";
 const String WATCH_PROVIDERS_LINK = "/watch/providers$API_KEY";
 const String VIDEOS_LINK = "/videos$API_KEY";
+const String EXTERNAL_IDS_LINK = "/external_ids$API_KEY";
