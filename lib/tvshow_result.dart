@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'common/constants.dart';
+import 'common/utils.dart';
 import 'friends.dart';
 import 'friends_profile.dart';
 import 'main.dart';
@@ -22,247 +23,6 @@ bool _isTappedSeen = false;
 bool _isTappedWatchlist = false;
 bool _isTappedFav = false;
 bool _isTappedList = false;
-
-Future<void> deleteFromWatchedConfirmation(
-    String id, BuildContext context) async {
-  // Display a dialog box for confirmation. You will have to create a custom dialog for this.
-  bool confirmed = await showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('Confirmation'),
-        content: const Text('Delete from watched?'),
-        actions: <Widget>[
-          TextButton(
-            child: const Text('No'),
-            onPressed: () {
-              Navigator.of(context).pop(false);
-            },
-          ),
-          TextButton(
-            child: const Text('Yes'),
-            onPressed: () {
-              Navigator.of(context).pop(true);
-            },
-          ),
-        ],
-      );
-    },
-  );
-
-  if (confirmed) {
-    List w;
-    await FirebaseFirestore.instance
-        .collection(currentUser.uid)
-        .get()
-        .then((QuerySnapshot querySnapshot) {
-      querySnapshot.docs.forEach((doc) async {
-        if (doc.id == "TVShows") {
-          Map tvshowResults = doc.data() as Map;
-          w = tvshowResults["Seen"];
-          int index = w.indexOf(id);
-
-          if (index > -1) {
-            w.removeAt(index);
-          }
-          var userDoc = FirebaseFirestore.instance
-              .collection(currentUser.uid)
-              .doc("TVShows");
-          await userDoc.update({'Seen': w});
-          currentUser.seenTVShows = [];
-          for (var element in w) {
-            currentUser.seenTVShows += [
-              ["TVShows", element]
-            ];
-          }
-        }
-      });
-    });
-  } else {
-    _imageProviderSeen = 'assets/seen_after.png';
-  }
-}
-
-void markWatched(String id, String title, BuildContext context) async {
-  final userDoc =
-      FirebaseFirestore.instance.collection(currentUser.uid).doc('TVShows');
-  id = id.toString();
-  await userDoc.update({
-    'Seen': FieldValue.arrayUnion([id])
-  });
-  // store id in shared preferences or another way
-  List w;
-  await FirebaseFirestore.instance
-      .collection(currentUser.uid)
-      .get()
-      .then((QuerySnapshot querySnapshot) {
-    querySnapshot.docs.forEach((doc) async {
-      if (doc.id == "TVShows") {
-        Map tvshowResult = doc.data() as Map;
-        w = tvshowResult["Seen"];
-        currentUser.seenTVShows = [];
-        for (var element in w) {
-          currentUser.seenTVShows += [
-            ["TVShows", element]
-          ];
-        }
-      }
-    });
-  });
-}
-
-void favorite(String id, context) async {
-  final userDoc =
-      FirebaseFirestore.instance.collection(currentUser.uid).doc("Favorites");
-  await userDoc.update({
-    'TVShows': FieldValue.arrayUnion([id])
-  });
-  currentUser.favTVShows = [];
-  await FirebaseFirestore.instance
-      .collection(currentUser.uid)
-      .get()
-      .then((QuerySnapshot querySnapshot) {
-    for (var doc in querySnapshot.docs) {
-      if (doc.id == "Favorites") {
-        Map allFavs = doc.data() as Map;
-        allFavs["TVShows"].forEach((element) {
-          currentUser.favTVShows += [
-            ["TVShows", element]
-          ];
-        });
-      }
-    }
-  });
-}
-
-void unfavorite(String id, context) async {
-  await FirebaseFirestore.instance
-      .collection(currentUser.uid)
-      .get()
-      .then((QuerySnapshot querySnapshot) async {
-    for (var doc in querySnapshot.docs) {
-      if (doc.id == "Favorites") {
-        Map allFavs = doc.data() as Map;
-        List tvshowsInFavs = allFavs["TVShows"];
-        int index = tvshowsInFavs.indexOf(id);
-        if (index > -1) {
-          tvshowsInFavs.removeAt(index);
-        }
-        final userDoc = FirebaseFirestore.instance
-            .collection(currentUser.uid)
-            .doc("Favorites");
-        await userDoc.update({'TVShows': tvshowsInFavs});
-        currentUser.favTVShows = [];
-        allFavs["TVShows"].forEach((element) {
-          currentUser.favTVShows += [
-            ["TVShows", element]
-          ];
-        });
-      }
-    }
-  });
-}
-
-void bookmark(String id, context) async {
-  final userDoc =
-      FirebaseFirestore.instance.collection(currentUser.uid).doc("Watchlist");
-  await userDoc.update({
-    'TVShows': FieldValue.arrayUnion([id])
-  });
-  currentUser.watchlistTVShows = [];
-  await FirebaseFirestore.instance
-      .collection(currentUser.uid)
-      .get()
-      .then((QuerySnapshot querySnapshot) {
-    for (var doc in querySnapshot.docs) {
-      if (doc.id == "Watchlist") {
-        Map watchlistAll = doc.data() as Map;
-        watchlistAll["TVShows"].forEach((element) {
-          currentUser.watchlistTVShows += [
-            ["TVShows", element]
-          ];
-        });
-      }
-    }
-  });
-}
-
-void unbookmark(String id, context) async {
-  await FirebaseFirestore.instance
-      .collection(currentUser.uid)
-      .get()
-      .then((QuerySnapshot querySnapshot) async {
-    for (var doc in querySnapshot.docs) {
-      if (doc.id == "Watchlist") {
-        Map allWatch = doc.data() as Map;
-        List tvShowinWatchlist = allWatch["TVShows"];
-        int index = tvShowinWatchlist.indexOf(id);
-        if (index > -1) {
-          tvShowinWatchlist.removeAt(index);
-        }
-        final userDoc = FirebaseFirestore.instance
-            .collection(currentUser.uid)
-            .doc("Watchlist");
-        await userDoc.update({'TVShows': tvShowinWatchlist});
-        currentUser.watchlistTVShows = [];
-        for (var element in tvShowinWatchlist) {
-          currentUser.watchlistTVShows += [
-            ["TVShows", element]
-          ];
-        }
-      }
-    }
-  });
-}
-
-void addToList(String id, String listId, List tvshowsInList, context) async {
-  tvshowsInList.add(id);
-  final userDoc = FirebaseFirestore.instance
-      .collection("Watchlists")
-      .doc(listId.toString());
-  await userDoc.update({'TV Shows': tvshowsInList});
-  currentUser.playlists = {};
-  await FirebaseFirestore.instance
-      .collection("Watchlists")
-      .get()
-      .then((QuerySnapshot querySnapshot) {
-    for (var doc in querySnapshot.docs) {
-      Map keysOfDoc = doc.data() as Map;
-      List users = keysOfDoc['Users'] as List;
-      for (var element in users) {
-        Map el = element as Map;
-        if (el.keys.contains(currentUser.uid)) {
-          currentUser.playlists[doc.id] = doc.data();
-        }
-      }
-    }
-  });
-}
-
-void deleteFromList(
-    String id, String listId, List tvshowsInList, context) async {
-  tvshowsInList.remove(id);
-  final userDoc = FirebaseFirestore.instance
-      .collection("Watchlists")
-      .doc(listId.toString());
-  await userDoc.update({'TV Shows': tvshowsInList});
-  currentUser.playlists = {};
-  await FirebaseFirestore.instance
-      .collection("Watchlists")
-      .get()
-      .then((QuerySnapshot querySnapshot) {
-    for (var doc in querySnapshot.docs) {
-      Map keysOfDoc = doc.data() as Map;
-      List users = keysOfDoc['Users'] as List;
-      for (var element in users) {
-        Map el = element as Map;
-        if (el.keys.contains(currentUser.uid)) {
-          currentUser.playlists[doc.id] = doc.data();
-        }
-      }
-    }
-  });
-}
 
 class TVShowResult extends StatefulWidget {
   // const TVShowResult({super.key});
@@ -437,272 +197,261 @@ class _TVShowResultState extends State<TVShowResult> {
   Widget build(BuildContext context) {
     check();
 
-    void _onTap(String type, String id, String title) {
-      setState(
-        () {
-          switch (type) {
-            case 'seen':
-              _isTappedSeen = !_isTappedSeen;
-              if (_isTappedSeen) {
-                markWatched(id, title, context);
-              } else {
-                deleteFromWatchedConfirmation(id, context);
-              }
-              break;
-            case 'watchlist':
-              _isTappedWatchlist = !_isTappedWatchlist;
-              if (_isTappedWatchlist) {
-                bookmark(id, context);
-              } else {
-                unbookmark(id, context);
-              }
-              break;
-            case 'fav':
-              _isTappedFav = !_isTappedFav;
-              if (_isTappedFav) {
-                favorite(id, context);
-              } else {
-                unfavorite(id, context);
-              }
-              break;
-            case 'list':
-              _isTappedList = !_isTappedList;
-              if (_isTappedList) {
-                _imageProviderList = 'assets/playlists_after.png';
-                showModalBottomSheet(
-                  context: context,
-                  builder: (_) {
-                    return SizedBox(
-                      height: 300, // set the height here
-                      child: ListView.builder(
-                        itemCount: (currentUser.playlists.length / 2).ceil(),
-                        itemBuilder: (context, index) {
-                          final leftMovieIndex = index * 2;
-                          final rightMovieIndex = index * 2 + 1;
-                          final keyLeft =
-                              (leftMovieIndex < currentUser.playlists.length)
-                                  ? currentUser.playlists.keys
-                                      .elementAt(leftMovieIndex)
-                                  : null;
-                          final keyRight =
-                              (rightMovieIndex < currentUser.playlists.length)
-                                  ? currentUser.playlists.keys
-                                      .elementAt(rightMovieIndex)
-                                  : null;
-                          dynamic valueLeft,
-                              imageLeft,
-                              moviesLeft,
-                              valueRight,
-                              imageRight,
-                              moviesRight;
-                          if (keyLeft != null) {
-                            valueLeft = currentUser.playlists[keyLeft]['Name'];
-                            imageLeft =
-                                currentUser.playlists[keyLeft]['CoverPhoto'];
-                            moviesLeft =
-                                currentUser.playlists[keyLeft]['TV Shows'];
-                          }
-                          if (keyRight != null) {
-                            valueRight =
-                                currentUser.playlists[keyRight]['Name'];
-                            imageRight =
-                                currentUser.playlists[keyRight]['CoverPhoto'];
-                            moviesRight =
-                                currentUser.playlists[keyRight]['TV Shows'];
-                          }
-                          return Row(
-                            children: [
-                              if (keyLeft != null)
-                                GestureDetector(
-                                  onTap: () {
-                                    if (moviesLeft.contains(id)) {
-                                      deleteFromList(
-                                          id, keyLeft, moviesLeft, context);
-                                    } else {
-                                      addToList(
-                                          id, keyLeft, moviesLeft, context);
-                                    }
-                                  },
-                                  child: Stack(
-                                    children: [
-                                      Container(
-                                        margin: const EdgeInsets.fromLTRB(
-                                            10.0, 10.0, 5.0, 0),
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.45,
-                                        height:
-                                            MediaQuery.of(context).size.height *
-                                                0.18,
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(27),
-                                          image: DecorationImage(
-                                            image: NetworkImage(imageLeft),
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned.fill(
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(27),
-                                            gradient: LinearGradient(
-                                              begin: Alignment.topCenter,
-                                              end: Alignment.bottomCenter,
-                                              colors: [
-                                                Colors.transparent,
-                                                Colors.black.withOpacity(1),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.fromLTRB(
-                                            5.0, 10.0, 10.0, 0),
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.45,
-                                        height:
-                                            MediaQuery.of(context).size.height *
-                                                0.18,
-                                        // Use Align to position the text
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Align(
-                                            alignment: Alignment.bottomRight,
-                                            child: Text(
-                                              valueLeft,
-                                              style: const TextStyle(
-                                                color: Colors
-                                                    .white, // Make sure the text is visible on the gradient
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                letterSpacing: 1.25,
-                                                wordSpacing: 1.75,
-                                                height: 1.5,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      if (moviesLeft.contains(id))
-                                        const Positioned(
-                                          top: 10,
-                                          right: 10,
-                                          child: Icon(Icons.check_circle,
-                                              color: Colors.green),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              if (keyRight != null)
-                                GestureDetector(
-                                  onTap: () {
-                                    if (moviesRight.contains(id)) {
-                                      deleteFromList(
-                                          id, keyRight, moviesRight, context);
-                                    } else {
-                                      addToList(
-                                          id, keyRight, moviesRight, context);
-                                    }
-                                  },
-                                  child: Stack(
-                                    children: [
-                                      Container(
-                                        margin: const EdgeInsets.fromLTRB(
-                                            5.0, 10.0, 10.0, 0),
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.45,
-                                        height:
-                                            MediaQuery.of(context).size.height *
-                                                0.18,
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(27),
-                                          image: DecorationImage(
-                                            image: NetworkImage(imageRight),
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned.fill(
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(27),
-                                            gradient: LinearGradient(
-                                              begin: Alignment.topCenter,
-                                              end: Alignment.bottomCenter,
-                                              colors: [
-                                                Colors.transparent,
-                                                Colors.black.withOpacity(1),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.fromLTRB(
-                                            5.0, 10.0, 10.0, 0),
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.45,
-                                        height:
-                                            MediaQuery.of(context).size.height *
-                                                0.18,
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Align(
-                                            alignment: Alignment.bottomRight,
-                                            child: Text(
-                                              valueRight,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                letterSpacing: 1.25,
-                                                wordSpacing: 1.75,
-                                                height: 1.5,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      if (moviesRight.contains(id))
-                                        const Positioned(
-                                          top: 10,
-                                          right: 10,
-                                          child: Icon(Icons.check_circle,
-                                              color: Colors.green),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          );
-                        },
-                      ),
-                    );
-                  },
-                ).then((value) => {
-                      setState(() {
-                        _imageProviderList = 'assets/playlists_before.png';
-                        _isTappedList = !_isTappedList;
-                      })
-                    });
-              } else {
-                _imageProviderList = 'assets/playlists_before.png';
-              }
-              break;
-            default:
-              break;
+    Future<void> _onTap(String type, String id, String title, int runtime,
+        double rating) async {
+      bool success = false;
+      switch (type) {
+        case 'seen':
+          _isTappedSeen = !_isTappedSeen;
+          if (_isTappedSeen) {
+            success = await FirebaseUtils.markWatched(
+                id, title, runtime, rating, context, "TVShows");
+          } else {
+            success = await FirebaseUtils.deleteFromWatchedConfirmation(
+                id, context, "TVShows");
           }
-        },
-      );
+          break;
+        case 'watchlist':
+          _isTappedWatchlist = !_isTappedWatchlist;
+          if (_isTappedWatchlist) {
+            success = await FirebaseUtils.bookmark(id, context, "TVShows");
+          } else {
+            success = await FirebaseUtils.unbookmark(id, context, "TVShows");
+          }
+          break;
+        case 'fav':
+          _isTappedFav = !_isTappedFav;
+          if (_isTappedFav) {
+            success = await FirebaseUtils.favorite(id, context, "TVShows");
+          } else {
+            success = await FirebaseUtils.unfavorite(id, context, "TVShows");
+          }
+          break;
+        case 'list':
+          _isTappedList = !_isTappedList;
+          if (_isTappedList) {
+            _imageProviderList = 'assets/playlists_after.png';
+            showModalBottomSheet(
+              context: context,
+              builder: (_) {
+                return SizedBox(
+                  height: 300,
+                  child: ListView.builder(
+                    itemCount: (currentUser.playlists.length / 2).ceil(),
+                    itemBuilder: (context, index) {
+                      final leftMovieIndex = index * 2;
+                      final rightMovieIndex = index * 2 + 1;
+                      final keyLeft = (leftMovieIndex <
+                              currentUser.playlists.length)
+                          ? currentUser.playlists.keys.elementAt(leftMovieIndex)
+                          : null;
+                      final keyRight =
+                          (rightMovieIndex < currentUser.playlists.length)
+                              ? currentUser.playlists.keys
+                                  .elementAt(rightMovieIndex)
+                              : null;
+                      dynamic valueLeft,
+                          imageLeft,
+                          moviesLeft,
+                          valueRight,
+                          imageRight,
+                          moviesRight;
+                      if (keyLeft != null) {
+                        valueLeft = currentUser.playlists[keyLeft]['Name'];
+                        imageLeft =
+                            currentUser.playlists[keyLeft]['CoverPhoto'];
+                        moviesLeft = currentUser.playlists[keyLeft]['TV Shows'];
+                      }
+                      if (keyRight != null) {
+                        valueRight = currentUser.playlists[keyRight]['Name'];
+                        imageRight =
+                            currentUser.playlists[keyRight]['CoverPhoto'];
+                        moviesRight =
+                            currentUser.playlists[keyRight]['TV Shows'];
+                      }
+                      return Row(
+                        children: [
+                          if (keyLeft != null)
+                            GestureDetector(
+                              onTap: () {
+                                if (moviesLeft.contains(id)) {
+                                  FirebaseUtils.deleteFromList(id, keyLeft,
+                                      moviesLeft, context, "TVShows");
+                                } else {
+                                  FirebaseUtils.addToList(id, keyLeft,
+                                      moviesLeft, context, "TVShows");
+                                }
+                              },
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        10.0, 10.0, 5.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.45,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.18,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(27),
+                                      image: DecorationImage(
+                                        image: NetworkImage(imageLeft),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned.fill(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(27),
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Colors.transparent,
+                                            Colors.black.withOpacity(1),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        5.0, 10.0, 10.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.45,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.18,
+                                    // Use Align to position the text
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Align(
+                                        alignment: Alignment.bottomRight,
+                                        child: Text(
+                                          valueLeft,
+                                          style: const TextStyle(
+                                            color: Colors
+                                                .white, // Make sure the text is visible on the gradient
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1.25,
+                                            wordSpacing: 1.75,
+                                            height: 1.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  if (moviesLeft.contains(id))
+                                    const Positioned(
+                                      top: 10,
+                                      right: 10,
+                                      child: Icon(Icons.check_circle,
+                                          color: Colors.green),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          if (keyRight != null)
+                            GestureDetector(
+                              onTap: () {
+                                if (moviesRight.contains(id)) {
+                                  FirebaseUtils.deleteFromList(id, keyRight,
+                                      moviesRight, context, "TVShows");
+                                } else {
+                                  FirebaseUtils.addToList(id, keyRight,
+                                      moviesRight, context, "TVShows");
+                                }
+                              },
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        5.0, 10.0, 10.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.45,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.18,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(27),
+                                      image: DecorationImage(
+                                        image: NetworkImage(imageRight),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned.fill(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(27),
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Colors.transparent,
+                                            Colors.black.withOpacity(1),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        5.0, 10.0, 10.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.45,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.18,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Align(
+                                        alignment: Alignment.bottomRight,
+                                        child: Text(
+                                          valueRight,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1.25,
+                                            wordSpacing: 1.75,
+                                            height: 1.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  if (moviesRight.contains(id))
+                                    const Positioned(
+                                      top: 10,
+                                      right: 10,
+                                      child: Icon(Icons.check_circle,
+                                          color: Colors.green),
+                                    ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                );
+              },
+            ).then((value) => {
+                  setState(() {
+                    _imageProviderList = 'assets/playlists_before.png';
+                    _isTappedList = !_isTappedList;
+                  })
+                });
+          } else {
+            _imageProviderList = 'assets/playlists_before.png';
+          }
+          break;
+        default:
+          break;
+      }
+
+      if (success) {
+        setState(() {});
+      }
     }
 
     return Scaffold(
@@ -902,7 +651,9 @@ class _TVShowResultState extends State<TVShowResult> {
                         onTap: () => _onTap(
                             'seen',
                             snapshot.data!["id"].toString(),
-                            snapshot.data!["name"]),
+                            snapshot.data!["name"],
+                            0,
+                            0),
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -916,7 +667,9 @@ class _TVShowResultState extends State<TVShowResult> {
                         onTap: () => _onTap(
                             'watchlist',
                             snapshot.data!["id"].toString(),
-                            snapshot.data!["name"]),
+                            snapshot.data!["name"],
+                            0,
+                            0),
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -930,7 +683,9 @@ class _TVShowResultState extends State<TVShowResult> {
                         onTap: () => _onTap(
                             'fav',
                             snapshot.data!["id"].toString(),
-                            snapshot.data!["name"]),
+                            snapshot.data!["name"],
+                            0,
+                            0),
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -944,7 +699,9 @@ class _TVShowResultState extends State<TVShowResult> {
                         onTap: () => _onTap(
                             'list',
                             snapshot.data!["id"].toString(),
-                            snapshot.data!["name"]),
+                            snapshot.data!["name"],
+                            0,
+                            0),
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -1782,23 +1539,5 @@ class _TVShowResultState extends State<TVShowResult> {
       ),
       bottomNavigationBar: CommonBottomAppBar(-1),
     );
-  }
-
-  Future<List<String>> getProfilePhotos(List uids) async {
-    List<String> profilePhotos = [];
-
-    for (String tempUid in uids) {
-      var document = await FirebaseFirestore.instance
-          .collection(tempUid)
-          .doc("Settings")
-          .get();
-      if (document.exists && document.data()!.containsKey('profile_photo')) {
-        profilePhotos.add(document.data()!['profile_photo']);
-      } else {
-        profilePhotos.add(""); //eplace with your default image URL
-      }
-    }
-
-    return profilePhotos;
   }
 }
