@@ -7,6 +7,7 @@ import 'friends_profile.dart';
 import 'main.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'objects/TVShow.dart';
 import 'person_result.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
@@ -70,8 +71,6 @@ Future<void> deleteFromWatchedConfirmation(
               ["TVShows", element]
             ];
           }
-          Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (context) => const TVShowResult()));
         }
       });
     });
@@ -105,9 +104,6 @@ void markWatched(String id, String title, BuildContext context) async {
       }
     });
   });
-
-  Navigator.pushReplacement(
-      context, MaterialPageRoute(builder: (context) => const TVShowResult()));
 }
 
 void favorite(String id, context) async {
@@ -131,8 +127,6 @@ void favorite(String id, context) async {
       }
     }
   });
-  Navigator.pushReplacement(
-      context, MaterialPageRoute(builder: (context) => const TVShowResult()));
 }
 
 void unfavorite(String id, context) async {
@@ -157,8 +151,6 @@ void unfavorite(String id, context) async {
             ["TVShows", element]
           ];
         });
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => const TVShowResult()));
       }
     }
   });
@@ -185,8 +177,6 @@ void bookmark(String id, context) async {
       }
     }
   });
-  Navigator.pushReplacement(
-      context, MaterialPageRoute(builder: (context) => const TVShowResult()));
 }
 
 void unbookmark(String id, context) async {
@@ -211,8 +201,6 @@ void unbookmark(String id, context) async {
             ["TVShows", element]
           ];
         }
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => const TVShowResult()));
       }
     }
   });
@@ -240,8 +228,6 @@ void addToList(String id, String listId, List tvshowsInList, context) async {
       }
     }
   });
-  Navigator.pushReplacement(
-      context, MaterialPageRoute(builder: (context) => const TVShowResult()));
 }
 
 void deleteFromList(
@@ -267,12 +253,13 @@ void deleteFromList(
       }
     }
   });
-  Navigator.pushReplacement(
-      context, MaterialPageRoute(builder: (context) => const TVShowResult()));
 }
 
 class TVShowResult extends StatefulWidget {
-  const TVShowResult({super.key});
+  // const TVShowResult({super.key});
+
+  final TVShow tvshow;
+  const TVShowResult({Key? key, required this.tvshow}) : super(key: key);
 
   @override
   _TVShowResultState createState() => _TVShowResultState();
@@ -288,30 +275,6 @@ bool containsMap(List list, List map) {
   return false;
 }
 
-void check() {
-  if (containsMap(seenTVShows, ['TVShows', tvShowResult[0]])) {
-    _isTappedSeen = true;
-    _imageProviderSeen = 'assets/seen_after.png';
-  } else {
-    _isTappedSeen = false;
-    _imageProviderSeen = 'assets/seen_before.png';
-  }
-  if (containsMap(watchlistTVShows, ['TVShows', tvShowResult[0]])) {
-    _isTappedWatchlist = true;
-    _imageProviderWatchlist = 'assets/watchlist_after.png';
-  } else {
-    _isTappedWatchlist = false;
-    _imageProviderWatchlist = 'assets/watchlist_before.png';
-  }
-  if (containsMap(favTVShows, ['TVShows', tvShowResult[0]])) {
-    _isTappedFav = true;
-    _imageProviderFav = 'assets/fav_after.png';
-  } else {
-    _isTappedFav = false;
-    _imageProviderFav = 'assets/fav_before.png';
-  }
-}
-
 class _TVShowResultState extends State<TVShowResult> {
   final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
   String credits = "/credits?api_key=700cd4fab994df56eb41b34d38c4762a";
@@ -322,8 +285,32 @@ class _TVShowResultState extends State<TVShowResult> {
       "/watch/providers?api_key=700cd4fab994df56eb41b34d38c4762a";
   String video = "/videos?api_key=700cd4fab994df56eb41b34d38c4762a";
 
+  void check() {
+    if (containsMap(seenTVShows, ['TVShows', widget.tvshow.id])) {
+      _isTappedSeen = true;
+      _imageProviderSeen = 'assets/seen_after.png';
+    } else {
+      _isTappedSeen = false;
+      _imageProviderSeen = 'assets/seen_before.png';
+    }
+    if (containsMap(watchlistTVShows, ['TVShows', widget.tvshow.id])) {
+      _isTappedWatchlist = true;
+      _imageProviderWatchlist = 'assets/watchlist_after.png';
+    } else {
+      _isTappedWatchlist = false;
+      _imageProviderWatchlist = 'assets/watchlist_before.png';
+    }
+    if (containsMap(favTVShows, ['TVShows', widget.tvshow.id])) {
+      _isTappedFav = true;
+      _imageProviderFav = 'assets/fav_after.png';
+    } else {
+      _isTappedFav = false;
+      _imageProviderFav = 'assets/fav_before.png';
+    }
+  }
+
   Future<Map> getMovieData() async {
-    List movieData = tvShowResult;
+    List movieData = [widget.tvshow.id, "TVShows"];
     String name = movieData[1]
         .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
         .replaceAll(" ", "-");
@@ -1084,7 +1071,7 @@ class _TVShowResultState extends State<TVShowResult> {
                   //     keyboardType: TextInputType.number,
                   //   ),
                   // ),
-                  if (containsMap(seenTVShows, ['TVShows', tvShowResult[0]]))
+                  if (containsMap(seenTVShows, ['TVShows', widget.tvshow.id]))
                     ExpansionTile(
                       title: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -1130,7 +1117,7 @@ class _TVShowResultState extends State<TVShowResult> {
                             seenWith.entries
                                 .where((entry) =>
                                     entry.value["TVShows"]?.contains(
-                                        tvShowResult[0].toString()) ??
+                                        widget.tvshow.id.toString()) ??
                                     false)
                                 .map((entry) => FirebaseFirestore.instance
                                     .collection(entry.key)
@@ -1395,7 +1382,7 @@ class _TVShowResultState extends State<TVShowResult> {
                                           child: const Text('Apply'),
                                           onPressed: () async {
                                             String id =
-                                                tvShowResult[0].toString();
+                                                widget.tvshow.id.toString();
                                             FirebaseFirestore firestore =
                                                 FirebaseFirestore.instance;
                                             for (String friend
@@ -1663,7 +1650,8 @@ class _TVShowResultState extends State<TVShowResult> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => const PersonResult()),
+                                        builder: (context) =>
+                                            const PersonResult()),
                                   );
                                 },
                                 child: Column(

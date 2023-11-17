@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +8,7 @@ import 'package:flutter/material.dart';
 import '../main.dart';
 import '../movie_result.dart';
 import '../rating_popup.dart';
+import 'constants.dart';
 
 class Utils {
   static bool containsMap(
@@ -21,7 +24,7 @@ class Utils {
 }
 
 class FirebaseUtils {
-  static Future<void> deleteFromWatchedConfirmation(
+  static Future<bool> deleteFromWatchedConfirmation(
       String id, BuildContext context) async {
     // Display a dialog box for confirmation. You will have to create a custom dialog for this.
     bool confirmed = await showDialog(
@@ -75,29 +78,36 @@ class FirebaseUtils {
           }
         });
       });
+      return true;
     }
+    return false;
   }
 
-  static void writeReview(id, context) {
+  static Future<bool> writeReview(id, context) {
     reviewId = id.toString();
     // Show the dialog like this
+    Completer<bool> completer = Completer();
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return const RatingDialog();
       },
-    );
+    ).then((value) => completer.complete(true));
+    return completer.future;
   }
 
-  static void editReview(id, context) {
+  static Future<bool> editReview(id, context) {
     reviewId = id.toString();
+
+    Completer<bool> completer = Completer();
     reviewInfo = reviews[id.toString()];
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return const RatingDialog();
+        return RatingDialog();
       },
-    );
+    ).then((value) => completer.complete(true));
+    return completer.future;
   }
 
   static void incrementWatched(String value, String id) {
@@ -110,7 +120,7 @@ class FirebaseUtils {
     }
   }
 
-  static Future<void> deleteReview(id, context) async {
+  static Future<bool> deleteReview(id, context) async {
     reviews.remove(id.toString());
     reviewInfo = {};
     reviewed = false;
@@ -141,10 +151,11 @@ class FirebaseUtils {
         }
       }
     });
+    return true;
   }
 
-  static void markWatched(String id, String title, int runtime, double rating,
-      BuildContext context) async {
+  static Future<bool> markWatched(String id, String title, int runtime,
+      double rating, BuildContext context) async {
     final userDoc = FirebaseFirestore.instance.collection(uid).doc('Movies');
     id = id.toString();
     await userDoc.update({
@@ -176,13 +187,14 @@ class FirebaseUtils {
     for (var doc in snapshot.docs) {
       if (doc.id == 'Calendar') {
         if (!dontAskCalendar) {
-          addtoCalendar(id, title, runtime, rating, today, context);
+          await addtoCalendar(id, title, runtime, rating, today, context);
         }
       }
     }
+    return true;
   }
 
-  static void addtoCalendar(String id, String title, int runtime,
+  static Future<bool> addtoCalendar(String id, String title, int runtime,
       double imdbRating, DateTime today, BuildContext context) async {
     final confirmed = await showDialog(
       context: context,
@@ -229,10 +241,12 @@ class FirebaseUtils {
           }
         });
       });
+      return true;
     }
+    return false;
   }
 
-  static void favorite(String id, context) async {
+  static Future<bool> favorite(String id, context) async {
     final userDoc = FirebaseFirestore.instance.collection(uid).doc("Favorites");
     await userDoc.update({
       'Movies': FieldValue.arrayUnion([id])
@@ -253,9 +267,10 @@ class FirebaseUtils {
         }
       }
     });
+    return true;
   }
 
-  static void unfavorite(String id, context) async {
+  static Future<bool> unfavorite(String id, context) async {
     await FirebaseFirestore.instance
         .collection(uid)
         .get()
@@ -280,9 +295,10 @@ class FirebaseUtils {
         }
       }
     });
+    return true;
   }
 
-  static void bookmark(String id, context) async {
+  static Future<bool> bookmark(String id, context) async {
     final userDoc = FirebaseFirestore.instance.collection(uid).doc("Watchlist");
     await userDoc.update({
       'Movies': FieldValue.arrayUnion([id])
@@ -303,9 +319,10 @@ class FirebaseUtils {
         }
       }
     });
+    return true;
   }
 
-  static void unbookmark(String id, context) async {
+  static Future<bool> unbookmark(String id, context) async {
     await FirebaseFirestore.instance
         .collection(uid)
         .get()
@@ -330,6 +347,7 @@ class FirebaseUtils {
         }
       }
     });
+    return true;
   }
 
   static Future<List<String>> getProfilePhotos(List uids) async {
@@ -401,5 +419,108 @@ class FirebaseUtils {
       }
     });
     Navigator.pop(context);
+  }
+}
+
+class ApiUtils {
+  static Future<dynamic> fetchOmdbData(String imdbId) async {
+    final response = await http
+        .get(Uri.parse('https://www.omdbapi.com/?i=$imdbId&apikey=768d2cf9'));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load OMDB data');
+    }
+    return jsonDecode(response.body);
+  }
+
+  static Future<List<dynamic>> fetchProviders(
+      String movieId, String name, String country) async {
+    final response = await http
+        .get(Uri.parse('$MOVIE_LINK$movieId-$name$WATCH_PROVIDERS_LINK'));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load provider data');
+    }
+
+    var data = jsonDecode(response.body);
+    List<dynamic> providers = [];
+    if (data["results"].keys.contains(country) &&
+        data["results"][country]['flatrate'] != null) {
+      providers = data["results"][country]['flatrate'].map((provider) {
+        return [provider['provider_name'], IMG_LINK + provider['logo_path']];
+      }).toList();
+    }
+    return providers;
+  }
+
+  static Future<Map<String, dynamic>> fetchCreditsAndTrailer(
+      String movieId, String name) async {
+    final creditsResponse =
+        await http.get(Uri.parse('$MOVIE_LINK$movieId-$name$CREDITS_LINK'));
+    final trailerResponse =
+        await http.get(Uri.parse('$MOVIE_LINK$movieId-$name$VIDEOS_LINK'));
+
+    if (creditsResponse.statusCode != 200 ||
+        trailerResponse.statusCode != 200) {
+      throw Exception('Failed to load credits or trailer data');
+    }
+
+    Map<String, dynamic> data = {
+      'cast': jsonDecode(creditsResponse.body)["cast"],
+      'crew': jsonDecode(creditsResponse.body)["crew"],
+      'trailer': null
+    };
+
+    var trailerResults = jsonDecode(trailerResponse.body)['results'];
+    var trailer = trailerResults.firstWhere(
+        (element) =>
+            element['site'] == "YouTube" && element['type'] == "Trailer",
+        orElse: () => null);
+    if (trailer != null) {
+      data['trailer'] = trailer;
+    }
+
+    return data;
+  }
+
+  static Future<Map<String, dynamic>> fetchMovieDetails(
+      String movieId, String name) async {
+    final movieResponse =
+        await http.get(Uri.parse('$MOVIE_LINK$movieId-$name$API_KEY'));
+    if (movieResponse.statusCode != 200) {
+      throw Exception('Failed to load movie details');
+    }
+    return jsonDecode(movieResponse.body);
+  }
+
+  static Future<Map<String, dynamic>> fetchAdditionalMovieData(
+      Map json, String movieId, String name) async {
+    Map<String, dynamic> additionalData = {};
+
+    var imdbId = json['imdb_id'];
+    if (imdbId != null) {
+      var omdbData = await fetchOmdbData(imdbId);
+      additionalData['imdb_rating'] =
+          omdbData["imdbRating"] != "N/A" ? omdbData["imdbRating"] : "0.0";
+      additionalData['year'] = omdbData['Year'] ?? "None";
+    } else {
+      additionalData['imdb_rating'] = "0.0";
+      additionalData['year'] = "None";
+    }
+
+    additionalData['providers'] = await fetchProviders(movieId, name, country);
+    additionalData.addAll(await fetchCreditsAndTrailer(movieId, name));
+
+    return additionalData;
+  }
+
+  static List<dynamic> processSeenDates(Map calendar, String movieId) {
+    List<dynamic> seenDates = [];
+    calendar.forEach((key, movies) {
+      movies.where((movie) => movie['id'] == movieId).forEach((movie) {
+        seenDates.add([key, movie["friends"]]);
+      });
+    });
+    seenDates
+        .sort((a, b) => DateTime.parse(b[0]).compareTo(DateTime.parse(a[0])));
+    return seenDates;
   }
 }

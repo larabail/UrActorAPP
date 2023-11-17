@@ -2,8 +2,11 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/objects/TVShow.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
+import 'objects/Media.dart';
+import 'objects/Movie.dart';
 import 'playlists.dart';
 import 'main.dart';
 import 'movie_result.dart';
@@ -376,6 +379,79 @@ class _ListResultState extends State<ListResult> {
     return data;
   }
 
+  Widget buildMediaItem(
+      String mediaId, String mediaType, BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: getData(mediaId, mediaType),
+      builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
+        if (snapshot.hasData) {
+          return GestureDetector(
+            onTap: () {
+              MediaItem tempItem = mediaType == "Movies"
+                  ? Movie(
+                      id: snapshot.data!['id'].toString(),
+                      title: snapshot.data!['title'].toString(),
+                      coverPhoto: snapshot.data!['poster_path'].toString(),
+                    )
+                  : TVShow(
+                      id: snapshot.data!['id'].toString(),
+                      title: snapshot.data!['title'].toString(),
+                      coverPhoto: snapshot.data!['poster_path'].toString(),
+                    );
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => mediaType == "Movies"
+                      ? MovieResult(movie: tempItem as Movie)
+                      : TVShowResult(tvshow: tempItem as TVShow),
+                ),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
+              width: MediaQuery.of(context).size.width * 0.28,
+              height: MediaQuery.of(context).size.height * 0.18,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(27),
+                image: DecorationImage(
+                  image: NetworkImage(snapshot.data!['poster']),
+                  fit: BoxFit.fitWidth,
+                ),
+              ),
+            ),
+          );
+        } else if (snapshot.hasError) {
+          return const Center(child: Text("Failed to load movie details"));
+        } else {
+          return const Center(child: CircularProgressIndicator());
+        }
+      },
+    );
+  }
+
+  Widget buildMediaList(
+      List mediaList, String mediaType, BuildContext context) {
+    return ListView.builder(
+      itemCount: (mediaList.length / 3).ceil(),
+      itemBuilder: (context, index) {
+        final leftIndex = index * 3;
+        final middleIndex = index * 3 + 1;
+        final rightIndex = index * 3 + 2;
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            if (leftIndex < mediaList.length)
+              buildMediaItem(mediaList[leftIndex], mediaType, context),
+            if (middleIndex < mediaList.length)
+              buildMediaItem(mediaList[middleIndex], mediaType, context),
+            if (rightIndex < mediaList.length)
+              buildMediaItem(mediaList[rightIndex], mediaType, context),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -556,487 +632,8 @@ class _ListResultState extends State<ListResult> {
                           MediaQuery.of(context).size.height * 0.25,
                       child: TabBarView(
                         children: [
-                          if (list["Movies"].length != 0)
-                            ListView.builder(
-                              itemCount: (list["Movies"].length / 3).ceil(),
-                              itemBuilder: (context, index) {
-                                final leftMovieIndex = index * 3;
-                                final middleMovieIndex = index * 3 + 1;
-                                final rightMovieIndex = index * 3 + 2;
-                                final leftMovie =
-                                    (leftMovieIndex < list["Movies"].length)
-                                        ? list["Movies"][leftMovieIndex]
-                                        : null;
-                                final middleMovie =
-                                    (middleMovieIndex < list["Movies"].length)
-                                        ? list["Movies"][middleMovieIndex]
-                                        : null;
-                                final rightMovie =
-                                    (rightMovieIndex < list["Movies"].length)
-                                        ? list["Movies"][rightMovieIndex]
-                                        : null;
-                                return Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    if (leftMovie != null)
-                                      FutureBuilder<Map<String, dynamic>>(
-                                        future: getData(leftMovie, "Movies"),
-                                        builder: (BuildContext context,
-                                            AsyncSnapshot<Map> snapshot) {
-                                          if (snapshot.hasData) {
-                                            return GestureDetector(
-                                              onTap: () {
-                                                // Handle the click event here
-                                                if (snapshot.data!['type'] ==
-                                                    "Movies") {
-                                                  movieResult = [
-                                                    snapshot.data!['id'],
-                                                    snapshot.data!['title'],
-                                                    snapshot.data!['type'],
-                                                  ];
-                                                } else {
-                                                  tvShowResult = [
-                                                    snapshot.data!['id'],
-                                                    snapshot.data!['title'],
-                                                    snapshot.data!['type'],
-                                                  ];
-                                                }
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) => snapshot
-                                                                      .data![
-                                                                  'type'] ==
-                                                              "Movies"
-                                                          ? const MovieResult()
-                                                          : const TVShowResult()),
-                                                );
-                                              },
-                                              child: Container(
-                                                margin:
-                                                    const EdgeInsets.fromLTRB(
-                                                        5.0, 10.0, 10.0, 0),
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.28,
-                                                height: MediaQuery.of(context)
-                                                        .size
-                                                        .height *
-                                                    0.18,
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(27),
-                                                  image: DecorationImage(
-                                                    image: NetworkImage(
-                                                      snapshot.data!['poster'],
-                                                    ),
-                                                    fit: BoxFit.fitWidth,
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          } else if (snapshot.hasError) {
-                                            return const Center(
-                                              child: Text(
-                                                  "Failed to load movie details"),
-                                            );
-                                          } else {
-                                            return const Center(
-                                              child:
-                                                  CircularProgressIndicator(),
-                                            );
-                                          }
-                                        },
-                                      ),
-                                    if (middleMovie != null)
-                                      FutureBuilder<Map<String, dynamic>>(
-                                        future: getData(middleMovie, "Movies"),
-                                        builder: (BuildContext context,
-                                            AsyncSnapshot<Map> snapshot) {
-                                          if (snapshot.hasData) {
-                                            return GestureDetector(
-                                              onTap: () {
-                                                // Handle the click event here
-                                                if (snapshot.data!['type'] ==
-                                                    "Movies") {
-                                                  movieResult = [
-                                                    snapshot.data!['id'],
-                                                    snapshot.data!['title'],
-                                                    snapshot.data!['type'],
-                                                  ];
-                                                } else {
-                                                  tvShowResult = [
-                                                    snapshot.data!['id'],
-                                                    snapshot.data!['title'],
-                                                    snapshot.data!['type'],
-                                                  ];
-                                                }
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) => snapshot
-                                                                      .data![
-                                                                  'type'] ==
-                                                              "Movies"
-                                                          ? const MovieResult()
-                                                          : const TVShowResult()),
-                                                );
-                                              },
-                                              child: Container(
-                                                margin:
-                                                    const EdgeInsets.fromLTRB(
-                                                        5.0, 10.0, 10.0, 0),
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.28,
-                                                height: MediaQuery.of(context)
-                                                        .size
-                                                        .height *
-                                                    0.18,
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(27),
-                                                  image: DecorationImage(
-                                                    image: NetworkImage(
-                                                      snapshot.data!['poster'],
-                                                    ),
-                                                    fit: BoxFit.fitWidth,
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          } else if (snapshot.hasError) {
-                                            return const Center(
-                                              child: Text(
-                                                  "Failed to load movie details"),
-                                            );
-                                          } else {
-                                            return const Center(
-                                              child:
-                                                  CircularProgressIndicator(),
-                                            );
-                                          }
-                                        },
-                                      ),
-                                    if (rightMovie != null)
-                                      FutureBuilder<Map<String, dynamic>>(
-                                        future: getData(rightMovie, "Movies"),
-                                        builder: (BuildContext context,
-                                            AsyncSnapshot<Map> snapshot) {
-                                          if (snapshot.hasData) {
-                                            return GestureDetector(
-                                              onTap: () {
-                                                // Handle the click event here
-                                                if (snapshot.data!['type'] ==
-                                                    "Movies") {
-                                                  movieResult = [
-                                                    snapshot.data!['id'],
-                                                    snapshot.data!['title'],
-                                                    snapshot.data!['type'],
-                                                  ];
-                                                } else {
-                                                  tvShowResult = [
-                                                    snapshot.data!['id'],
-                                                    snapshot.data!['title'],
-                                                    snapshot.data!['type'],
-                                                  ];
-                                                }
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) => snapshot
-                                                                      .data![
-                                                                  'type'] ==
-                                                              "Movies"
-                                                          ? const MovieResult()
-                                                          : const TVShowResult()),
-                                                );
-                                              },
-                                              child: Container(
-                                                margin:
-                                                    const EdgeInsets.fromLTRB(
-                                                        5.0, 10.0, 10.0, 0),
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.28,
-                                                height: MediaQuery.of(context)
-                                                        .size
-                                                        .height *
-                                                    0.18,
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(27),
-                                                  image: DecorationImage(
-                                                    image: NetworkImage(
-                                                      snapshot.data!['poster'],
-                                                    ),
-                                                    fit: BoxFit.fitWidth,
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          } else if (snapshot.hasError) {
-                                            return const Center(
-                                              child: Text(
-                                                  "Failed to load movie details"),
-                                            );
-                                          } else {
-                                            return const Center(
-                                              child:
-                                                  CircularProgressIndicator(),
-                                            );
-                                          }
-                                        },
-                                      )
-                                  ],
-                                );
-                              },
-                            ),
-                          if (list["TVShows"].length != 0)
-                            ListView.builder(
-                              itemCount: (list["TVShows"].length / 3).ceil(),
-                              itemBuilder: (context, index) {
-                                final leftTVShowIndex = index * 3;
-                                final middleTVShowIndex = index * 3 + 1;
-                                final rightTVShowIndex = index * 3 + 2;
-                                final leftTVShow =
-                                    (leftTVShowIndex < list["TVShows"].length)
-                                        ? list["TVShows"][leftTVShowIndex]
-                                        : null;
-                                final middleTVShow =
-                                    (middleTVShowIndex < list["TVShows"].length)
-                                        ? list["TVShows"][middleTVShowIndex]
-                                        : null;
-                                final rightTVShow =
-                                    (rightTVShowIndex < list["TVShows"].length)
-                                        ? list["TVShows"][rightTVShowIndex]
-                                        : null;
-                                return Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    if (leftTVShow != null)
-                                      FutureBuilder<Map<String, dynamic>>(
-                                        future: getData(leftTVShow, "TVShows"),
-                                        builder: (BuildContext context,
-                                            AsyncSnapshot<Map> snapshot) {
-                                          if (snapshot.hasData) {
-                                            return GestureDetector(
-                                              onTap: () {
-                                                // Handle the click event here
-                                                if (snapshot.data!['type'] ==
-                                                    "Movies") {
-                                                  movieResult = [
-                                                    snapshot.data!['id'],
-                                                    snapshot.data!['title'],
-                                                    snapshot.data!['type'],
-                                                  ];
-                                                } else {
-                                                  tvShowResult = [
-                                                    snapshot.data!['id'],
-                                                    snapshot.data!['title'],
-                                                    snapshot.data!['type'],
-                                                  ];
-                                                }
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) => snapshot
-                                                                      .data![
-                                                                  'type'] ==
-                                                              "Movies"
-                                                          ? const MovieResult()
-                                                          : const TVShowResult()),
-                                                );
-                                              },
-                                              child: Container(
-                                                margin:
-                                                    const EdgeInsets.fromLTRB(
-                                                        5.0, 10.0, 10.0, 0),
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.28,
-                                                height: MediaQuery.of(context)
-                                                        .size
-                                                        .height *
-                                                    0.18,
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(27),
-                                                  image: DecorationImage(
-                                                    image: NetworkImage(
-                                                      snapshot.data!['poster'],
-                                                    ),
-                                                    fit: BoxFit.fitWidth,
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          } else if (snapshot.hasError) {
-                                            return const Center(
-                                              child: Text(
-                                                  "Failed to load movie details"),
-                                            );
-                                          } else {
-                                            return const Center(
-                                              child:
-                                                  CircularProgressIndicator(),
-                                            );
-                                          }
-                                        },
-                                      ),
-                                    if (middleTVShow != null)
-                                      FutureBuilder<Map<String, dynamic>>(
-                                        future:
-                                            getData(middleTVShow, "TVShows"),
-                                        builder: (BuildContext context,
-                                            AsyncSnapshot<Map> snapshot) {
-                                          if (snapshot.hasData) {
-                                            return GestureDetector(
-                                              onTap: () {
-                                                // Handle the click event here
-                                                if (snapshot.data!['type'] ==
-                                                    "Movies") {
-                                                  movieResult = [
-                                                    snapshot.data!['id'],
-                                                    snapshot.data!['title'],
-                                                    snapshot.data!['type'],
-                                                  ];
-                                                } else {
-                                                  tvShowResult = [
-                                                    snapshot.data!['id'],
-                                                    snapshot.data!['title'],
-                                                    snapshot.data!['type'],
-                                                  ];
-                                                }
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) => snapshot
-                                                                      .data![
-                                                                  'type'] ==
-                                                              "Movies"
-                                                          ? const MovieResult()
-                                                          : const TVShowResult()),
-                                                );
-                                              },
-                                              child: Container(
-                                                margin:
-                                                    const EdgeInsets.fromLTRB(
-                                                        5.0, 10.0, 10.0, 0),
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.28,
-                                                height: MediaQuery.of(context)
-                                                        .size
-                                                        .height *
-                                                    0.18,
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(27),
-                                                  image: DecorationImage(
-                                                    image: NetworkImage(
-                                                      snapshot.data!['poster'],
-                                                    ),
-                                                    fit: BoxFit.fitWidth,
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          } else if (snapshot.hasError) {
-                                            return const Center(
-                                              child: Text(
-                                                  "Failed to load movie details"),
-                                            );
-                                          } else {
-                                            return const Center(
-                                              child:
-                                                  CircularProgressIndicator(),
-                                            );
-                                          }
-                                        },
-                                      ),
-                                    if (rightTVShow != null)
-                                      FutureBuilder<Map<String, dynamic>>(
-                                        future: getData(rightTVShow, "TVShows"),
-                                        builder: (BuildContext context,
-                                            AsyncSnapshot<Map> snapshot) {
-                                          if (snapshot.hasData) {
-                                            return GestureDetector(
-                                              onTap: () {
-                                                // Handle the click event here
-                                                if (snapshot.data!['type'] ==
-                                                    "Movies") {
-                                                  movieResult = [
-                                                    snapshot.data!['id'],
-                                                    snapshot.data!['title'],
-                                                    snapshot.data!['type'],
-                                                  ];
-                                                } else {
-                                                  tvShowResult = [
-                                                    snapshot.data!['id'],
-                                                    snapshot.data!['title'],
-                                                    snapshot.data!['type'],
-                                                  ];
-                                                }
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) => snapshot
-                                                                      .data![
-                                                                  'type'] ==
-                                                              "Movies"
-                                                          ? const MovieResult()
-                                                          : const TVShowResult()),
-                                                );
-                                              },
-                                              child: Container(
-                                                margin:
-                                                    const EdgeInsets.fromLTRB(
-                                                        5.0, 10.0, 10.0, 0),
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.28,
-                                                height: MediaQuery.of(context)
-                                                        .size
-                                                        .height *
-                                                    0.18,
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(27),
-                                                  image: DecorationImage(
-                                                    image: NetworkImage(
-                                                      snapshot.data!['poster'],
-                                                    ),
-                                                    fit: BoxFit.fitWidth,
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          } else if (snapshot.hasError) {
-                                            return const Center(
-                                              child: Text(
-                                                  "Failed to load movie details"),
-                                            );
-                                          } else {
-                                            return const Center(
-                                              child:
-                                                  CircularProgressIndicator(),
-                                            );
-                                          }
-                                        },
-                                      )
-                                  ],
-                                );
-                              },
-                            )
+                          buildMediaList(list["Movies"], "Movies", context),
+                          buildMediaList(list["TVShows"], "TVShows", context),
                         ],
                       ),
                     ),
@@ -1044,426 +641,9 @@ class _ListResultState extends State<ListResult> {
                 ),
               ),
             if (list["Movies"].length > 0 && list["TVShows"].length == 0)
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.475,
-                child: ListView.builder(
-                  itemCount: (list["Movies"].length / 3).ceil(),
-                  itemBuilder: (context, index) {
-                    final leftMovieIndex = index * 3;
-                    final middleMovieIndex = index * 3 + 1;
-                    final rightMovieIndex = index * 3 + 2;
-                    final leftMovie = (leftMovieIndex < list["Movies"].length)
-                        ? list["Movies"][leftMovieIndex]
-                        : null;
-                    final middleMovie =
-                        (middleMovieIndex < list["Movies"].length)
-                            ? list["Movies"][middleMovieIndex]
-                            : null;
-                    final rightMovie = (rightMovieIndex < list["Movies"].length)
-                        ? list["Movies"][rightMovieIndex]
-                        : null;
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        if (leftMovie != null)
-                          FutureBuilder<Map<String, dynamic>>(
-                            future: getData(leftMovie, "Movies"),
-                            builder: (BuildContext context,
-                                AsyncSnapshot<Map> snapshot) {
-                              if (snapshot.hasData) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    // Handle the click event here
-                                    if (snapshot.data!['type'] == "Movies") {
-                                      movieResult = [
-                                        snapshot.data!['id'],
-                                        snapshot.data!['title'],
-                                        snapshot.data!['type'],
-                                      ];
-                                    } else {
-                                      tvShowResult = [
-                                        snapshot.data!['id'],
-                                        snapshot.data!['title'],
-                                        snapshot.data!['type'],
-                                      ];
-                                    }
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              snapshot.data!['type'] == "Movies"
-                                                  ? const MovieResult()
-                                                  : const TVShowResult()),
-                                    );
-                                  },
-                                  child: Container(
-                                    margin: const EdgeInsets.fromLTRB(
-                                        5.0, 10.0, 10.0, 0),
-                                    width: MediaQuery.of(context).size.width *
-                                        0.28,
-                                    height: MediaQuery.of(context).size.height *
-                                        0.18,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(27),
-                                      image: DecorationImage(
-                                        image: NetworkImage(
-                                          snapshot.data!['poster'],
-                                        ),
-                                        fit: BoxFit.fitWidth,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              } else if (snapshot.hasError) {
-                                return const Center(
-                                  child: Text("Failed to load movie details"),
-                                );
-                              } else {
-                                return const Center(
-                                  child: CircularProgressIndicator(),
-                                );
-                              }
-                            },
-                          ),
-                        if (middleMovie != null)
-                          FutureBuilder<Map<String, dynamic>>(
-                            future: getData(middleMovie, "Movies"),
-                            builder: (BuildContext context,
-                                AsyncSnapshot<Map> snapshot) {
-                              if (snapshot.hasData) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    // Handle the click event here
-                                    if (snapshot.data!['type'] == "Movies") {
-                                      movieResult = [
-                                        snapshot.data!['id'],
-                                        snapshot.data!['title'],
-                                        snapshot.data!['type'],
-                                      ];
-                                    } else {
-                                      tvShowResult = [
-                                        snapshot.data!['id'],
-                                        snapshot.data!['title'],
-                                        snapshot.data!['type'],
-                                      ];
-                                    }
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              snapshot.data!['type'] == "Movies"
-                                                  ? const MovieResult()
-                                                  : const TVShowResult()),
-                                    );
-                                  },
-                                  child: Container(
-                                    margin: const EdgeInsets.fromLTRB(
-                                        5.0, 10.0, 10.0, 0),
-                                    width: MediaQuery.of(context).size.width *
-                                        0.28,
-                                    height: MediaQuery.of(context).size.height *
-                                        0.18,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(27),
-                                      image: DecorationImage(
-                                        image: NetworkImage(
-                                          snapshot.data!['poster'],
-                                        ),
-                                        fit: BoxFit.fitWidth,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              } else if (snapshot.hasError) {
-                                return const Center(
-                                  child: Text("Failed to load movie details"),
-                                );
-                              } else {
-                                return const Center(
-                                  child: CircularProgressIndicator(),
-                                );
-                              }
-                            },
-                          ),
-                        if (rightMovie != null)
-                          FutureBuilder<Map<String, dynamic>>(
-                            future: getData(rightMovie, "Movies"),
-                            builder: (BuildContext context,
-                                AsyncSnapshot<Map> snapshot) {
-                              if (snapshot.hasData) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    // Handle the click event here
-                                    if (snapshot.data!['type'] == "Movies") {
-                                      movieResult = [
-                                        snapshot.data!['id'],
-                                        snapshot.data!['title'],
-                                        snapshot.data!['type'],
-                                      ];
-                                    } else {
-                                      tvShowResult = [
-                                        snapshot.data!['id'],
-                                        snapshot.data!['title'],
-                                        snapshot.data!['type'],
-                                      ];
-                                    }
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              snapshot.data!['type'] == "Movies"
-                                                  ? const MovieResult()
-                                                  : const TVShowResult()),
-                                    );
-                                  },
-                                  child: Container(
-                                    margin: const EdgeInsets.fromLTRB(
-                                        5.0, 10.0, 10.0, 0),
-                                    width: MediaQuery.of(context).size.width *
-                                        0.28,
-                                    height: MediaQuery.of(context).size.height *
-                                        0.18,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(27),
-                                      image: DecorationImage(
-                                        image: NetworkImage(
-                                          snapshot.data!['poster'],
-                                        ),
-                                        fit: BoxFit.fitWidth,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              } else if (snapshot.hasError) {
-                                return const Center(
-                                  child: Text("Failed to load movie details"),
-                                );
-                              } else {
-                                return const Center(
-                                  child: CircularProgressIndicator(),
-                                );
-                              }
-                            },
-                          )
-                      ],
-                    );
-                  },
-                ),
-              ),
+              buildMediaList(list["Movies"], "Movies", context),
             if (list["TVShows"].length > 0 && list["Movies"].length == 0)
-              SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.475,
-                  child: ListView.builder(
-                    itemCount: (list["TVShows"].length / 3).ceil(),
-                    itemBuilder: (context, index) {
-                      final leftTVShowIndex = index * 3;
-                      final middleTVShowIndex = index * 3 + 1;
-                      final rightTVShowIndex = index * 3 + 2;
-                      final leftTVShow =
-                          (leftTVShowIndex < list["TVShows"].length)
-                              ? list["TVShows"][leftTVShowIndex]
-                              : null;
-                      final middleTVShow =
-                          (middleTVShowIndex < list["TVShows"].length)
-                              ? list["TVShows"][middleTVShowIndex]
-                              : null;
-                      final rightTVShow =
-                          (rightTVShowIndex < list["TVShows"].length)
-                              ? list["TVShows"][rightTVShowIndex]
-                              : null;
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          if (leftTVShow != null)
-                            FutureBuilder<Map<String, dynamic>>(
-                              future: getData(leftTVShow, "TVShows"),
-                              builder: (BuildContext context,
-                                  AsyncSnapshot<Map> snapshot) {
-                                if (snapshot.hasData) {
-                                  return GestureDetector(
-                                    onTap: () {
-                                      // Handle the click event here
-                                      if (snapshot.data!['type'] == "Movies") {
-                                        movieResult = [
-                                          snapshot.data!['id'],
-                                          snapshot.data!['title'],
-                                          snapshot.data!['type'],
-                                        ];
-                                      } else {
-                                        tvShowResult = [
-                                          snapshot.data!['id'],
-                                          snapshot.data!['title'],
-                                          snapshot.data!['type'],
-                                        ];
-                                      }
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                snapshot.data!['type'] ==
-                                                        "Movies"
-                                                    ? const MovieResult()
-                                                    : const TVShowResult()),
-                                      );
-                                    },
-                                    child: Container(
-                                      margin: const EdgeInsets.fromLTRB(
-                                          5.0, 10.0, 10.0, 0),
-                                      width: MediaQuery.of(context).size.width *
-                                          0.28,
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              0.18,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(27),
-                                        image: DecorationImage(
-                                          image: NetworkImage(
-                                            snapshot.data!['poster'],
-                                          ),
-                                          fit: BoxFit.fitWidth,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                } else if (snapshot.hasError) {
-                                  return const Center(
-                                    child: Text("Failed to load movie details"),
-                                  );
-                                } else {
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                }
-                              },
-                            ),
-                          if (middleTVShow != null)
-                            FutureBuilder<Map<String, dynamic>>(
-                              future: getData(middleTVShow, "TVShows"),
-                              builder: (BuildContext context,
-                                  AsyncSnapshot<Map> snapshot) {
-                                if (snapshot.hasData) {
-                                  return GestureDetector(
-                                    onTap: () {
-                                      // Handle the click event here
-                                      if (snapshot.data!['type'] == "Movies") {
-                                        movieResult = [
-                                          snapshot.data!['id'],
-                                          snapshot.data!['title'],
-                                          snapshot.data!['type'],
-                                        ];
-                                      } else {
-                                        tvShowResult = [
-                                          snapshot.data!['id'],
-                                          snapshot.data!['title'],
-                                          snapshot.data!['type'],
-                                        ];
-                                      }
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                snapshot.data!['type'] ==
-                                                        "Movies"
-                                                    ? const MovieResult()
-                                                    : const TVShowResult()),
-                                      );
-                                    },
-                                    child: Container(
-                                      margin: const EdgeInsets.fromLTRB(
-                                          5.0, 10.0, 10.0, 0),
-                                      width: MediaQuery.of(context).size.width *
-                                          0.28,
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              0.18,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(27),
-                                        image: DecorationImage(
-                                          image: NetworkImage(
-                                            snapshot.data!['poster'],
-                                          ),
-                                          fit: BoxFit.fitWidth,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                } else if (snapshot.hasError) {
-                                  return const Center(
-                                    child: Text("Failed to load movie details"),
-                                  );
-                                } else {
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                }
-                              },
-                            ),
-                          if (rightTVShow != null)
-                            FutureBuilder<Map<String, dynamic>>(
-                              future: getData(rightTVShow, "TVShows"),
-                              builder: (BuildContext context,
-                                  AsyncSnapshot<Map> snapshot) {
-                                if (snapshot.hasData) {
-                                  return GestureDetector(
-                                    onTap: () {
-                                      // Handle the click event here
-                                      if (snapshot.data!['type'] == "Movies") {
-                                        movieResult = [
-                                          snapshot.data!['id'],
-                                          snapshot.data!['title'],
-                                          snapshot.data!['type'],
-                                        ];
-                                      } else {
-                                        tvShowResult = [
-                                          snapshot.data!['id'],
-                                          snapshot.data!['title'],
-                                          snapshot.data!['type'],
-                                        ];
-                                      }
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                snapshot.data!['type'] ==
-                                                        "Movies"
-                                                    ? const MovieResult()
-                                                    : const TVShowResult()),
-                                      );
-                                    },
-                                    child: Container(
-                                      margin: const EdgeInsets.fromLTRB(
-                                          5.0, 10.0, 10.0, 0),
-                                      width: MediaQuery.of(context).size.width *
-                                          0.28,
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              0.18,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(27),
-                                        image: DecorationImage(
-                                          image: NetworkImage(
-                                            snapshot.data!['poster'],
-                                          ),
-                                          fit: BoxFit.fitWidth,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                } else if (snapshot.hasError) {
-                                  return const Center(
-                                    child: Text("Failed to load movie details"),
-                                  );
-                                } else {
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                }
-                              },
-                            )
-                        ],
-                      );
-                    },
-                  )),
+              buildMediaList(list["TVShows"], "TVShows", context),
           ],
         ),
         bottomNavigationBar: CommonBottomAppBar(-1),

@@ -1,6 +1,8 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 import 'package:flutter/material.dart';
+import 'package:uractor/objects/Movie.dart';
+import 'package:uractor/objects/TVShow.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'person_result.dart';
@@ -73,6 +75,64 @@ class _SearchResultState extends State<Search> {
       return results;
     }
 
+    String getDefaultImagePath(String? imagePath) {
+      const defaultPath =
+          'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
+      return imagePath == null ? defaultPath : img + imagePath;
+    }
+
+    void handleTap(BuildContext context, Map<String, dynamic> item) {
+      if (item.containsKey("poster_path") && item.containsKey("title")) {
+        // movieResult = [item['id'], item['title'], "Movies"];
+        Movie tempMovie = Movie(
+            id: item['id'],
+            title: item['title'],
+            coverPhoto: item['poster_path']);
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => MovieResult(
+                      movie: tempMovie,
+                    )));
+      } else if (item.containsKey("poster_path") && item.containsKey("name")) {
+        TVShow tempTvShow = TVShow(
+            id: item['id'],
+            title: item['name'],
+            coverPhoto: item['poster_path']);
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => TVShowResult(
+                      tvshow: tempTvShow,
+                    )));
+      } else {
+        personResult = item;
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => const PersonResult()));
+      }
+    }
+
+    Widget buildItem(BuildContext context, Map<String, dynamic>? item) {
+      if (item == null) return SizedBox();
+      item['profile_path'] = getDefaultImagePath(item['profile_path']);
+
+      return GestureDetector(
+        onTap: () => handleTap(context, item),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
+          width: MediaQuery.of(context).size.width * 0.25,
+          height: MediaQuery.of(context).size.height * 0.18,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(27),
+            image: DecorationImage(
+              image: NetworkImage(item['profile_path']),
+              fit: BoxFit.fitWidth,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: const CustomAppBar(),
       body: DefaultTabController(
@@ -134,244 +194,14 @@ class _SearchResultState extends State<Search> {
                                         (rightPersonIndex < people.length)
                                             ? people[rightPersonIndex]
                                             : null;
-                                    if (leftPerson != null) {
-                                      if (leftPerson['profile_path'] == null) {
-                                        leftPerson['profile_path'] =
-                                            'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
-                                      } else if (leftPerson['profile_path'] !=
-                                          'https://cdn-icons-png.flaticon.com/512/3088/3088765.png') {
-                                        leftPerson['profile_path'] =
-                                            img + leftPerson['profile_path'];
-                                      }
-                                    }
-                                    if (middlePerson != null) {
-                                      if (middlePerson['profile_path'] ==
-                                          null) {
-                                        middlePerson['profile_path'] =
-                                            'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
-                                      } else if (middlePerson['profile_path'] !=
-                                          'https://cdn-icons-png.flaticon.com/512/3088/3088765.png') {
-                                        middlePerson['profile_path'] =
-                                            img + middlePerson['profile_path'];
-                                      }
-                                    }
-                                    if (rightPerson != null) {
-                                      if (rightPerson['profile_path'] == null) {
-                                        rightPerson['profile_path'] =
-                                            'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
-                                      } else if (rightPerson['profile_path'] !=
-                                          'https://cdn-icons-png.flaticon.com/512/3088/3088765.png') {
-                                        rightPerson['profile_path'] =
-                                            img + rightPerson['profile_path'];
-                                      }
-                                    }
+
                                     return Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceAround,
                                       children: [
-                                        if (leftPerson != null)
-                                          GestureDetector(
-                                            onTap: () {
-                                              if (leftPerson.keys.contains(
-                                                      "poster_path") &&
-                                                  leftPerson.keys
-                                                      .contains("title")) {
-                                                movieResult = [
-                                                  leftPerson['id'],
-                                                  leftPerson['title'],
-                                                  "Movies",
-                                                ];
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          const MovieResult()),
-                                                );
-                                              } else if (leftPerson.keys
-                                                      .contains(
-                                                          "poster_path") &&
-                                                  leftPerson.keys
-                                                      .contains("name")) {
-                                                tvShowResult = [
-                                                  leftPerson['id'],
-                                                  leftPerson['name'],
-                                                  "TVShows",
-                                                ];
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          const TVShowResult()),
-                                                );
-                                              } else {
-                                                personResult = leftPerson;
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          const PersonResult()),
-                                                );
-                                              }
-                                            },
-                                            child: Container(
-                                              margin: const EdgeInsets.fromLTRB(
-                                                  10.0, 10.0, 5.0, 0),
-                                              width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  0.25,
-                                              height: MediaQuery.of(context)
-                                                      .size
-                                                      .height *
-                                                  0.18,
-                                              decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(27),
-                                                image: DecorationImage(
-                                                  image: NetworkImage(
-                                                      leftPerson[
-                                                          'profile_path']),
-                                                  fit: BoxFit.fitWidth,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        if (middlePerson != null)
-                                          GestureDetector(
-                                            onTap: () {
-                                              if (middlePerson.keys.contains(
-                                                      "poster_path") &&
-                                                  middlePerson.keys
-                                                      .contains("title")) {
-                                                movieResult = [
-                                                  middlePerson['id'],
-                                                  middlePerson['title'],
-                                                  "Movies",
-                                                ];
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          const MovieResult()),
-                                                );
-                                              } else if (middlePerson.keys
-                                                      .contains(
-                                                          "poster_path") &&
-                                                  middlePerson.keys
-                                                      .contains("name")) {
-                                                tvShowResult = [
-                                                  middlePerson['id'],
-                                                  middlePerson['name'],
-                                                  "TVShows",
-                                                ];
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          const TVShowResult()),
-                                                );
-                                              } else {
-                                                personResult = middlePerson;
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          const PersonResult()),
-                                                );
-                                              }
-                                            },
-                                            child: Container(
-                                              margin:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 5.0,
-                                                      vertical: 10.0),
-                                              width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  0.25,
-                                              height: MediaQuery.of(context)
-                                                      .size
-                                                      .height *
-                                                  0.18,
-                                              decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(27),
-                                                image: DecorationImage(
-                                                  image: NetworkImage(
-                                                      middlePerson[
-                                                          'profile_path']),
-                                                  fit: BoxFit.fitWidth,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        if (rightPerson != null)
-                                          GestureDetector(
-                                            onTap: () {
-                                              if (rightPerson.keys.contains(
-                                                      "poster_path") &&
-                                                  rightPerson.keys
-                                                      .contains("title")) {
-                                                movieResult = [
-                                                  rightPerson['id'],
-                                                  rightPerson['title'],
-                                                  "Movies",
-                                                ];
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          const MovieResult()),
-                                                );
-                                              } else if (rightPerson.keys
-                                                      .contains(
-                                                          "poster_path") &&
-                                                  rightPerson.keys
-                                                      .contains("name")) {
-                                                tvShowResult = [
-                                                  rightPerson['id'],
-                                                  rightPerson['name'],
-                                                  "TVShows",
-                                                ];
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          const TVShowResult()),
-                                                );
-                                              } else {
-                                                personResult = rightPerson;
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          const PersonResult()),
-                                                );
-                                              }
-                                            },
-                                            child: Container(
-                                              margin: const EdgeInsets.fromLTRB(
-                                                  5.0, 10.0, 10.0, 0),
-                                              width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  0.25,
-                                              height: MediaQuery.of(context)
-                                                      .size
-                                                      .height *
-                                                  0.18,
-                                              decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(27),
-                                                image: DecorationImage(
-                                                  image: NetworkImage(
-                                                    rightPerson['profile_path'],
-                                                  ),
-                                                  fit: BoxFit.fitWidth,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
+                                        buildItem(context, leftPerson),
+                                        buildItem(context, middlePerson),
+                                        buildItem(context, rightPerson),
                                       ],
                                     );
                                   },
@@ -379,14 +209,10 @@ class _SearchResultState extends State<Search> {
                               );
                             } else if (snapshot.hasError) {
                               return const Center(
-                                child: Text(
-                                  "Failed to load movie details",
-                                ),
-                              );
+                                  child: Text("Failed to load movie details"));
                             } else {
                               return const Center(
-                                child: CircularProgressIndicator(),
-                              );
+                                  child: CircularProgressIndicator());
                             }
                           },
                         ),

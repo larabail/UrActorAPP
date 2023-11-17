@@ -23,8 +23,8 @@ class Login extends StatelessWidget {
     seenTVShows = [];
     watchlist = [];
     watchlistTVShows = [];
-    movieResult = [];
-    tvShowResult = [];
+    // movieResult = [];
+    // tvShowResult = [];
     reviews = {};
     rewatchedMovies = {};
     playlists = {};
@@ -180,7 +180,8 @@ class Login extends StatelessWidget {
                               .then((_) {
                             Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(builder: (context) => const MyApp()),
+                              MaterialPageRoute(
+                                  builder: (context) => const MyApp()),
                             );
                           });
                         } on FirebaseAuthException catch (e) {
@@ -199,8 +200,10 @@ class Login extends StatelessWidget {
                       'Don\'t have an account? Sign up',
                     ),
                     onTap: () {
-                      Navigator.pushReplacement(context,
-                          MaterialPageRoute(builder: (context) => const SignUp()));
+                      Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const SignUp()));
                     },
                   ),
                   const SizedBox(height: 20),

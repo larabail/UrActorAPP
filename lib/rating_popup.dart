@@ -52,8 +52,7 @@ class _RatingDialogState extends State<RatingDialog> {
       }
     });
     reviewInfo = {};
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => const MovieResult()));
+    Navigator.pop(context);
   }
 
   Future<void> deleteReview(id, context) async {

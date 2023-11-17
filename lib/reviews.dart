@@ -2,6 +2,9 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/objects/Media.dart';
+import 'package:uractor/objects/Movie.dart';
+import 'package:uractor/objects/TVShow.dart';
 import 'package:uractor/rating_popup.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
@@ -162,26 +165,39 @@ class _ReviewsState extends State<Reviews> {
                         ),
                       ),
                       onTap: () {
+                        MediaItem tempItem;
                         if (snapshot.data!['type'] == "Movies") {
-                          movieResult = [
-                            snapshot.data!['id'],
-                            snapshot.data!['title'],
-                            snapshot.data!['type'],
-                          ];
+                          // movieResult = [
+                          //   snapshot.data!['id'],
+                          //   snapshot.data!['title'],
+                          //   snapshot.data!['type'],
+                          // ];
+                          tempItem = Movie(
+                              id: snapshot.data!['id'],
+                              title: snapshot.data!['title'],
+                              coverPhoto: snapshot.data!['poster_path']);
                         } else {
-                          tvShowResult = [
-                            snapshot.data!['id'],
-                            snapshot.data!['title'],
-                            snapshot.data!['type'],
-                          ];
+                          // tvShowResult = [
+                          //   snapshot.data!['id'],
+                          //   snapshot.data!['title'],
+                          //   snapshot.data!['type'],
+                          // ];
+                          tempItem = TVShow(
+                              id: snapshot.data!['id'],
+                              title: snapshot.data!['title'],
+                              coverPhoto: snapshot.data!['poster_path']);
                         }
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                               builder: (context) =>
                                   snapshot.data!['type'] == "Movies"
-                                      ? const MovieResult()
-                                      : const TVShowResult()),
+                                      ? MovieResult(
+                                          movie: tempItem as Movie,
+                                        )
+                                      : TVShowResult(
+                                          tvshow: tempItem as TVShow,
+                                        )),
                         );
                       },
                     ),

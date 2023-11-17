@@ -6,6 +6,7 @@ import 'package:flutter_svg/svg.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'friends.dart';
+import 'objects/Movie.dart';
 import 'playlists.dart';
 import 'profile.dart';
 import 'search.dart';
@@ -1085,15 +1086,20 @@ class _ExploreState extends State<Explore> {
                           child: GestureDetector(
                             onTap: () {
                               // Handle the click event here
-                              movieResult = [
-                                item['id'],
-                                item['title'],
-                                "Movies",
-                              ];
+                              // movieResult = [
+                              //   item['id'],
+                              //   item['title'],
+                              //   "Movies",
+                              // ];
+                              Movie tempMovie = Movie(
+                                  id: item["id"],
+                                  title: item["title"],
+                                  coverPhoto: item["poster_path"]);
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => const MovieResult()),
+                                    builder: (context) =>
+                                        MovieResult(movie: tempMovie)),
                               );
                             },
                             child: Container(
@@ -1234,15 +1240,20 @@ class _ExploreState extends State<Explore> {
                     GestureDetector(
                       onTap: () {
                         // Handle the click event here
-                        movieResult = [
-                          item['id'],
-                          item['title'],
-                          "Movies",
-                        ];
+                        // movieResult = [
+                        //   item['id'],
+                        //   item['title'],
+                        //   "Movies",
+                        // ];
+                        Movie tempMovie = Movie(
+                            id: item["id"],
+                            title: item["title"],
+                            coverPhoto: item["poster_path"]);
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const MovieResult()),
+                              builder: (context) =>
+                                  MovieResult(movie: tempMovie)),
                         );
                       },
                       child: Container(

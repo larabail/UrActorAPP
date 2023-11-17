@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/objects/Movie.dart';
+import 'package:uractor/objects/TVShow.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'friends.dart';
@@ -521,179 +523,73 @@ class _PersonResultState extends State<PersonResult> {
     );
   }
 
+  Widget buildMediaRow(BuildContext context, List<dynamic> mediaList, int index,
+      String mediaType, bool isCrew) {
+    int leftIndex = index * 3;
+    int middleIndex = index * 3 + 1;
+    int rightIndex = index * 3 + 2;
+
+    Widget buildMediaItem(dynamic media) {
+      if (media == null || media["poster_path"] == null) return Container();
+
+      return GestureDetector(
+        onTap: () {
+          var route;
+          if (mediaType == 'Movies') {
+            var tempMovie = Movie(
+                id: media['id'],
+                title: media['title'],
+                coverPhoto: media['poster_path']);
+            route = MaterialPageRoute(
+                builder: (context) => MovieResult(movie: tempMovie));
+          } else {
+            var tempTvShow = TVShow(
+                id: media['id'],
+                title: media['name'],
+                coverPhoto: media['poster_photo']);
+            route = MaterialPageRoute(
+                builder: (context) => TVShowResult(tvshow: tempTvShow));
+          }
+          Navigator.push(context, route);
+        },
+        child: isCrew
+            ? seenCrew(context, media, mediaType)
+            : seen(context, media, mediaType),
+      );
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        if (leftIndex < mediaList.length) buildMediaItem(mediaList[leftIndex]),
+        if (middleIndex < mediaList.length)
+          buildMediaItem(mediaList[middleIndex]),
+        if (rightIndex < mediaList.length)
+          buildMediaItem(mediaList[rightIndex]),
+      ],
+    );
+  }
+
   cast(BuildContext context, data) {
     return DefaultTabController(
       length: 2,
       child: Column(
         children: [
-          const TabBar(
-            tabs: [
-              Tab(text: 'Movies'),
-              Tab(text: 'TV Shows'),
-            ],
-          ),
+          // TabBar code
           Expanded(
             child: TabBarView(
               children: [
                 ListView.builder(
                   scrollDirection: Axis.vertical,
-                  itemCount: (data!['movie_credits_cast'].length / 3).ceil(),
-                  itemBuilder: (context, index) {
-                    final leftMovieIndex = index * 3;
-                    final middleMovieIndex = index * 3 + 1;
-                    final rightMovieIndex = index * 3 + 2;
-                    final leftMovie =
-                        (leftMovieIndex < data!['movie_credits_cast'].length)
-                            ? data!['movie_credits_cast'][leftMovieIndex]
-                            : null;
-                    final middleMovie =
-                        (middleMovieIndex < data!['movie_credits_cast'].length)
-                            ? data!['movie_credits_cast'][middleMovieIndex]
-                            : null;
-                    final rightMovie =
-                        (rightMovieIndex < data!['movie_credits_cast'].length)
-                            ? data!['movie_credits_cast'][rightMovieIndex]
-                            : null;
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        if (leftMovie != null &&
-                            leftMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              movieResult = [
-                                leftMovie['id'],
-                                leftMovie['title'],
-                                "Movies",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const MovieResult()),
-                              );
-                            },
-                            child: seen(context, leftMovie, "Movies"),
-                          ),
-                        if (middleMovie != null &&
-                            middleMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              movieResult = [
-                                middleMovie['id'],
-                                middleMovie['title'],
-                                "Movies",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const MovieResult()),
-                              );
-                            },
-                            child: seen(context, middleMovie, "Movies"),
-                          ),
-                        if (rightMovie != null &&
-                            rightMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              movieResult = [
-                                rightMovie['id'],
-                                rightMovie['title'],
-                                "Movies",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const MovieResult()),
-                              );
-                            },
-                            child: seen(context, rightMovie, "Movies"),
-                          ),
-                      ],
-                    );
-                  },
+                  itemCount: (data['movie_credits_cast'].length / 3).ceil(),
+                  itemBuilder: (context, index) => buildMediaRow(context,
+                      data['movie_credits_cast'], index, "Movies", false),
                 ),
                 ListView.builder(
                   scrollDirection: Axis.vertical,
-                  itemCount: (data!['tv_credits_cast'].length / 3).ceil(),
-                  itemBuilder: (context, index) {
-                    final leftMovieIndex = index * 3;
-                    final middleMovieIndex = index * 3 + 1;
-                    final rightMovieIndex = index * 3 + 2;
-                    final leftMovie =
-                        (leftMovieIndex < data!['tv_credits_cast'].length)
-                            ? data!['tv_credits_cast'][leftMovieIndex]
-                            : null;
-                    final middleMovie =
-                        (middleMovieIndex < data!['tv_credits_cast'].length)
-                            ? data!['tv_credits_cast'][middleMovieIndex]
-                            : null;
-                    final rightMovie =
-                        (rightMovieIndex < data!['tv_credits_cast'].length)
-                            ? data!['tv_credits_cast'][rightMovieIndex]
-                            : null;
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        if (leftMovie != null &&
-                            leftMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              tvShowResult = [
-                                leftMovie['id'],
-                                leftMovie['name'],
-                                "TVShows",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const TVShowResult()),
-                              );
-                            },
-                            child: seen(context, leftMovie, "TVShows"),
-                          ),
-                        if (middleMovie != null &&
-                            middleMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              tvShowResult = [
-                                middleMovie['id'],
-                                middleMovie['name'],
-                                "TVShows",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const TVShowResult()),
-                              );
-                            },
-                            child: seen(context, middleMovie, "TVShows"),
-                          ),
-                        if (rightMovie != null &&
-                            rightMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              tvShowResult = [
-                                rightMovie['id'],
-                                rightMovie['name'],
-                                "TVShows",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const TVShowResult()),
-                              );
-                            },
-                            child: seen(context, rightMovie, "TVShows"),
-                          ),
-                      ],
-                    );
-                  },
+                  itemCount: (data['tv_credits_cast'].length / 3).ceil(),
+                  itemBuilder: (context, index) => buildMediaRow(context,
+                      data['tv_credits_cast'], index, "TVShows", false),
                 ),
               ],
             ),
@@ -708,174 +604,21 @@ class _PersonResultState extends State<PersonResult> {
       length: 2,
       child: Column(
         children: [
-          const TabBar(
-            tabs: [
-              Tab(text: 'Movies'),
-              Tab(text: 'TV Shows'),
-            ],
-          ),
+          // TabBar code
           Expanded(
             child: TabBarView(
               children: [
                 ListView.builder(
                   scrollDirection: Axis.vertical,
-                  itemCount: (data!['movie_credits_crew'].length / 3).ceil(),
-                  itemBuilder: (context, index) {
-                    final leftMovieIndex = index * 3;
-                    final middleMovieIndex = index * 3 + 1;
-                    final rightMovieIndex = index * 3 + 2;
-                    final leftMovie =
-                        (leftMovieIndex < data!['movie_credits_crew'].length)
-                            ? data!['movie_credits_crew'][leftMovieIndex]
-                            : null;
-                    final middleMovie =
-                        (middleMovieIndex < data!['movie_credits_crew'].length)
-                            ? data!['movie_credits_crew'][middleMovieIndex]
-                            : null;
-                    final rightMovie =
-                        (rightMovieIndex < data!['movie_credits_crew'].length)
-                            ? data!['movie_credits_crew'][rightMovieIndex]
-                            : null;
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        if (leftMovie != null &&
-                            leftMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              movieResult = [
-                                leftMovie['id'],
-                                leftMovie['title'],
-                                "Movies",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const MovieResult()),
-                              );
-                            },
-                            child: seenCrew(context, leftMovie, "Movies"),
-                          ),
-                        if (middleMovie != null &&
-                            middleMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              movieResult = [
-                                middleMovie['id'],
-                                middleMovie['title'],
-                                "Movies",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const MovieResult()),
-                              );
-                            },
-                            child: seenCrew(context, middleMovie, "Movies"),
-                          ),
-                        if (rightMovie != null &&
-                            rightMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              movieResult = [
-                                rightMovie['id'],
-                                rightMovie['title'],
-                                "Movies",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const MovieResult()),
-                              );
-                            },
-                            child: seenCrew(context, rightMovie, "Movies"),
-                          ),
-                      ],
-                    );
-                  },
+                  itemCount: (data['movie_credits_cast'].length / 3).ceil(),
+                  itemBuilder: (context, index) => buildMediaRow(context,
+                      data['movie_credits_cast'], index, "Movies", true),
                 ),
                 ListView.builder(
                   scrollDirection: Axis.vertical,
-                  itemCount: (data!['tv_credits_crew'].length / 3).ceil(),
-                  itemBuilder: (context, index) {
-                    final leftMovieIndex = index * 3;
-                    final middleMovieIndex = index * 3 + 1;
-                    final rightMovieIndex = index * 3 + 2;
-                    final leftMovie =
-                        (leftMovieIndex < data!['tv_credits_crew'].length)
-                            ? data!['tv_credits_crew'][leftMovieIndex]
-                            : null;
-                    final middleMovie =
-                        (middleMovieIndex < data!['tv_credits_crew'].length)
-                            ? data!['tv_credits_crew'][middleMovieIndex]
-                            : null;
-                    final rightMovie =
-                        (rightMovieIndex < data!['tv_credits_crew'].length)
-                            ? data!['tv_credits_crew'][rightMovieIndex]
-                            : null;
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        if (leftMovie != null &&
-                            leftMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              tvShowResult = [
-                                leftMovie['id'],
-                                leftMovie['name'],
-                                "TVShows",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const TVShowResult()),
-                              );
-                            },
-                            child: seenCrew(context, leftMovie, "TVShows"),
-                          ),
-                        if (middleMovie != null &&
-                            middleMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              tvShowResult = [
-                                middleMovie['id'],
-                                middleMovie['name'],
-                                "TVShows",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const TVShowResult()),
-                              );
-                            },
-                            child: seenCrew(context, middleMovie, "TVShows"),
-                          ),
-                        if (rightMovie != null &&
-                            rightMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              tvShowResult = [
-                                rightMovie['id'],
-                                rightMovie['name'],
-                                "TVShows",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const TVShowResult()),
-                              );
-                            },
-                            child: seenCrew(context, rightMovie, "TVShows"),
-                          ),
-                      ],
-                    );
-                  },
+                  itemCount: (data['tv_credits_cast'].length / 3).ceil(),
+                  itemBuilder: (context, index) => buildMediaRow(
+                      context, data['tv_credits_cast'], index, "TVShows", true),
                 ),
               ],
             ),
@@ -884,6 +627,402 @@ class _PersonResultState extends State<PersonResult> {
       ),
     );
   }
+
+  // cast(BuildContext context, data) {
+  //   return DefaultTabController(
+  //     length: 2,
+  //     child: Column(
+  //       children: [
+  //         const TabBar(
+  //           tabs: [
+  //             Tab(text: 'Movies'),
+  //             Tab(text: 'TV Shows'),
+  //           ],
+  //         ),
+  //         Expanded(
+  //           child: TabBarView(
+  //             children: [
+  //               ListView.builder(
+  //                 scrollDirection: Axis.vertical,
+  //                 itemCount: (data!['movie_credits_cast'].length / 3).ceil(),
+  //                 itemBuilder: (context, index) {
+  //                   final leftMovieIndex = index * 3;
+  //                   final middleMovieIndex = index * 3 + 1;
+  //                   final rightMovieIndex = index * 3 + 2;
+  //                   final leftMovie =
+  //                       (leftMovieIndex < data!['movie_credits_cast'].length)
+  //                           ? data!['movie_credits_cast'][leftMovieIndex]
+  //                           : null;
+  //                   final middleMovie =
+  //                       (middleMovieIndex < data!['movie_credits_cast'].length)
+  //                           ? data!['movie_credits_cast'][middleMovieIndex]
+  //                           : null;
+  //                   final rightMovie =
+  //                       (rightMovieIndex < data!['movie_credits_cast'].length)
+  //                           ? data!['movie_credits_cast'][rightMovieIndex]
+  //                           : null;
+  //                   return Row(
+  //                     mainAxisAlignment: MainAxisAlignment.spaceAround,
+  //                     children: [
+  //                       if (leftMovie != null &&
+  //                           leftMovie["poster_path"] != null)
+  //                         GestureDetector(
+  //                           onTap: () {
+  //                             // Handle the click event here
+  //                             Movie tempMovie = Movie(
+  //                                 id: leftMovie['id'],
+  //                                 title: leftMovie['title'],
+  //                                 coverPhoto: leftMovie['poster_path']);
+  //                             Navigator.push(
+  //                               context,
+  //                               MaterialPageRoute(
+  //                                   builder: (context) => MovieResult(
+  //                                         movie: tempMovie,
+  //                                       )),
+  //                             );
+  //                           },
+  //                           child: seen(context, leftMovie, "Movies"),
+  //                         ),
+  //                       if (middleMovie != null &&
+  //                           middleMovie["poster_path"] != null)
+  //                         GestureDetector(
+  //                           onTap: () {
+  //                             // Handle the click event here
+  //                             Movie tempMovie = Movie(
+  //                                 id: middleMovie['id'],
+  //                                 title: middleMovie['title'],
+  //                                 coverPhoto: middleMovie['poster_path']);
+  //                             Navigator.push(
+  //                               context,
+  //                               MaterialPageRoute(
+  //                                   builder: (context) => MovieResult(
+  //                                         movie: tempMovie,
+  //                                       )),
+  //                             );
+  //                           },
+  //                           child: seen(context, middleMovie, "Movies"),
+  //                         ),
+  //                       if (rightMovie != null &&
+  //                           rightMovie["poster_path"] != null)
+  //                         GestureDetector(
+  //                           onTap: () {
+  //                             // Handle the click event here
+  //                             Movie tempMovie = Movie(
+  //                                 id: rightMovie['id'],
+  //                                 title: rightMovie['title'],
+  //                                 coverPhoto: rightMovie['poster_path']);
+  //                             Navigator.push(
+  //                               context,
+  //                               MaterialPageRoute(
+  //                                   builder: (context) => MovieResult(
+  //                                         movie: tempMovie,
+  //                                       )),
+  //                             );
+  //                           },
+  //                           child: seen(context, rightMovie, "Movies"),
+  //                         ),
+  //                     ],
+  //                   );
+  //                 },
+  //               ),
+  //               ListView.builder(
+  //                 scrollDirection: Axis.vertical,
+  //                 itemCount: (data!['tv_credits_cast'].length / 3).ceil(),
+  //                 itemBuilder: (context, index) {
+  //                   final leftMovieIndex = index * 3;
+  //                   final middleMovieIndex = index * 3 + 1;
+  //                   final rightMovieIndex = index * 3 + 2;
+  //                   final leftMovie =
+  //                       (leftMovieIndex < data!['tv_credits_cast'].length)
+  //                           ? data!['tv_credits_cast'][leftMovieIndex]
+  //                           : null;
+  //                   final middleMovie =
+  //                       (middleMovieIndex < data!['tv_credits_cast'].length)
+  //                           ? data!['tv_credits_cast'][middleMovieIndex]
+  //                           : null;
+  //                   final rightMovie =
+  //                       (rightMovieIndex < data!['tv_credits_cast'].length)
+  //                           ? data!['tv_credits_cast'][rightMovieIndex]
+  //                           : null;
+  //                   return Row(
+  //                     mainAxisAlignment: MainAxisAlignment.spaceAround,
+  //                     children: [
+  //                       if (leftMovie != null &&
+  //                           leftMovie["poster_path"] != null)
+  //                         GestureDetector(
+  //                           onTap: () {
+  //                             // Handle the click event here
+  //                             TVShow tempTvShow = TVShow(
+  //                                 id: leftMovie['id'],
+  //                                 title: leftMovie['name'],
+  //                                 coverPhoto: leftMovie['poster_photo']);
+  //                             Navigator.push(
+  //                               context,
+  //                               MaterialPageRoute(
+  //                                   builder: (context) => TVShowResult(
+  //                                         tvshow: tempTvShow,
+  //                                       )),
+  //                             );
+  //                           },
+  //                           child: seen(context, leftMovie, "TVShows"),
+  //                         ),
+  //                       if (middleMovie != null &&
+  //                           middleMovie["poster_path"] != null)
+  //                         GestureDetector(
+  //                           onTap: () {
+  //                             // Handle the click event here
+  //                             TVShow tempTvShow = TVShow(
+  //                                 id: middleMovie['id'],
+  //                                 title: middleMovie['name'],
+  //                                 coverPhoto: middleMovie['poster_photo']);
+  //                             Navigator.push(
+  //                               context,
+  //                               MaterialPageRoute(
+  //                                   builder: (context) => TVShowResult(
+  //                                         tvshow: tempTvShow,
+  //                                       )),
+  //                             );
+  //                           },
+  //                           child: seen(context, middleMovie, "TVShows"),
+  //                         ),
+  //                       if (rightMovie != null &&
+  //                           rightMovie["poster_path"] != null)
+  //                         GestureDetector(
+  //                           onTap: () {
+  //                             // Handle the click event here
+  //                             TVShow tempTvShow = TVShow(
+  //                                 id: rightMovie['id'],
+  //                                 title: rightMovie['name'],
+  //                                 coverPhoto: rightMovie['poster_photo']);
+  //                             Navigator.push(
+  //                               context,
+  //                               MaterialPageRoute(
+  //                                   builder: (context) => TVShowResult(
+  //                                         tvshow: tempTvShow,
+  //                                       )),
+  //                             );
+  //                           },
+  //                           child: seen(context, rightMovie, "TVShows"),
+  //                         ),
+  //                     ],
+  //                   );
+  //                 },
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  // crew(BuildContext context, data) {
+  //   return DefaultTabController(
+  //     length: 2,
+  //     child: Column(
+  //       children: [
+  //         const TabBar(
+  //           tabs: [
+  //             Tab(text: 'Movies'),
+  //             Tab(text: 'TV Shows'),
+  //           ],
+  //         ),
+  //         Expanded(
+  //           child: TabBarView(
+  //             children: [
+  //               ListView.builder(
+  //                 scrollDirection: Axis.vertical,
+  //                 itemCount: (data!['movie_credits_crew'].length / 3).ceil(),
+  //                 itemBuilder: (context, index) {
+  //                   final leftMovieIndex = index * 3;
+  //                   final middleMovieIndex = index * 3 + 1;
+  //                   final rightMovieIndex = index * 3 + 2;
+  //                   final leftMovie =
+  //                       (leftMovieIndex < data!['movie_credits_crew'].length)
+  //                           ? data!['movie_credits_crew'][leftMovieIndex]
+  //                           : null;
+  //                   final middleMovie =
+  //                       (middleMovieIndex < data!['movie_credits_crew'].length)
+  //                           ? data!['movie_credits_crew'][middleMovieIndex]
+  //                           : null;
+  //                   final rightMovie =
+  //                       (rightMovieIndex < data!['movie_credits_crew'].length)
+  //                           ? data!['movie_credits_crew'][rightMovieIndex]
+  //                           : null;
+  //                   return Row(
+  //                     mainAxisAlignment: MainAxisAlignment.spaceAround,
+  //                     children: [
+  //                       if (leftMovie != null &&
+  //                           leftMovie["poster_path"] != null)
+  //                         GestureDetector(
+  //                           onTap: () {
+  //                             // Handle the click event here
+  //                             Movie tempMovie = Movie(
+  //                                 id: leftMovie['id'],
+  //                                 title: leftMovie['title'],
+  //                                 coverPhoto: leftMovie['poster_path']);
+  //                             Navigator.push(
+  //                               context,
+  //                               MaterialPageRoute(
+  //                                   builder: (context) => MovieResult(
+  //                                         movie: tempMovie,
+  //                                       )),
+  //                             );
+  //                           },
+  //                           child: seenCrew(context, leftMovie, "Movies"),
+  //                         ),
+  //                       if (middleMovie != null &&
+  //                           middleMovie["poster_path"] != null)
+  //                         GestureDetector(
+  //                           onTap: () {
+  //                             // Handle the click event here
+  //                             Movie tempMovie = Movie(
+  //                                 id: middleMovie['id'],
+  //                                 title: middleMovie['title'],
+  //                                 coverPhoto: middleMovie['poster_path']);
+  //                             Navigator.push(
+  //                               context,
+  //                               MaterialPageRoute(
+  //                                   builder: (context) => MovieResult(
+  //                                         movie: tempMovie,
+  //                                       )),
+  //                             );
+  //                           },
+  //                           child: seenCrew(context, middleMovie, "Movies"),
+  //                         ),
+  //                       if (rightMovie != null &&
+  //                           rightMovie["poster_path"] != null)
+  //                         GestureDetector(
+  //                           onTap: () {
+  //                             // Handle the click event here
+  //                             // movieResult = [
+  //                             //   rightMovie['id'],
+  //                             //   rightMovie['title'],
+  //                             //   "Movies",
+  //                             // ];
+  //                             Movie tempMovie = Movie(
+  //                                 id: rightMovie['id'],
+  //                                 title: rightMovie['title'],
+  //                                 coverPhoto: rightMovie['poster_path']);
+  //                             Navigator.push(
+  //                               context,
+  //                               MaterialPageRoute(
+  //                                   builder: (context) => MovieResult(
+  //                                         movie: tempMovie,
+  //                                       )),
+  //                             );
+  //                           },
+  //                           child: seenCrew(context, rightMovie, "Movies"),
+  //                         ),
+  //                     ],
+  //                   );
+  //                 },
+  //               ),
+  //               ListView.builder(
+  //                 scrollDirection: Axis.vertical,
+  //                 itemCount: (data!['tv_credits_crew'].length / 3).ceil(),
+  //                 itemBuilder: (context, index) {
+  //                   final leftMovieIndex = index * 3;
+  //                   final middleMovieIndex = index * 3 + 1;
+  //                   final rightMovieIndex = index * 3 + 2;
+  //                   final leftMovie =
+  //                       (leftMovieIndex < data!['tv_credits_crew'].length)
+  //                           ? data!['tv_credits_crew'][leftMovieIndex]
+  //                           : null;
+  //                   final middleMovie =
+  //                       (middleMovieIndex < data!['tv_credits_crew'].length)
+  //                           ? data!['tv_credits_crew'][middleMovieIndex]
+  //                           : null;
+  //                   final rightMovie =
+  //                       (rightMovieIndex < data!['tv_credits_crew'].length)
+  //                           ? data!['tv_credits_crew'][rightMovieIndex]
+  //                           : null;
+  //                   return Row(
+  //                     mainAxisAlignment: MainAxisAlignment.spaceAround,
+  //                     children: [
+  //                       if (leftMovie != null &&
+  //                           leftMovie["poster_path"] != null)
+  //                         GestureDetector(
+  //                           onTap: () {
+  //                             // Handle the click event here
+  //                             // tvShowResult = [
+  //                             //   leftMovie['id'],
+  //                             //   leftMovie['name'],
+  //                             //   "TVShows",
+  //                             // ];
+  //                             TVShow tempTvShow = TVShow(
+  //                                 id: leftMovie['id'],
+  //                                 title: leftMovie['name'],
+  //                                 coverPhoto: leftMovie['poster_photo']);
+  //                             Navigator.push(
+  //                               context,
+  //                               MaterialPageRoute(
+  //                                   builder: (context) => TVShowResult(
+  //                                         tvshow: tempTvShow,
+  //                                       )),
+  //                             );
+  //                           },
+  //                           child: seenCrew(context, leftMovie, "TVShows"),
+  //                         ),
+  //                       if (middleMovie != null &&
+  //                           middleMovie["poster_path"] != null)
+  //                         GestureDetector(
+  //                           onTap: () {
+  //                             // Handle the click event here
+  //                             // tvShowResult = [
+  //                             //   middleMovie['id'],
+  //                             //   middleMovie['name'],
+  //                             //   "TVShows",
+  //                             // ];
+  //                             TVShow tempTvShow = TVShow(
+  //                                 id: middleMovie['id'],
+  //                                 title: middleMovie['name'],
+  //                                 coverPhoto: middleMovie['poster_photo']);
+  //                             Navigator.push(
+  //                               context,
+  //                               MaterialPageRoute(
+  //                                   builder: (context) => TVShowResult(
+  //                                         tvshow: tempTvShow,
+  //                                       )),
+  //                             );
+  //                           },
+  //                           child: seenCrew(context, middleMovie, "TVShows"),
+  //                         ),
+  //                       if (rightMovie != null &&
+  //                           rightMovie["poster_path"] != null)
+  //                         GestureDetector(
+  //                           onTap: () {
+  //                             // Handle the click event here
+  //                             // tvShowResult = [
+  //                             //   rightMovie['id'],
+  //                             //   rightMovie['name'],
+  //                             //   "TVShows",
+  //                             // ];
+  //                             TVShow tempTvShow = TVShow(
+  //                                 id: rightMovie['id'],
+  //                                 title: rightMovie['name'],
+  //                                 coverPhoto: rightMovie['poster_photo']);
+  //                             Navigator.push(
+  //                               context,
+  //                               MaterialPageRoute(
+  //                                   builder: (context) => TVShowResult(
+  //                                         tvshow: tempTvShow,
+  //                                       )),
+  //                             );
+  //                           },
+  //                           child: seenCrew(context, rightMovie, "TVShows"),
+  //                         ),
+  //                     ],
+  //                   );
+  //                 },
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   bool containsMap(List list, List map) {
     for (int i = 0; i < list.length; i++) {
