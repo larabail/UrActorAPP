@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:uractor/objects/Media.dart';
+import 'package:uractor/objects/Movie.dart';
+import 'package:uractor/objects/TVShow.dart';
 
-import 'main.dart';
+// import 'main.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
 import 'package:http/http.dart' as http;
@@ -46,25 +49,38 @@ class ItemCard extends StatelessWidget {
           return GestureDetector(
             onTap: () {
               // Handle the click event here
+              MediaItem tempMediaItem;
               if (snapshot.data!['type'] == "Movies") {
-                movieResult = [
-                  snapshot.data!['id'],
-                  snapshot.data!['title'],
-                  snapshot.data!['type'],
-                ];
+                tempMediaItem = Movie(
+                    id: snapshot.data!['id'],
+                    title: snapshot.data!['title'],
+                    coverPhoto: snapshot.data!['poster_path']);
+                // movieResult = [
+                //   snapshot.data!['id'],
+                //   snapshot.data!['title'],
+                //   snapshot.data!['type'],
+                // ];
               } else {
-                tvShowResult = [
-                  snapshot.data!['id'],
-                  snapshot.data!['title'],
-                  snapshot.data!['type'],
-                ];
+                // tvShowResult = [
+                //   snapshot.data!['id'],
+                //   snapshot.data!['title'],
+                //   snapshot.data!['type'],
+                // ];
+                tempMediaItem = TVShow(
+                    id: snapshot.data!['id'],
+                    title: snapshot.data!['title'],
+                    coverPhoto: snapshot.data!['poster_path']);
               }
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => snapshot.data!['type'] == "Movies"
-                      ? const MovieResult()
-                      : const TVShowResult(),
+                      ? MovieResult(
+                          movie: tempMediaItem as Movie,
+                        )
+                      : TVShowResult(
+                          tvshow: tempMediaItem as TVShow,
+                        ),
                 ),
               );
             },

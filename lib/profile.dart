@@ -9,9 +9,7 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
-import 'friends.dart';
-import 'playlists.dart';
-import 'search.dart';
+import 'objects/Movie.dart';
 import 'main.dart';
 import 'person_result.dart';
 import 'movie_result.dart';
@@ -395,33 +393,6 @@ final months = [
   "December"
 ];
 
-Future<List<Map>> topMovies() async {
-  int i = 0;
-  List<Map> movies = [];
-
-  List moviesTemp = [];
-  rewatchedMovies.forEach((key, value) {
-    moviesTemp.add([value, key]);
-  });
-
-  moviesTemp.sort((a, b) => b[0].compareTo(a[0]));
-
-  while (i < 18 && i < moviesTemp.length) {
-    String completeLinkMovie =
-        link + moviesTemp[i][1].toString() + api_key_actor;
-
-    final response = await http.get(Uri.parse(completeLinkMovie));
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      movies.add(json);
-    } else {
-      throw Exception('Failed to load actor details');
-    }
-    i++;
-  }
-  return movies;
-}
-
 class AlertButtonDialogue extends StatelessWidget {
   TextEditingController passwordController = TextEditingController();
   @override
@@ -559,7 +530,6 @@ class _ProfileState extends State<Profile> {
 
   @override
   Widget build(BuildContext context) {
-    int selectedIndex = 0;
     DateTime now = DateTime.now();
     DateTime startOfWeek =
         now.subtract(Duration(days: now.weekday - 1 + (7 * weekOffset)));
@@ -591,6 +561,33 @@ class _ProfileState extends State<Profile> {
         i++;
       }
       return favActsData;
+    }
+
+    Future<List<Map<String, dynamic>>> topMovies() async {
+      int i = 0;
+      List<Map<String, dynamic>> movies = [];
+
+      List moviesTemp = [];
+      rewatchedMovies.forEach((key, value) {
+        moviesTemp.add([value, key]);
+      });
+
+      moviesTemp.sort((a, b) => b[0].compareTo(a[0]));
+
+      while (i < 18 && i < moviesTemp.length) {
+        String completeLinkMovie =
+            link + moviesTemp[i][1].toString() + api_key_actor;
+
+        final response = await http.get(Uri.parse(completeLinkMovie));
+        if (response.statusCode == 200) {
+          final json = jsonDecode(response.body);
+          movies.add(json);
+        } else {
+          throw Exception('Failed to load actor details');
+        }
+        i++;
+      }
+      return movies;
     }
 
     Future<String> uploadImage() async {
@@ -666,15 +663,6 @@ class _ProfileState extends State<Profile> {
       return favActsData;
     }
 
-    final List<Widget> pages = [
-      const MyApp(),
-      const Playlists(),
-      const Search(),
-      const Friends(),
-      const Profile(),
-      // Add more pages here
-    ];
-
     Map filteredData = {};
 
     Map tempData = Map.fromEntries(calendar.entries.where((entry) {
@@ -714,19 +702,94 @@ class _ProfileState extends State<Profile> {
       ]);
     }).toList();
 
-    void _onItemTapped(int index) {
-      selectedIndex = index;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
-      );
-    }
-
     int maxMovies = 0;
     for (var movies in calendar.values) {
       if (movies.length > maxMovies) {
         maxMovies = movies.length;
       }
+    }
+    Widget buildItem(
+        BuildContext context, Map<String, dynamic> item, String type) {
+      String imagePath =
+          type == "Movies" ? item['poster_path'] : item['profile_path'];
+      String navigateTo = type == "Movies" ? 'MovieResult' : 'PersonResult';
+
+      return GestureDetector(
+        onTap: () {
+          Movie tempMovie = Movie(id: "", title: "", coverPhoto: "");
+          if (type == "Movies") {
+            tempMovie = Movie(
+                id: item['id'],
+                title: item['title'],
+                coverPhoto: item["poster_path"]);
+          } else {
+            personResult = item;
+          }
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => navigateTo == 'MovieResult'
+                    ? MovieResult(movie: tempMovie)
+                    : const PersonResult()),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
+          width: MediaQuery.of(context).size.width * 0.28,
+          height: MediaQuery.of(context).size.height * 0.18,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(27),
+            image: DecorationImage(
+              image: NetworkImage(imgLink + imagePath),
+              fit: BoxFit.fitWidth,
+            ),
+          ),
+        ),
+      );
+    }
+
+    Widget buildTabContent(BuildContext context,
+        Future<List<Map<String, dynamic>>> futureData, String type) {
+      return FutureBuilder<List<Map<String, dynamic>>>(
+        future: futureData,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            final items = snapshot.data!;
+            return ListView.builder(
+              shrinkWrap: true,
+              itemCount: 3, // adjust based on your requirements
+              itemBuilder: (context, index) {
+                final leftItemIndex = index * 3;
+                final middleItemIndex = index * 3 + 1;
+                final rightItemIndex = index * 3 + 2;
+                final leftItem = (leftItemIndex < items.length)
+                    ? items[leftItemIndex]
+                    : null;
+                final middleItem = (middleItemIndex < items.length)
+                    ? items[middleItemIndex]
+                    : null;
+                final rightItem = (rightItemIndex < items.length)
+                    ? items[rightItemIndex]
+                    : null;
+
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    if (leftItem != null) buildItem(context, leftItem, type),
+                    if (middleItem != null)
+                      buildItem(context, middleItem, type),
+                    if (rightItem != null) buildItem(context, rightItem, type),
+                  ],
+                );
+              },
+            );
+          } else if (snapshot.hasError) {
+            return const Center(child: Text("Failed to load data"));
+          } else {
+            return const Center(child: CircularProgressIndicator());
+          }
+        },
+      );
     }
 
     return Scaffold(
@@ -995,8 +1058,6 @@ class _ProfileState extends State<Profile> {
                       child: Column(
                         children: [
                           const TabBar(
-                            labelColor: null,
-                            unselectedLabelColor: null,
                             tabs: [
                               Tab(text: 'Fav. Actors'),
                               Tab(text: 'Fav. Directors'),
@@ -1007,505 +1068,12 @@ class _ProfileState extends State<Profile> {
                             height: MediaQuery.of(context).size.height * 0.655,
                             child: TabBarView(
                               children: [
-                                FutureBuilder<List<Map<String, dynamic>>>(
-                                  future: actorData(),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.hasData) {
-                                      final movies = snapshot.data!;
-                                      return ListView.builder(
-                                        shrinkWrap: true,
-                                        itemCount: 3,
-                                        itemBuilder: (context, index) {
-                                          final leftMovieIndex = index * 3;
-                                          final middleMovieIndex =
-                                              index * 3 + 1;
-                                          final rightMovieIndex = index * 3 + 2;
-                                          final leftMovie =
-                                              (leftMovieIndex < movies.length)
-                                                  ? movies[leftMovieIndex]
-                                                  : null;
-                                          final middleMovie =
-                                              (middleMovieIndex < movies.length)
-                                                  ? movies[middleMovieIndex]
-                                                  : null;
-                                          final rightMovie =
-                                              (rightMovieIndex < movies.length)
-                                                  ? movies[rightMovieIndex]
-                                                  : null;
-                                          return Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceAround,
-                                            children: [
-                                              if (leftMovie != null)
-                                                GestureDetector(
-                                                  onTap: () {
-                                                    // Handle the click event here
-                                                    personResult = leftMovie;
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              const PersonResult()),
-                                                    );
-                                                  },
-                                                  child: Container(
-                                                    margin: const EdgeInsets
-                                                            .fromLTRB(
-                                                        10.0, 10.0, 5.0, 0),
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            0.28,
-                                                    height:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .height *
-                                                            0.18,
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              27),
-                                                      image: DecorationImage(
-                                                        image: NetworkImage(
-                                                            leftMovie[
-                                                                'profile_path']),
-                                                        fit: BoxFit.fitWidth,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              if (middleMovie != null)
-                                                GestureDetector(
-                                                  onTap: () {
-                                                    personResult = middleMovie;
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              const PersonResult()),
-                                                    );
-                                                  },
-                                                  child: Container(
-                                                    margin: const EdgeInsets
-                                                            .symmetric(
-                                                        horizontal: 5.0,
-                                                        vertical: 10.0),
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            0.28,
-                                                    height:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .height *
-                                                            0.18,
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              27),
-                                                      image: DecorationImage(
-                                                        image: NetworkImage(
-                                                            middleMovie[
-                                                                'profile_path']),
-                                                        fit: BoxFit.fitWidth,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              if (rightMovie != null)
-                                                GestureDetector(
-                                                  onTap: () {
-                                                    personResult = rightMovie;
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              const PersonResult()),
-                                                    );
-                                                  },
-                                                  child: Container(
-                                                    margin: const EdgeInsets
-                                                            .fromLTRB(
-                                                        5.0, 10.0, 10.0, 0),
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            0.28,
-                                                    height:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .height *
-                                                            0.18,
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              27),
-                                                      image: DecorationImage(
-                                                        image: NetworkImage(
-                                                          rightMovie[
-                                                              'profile_path'],
-                                                        ),
-                                                        fit: BoxFit.fitWidth,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
-                                          );
-                                        },
-                                      );
-                                    } else if (snapshot.hasError) {
-                                      return const Center(
-                                        child: Text(
-                                            "Failed to load movie details"),
-                                      );
-                                    } else {
-                                      return const Center(
-                                        child: CircularProgressIndicator(),
-                                      );
-                                    }
-                                  },
-                                ),
-                                FutureBuilder<List<Map<String, dynamic>>>(
-                                  future: dirData(),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.hasData) {
-                                      final movies = snapshot.data!;
-                                      return ListView.builder(
-                                        shrinkWrap: true,
-                                        itemCount: 3,
-                                        itemBuilder: (context, index) {
-                                          final leftMovieIndex = index * 3;
-                                          final middleMovieIndex =
-                                              index * 3 + 1;
-                                          final rightMovieIndex = index * 3 + 2;
-                                          final leftMovie =
-                                              (leftMovieIndex < movies.length)
-                                                  ? movies[leftMovieIndex]
-                                                  : null;
-                                          final middleMovie =
-                                              (middleMovieIndex < movies.length)
-                                                  ? movies[middleMovieIndex]
-                                                  : null;
-                                          final rightMovie =
-                                              (rightMovieIndex < movies.length)
-                                                  ? movies[rightMovieIndex]
-                                                  : null;
-                                          return Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceAround,
-                                            children: [
-                                              if (leftMovie != null)
-                                                GestureDetector(
-                                                  onTap: () {
-                                                    personResult = leftMovie;
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              const PersonResult()),
-                                                    );
-                                                  },
-                                                  child: Container(
-                                                    margin: const EdgeInsets
-                                                            .fromLTRB(
-                                                        10.0, 10.0, 5.0, 0),
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            0.28,
-                                                    height:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .height *
-                                                            0.18,
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              27),
-                                                      image: DecorationImage(
-                                                        image: NetworkImage(
-                                                            leftMovie[
-                                                                'profile_path']),
-                                                        fit: BoxFit.fitWidth,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              if (middleMovie != null)
-                                                GestureDetector(
-                                                  onTap: () {
-                                                    personResult = middleMovie;
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              const PersonResult()),
-                                                    );
-                                                  },
-                                                  child: Container(
-                                                    margin: const EdgeInsets
-                                                            .symmetric(
-                                                        horizontal: 5.0,
-                                                        vertical: 10.0),
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            0.28,
-                                                    height:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .height *
-                                                            0.18,
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              27),
-                                                      image: DecorationImage(
-                                                        image: NetworkImage(
-                                                            middleMovie[
-                                                                'profile_path']),
-                                                        fit: BoxFit.fitWidth,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              if (rightMovie != null)
-                                                GestureDetector(
-                                                  onTap: () {
-                                                    personResult = rightMovie;
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              const PersonResult()),
-                                                    );
-                                                  },
-                                                  child: Container(
-                                                    margin: const EdgeInsets
-                                                            .fromLTRB(
-                                                        5.0, 10.0, 10.0, 0),
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            0.28,
-                                                    height:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .height *
-                                                            0.18,
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              27),
-                                                      image: DecorationImage(
-                                                        image: NetworkImage(
-                                                          rightMovie[
-                                                              'profile_path'],
-                                                        ),
-                                                        fit: BoxFit.fitWidth,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
-                                          );
-                                        },
-                                      );
-                                    } else if (snapshot.hasError) {
-                                      return const Center(
-                                        child: Text(
-                                            "Failed to load movie details"),
-                                      );
-                                    } else {
-                                      return const Center(
-                                        child: CircularProgressIndicator(),
-                                      );
-                                    }
-                                  },
-                                ),
-                                FutureBuilder<List<Map>>(
-                                  future: topMovies(),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.hasData) {
-                                      final movies = snapshot.data!;
-                                      return ListView.builder(
-                                        itemCount: 3,
-                                        itemBuilder: (context, index) {
-                                          final leftMovieIndex = index * 3;
-                                          final middleMovieIndex =
-                                              index * 3 + 1;
-                                          final rightMovieIndex = index * 3 + 2;
-                                          final leftMovie =
-                                              (leftMovieIndex < movies.length)
-                                                  ? movies[leftMovieIndex]
-                                                  : null;
-                                          final middleMovie =
-                                              (middleMovieIndex < movies.length)
-                                                  ? movies[middleMovieIndex]
-                                                  : null;
-                                          final rightMovie =
-                                              (rightMovieIndex < movies.length)
-                                                  ? movies[rightMovieIndex]
-                                                  : null;
-                                          return Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceAround,
-                                            children: [
-                                              if (leftMovie != null)
-                                                GestureDetector(
-                                                  onTap: () {
-                                                    // Handle the click event here
-                                                    movieResult = [
-                                                      leftMovie['id'],
-                                                      leftMovie['title'],
-                                                      "Movies"
-                                                    ];
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              const MovieResult()),
-                                                    );
-                                                  },
-                                                  child: Container(
-                                                    margin: const EdgeInsets
-                                                            .fromLTRB(
-                                                        10.0, 10.0, 5.0, 0),
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            0.28,
-                                                    height:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .height *
-                                                            0.18,
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              27),
-                                                      image: DecorationImage(
-                                                        image: NetworkImage(
-                                                            imgLink +
-                                                                leftMovie[
-                                                                    'poster_path']),
-                                                        fit: BoxFit.fitWidth,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              if (middleMovie != null)
-                                                GestureDetector(
-                                                  onTap: () {
-                                                    movieResult = [
-                                                      middleMovie['id'],
-                                                      middleMovie['title'],
-                                                      "Movies"
-                                                    ];
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              const MovieResult()),
-                                                    );
-                                                  },
-                                                  child: Container(
-                                                    margin: const EdgeInsets
-                                                            .symmetric(
-                                                        horizontal: 5.0,
-                                                        vertical: 10.0),
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            0.28,
-                                                    height:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .height *
-                                                            0.18,
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              27),
-                                                      image: DecorationImage(
-                                                        image: NetworkImage(
-                                                            imgLink +
-                                                                middleMovie[
-                                                                    'poster_path']),
-                                                        fit: BoxFit.fitWidth,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              if (rightMovie != null)
-                                                GestureDetector(
-                                                  onTap: () {
-                                                    movieResult = [
-                                                      rightMovie['id'],
-                                                      rightMovie['title'],
-                                                      "Movies"
-                                                    ];
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              const MovieResult()),
-                                                    );
-                                                  },
-                                                  child: Container(
-                                                    margin: const EdgeInsets
-                                                            .fromLTRB(
-                                                        5.0, 10.0, 10.0, 0),
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            0.28,
-                                                    height:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .height *
-                                                            0.18,
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              27),
-                                                      image: DecorationImage(
-                                                        image: NetworkImage(
-                                                          imgLink +
-                                                              rightMovie[
-                                                                  'poster_path'],
-                                                        ),
-                                                        fit: BoxFit.fitWidth,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
-                                          );
-                                        },
-                                      );
-                                    } else if (snapshot.hasError) {
-                                      return const Center(
-                                        child: Text(
-                                            "Failed to load movie details"),
-                                      );
-                                    } else {
-                                      return const Center(
-                                        child: CircularProgressIndicator(),
-                                      );
-                                    }
-                                  },
-                                ),
+                                buildTabContent(
+                                    context, actorData(), 'PersonResult'),
+                                buildTabContent(
+                                    context, dirData(), 'PersonResult'),
+                                buildTabContent(
+                                    context, topMovies(), 'MovieResult'),
                               ],
                             ),
                           ),

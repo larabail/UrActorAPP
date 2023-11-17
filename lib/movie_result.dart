@@ -10,9 +10,7 @@ import 'bottom_app_bar.dart';
 import 'friends.dart';
 import 'friends_profile.dart';
 import 'main.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-// import 'rating_popup.dart';
+import 'objects/Movie.dart';
 import 'person_result.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'dart:async';
@@ -31,7 +29,8 @@ Map reviewInfo = {};
 final myController = TextEditingController(text: "");
 
 class MovieResult extends StatefulWidget {
-  const MovieResult({super.key});
+  final Movie movie;
+  const MovieResult({Key? key, required this.movie}) : super(key: key);
 
   @override
   _MovieResultState createState() => _MovieResultState();
@@ -47,272 +46,31 @@ bool containsMap(List list, List map) {
   return false;
 }
 
-void check() {
-  if (containsMap(seenMovies, ['Movies', movieResult[0]])) {
-    _isTappedSeen = true;
-    _imageProviderSeen = 'assets/seen_after.png';
-  } else {
-    _isTappedSeen = false;
-    _imageProviderSeen = 'assets/seen_before.png';
-  }
-  if (containsMap(watchlist, ['Movies', movieResult[0]])) {
-    _isTappedWatchlist = true;
-    _imageProviderWatchlist = 'assets/watchlist_after.png';
-  } else {
-    _isTappedWatchlist = false;
-    _imageProviderWatchlist = 'assets/watchlist_before.png';
-  }
-  if (containsMap(favMovies, ['Movies', movieResult[0]])) {
-    _isTappedFav = true;
-    _imageProviderFav = 'assets/fav_after.png';
-  } else {
-    _isTappedFav = false;
-    _imageProviderFav = 'assets/fav_before.png';
-  }
-
-  if (reviews.keys.toList().contains(movieResult[0].toString())) {
-    reviewed = true;
-  }
-}
-
 class _MovieResultState extends State<MovieResult> {
-  Future<Map> getMovieData() async {
-    List movieData = movieResult;
-    if (rewatchedMovies.keys.toList().contains(movieData[0])) {
-      movieData.add(rewatchedMovies[movieData[0]]);
-    } else if (containsMap(seenMovies, ['Movies', movieResult[0]])) {
-      movieData.add(1);
+  void check() {
+    if (containsMap(seenMovies, ['Movies', widget.movie.id])) {
+      _isTappedSeen = true;
+      _imageProviderSeen = 'assets/seen_after.png';
     } else {
-      movieData.add(0);
+      _isTappedSeen = false;
+      _imageProviderSeen = 'assets/seen_before.png';
     }
-    movieData.add(null);
-    if (reviewed) {
-      movieData[4] = (reviews[movieData[0].toString()] as Map);
-    }
-    String name = movieData[1]
-        .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
-        .replaceAll(" ", "-");
-    final response =
-        await http.get(Uri.parse('$MOVIE_LINK${movieData[0]}-$name$API_KEY'));
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      json["times_seen"] = movieData[3];
-      json["review"] = movieData[4];
-      json["seen_dates"] = [];
-      for (String key in calendar.keys) {
-        for (var movie in calendar[key]) {
-          if (movie['id'] == movieData[0].toString()) {
-            json["seen_dates"].add([key, movie["friends"]]);
-          }
-        }
-      }
-      json["seen_dates"].sort((a, b) {
-        var dateA = DateTime.parse(a[0]);
-        var dateB = DateTime.parse(b[0]);
-        return dateB.compareTo(dateA);
-      });
-
-      if (json["backdrop_path"] == null) {
-        json["backdrop_path"] = "";
-      }
-      var imdbId = json['imdb_id'];
-      if (imdbId != null) {
-        String link2 = 'https://www.omdbapi.com/?i=$imdbId&apikey=768d2cf9';
-        final r = await http.get(Uri.parse(link2));
-        if (r.statusCode == 200) {
-          if (jsonDecode(r.body)["imdbRating"] != null &&
-              jsonDecode(r.body)["imdbRating"] != "N/A") {
-            json["imdb_rating"] = jsonDecode(r.body)["imdbRating"];
-          } else {
-            json["imdb_rating"] = "0.0";
-          }
-          json['year'] = jsonDecode(r.body)['Year'];
-          final r2 = await http.get(Uri.parse(
-              '$MOVIE_LINK${movieData[0]}-$name$WATCH_PROVIDERS_LINK'));
-          if (r2.statusCode == 200) {
-            json['providers'] = [];
-            if (jsonDecode(r2.body)["results"].keys.contains(country)) {
-              if (jsonDecode(r2.body)["results"][country]['flatrate'] != null) {
-                jsonDecode(r2.body)["results"][country]['flatrate'].forEach(
-                  (provider) async {
-                    String name = provider['provider_name'];
-                    String photo = IMG_LINK + provider['logo_path'];
-                    json['providers'].add([name, photo]);
-                  },
-                );
-                final r3 = await http.get(
-                    Uri.parse('$MOVIE_LINK${movieData[0]}-$name$CREDITS_LINK'));
-                if (r3.statusCode == 200) {
-                  json['cast'] = jsonDecode(r3.body)["cast"];
-                  json['crew'] = jsonDecode(r3.body)["crew"];
-                  final r4 = await http.get(Uri.parse(
-                      '$MOVIE_LINK${movieData[0]}-$name$VIDEOS_LINK'));
-                  if (r4.statusCode == 200) {
-                    bool got = false;
-                    jsonDecode(r4.body)['results'].forEach((element) {
-                      if (element['site'] == "YouTube" &&
-                          element['type'] == "Trailer" &&
-                          !got) {
-                        json['trailer'] = element;
-                        got = true;
-                      }
-                    });
-                    return json;
-                  }
-                  throw Exception('Failed to load movie details');
-                }
-                throw Exception('Failed to load movie details');
-              } else {
-                json['providers'] = [];
-                final r3 = await http.get(
-                    Uri.parse('$MOVIE_LINK${movieData[0]}-$name$CREDITS_LINK'));
-                if (r3.statusCode == 200) {
-                  json['cast'] = jsonDecode(r3.body)["cast"];
-                  json['crew'] = jsonDecode(r3.body)["crew"];
-                  final r4 = await http.get(Uri.parse(
-                      '$MOVIE_LINK${movieData[0]}-$name$VIDEOS_LINK'));
-                  if (r4.statusCode == 200) {
-                    bool got = false;
-                    jsonDecode(r4.body)['results'].forEach((element) {
-                      if (element['site'] == "YouTube" &&
-                          element['type'] == "Trailer" &&
-                          !got) {
-                        json['trailer'] = element;
-                        got = true;
-                      }
-                    });
-                    return json;
-                  }
-                  throw Exception('Failed to load movie details');
-                }
-                throw Exception('Failed to load movie details');
-              }
-            } else {
-              json['providers'] = [];
-              final r3 = await http.get(
-                  Uri.parse('$MOVIE_LINK${movieData[0]}-$name$CREDITS_LINK'));
-              if (r3.statusCode == 200) {
-                json['cast'] = jsonDecode(r3.body)["cast"];
-                json['crew'] = jsonDecode(r3.body)["crew"];
-                final r4 = await http.get(
-                    Uri.parse('$MOVIE_LINK${movieData[0]}-$name$VIDEOS_LINK'));
-                if (r4.statusCode == 200) {
-                  bool got = false;
-                  jsonDecode(r4.body)['results'].forEach((element) {
-                    if (element['site'] == "YouTube" &&
-                        element['type'] == "Trailer" &&
-                        !got) {
-                      json['trailer'] = element;
-                      got = true;
-                    }
-                  });
-                  return json;
-                }
-                throw Exception('Failed to load movie details');
-              }
-              throw Exception('Failed to load movie details');
-            }
-          } else {
-            throw Exception('Failed to load movie details');
-          }
-        } else {
-          throw Exception('Failed to load movie details');
-        }
-      } else {
-        json['imdb_rating'] = "0.0";
-        json['year'] = "None";
-        final r2 = await http.get(
-            Uri.parse('$MOVIE_LINK${movieData[0]}-$name$WATCH_PROVIDERS_LINK'));
-        if (r2.statusCode == 200) {
-          json['providers'] = [];
-          if (jsonDecode(r2.body)["results"].keys.contains(country)) {
-            if (jsonDecode(r2.body)["results"][country]['flatrate'] != null) {
-              jsonDecode(r2.body)["results"][country]['flatrate'].forEach(
-                (provider) async {
-                  String name = provider['provider_name'];
-                  String photo = IMG_LINK + provider['logo_path'];
-                  json['providers'].add([name, photo]);
-                },
-              );
-              final r3 = await http.get(
-                  Uri.parse('$MOVIE_LINK${movieData[0]}-$name$CREDITS_LINK'));
-              if (r3.statusCode == 200) {
-                json['cast'] = jsonDecode(r3.body)["cast"];
-                json['crew'] = jsonDecode(r3.body)["crew"];
-                final r4 = await http.get(
-                    Uri.parse('$MOVIE_LINK${movieData[0]}-$name$VIDEOS_LINK'));
-                if (r4.statusCode == 200) {
-                  bool got = false;
-                  jsonDecode(r4.body)['results'].forEach((element) {
-                    if (element['site'] == "YouTube" &&
-                        element['type'] == "Trailer" &&
-                        !got) {
-                      json['trailer'] = element;
-                      got = true;
-                    }
-                  });
-                  return json;
-                }
-                throw Exception('Failed to load movie details');
-              }
-              throw Exception('Failed to load movie details');
-            } else {
-              json['providers'] = [];
-              final r3 = await http.get(
-                  Uri.parse('$MOVIE_LINK${movieData[0]}-$name$CREDITS_LINK'));
-              if (r3.statusCode == 200) {
-                json['cast'] = jsonDecode(r3.body)["cast"];
-                json['crew'] = jsonDecode(r3.body)["crew"];
-                final r4 = await http.get(
-                    Uri.parse('$MOVIE_LINK${movieData[0]}-$name$VIDEOS_LINK'));
-                if (r4.statusCode == 200) {
-                  bool got = false;
-                  jsonDecode(r4.body)['results'].forEach((element) {
-                    if (element['site'] == "YouTube" &&
-                        element['type'] == "Trailer" &&
-                        !got) {
-                      json['trailer'] = element;
-                      got = true;
-                    }
-                  });
-                  return json;
-                }
-                throw Exception('Failed to load movie details');
-              }
-              throw Exception('Failed to load movie details');
-            }
-          } else {
-            json['providers'] = [];
-            final r3 = await http.get(
-                Uri.parse('$MOVIE_LINK${movieData[0]}-$name$CREDITS_LINK'));
-            if (r3.statusCode == 200) {
-              json['cast'] = jsonDecode(r3.body)["cast"];
-              json['crew'] = jsonDecode(r3.body)["crew"];
-              final r4 = await http.get(
-                  Uri.parse('$MOVIE_LINK${movieData[0]}-$name$VIDEOS_LINK'));
-              if (r4.statusCode == 200) {
-                bool got = false;
-                jsonDecode(r4.body)['results'].forEach((element) {
-                  if (element['site'] == "YouTube" &&
-                      element['type'] == "Trailer" &&
-                      !got) {
-                    json['trailer'] = element;
-                    got = true;
-                  }
-                });
-                return json;
-              }
-              throw Exception('Failed to load movie details');
-            }
-            throw Exception('Failed to load movie details');
-          }
-        } else {
-          throw Exception('Failed to load movie details');
-        }
-      }
+    if (containsMap(watchlist, ['Movies', widget.movie.id])) {
+      _isTappedWatchlist = true;
+      _imageProviderWatchlist = 'assets/watchlist_after.png';
     } else {
-      throw Exception('Failed to load movie details');
+      _isTappedWatchlist = false;
+      _imageProviderWatchlist = 'assets/watchlist_before.png';
+    }
+    if (containsMap(favMovies, ['Movies', widget.movie.id])) {
+      _isTappedFav = true;
+      _imageProviderFav = 'assets/fav_after.png';
+    } else {
+      _isTappedFav = false;
+      _imageProviderFav = 'assets/fav_before.png';
+    }
+    if (reviews.keys.toList().contains(widget.movie.id)) {
+      reviewed = true;
     }
   }
 
@@ -322,281 +80,288 @@ class _MovieResultState extends State<MovieResult> {
     check();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (rewatchedMovies.keys.toList().contains(movieResult[0].toString())) {
-        myController.text =
-            (rewatchedMovies[movieResult[0].toString()]).toString();
-      } else if (containsMap(seenMovies, ['Movies', movieResult[0]])) {
+      if (rewatchedMovies.keys.toList().contains(widget.movie.id)) {
+        myController.text = (rewatchedMovies[widget.movie.id]).toString();
+      } else if (containsMap(seenMovies, ['Movies', widget.movie.id])) {
         myController.text = "1";
       } else {
         myController.text = "0";
       }
     });
 
-    void _onTap(
-        String type, String id, String title, int runtime, double rating) {
-      setState(
-        () {
-          switch (type) {
-            case 'seen':
-              _isTappedSeen = !_isTappedSeen;
-              if (_isTappedSeen) {
-                FirebaseUtils.markWatched(id, title, runtime, rating, context);
-              } else {
-                FirebaseUtils.deleteFromWatchedConfirmation(id, context);
-              }
-
-              break;
-            case 'watchlist':
-              _isTappedWatchlist = !_isTappedWatchlist;
-              if (_isTappedWatchlist) {
-                FirebaseUtils.bookmark(id, context);
-              } else {
-                FirebaseUtils.unbookmark(id, context);
-              }
-              break;
-            case 'fav':
-              _isTappedFav = !_isTappedFav;
-              if (_isTappedFav) {
-                FirebaseUtils.favorite(id, context);
-              } else {
-                FirebaseUtils.unfavorite(id, context);
-              }
-              break;
-            case 'list':
-              _isTappedList = !_isTappedList;
-              if (_isTappedList) {
-                _imageProviderList = 'assets/playlists_after.png';
-                showModalBottomSheet(
-                  context: context,
-                  builder: (_) {
-                    return SizedBox(
-                      height: 300,
-                      child: ListView.builder(
-                        itemCount: (playlists.length / 2).ceil(),
-                        itemBuilder: (context, index) {
-                          final leftMovieIndex = index * 2;
-                          final rightMovieIndex = index * 2 + 1;
-                          final keyLeft = (leftMovieIndex < playlists.length)
-                              ? playlists.keys.elementAt(leftMovieIndex)
-                              : null;
-                          final keyRight = (rightMovieIndex < playlists.length)
-                              ? playlists.keys.elementAt(rightMovieIndex)
-                              : null;
-                          dynamic valueLeft,
-                              imageLeft,
-                              moviesLeft,
-                              valueRight,
-                              imageRight,
-                              moviesRight;
-                          if (keyLeft != null) {
-                            valueLeft = playlists[keyLeft]['Name'];
-                            imageLeft = playlists[keyLeft]['CoverPhoto'];
-                            moviesLeft = playlists[keyLeft]['Movies'];
-                          }
-                          if (keyRight != null) {
-                            valueRight = playlists[keyRight]['Name'];
-                            imageRight = playlists[keyRight]['CoverPhoto'];
-                            moviesRight = playlists[keyRight]['Movies'];
-                          }
-                          return Row(
-                            children: [
-                              if (keyLeft != null)
-                                GestureDetector(
-                                  onTap: () {
-                                    if (moviesLeft.contains(id)) {
-                                      FirebaseUtils.deleteFromList(
-                                          id, keyLeft, moviesLeft, context);
-                                    } else {
-                                      FirebaseUtils.addToList(
-                                          id, keyLeft, moviesLeft, context);
-                                    }
-                                  },
-                                  child: Stack(
-                                    children: [
-                                      Container(
-                                        margin: const EdgeInsets.fromLTRB(
-                                            10.0, 10.0, 5.0, 0),
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.45,
-                                        height:
-                                            MediaQuery.of(context).size.height *
-                                                0.18,
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(27),
-                                          image: DecorationImage(
-                                            image: NetworkImage(imageLeft),
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned.fill(
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(27),
-                                            gradient: LinearGradient(
-                                              begin: Alignment.topCenter,
-                                              end: Alignment.bottomCenter,
-                                              colors: [
-                                                Colors.transparent,
-                                                Colors.black.withOpacity(1),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.fromLTRB(
-                                            5.0, 10.0, 10.0, 0),
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.45,
-                                        height:
-                                            MediaQuery.of(context).size.height *
-                                                0.18,
-                                        // Use Align to position the text
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Align(
-                                            alignment: Alignment.bottomRight,
-                                            child: Text(
-                                              valueLeft,
-                                              style: const TextStyle(
-                                                color: Colors
-                                                    .white, // Make sure the text is visible on the gradient
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                letterSpacing: 1.25,
-                                                wordSpacing: 1.75,
-                                                height: 1.5,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      if (moviesLeft.contains(id))
-                                        const Positioned(
-                                          top: 10,
-                                          right: 10,
-                                          child: Icon(Icons.check_circle,
-                                              color: Colors.green),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              if (keyRight != null)
-                                GestureDetector(
-                                  onTap: () {
-                                    if (moviesRight.contains(id)) {
-                                      FirebaseUtils.deleteFromList(
-                                          id, keyRight, moviesRight, context);
-                                    } else {
-                                      FirebaseUtils.addToList(
-                                          id, keyRight, moviesRight, context);
-                                    }
-                                  },
-                                  child: Stack(
-                                    children: [
-                                      Container(
-                                        margin: const EdgeInsets.fromLTRB(
-                                            5.0, 10.0, 10.0, 0),
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.45,
-                                        height:
-                                            MediaQuery.of(context).size.height *
-                                                0.18,
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(27),
-                                          image: DecorationImage(
-                                            image: NetworkImage(imageRight),
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned.fill(
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(27),
-                                            gradient: LinearGradient(
-                                              begin: Alignment.topCenter,
-                                              end: Alignment.bottomCenter,
-                                              colors: [
-                                                Colors.transparent,
-                                                Colors.black.withOpacity(1),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.fromLTRB(
-                                            5.0, 10.0, 10.0, 0),
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.45,
-                                        height:
-                                            MediaQuery.of(context).size.height *
-                                                0.18,
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Align(
-                                            alignment: Alignment.bottomRight,
-                                            child: Text(
-                                              valueRight,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                letterSpacing: 1.25,
-                                                wordSpacing: 1.75,
-                                                height: 1.5,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      if (moviesRight.contains(id))
-                                        const Positioned(
-                                          top: 10,
-                                          right: 10,
-                                          child: Icon(Icons.check_circle,
-                                              color: Colors.green),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          );
-                        },
-                      ),
-                    );
-                  },
-                ).then((value) => {
-                      setState(() {
-                        _imageProviderList = 'assets/playlists_before.png';
-                        _isTappedList = !_isTappedList;
-                      })
-                    });
-              } else {
-                _imageProviderList = 'assets/playlists_before.png';
-              }
-              break;
-            default:
-              break;
+    Future<void> _onTap(String type, String id, String title, int runtime,
+        double rating) async {
+      bool success = false;
+      switch (type) {
+        case 'seen':
+          _isTappedSeen = !_isTappedSeen;
+          if (_isTappedSeen) {
+            success = await FirebaseUtils.markWatched(
+                id, title, runtime, rating, context);
+            setState(() {
+              seenMovies = seenMovies;
+            });
+          } else {
+            success =
+                await FirebaseUtils.deleteFromWatchedConfirmation(id, context);
+            setState(() {
+              seenMovies = seenMovies;
+            });
           }
-        },
-      );
+          break;
+        case 'watchlist':
+          _isTappedWatchlist = !_isTappedWatchlist;
+          if (_isTappedWatchlist) {
+            success = await FirebaseUtils.bookmark(id, context);
+            setState(() {
+              watchlist = watchlist;
+            });
+          } else {
+            success = await FirebaseUtils.unbookmark(id, context);
+            setState(() {
+              watchlist = watchlist;
+            });
+          }
+          break;
+        case 'fav':
+          _isTappedFav = !_isTappedFav;
+          if (_isTappedFav) {
+            success = await FirebaseUtils.favorite(id, context);
+            setState(() {
+              favMovies = favMovies;
+            });
+          } else {
+            success = await FirebaseUtils.unfavorite(id, context);
+            setState(() {
+              favMovies = favMovies;
+            });
+          }
+          break;
+        case 'list':
+          _isTappedList = !_isTappedList;
+          if (_isTappedList) {
+            _imageProviderList = 'assets/playlists_after.png';
+            showModalBottomSheet(
+              context: context,
+              builder: (_) {
+                return SizedBox(
+                  height: 300,
+                  child: ListView.builder(
+                    itemCount: (playlists.length / 2).ceil(),
+                    itemBuilder: (context, index) {
+                      final leftMovieIndex = index * 2;
+                      final rightMovieIndex = index * 2 + 1;
+                      final keyLeft = (leftMovieIndex < playlists.length)
+                          ? playlists.keys.elementAt(leftMovieIndex)
+                          : null;
+                      final keyRight = (rightMovieIndex < playlists.length)
+                          ? playlists.keys.elementAt(rightMovieIndex)
+                          : null;
+                      dynamic valueLeft,
+                          imageLeft,
+                          moviesLeft,
+                          valueRight,
+                          imageRight,
+                          moviesRight;
+                      if (keyLeft != null) {
+                        valueLeft = playlists[keyLeft]['Name'];
+                        imageLeft = playlists[keyLeft]['CoverPhoto'];
+                        moviesLeft = playlists[keyLeft]['Movies'];
+                      }
+                      if (keyRight != null) {
+                        valueRight = playlists[keyRight]['Name'];
+                        imageRight = playlists[keyRight]['CoverPhoto'];
+                        moviesRight = playlists[keyRight]['Movies'];
+                      }
+                      return Row(
+                        children: [
+                          if (keyLeft != null)
+                            GestureDetector(
+                              onTap: () {
+                                if (moviesLeft.contains(id)) {
+                                  FirebaseUtils.deleteFromList(
+                                      id, keyLeft, moviesLeft, context);
+                                } else {
+                                  FirebaseUtils.addToList(
+                                      id, keyLeft, moviesLeft, context);
+                                }
+                              },
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        10.0, 10.0, 5.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.45,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.18,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(27),
+                                      image: DecorationImage(
+                                        image: NetworkImage(imageLeft),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned.fill(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(27),
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Colors.transparent,
+                                            Colors.black.withOpacity(1),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        5.0, 10.0, 10.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.45,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.18,
+                                    // Use Align to position the text
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Align(
+                                        alignment: Alignment.bottomRight,
+                                        child: Text(
+                                          valueLeft,
+                                          style: const TextStyle(
+                                            color: Colors
+                                                .white, // Make sure the text is visible on the gradient
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1.25,
+                                            wordSpacing: 1.75,
+                                            height: 1.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  if (moviesLeft.contains(id))
+                                    const Positioned(
+                                      top: 10,
+                                      right: 10,
+                                      child: Icon(Icons.check_circle,
+                                          color: Colors.green),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          if (keyRight != null)
+                            GestureDetector(
+                              onTap: () {
+                                if (moviesRight.contains(id)) {
+                                  FirebaseUtils.deleteFromList(
+                                      id, keyRight, moviesRight, context);
+                                } else {
+                                  FirebaseUtils.addToList(
+                                      id, keyRight, moviesRight, context);
+                                }
+                              },
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        5.0, 10.0, 10.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.45,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.18,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(27),
+                                      image: DecorationImage(
+                                        image: NetworkImage(imageRight),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned.fill(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(27),
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Colors.transparent,
+                                            Colors.black.withOpacity(1),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        5.0, 10.0, 10.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.45,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.18,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Align(
+                                        alignment: Alignment.bottomRight,
+                                        child: Text(
+                                          valueRight,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1.25,
+                                            wordSpacing: 1.75,
+                                            height: 1.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  if (moviesRight.contains(id))
+                                    const Positioned(
+                                      top: 10,
+                                      right: 10,
+                                      child: Icon(Icons.check_circle,
+                                          color: Colors.green),
+                                    ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                );
+              },
+            ).then((value) => {
+                  setState(() {
+                    _imageProviderList = 'assets/playlists_before.png';
+                    _isTappedList = !_isTappedList;
+                  })
+                });
+          } else {
+            _imageProviderList = 'assets/playlists_before.png';
+          }
+          break;
+        default:
+          break;
+      }
+
+      if (success) {
+        setState(() {});
+      }
     }
 
     return Scaffold(
       appBar: const CustomAppBar(),
       body: FutureBuilder<Map>(
-        future: getMovieData(),
+        future: widget.movie.getMovieData(),
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
           if (snapshot.hasData) {
             return SingleChildScrollView(
@@ -923,9 +688,14 @@ class _MovieResultState extends State<MovieResult> {
                                           MainAxisAlignment.center,
                                       children: [
                                         GestureDetector(
-                                          onTap: () {
-                                            FirebaseUtils.editReview(
-                                                snapshot.data!["id"], context);
+                                          onTap: () async {
+                                            bool success =
+                                                await FirebaseUtils.editReview(
+                                                    snapshot.data!["id"],
+                                                    context);
+                                            if (success) {
+                                              setState(() {});
+                                            }
                                           },
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(
@@ -953,9 +723,14 @@ class _MovieResultState extends State<MovieResult> {
                                         ),
                                         const SizedBox(width: 20),
                                         GestureDetector(
-                                          onTap: () {
-                                            FirebaseUtils.deleteReview(
-                                                snapshot.data!["id"], context);
+                                          onTap: () async {
+                                            bool success = await FirebaseUtils
+                                                .deleteReview(
+                                                    snapshot.data!["id"],
+                                                    context);
+                                            if (success) {
+                                              setState(() {});
+                                            }
                                           },
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(
@@ -996,9 +771,12 @@ class _MovieResultState extends State<MovieResult> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         ElevatedButton(
-                            onPressed: () {
-                              FirebaseUtils.writeReview(
+                            onPressed: () async {
+                              bool success = await FirebaseUtils.writeReview(
                                   snapshot.data!["id"], context);
+                              if (success) {
+                                setState(() {});
+                              }
                             },
                             child: const Text('Write A Review')),
                       ],
@@ -1098,7 +876,7 @@ class _MovieResultState extends State<MovieResult> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  if (containsMap(seenMovies, ['Movies', movieResult[0]]))
+                  if (containsMap(seenMovies, ['Movies', widget.movie.id]))
                     ExpansionTile(
                       title: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -1117,27 +895,6 @@ class _MovieResultState extends State<MovieResult> {
                         ],
                       ),
                       children: [
-                        // if ((snapshot.data!['seen_dates'] as List).isNotEmpty)
-                        //   Padding(
-                        //     padding: const EdgeInsets.all(12.0),
-                        //     child: Row(
-                        //       children: [
-                        //         const SizedBox(
-                        //             width: 16), // Added margin to the left
-                        //         const Icon(Icons.access_time,
-                        //             color: Colors.green),
-                        //         const SizedBox(width: 8),
-                        //         Text(
-                        //           "Last watched: ${intl.DateFormat('dd MMMM, yyyy').format(DateTime.parse(snapshot.data!['seen_dates'][0][0]))}",
-                        //           style: const TextStyle(
-                        //               fontSize: 16,
-                        //               fontWeight: FontWeight.bold,
-                        //               color: Colors.green),
-                        //         ),
-                        //       ],
-                        //     ),
-                        //   ),
-                        // Rest of the dates in a smaller font
                         if ((snapshot.data!['seen_dates'] as List).isNotEmpty)
                           Padding(
                             padding:
@@ -1146,7 +903,6 @@ class _MovieResultState extends State<MovieResult> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: (snapshot.data!['seen_dates'] as List)
                                   .map<Widget>((date) {
-                                // Assuming date[1] is a list of friend UIDs who watched the movie on this date
                                 List friendsWhoWatched = date[1] ?? [];
                                 return Padding(
                                   padding:
@@ -1258,7 +1014,7 @@ class _MovieResultState extends State<MovieResult> {
                         if (seenWith.entries
                             .where((entry) =>
                                 entry.value["Movies"]
-                                    ?.contains(movieResult[0].toString()) ??
+                                    ?.contains(widget.movie.id) ??
                                 false)
                             .isNotEmpty)
                           const Text("People watched with",
@@ -1270,7 +1026,7 @@ class _MovieResultState extends State<MovieResult> {
                             seenWith.entries
                                 .where((entry) =>
                                     entry.value["Movies"]
-                                        ?.contains(movieResult[0].toString()) ??
+                                        ?.contains(widget.movie.id) ??
                                     false)
                                 .map((entry) => FirebaseFirestore.instance
                                     .collection(entry.key)
@@ -1527,10 +1283,7 @@ class _MovieResultState extends State<MovieResult> {
                                         TextButton(
                                           child: const Text('Apply'),
                                           onPressed: () async {
-                                            // TODO: Update the Firebase database with the selected friends
-                                            // Implement the logic to update the 'seenWith' document for both the current user and the selected friends
-                                            String id =
-                                                movieResult[0].toString();
+                                            String id = widget.movie.id;
                                             FirebaseFirestore firestore =
                                                 FirebaseFirestore.instance;
                                             for (String friend

@@ -46,8 +46,6 @@ List idsExplorePage = [];
 List seenTVShows = [];
 List watchlist = [];
 List watchlistTVShows = [];
-List movieResult = [];
-List tvShowResult = [];
 Map reviews = {};
 Map rewatchedMovies = {};
 Map playlists = {};
@@ -168,8 +166,6 @@ class _MyHomePageState extends State<MyHomePage> {
     seenTVShows = [];
     watchlist = [];
     watchlistTVShows = [];
-    movieResult = [];
-    tvShowResult = [];
     reviews = {};
     rewatchedMovies = {};
     playlists = {};
@@ -731,16 +727,16 @@ class _MyHomePageState extends State<MyHomePage> {
                               if (snapshot.hasData) {
                                 return GestureDetector(
                                   onTap: () {
-                                    movieResult = [
-                                      snapshot.data!.id,
-                                      snapshot.data!.title,
-                                      snapshot.data!.runtimeType,
-                                    ];
+                                    // movieResult = [
+                                    //   snapshot.data!.id,
+                                    //   snapshot.data!.title,
+                                    //   snapshot.data!.runtimeType,
+                                    // ];
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) =>
-                                              const MovieResult()),
+                                          builder: (context) => MovieResult(
+                                              movie: snapshot.data! as Movie)),
                                     );
                                   },
                                   child: Container(
@@ -833,16 +829,16 @@ class _MyHomePageState extends State<MyHomePage> {
                               if (snapshot.hasData) {
                                 return GestureDetector(
                                   onTap: () {
-                                    movieResult = [
-                                      snapshot.data!.id,
-                                      snapshot.data!.title,
-                                      snapshot.data!.runtimeType,
-                                    ];
+                                    // movieResult = [
+                                    //   snapshot.data!.id,
+                                    //   snapshot.data!.title,
+                                    //   snapshot.data!.runtimeType,
+                                    // ];
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) =>
-                                              const MovieResult()),
+                                          builder: (context) => MovieResult(
+                                              movie: snapshot.data! as Movie)),
                                     );
                                   },
                                   child: Container(
@@ -935,16 +931,16 @@ class _MyHomePageState extends State<MyHomePage> {
                               if (snapshot.hasData) {
                                 return GestureDetector(
                                   onTap: () {
-                                    movieResult = [
-                                      snapshot.data!.id,
-                                      snapshot.data!.title,
-                                      snapshot.data!.runtimeType,
-                                    ];
+                                    // movieResult = [
+                                    //   snapshot.data!.id,
+                                    //   snapshot.data!.title,
+                                    //   snapshot.data!.runtimeType,
+                                    // ];
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) =>
-                                              const MovieResult()),
+                                          builder: (context) => MovieResult(
+                                              movie: snapshot.data! as Movie)),
                                     );
                                   },
                                   child: Container(
@@ -1039,16 +1035,16 @@ class _MyHomePageState extends State<MyHomePage> {
                               if (snapshot.hasData) {
                                 return GestureDetector(
                                   onTap: () {
-                                    movieResult = [
-                                      snapshot.data!.id,
-                                      snapshot.data!.title,
-                                      snapshot.data!.runtimeType,
-                                    ];
+                                    // movieResult = [
+                                    //   snapshot.data!.id,
+                                    //   snapshot.data!.title,
+                                    //   snapshot.data!.runtimeType,
+                                    // ];
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) =>
-                                              const MovieResult()),
+                                          builder: (context) => MovieResult(
+                                              movie: snapshot.data! as Movie)),
                                     );
                                   },
                                   child: Column(children: [
