@@ -1,4 +1,4 @@
-class MediaItem {
+abstract class MediaItem {
   final String id;
   final String coverPhoto;
   final String title;
@@ -8,4 +8,6 @@ class MediaItem {
     required this.title,
     required this.coverPhoto,
   });
+
+  Future<Map> getData();
 }

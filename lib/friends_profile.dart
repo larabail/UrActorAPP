@@ -5,6 +5,7 @@ import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'friends.dart';
 import 'friends_calendar.dart';
+import 'objects/Movie.dart';
 import 'playlists.dart';
 import 'search.dart';
 import 'main.dart';
@@ -361,7 +362,8 @@ class _FriendProfileState extends State<FriendProfile> {
                         friends.remove(friendUid);
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (context) => const Friends()),
+                          MaterialPageRoute(
+                              builder: (context) => const Friends()),
                         );
                       }
                     },
@@ -485,16 +487,17 @@ class _FriendProfileState extends State<FriendProfile> {
                                 if (snapshot.hasData) {
                                   return GestureDetector(
                                     onTap: () {
-                                      movieResult = [
-                                        snapshot.data!['id'],
-                                        snapshot.data!['title'],
-                                        snapshot.data!['type'],
-                                      ];
+                                      // movieResult = [
+                                      //   snapshot.data!['id'],
+                                      //   snapshot.data!['title'],
+                                      //   snapshot.data!['type'],
+                                      // ];
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                            builder: (context) =>
-                                                const MovieResult()),
+                                            builder: (context) => MovieResult(
+                                                movie:
+                                                    snapshot.data! as Movie)),
                                       );
                                     },
                                     child: Container(
@@ -685,15 +688,15 @@ class _FriendProfileState extends State<FriendProfile> {
                                 final movie = movies[index];
                                 return GestureDetector(
                                   onTap: () {
-                                    movieResult = [
-                                      movie['id'],
-                                      movie['title'],
-                                      "Movies"
-                                    ];
+                                    Movie tempMovie = Movie(
+                                        id: movie['id'],
+                                        title: movie['title'],
+                                        coverPhoto: movie["poster_path"]);
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => const MovieResult()),
+                                          builder: (context) =>
+                                              MovieResult(movie: tempMovie)),
                                     );
                                   },
                                   child: Container(
@@ -771,7 +774,8 @@ class _FriendProfileState extends State<FriendProfile> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => const PersonResult()),
+                                          builder: (context) =>
+                                              const PersonResult()),
                                     );
                                   },
                                   child: Container(
@@ -849,7 +853,8 @@ class _FriendProfileState extends State<FriendProfile> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => const PersonResult()),
+                                          builder: (context) =>
+                                              const PersonResult()),
                                     );
                                   },
                                   child: Container(
