@@ -36,33 +36,23 @@ class MovieResult extends StatefulWidget {
   _MovieResultState createState() => _MovieResultState();
 }
 
-bool containsMap(List list, List map) {
-  for (int i = 0; i < list.length; i++) {
-    if ((list[i][1]).toString() == map[1].toString() &&
-        (list[i][0]) as String == "Movies") {
-      return true;
-    }
-  }
-  return false;
-}
-
 class _MovieResultState extends State<MovieResult> {
   void check() {
-    if (containsMap(currentUser.seenMovies, ['Movies', widget.movie.id])) {
+    if (widget.movie.isSeen()) {
       _isTappedSeen = true;
       _imageProviderSeen = 'assets/seen_after.png';
     } else {
       _isTappedSeen = false;
       _imageProviderSeen = 'assets/seen_before.png';
     }
-    if (containsMap(currentUser.watchlist, ['Movies', widget.movie.id])) {
+    if (widget.movie.isBookmarked()) {
       _isTappedWatchlist = true;
       _imageProviderWatchlist = 'assets/watchlist_after.png';
     } else {
       _isTappedWatchlist = false;
       _imageProviderWatchlist = 'assets/watchlist_before.png';
     }
-    if (containsMap(currentUser.favMovies, ['Movies', widget.movie.id])) {
+    if (widget.movie.isFavorite()) {
       _isTappedFav = true;
       _imageProviderFav = 'assets/fav_after.png';
     } else {
@@ -83,8 +73,7 @@ class _MovieResultState extends State<MovieResult> {
       if (currentUser.rewatchedMovies.keys.toList().contains(widget.movie.id)) {
         myController.text =
             (currentUser.rewatchedMovies[widget.movie.id]).toString();
-      } else if (containsMap(
-          currentUser.seenMovies, ['Movies', widget.movie.id])) {
+      } else if (widget.movie.isSeen()) {
         myController.text = "1";
       } else {
         myController.text = "0";
@@ -99,13 +88,13 @@ class _MovieResultState extends State<MovieResult> {
           _isTappedSeen = !_isTappedSeen;
           if (_isTappedSeen) {
             success = await FirebaseUtils.markWatched(
-                id, title, runtime, rating, context);
+                id, title, runtime, rating, context, "Movies");
             setState(() {
               currentUser.seenMovies = currentUser.seenMovies;
             });
           } else {
-            success =
-                await FirebaseUtils.deleteFromWatchedConfirmation(id, context);
+            success = await FirebaseUtils.deleteFromWatchedConfirmation(
+                id, context, "Movies");
             setState(() {
               currentUser.seenMovies = currentUser.seenMovies;
             });
@@ -114,12 +103,12 @@ class _MovieResultState extends State<MovieResult> {
         case 'watchlist':
           _isTappedWatchlist = !_isTappedWatchlist;
           if (_isTappedWatchlist) {
-            success = await FirebaseUtils.bookmark(id, context);
+            success = await FirebaseUtils.bookmark(id, context, "Movies");
             setState(() {
               currentUser.watchlist = currentUser.watchlist;
             });
           } else {
-            success = await FirebaseUtils.unbookmark(id, context);
+            success = await FirebaseUtils.unbookmark(id, context, "Movies");
             setState(() {
               currentUser.watchlist = currentUser.watchlist;
             });
@@ -128,12 +117,12 @@ class _MovieResultState extends State<MovieResult> {
         case 'fav':
           _isTappedFav = !_isTappedFav;
           if (_isTappedFav) {
-            success = await FirebaseUtils.favorite(id, context);
+            success = await FirebaseUtils.favorite(id, context, "Movies");
             setState(() {
               currentUser.favMovies = currentUser.favMovies;
             });
           } else {
-            success = await FirebaseUtils.unfavorite(id, context);
+            success = await FirebaseUtils.unfavorite(id, context, "Movies");
             setState(() {
               currentUser.favMovies = currentUser.favMovies;
             });
@@ -186,11 +175,11 @@ class _MovieResultState extends State<MovieResult> {
                             GestureDetector(
                               onTap: () {
                                 if (moviesLeft.contains(id)) {
-                                  FirebaseUtils.deleteFromList(
-                                      id, keyLeft, moviesLeft, context);
+                                  FirebaseUtils.deleteFromList(id, keyLeft,
+                                      moviesLeft, context, "Movies");
                                 } else {
-                                  FirebaseUtils.addToList(
-                                      id, keyLeft, moviesLeft, context);
+                                  FirebaseUtils.addToList(id, keyLeft,
+                                      moviesLeft, context, "Movies");
                                 }
                               },
                               child: Stack(
@@ -266,11 +255,11 @@ class _MovieResultState extends State<MovieResult> {
                             GestureDetector(
                               onTap: () {
                                 if (moviesRight.contains(id)) {
-                                  FirebaseUtils.deleteFromList(
-                                      id, keyRight, moviesRight, context);
+                                  FirebaseUtils.deleteFromList(id, keyRight,
+                                      moviesRight, context, "Movies");
                                 } else {
-                                  FirebaseUtils.addToList(
-                                      id, keyRight, moviesRight, context);
+                                  FirebaseUtils.addToList(id, keyRight,
+                                      moviesRight, context, "Movies");
                                 }
                               },
                               child: Stack(
@@ -771,9 +760,7 @@ class _MovieResultState extends State<MovieResult> {
                             ),
                           ),
                         ]),
-                  if (!reviewed &&
-                      containsMap(currentUser.seenMovies,
-                          ['Movies', snapshot.data!["id"].toString()]))
+                  if (!reviewed && widget.movie.isSeen())
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -883,8 +870,7 @@ class _MovieResultState extends State<MovieResult> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  if (containsMap(
-                      currentUser.seenMovies, ['Movies', widget.movie.id]))
+                  if (widget.movie.isSeen())
                     ExpansionTile(
                       title: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,

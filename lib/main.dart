@@ -4,9 +4,7 @@ import 'dart:convert';
 
 import 'package:uractor/objects/User.dart';
 
-// import 'common/utils.dart';
 import 'common/constants.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
 import 'appbar.dart';

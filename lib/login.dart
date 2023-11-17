@@ -11,6 +11,7 @@ class Login extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     currentUser.clearUser();
+    currentUser.clearUserData();
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     late String email, password;
 
