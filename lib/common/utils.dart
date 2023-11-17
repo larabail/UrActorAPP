@@ -22,10 +22,10 @@ class Utils {
     return false;
   }
 
-  static bool contains(List list, List map) {
+  static bool contains(List list, List map, String type) {
     for (int i = 0; i < list.length; i++) {
       if ((list[i][1]).toString() == map[1].toString() &&
-          (list[i][0]) as String == "Movies") {
+          (list[i][0]) as String == type) {
         return true;
       }
     }
@@ -80,11 +80,22 @@ class FirebaseUtils {
                 .collection(currentUser.uid)
                 .doc(type);
             await userDoc.update({'Seen': w});
-            currentUser.seenMovies = [];
+            if (type == "Movies") {
+              currentUser.seenMovies = [];
+            } else {
+              currentUser.seenTVShows = [];
+            }
+
             for (var element in w) {
-              currentUser.seenMovies += [
-                [type, element]
-              ];
+              if (type == "Movies") {
+                currentUser.seenMovies += [
+                  [type, element]
+                ];
+              } else {
+                currentUser.seenTVShows += [
+                  [type, element]
+                ];
+              }
             }
           }
         });
@@ -186,11 +197,21 @@ class FirebaseUtils {
         if (doc.id == type) {
           Map movies_result = doc.data() as Map;
           w = movies_result["Seen"];
-          currentUser.seenMovies = [];
+          if (type == "Movies") {
+            currentUser.seenMovies = [];
+          } else {
+            currentUser.seenTVShows = [];
+          }
           for (var element in w) {
-            currentUser.seenMovies += [
-              [type, element]
-            ];
+            if (type == "Movies") {
+              currentUser.seenMovies += [
+                [type, element]
+              ];
+            } else {
+              currentUser.seenTVShows += [
+                [type, element]
+              ];
+            }
           }
         }
       });
@@ -271,7 +292,11 @@ class FirebaseUtils {
     await userDoc.update({
       type: FieldValue.arrayUnion([id])
     });
-    currentUser.favMovies = [];
+    if (type == "Movies") {
+      currentUser.favMovies = [];
+    } else {
+      currentUser.favTVShows = [];
+    }
     await FirebaseFirestore.instance
         .collection(currentUser.uid)
         .get()
@@ -280,9 +305,15 @@ class FirebaseUtils {
         if (doc.id == "Favorites") {
           Map allFavs = doc.data() as Map;
           allFavs[type].forEach((element) {
-            currentUser.favMovies += [
-              [type, element]
-            ];
+            if (type == "Movies") {
+              currentUser.favMovies += [
+                [type, element]
+              ];
+            } else {
+              currentUser.favTVShows += [
+                [type, element]
+              ];
+            }
           });
         }
       }
@@ -307,11 +338,21 @@ class FirebaseUtils {
               .collection(currentUser.uid)
               .doc("Favorites");
           await userDoc.update({type: movieInFavs});
-          currentUser.favMovies = [];
+          if (type == "Movies") {
+            currentUser.favMovies = [];
+          } else {
+            currentUser.favTVShows = [];
+          }
           allFavs[type].forEach((element) {
-            currentUser.favMovies += [
-              [type, element]
-            ];
+            if (type == "Movies") {
+              currentUser.favMovies += [
+                [type, element]
+              ];
+            } else {
+              currentUser.favTVShows += [
+                [type, element]
+              ];
+            }
           });
         }
       }
@@ -325,7 +366,11 @@ class FirebaseUtils {
     await userDoc.update({
       type: FieldValue.arrayUnion([id])
     });
-    currentUser.watchlist = [];
+    if (type == "Movies") {
+      currentUser.watchlist = [];
+    } else {
+      currentUser.watchlistTVShows = [];
+    }
     await FirebaseFirestore.instance
         .collection(currentUser.uid)
         .get()
@@ -334,9 +379,15 @@ class FirebaseUtils {
         if (doc.id == "Watchlist") {
           Map watchlistAll = doc.data() as Map;
           watchlistAll[type].forEach((element) {
-            currentUser.watchlist += [
-              [type, element]
-            ];
+            if (type == "Movies") {
+              currentUser.watchlist += [
+                [type, element]
+              ];
+            } else {
+              currentUser.watchlistTVShows += [
+                [type, element]
+              ];
+            }
           });
         }
       }
@@ -361,11 +412,21 @@ class FirebaseUtils {
               .collection(currentUser.uid)
               .doc("Watchlist");
           await userDoc.update({type: movieInWatchlist});
-          currentUser.watchlist = [];
+          if (type == "Movies") {
+            currentUser.watchlist = [];
+          } else {
+            currentUser.watchlistTVShows = [];
+          }
           watchlistAll[type].forEach((element) {
-            currentUser.watchlist += [
-              [type, element]
-            ];
+            if (type == "Movies") {
+              currentUser.watchlist += [
+                [type, element]
+              ];
+            } else {
+              currentUser.watchlistTVShows += [
+                [type, element]
+              ];
+            }
           });
         }
       }
@@ -398,6 +459,9 @@ class FirebaseUtils {
     final userDoc = FirebaseFirestore.instance
         .collection("Watchlists")
         .doc(listId.toString());
+    if (type == "TVShows") {
+      type = "TV Shows";
+    }
     await userDoc.update({type: moviesinList});
     currentUser.playlists = {};
     await FirebaseFirestore.instance
@@ -424,6 +488,9 @@ class FirebaseUtils {
     final userDoc = FirebaseFirestore.instance
         .collection("Watchlists")
         .doc(listId.toString());
+    if (type == "TVShows") {
+      type = "TV Shows";
+    }
     await userDoc.update({type: moviesinList});
     currentUser.playlists = {};
     await FirebaseFirestore.instance

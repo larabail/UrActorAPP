@@ -52,24 +52,14 @@ class ItemCard extends StatelessWidget {
               MediaItem tempMediaItem;
               if (snapshot.data!['type'] == "Movies") {
                 tempMediaItem = Movie(
-                    id: snapshot.data!['id'],
+                    id: snapshot.data!['id'].toString(),
                     title: snapshot.data!['title'],
-                    coverPhoto: snapshot.data!['poster_path']);
-                // movieResult = [
-                //   snapshot.data!['id'],
-                //   snapshot.data!['title'],
-                //   snapshot.data!['type'],
-                // ];
+                    coverPhoto: snapshot.data!['poster']);
               } else {
-                // tvShowResult = [
-                //   snapshot.data!['id'],
-                //   snapshot.data!['title'],
-                //   snapshot.data!['type'],
-                // ];
                 tempMediaItem = TVShow(
                     id: snapshot.data!['id'].toString(),
                     title: snapshot.data!['title'],
-                    coverPhoto: snapshot.data!['poster_path']);
+                    coverPhoto: snapshot.data!['poster']);
               }
               Navigator.push(
                 context,
@@ -113,6 +103,7 @@ String link = "https://api.themoviedb.org/3/movie/";
 List<Map<String, dynamic>> movies = [];
 
 Future<Map<String, dynamic>> getData(id, type) async {
+  print(type);
   Map<String, dynamic> data = {};
   if (type == "TVShows") {
     link = 'https://api.themoviedb.org/3/tv/';
@@ -134,8 +125,6 @@ Future<Map<String, dynamic>> getData(id, type) async {
     }
     data['id'] = json['id'];
     data['type'] = type;
-    print(data['type']);
-    print(data['title']);
     if (!containsMap(movies, data)) {
       movies.add(data);
     }

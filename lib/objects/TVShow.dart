@@ -22,14 +22,15 @@ class TVShow extends MediaItem {
   }
 
   bool isSeen() {
-    return Utils.contains(currentUser.seenTVShows, ['TVShows', id]);
+    print(currentUser.seenTVShows);
+    return Utils.contains(currentUser.seenTVShows, ['TVShows', id], "TVShows");
   }
 
   bool isBookmarked() {
-    return Utils.contains(currentUser.watchlistTVShows, ['TVShows', id]);
+    return Utils.contains(currentUser.watchlistTVShows, ['TVShows', id], "TVShows");
   }
 
   bool isFavorite() {
-    return Utils.contains(currentUser.favTVShows, ['TVShows', id]);
+    return Utils.contains(currentUser.favTVShows, ['TVShows', id], "TVShows");
   }
 }
