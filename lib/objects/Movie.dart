@@ -55,14 +55,14 @@ class Movie extends MediaItem {
   }
 
   bool isSeen() {
-    return Utils.contains(currentUser.seenMovies, ['Movies', id]);
+    return Utils.contains(currentUser.seenMovies, ['Movies', id], "Movies");
   }
 
   bool isBookmarked() {
-    return Utils.contains(currentUser.watchlist, ['Movies', id]);
+    return Utils.contains(currentUser.watchlist, ['Movies', id], "Movies");
   }
 
   bool isFavorite() {
-    return Utils.contains(currentUser.favMovies, ['Movies', id]);
+    return Utils.contains(currentUser.favMovies, ['Movies', id], "Movies");
   }
 }
