@@ -26,7 +26,6 @@ bool _isTappedFav = false;
 bool _isTappedList = false;
 String reviewId = "";
 Map reviewInfo = {};
-final myController = TextEditingController(text: "");
 
 class MovieResult extends StatefulWidget {
   final Movie movie;
@@ -37,6 +36,7 @@ class MovieResult extends StatefulWidget {
 }
 
 class _MovieResultState extends State<MovieResult> {
+  final myController = TextEditingController(text: "");
   void check() {
     if (widget.movie.isSeen()) {
       _isTappedSeen = true;

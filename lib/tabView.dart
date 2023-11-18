@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:uractor/common/constants.dart';
 import 'package:uractor/objects/Media.dart';
 import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/TVShow.dart';
@@ -97,20 +98,17 @@ class ItemCard extends StatelessWidget {
   }
 }
 
-const String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-const String imgLink = 'https://image.tmdb.org/t/p/w500/';
-String link = "https://api.themoviedb.org/3/movie/";
 List<Map<String, dynamic>> movies = [];
 
 Future<Map<String, dynamic>> getData(id, type) async {
-  print(type);
   Map<String, dynamic> data = {};
+  String link;
   if (type == "TVShows") {
-    link = 'https://api.themoviedb.org/3/tv/';
+    link = TV_SHOW_LINK;
   } else {
-    link = 'https://api.themoviedb.org/3/movie/';
+    link = MOVIE_LINK;
   }
-  final response = await http.get(Uri.parse('$link$id$api_key_actor'));
+  final response = await http.get(Uri.parse('$link$id$API_KEY'));
   if (response.statusCode == 200) {
     final json = jsonDecode(response.body);
     if (type == "TVShows") {
@@ -121,7 +119,7 @@ Future<Map<String, dynamic>> getData(id, type) async {
     if (json['poster_path'] == null) {
       data['poster'] = 'assets/question_mark.png';
     } else {
-      data['poster'] = imgLink + json['poster_path'];
+      data['poster'] = IMG_LINK + json['poster_path'];
     }
     data['id'] = json['id'];
     data['type'] = type;

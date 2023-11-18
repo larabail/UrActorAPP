@@ -4,12 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
-import 'friends.dart';
-import 'profile.dart';
-import 'search.dart';
 import 'main.dart';
 import 'list_result.dart';
-
 import 'list_add_popup.dart';
 import 'list_join_popup.dart';
 
@@ -72,25 +68,6 @@ class _PlaylistsState extends State<Playlists> {
 
   @override
   Widget build(BuildContext context) {
-    int selectedIndex = 0;
-
-    final List<Widget> pages = [
-      const MyApp(),
-      const Playlists(),
-      const Search(),
-      const Friends(),
-      const Profile(),
-      // Add more pages here
-    ];
-
-    void _onItemTapped(int index) {
-      selectedIndex = index;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
-      );
-    }
-
     return Scaffold(
       appBar: const CustomAppBar(),
       body: SingleChildScrollView(
@@ -168,7 +145,8 @@ class _PlaylistsState extends State<Playlists> {
                       dynamic image = currentUser.playlists[key]['CoverPhoto'];
                       dynamic movies = currentUser.playlists[key]['Movies'];
                       dynamic tvshows = currentUser.playlists[key]['TV Shows'];
-                      dynamic accessCode = currentUser.playlists[key]['AccessCode'];
+                      dynamic accessCode =
+                          currentUser.playlists[key]['AccessCode'];
                       return GestureDetector(
                         onTap: () {
                           // Handle the click event here
@@ -178,7 +156,8 @@ class _PlaylistsState extends State<Playlists> {
                           list_result["Name"] = value;
                           list_result["AccessCode"] = accessCode;
                           list_result["id"] = key;
-                          list_result["Users"] = currentUser.playlists[key]["Users"];
+                          list_result["Users"] =
+                              currentUser.playlists[key]["Users"];
                           Navigator.push(
                             context,
                             MaterialPageRoute(

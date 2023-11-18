@@ -2,6 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/common/constants.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
@@ -344,18 +345,16 @@ class ListResult extends StatefulWidget {
 class _ListResultState extends State<ListResult> {
   Map list = list_result;
   List<Map<String, dynamic>> moviesList = [];
-  final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-  final String imgLink = 'https://image.tmdb.org/t/p/w500/';
-  String link = "https://api.themoviedb.org/3/movie/";
 
   Future<Map<String, dynamic>> getData(id, type) async {
     Map<String, dynamic> data = {};
+    String link;
     if (type == "TVShows") {
-      link = 'https://api.themoviedb.org/3/tv/';
+      link = TV_SHOW_LINK;
     } else {
-      link = 'https://api.themoviedb.org/3/movie/';
+      link = MOVIE_LINK;
     }
-    final response = await http.get(Uri.parse('$link$id$api_key_actor'));
+    final response = await http.get(Uri.parse('$link$id$API_KEY'));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       if (type == "TVShows") {
@@ -366,7 +365,7 @@ class _ListResultState extends State<ListResult> {
       if (json['poster_path'] == null) {
         data['poster'] = 'assets/question_mark.png';
       } else {
-        data['poster'] = imgLink + json['poster_path'];
+        data['poster'] = IMG_LINK + json['poster_path'];
       }
       data['id'] = json['id'];
       data['type'] = type;

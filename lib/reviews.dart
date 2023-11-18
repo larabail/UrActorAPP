@@ -2,31 +2,19 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/common/constants.dart';
 import 'package:uractor/objects/Media.dart';
 import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'package:uractor/rating_popup.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
-import 'friends.dart';
-import 'playlists.dart';
-import 'profile.dart';
-import 'search.dart';
+import 'common/utils.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'main.dart';
-
-bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
-  String jsonString = json.encode(map);
-  for (int i = 0; i < list.length; i++) {
-    if (json.encode(list[i]) == jsonString) {
-      return true;
-    }
-  }
-  return false;
-}
 
 class Reviews extends StatefulWidget {
   const Reviews();
@@ -36,9 +24,6 @@ class Reviews extends StatefulWidget {
 }
 
 class _ReviewsState extends State<Reviews> {
-  final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-  final String imgLink = 'https://image.tmdb.org/t/p/w500/';
-  String link = "https://api.themoviedb.org/3/movie/";
   List<Map<String, dynamic>> movies = [];
   void editReview(id, context) {
     reviewId = id.toString();
@@ -70,8 +55,9 @@ class _ReviewsState extends State<Reviews> {
               tempReviewsInList.add(element);
             }
           }
-          final userDoc =
-              FirebaseFirestore.instance.collection(currentUser.uid).doc("Reviews");
+          final userDoc = FirebaseFirestore.instance
+              .collection(currentUser.uid)
+              .doc("Reviews");
           await userDoc.update({'Seen': tempReviewsInList});
           currentUser.reviews = {};
           for (var element in tempReviewsInList) {
@@ -89,12 +75,13 @@ class _ReviewsState extends State<Reviews> {
 
   Future<Map<String, dynamic>> getData(id, type) async {
     Map<String, dynamic> data = {};
+    String link;
     if (type == "TVShows") {
-      link = 'https://api.themoviedb.org/3/tv/';
+      link = TV_SHOW_LINK;
     } else {
-      link = 'https://api.themoviedb.org/3/movie/';
+      link = MOVIE_LINK;
     }
-    final response = await http.get(Uri.parse('$link$id$api_key_actor'));
+    final response = await http.get(Uri.parse('$link$id$API_KEY'));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       if (type == "TVShows") {
@@ -105,17 +92,17 @@ class _ReviewsState extends State<Reviews> {
       if (json['poster_path'] == null) {
         data['poster'] = 'assets/question_mark.png';
       } else {
-        data['poster'] = imgLink + json['poster_path'];
+        data['poster'] = IMG_LINK + json['poster_path'];
       }
       data['id'] = json['id'];
       data['type'] = type;
-      if (!containsMap(movies, data)) {
+      if (!Utils.containsMap(movies, data)) {
         movies.add(data);
       }
     } else {
       link = 'https://api.themoviedb.org/3/tv/';
       type = "TVShows";
-      final response = await http.get(Uri.parse('$link$id$api_key_actor'));
+      final response = await http.get(Uri.parse('$link$id$API_KEY'));
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         if (type == "TVShows") {
@@ -126,11 +113,11 @@ class _ReviewsState extends State<Reviews> {
         if (json['poster_path'] == null) {
           data['poster'] = 'assets/question_mark.png';
         } else {
-          data['poster'] = imgLink + json['poster_path'];
+          data['poster'] = IMG_LINK + json['poster_path'];
         }
         data['id'] = json['id'];
         data['type'] = type;
-        if (!containsMap(movies, data)) {
+        if (!Utils.containsMap(movies, data)) {
           movies.add(data);
         }
       } else {
@@ -167,21 +154,11 @@ class _ReviewsState extends State<Reviews> {
                       onTap: () {
                         MediaItem tempItem;
                         if (snapshot.data!['type'] == "Movies") {
-                          // movieResult = [
-                          //   snapshot.data!['id'],
-                          //   snapshot.data!['title'],
-                          //   snapshot.data!['type'],
-                          // ];
                           tempItem = Movie(
                               id: snapshot.data!['id'],
                               title: snapshot.data!['title'],
                               coverPhoto: snapshot.data!['poster_path']);
                         } else {
-                          // tvShowResult = [
-                          //   snapshot.data!['id'],
-                          //   snapshot.data!['title'],
-                          //   snapshot.data!['type'],
-                          // ];
                           tempItem = TVShow(
                               id: snapshot.data!['id'],
                               title: snapshot.data!['title'],
@@ -277,25 +254,6 @@ class _ReviewsState extends State<Reviews> {
 
   @override
   Widget build(BuildContext context) {
-    int selectedIndex = 0;
-
-    final List<Widget> pages = [
-      const MyApp(),
-      const Playlists(),
-      const Search(),
-      const Friends(),
-      const Profile(),
-      // Add more pages here
-    ];
-
-    void _onItemTapped(int index) {
-      selectedIndex = index;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
-      );
-    }
-
     return Scaffold(
       appBar: const CustomAppBar(),
       body: ListView.builder(
@@ -303,17 +261,26 @@ class _ReviewsState extends State<Reviews> {
         itemBuilder: (BuildContext context, int index) {
           final leftReviewIndex = index * 2;
           final rightReviewIndex = index * 2 + 1;
-          final leftReviewId = (leftReviewIndex < currentUser.reviews.keys.toList().length)
-              ? currentUser.reviews.keys.toList().reversed.toList()[leftReviewIndex]
-              : null;
+          final leftReviewId =
+              (leftReviewIndex < currentUser.reviews.keys.toList().length)
+                  ? currentUser.reviews.keys
+                      .toList()
+                      .reversed
+                      .toList()[leftReviewIndex]
+                  : null;
           final rightReviewId =
               (rightReviewIndex < currentUser.reviews.keys.toList().length)
-                  ? currentUser.reviews.keys.toList().reversed.toList()[rightReviewIndex]
+                  ? currentUser.reviews.keys
+                      .toList()
+                      .reversed
+                      .toList()[rightReviewIndex]
                   : null;
-          final leftReview =
-              (leftReviewId != null) ? (currentUser.reviews[leftReviewId]) : null;
-          final rightReview =
-              (rightReviewId != null) ? (currentUser.reviews[rightReviewId]) : null;
+          final leftReview = (leftReviewId != null)
+              ? (currentUser.reviews[leftReviewId])
+              : null;
+          final rightReview = (rightReviewId != null)
+              ? (currentUser.reviews[rightReviewId])
+              : null;
           return Row(
             children: [
               if (leftReview != null)
