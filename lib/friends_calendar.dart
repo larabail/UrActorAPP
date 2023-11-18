@@ -1,8 +1,9 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
-import 'appbar.dart';
-import 'bottom_app_bar.dart';
+import 'common/appbar.dart';
+import 'common/bottom_app_bar.dart';
+import 'common/utils.dart';
 import 'friends.dart';
 import 'objects/Movie.dart';
 import 'playlists.dart';
@@ -18,19 +19,6 @@ import 'dart:convert';
 const String imgLink = 'https://image.tmdb.org/t/p/w500/';
 DateTime selectedDate = DateTime.now();
 
-String _selectedDay = '';
-String dateForMap = '';
-
-bool containsMap(List list, Map map) {
-  String jsonString = json.encode(map);
-  for (int i = 0; i < list.length; i++) {
-    if (json.encode(list[i]) == jsonString) {
-      return true;
-    }
-  }
-  return false;
-}
-
 class FriendCalendar extends StatefulWidget {
   const FriendCalendar({super.key, required String friendUid});
   @override
@@ -38,6 +26,7 @@ class FriendCalendar extends StatefulWidget {
 }
 
 class _FriendCalendarState extends State<FriendCalendar> {
+  String dateForMap = '';
   Map friendCalendar = {};
   bool gotData = false;
   Future<void> getFirebaseData() async {
@@ -142,7 +131,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
             await http.get(Uri.parse('$link$id-$name$apiKeyActor'));
         if (response.statusCode == 200) {
           dynamic json = jsonDecode(response.body);
-          if (!containsMap(movies, json)) {
+          if (!Utils.containsMap(movies, json)) {
             movies.add(json);
           }
         } else {
@@ -174,17 +163,11 @@ class _FriendCalendarState extends State<FriendCalendar> {
                                         children: [
                                           GestureDetector(
                                             onTap: () {
-                                              // Handle the click event here
                                               Movie tempMovie = Movie(
                                                   id: event[id],
                                                   title: event['title'],
                                                   coverPhoto:
                                                       event["poster_path"]);
-                                              // movieResult = [
-                                              //   event['id'],
-                                              //   event['title'],
-                                              //   "Movie",
-                                              // ];
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
@@ -195,7 +178,6 @@ class _FriendCalendarState extends State<FriendCalendar> {
                                               );
                                             },
                                             child: ClipRRect(
-                                              // Wrap the container with ClipRRect
                                               borderRadius: BorderRadius.circular(
                                                   50), // Set the border radius here
                                               child: Container(
@@ -254,7 +236,6 @@ class _FriendCalendarState extends State<FriendCalendar> {
                 child: TableCalendar(
                     firstDay: DateTime.utc(1990, 10, 16),
                     lastDay: DateTime.utc(2030, 3, 14),
-                    // focusedDay: DateTime.now(),
                     headerStyle: const HeaderStyle(
                       formatButtonVisible: false,
                       titleCentered: true,

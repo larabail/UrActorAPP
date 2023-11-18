@@ -4,8 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
 import 'package:uractor/objects/TVShow.dart';
-import 'appbar.dart';
-import 'bottom_app_bar.dart';
+import 'common/appbar.dart';
+import 'common/bottom_app_bar.dart';
 import 'objects/Media.dart';
 import 'objects/Movie.dart';
 import 'playlists.dart';
@@ -15,9 +15,9 @@ import 'tvshow_result.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-import 'list_edit_popup.dart';
-import 'movie_add_popup.dart';
-import 'tv_add_popup.dart';
+import 'popups/list_edit_popup.dart';
+import 'popups/movie_add_popup.dart';
+import 'popups/tv_add_popup.dart';
 
 String cover = "";
 String listName = "";
