@@ -446,7 +446,6 @@ class _TVShowResultState extends State<TVShowResult> {
       body: FutureBuilder<Map>(
         future: getMovieData(),
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
-          // print(snapshot.data);
           if (snapshot.hasData) {
             return SingleChildScrollView(
               child: Column(

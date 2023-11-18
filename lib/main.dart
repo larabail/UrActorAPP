@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 
+import 'package:uractor/objects/Playlist.dart';
 import 'package:uractor/objects/User.dart';
 
 import 'common/constants.dart';
@@ -345,18 +346,20 @@ class _MyHomePageState extends State<MyHomePage> {
 
                       return GestureDetector(
                           onTap: () {
-                            list_result["Movies"] = movies;
-                            list_result["TVShows"] = tvshows;
-                            list_result["Backdrop"] = image;
-                            list_result["Name"] = value;
-                            list_result["AccessCode"] = accessCode;
-                            list_result["id"] = key;
-                            list_result["Users"] =
-                                currentUser.playlists[key]["Users"];
+                            Playlist listResult = Playlist(
+                                id: key.toString(),
+                                name: value.toString(),
+                                backdrop: image.toString(),
+                                movies: movies,
+                                tvshows: tvshows,
+                                accesscode: accessCode.toString(),
+                                users: currentUser.playlists[key]["Users"]);
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => ListResult()),
+                                  builder: (context) => ListResult(
+                                        list_result: listResult,
+                                      )),
                             );
                           },
                           child: Container(

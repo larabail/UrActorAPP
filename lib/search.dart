@@ -127,93 +127,75 @@ class _SearchResultState extends State<Search> {
 
     return Scaffold(
       appBar: const CustomAppBar(),
-      body: DefaultTabController(
-        length: 3,
-        child: Column(
-          children: [
-            SingleChildScrollView(
-              child: Container(
-                height: MediaQuery.of(context).size.height - 176,
-                margin: const EdgeInsets.all(10.0),
-                child: Column(
-                  children: [
-                    TextField(
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.search),
-                        hintText: 'Enter name of person/movie/show...',
-                        hintStyle: TextStyle(color: Colors.grey),
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey),
-                        ),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _searchTermActor = value;
-                        });
-                      },
-                      onSubmitted: (value) {
-                        setState(() {
-                          _searchTermActor = value;
-                        });
-                      },
-                    ),
-                    Expanded(
-                      child: FutureBuilder<List>(
-                        future: searchData(),
-                        builder: (context, snapshot) {
-                          if (snapshot.hasData) {
-                            final people = snapshot.data!;
-                            return SizedBox(
-                              width: MediaQuery.of(context).size.width,
-                              height: MediaQuery.of(context).size.height,
-                              child: ListView.builder(
-                                shrinkWrap: true,
-                                itemCount: (people.length / 3).ceil(),
-                                itemBuilder: (context, index) {
-                                  final leftPersonIndex = index * 3;
-                                  final middlePersonIndex = index * 3 + 1;
-                                  final rightPersonIndex = index * 3 + 2;
-                                  final leftPerson =
-                                      (leftPersonIndex < people.length)
-                                          ? people[leftPersonIndex]
-                                          : null;
-                                  final middlePerson =
-                                      (middlePersonIndex < people.length)
-                                          ? people[middlePersonIndex]
-                                          : null;
-                                  final rightPerson =
-                                      (rightPersonIndex < people.length)
-                                          ? people[rightPersonIndex]
-                                          : null;
-
-                                  return Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceAround,
-                                    children: [
-                                      buildItem(context, leftPerson),
-                                      buildItem(context, middlePerson),
-                                      buildItem(context, rightPerson),
-                                    ],
-                                  );
-                                },
-                              ),
-                            );
-                          } else if (snapshot.hasError) {
-                            return const Center(
-                                child: Text("Failed to load movie details"));
-                          } else {
-                            return const Center(
-                                child: CircularProgressIndicator());
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
+      body: Column(
+        children: [
+          TextField(
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.search),
+              hintText: 'Enter name of person/movie/show...',
+              hintStyle: TextStyle(color: Colors.grey),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.grey),
               ),
             ),
-          ],
-        ),
+            onChanged: (value) {
+              setState(() {
+                _searchTermActor = value;
+              });
+            },
+            onSubmitted: (value) {
+              setState(() {
+                _searchTermActor = value;
+              });
+            },
+          ),
+          Expanded(
+            child: FutureBuilder<List>(
+              future: searchData(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  final people = snapshot.data!;
+                  return SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    height: MediaQuery.of(context).size.height,
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: (people.length / 3).ceil(),
+                      itemBuilder: (context, index) {
+                        final leftPersonIndex = index * 3;
+                        final middlePersonIndex = index * 3 + 1;
+                        final rightPersonIndex = index * 3 + 2;
+                        final leftPerson = (leftPersonIndex < people.length)
+                            ? people[leftPersonIndex]
+                            : null;
+                        final middlePerson = (middlePersonIndex < people.length)
+                            ? people[middlePersonIndex]
+                            : null;
+                        final rightPerson = (rightPersonIndex < people.length)
+                            ? people[rightPersonIndex]
+                            : null;
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            buildItem(context, leftPerson),
+                            buildItem(context, middlePerson),
+                            buildItem(context, rightPerson),
+                          ],
+                        );
+                      },
+                    ),
+                  );
+                } else if (snapshot.hasError) {
+                  return const Center(
+                      child: Text("Failed to load movie details"));
+                } else {
+                  return const Center(child: CircularProgressIndicator());
+                }
+              },
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: CommonBottomAppBar(-1),
     );
