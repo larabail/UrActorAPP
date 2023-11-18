@@ -14,12 +14,10 @@ class CommonBottomAppBar extends StatelessWidget {
   }
 
   final List<Widget> pages = [
-    const MyApp(),
+    const MyHomePage(),
     const Playlists(),
-    // Search(),
     const Friends(),
     const Profile(),
-    // Add more pages here
   ];
 
   @override
