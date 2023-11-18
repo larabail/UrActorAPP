@@ -101,7 +101,7 @@ class MyApp extends StatelessWidget {
                       selectedItemColor: Color.fromARGB(255, 150, 127, 52),
                     ),
                   ),
-            home: MyHomePage(),
+            home: const MyHomePage(),
           );
         },
       ),
@@ -110,7 +110,7 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage();
+  const MyHomePage({super.key});
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
