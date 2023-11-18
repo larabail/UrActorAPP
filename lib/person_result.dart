@@ -1,24 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/objects/Movie.dart';
+import 'package:uractor/objects/TVShow.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
-import 'friends.dart';
-import 'profile.dart';
-import 'search.dart';
+import 'common/constants.dart';
 import 'main.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'playlists.dart';
-import 'package:flutter/services.dart' show rootBundle;
 
-const String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-const String imgLink = 'https://image.tmdb.org/t/p/w500/';
-String api_key_movie =
-    '/movie_credits?api_key=700cd4fab994df56eb41b34d38c4762a';
-String api_key_tv = '/tv_credits?api_key=700cd4fab994df56eb41b34d38c4762a';
-String link = "https://api.themoviedb.org/3/person/";
 int scoreActor = 0;
 int scoreDirector = 0;
 int stats = 0;
@@ -29,10 +21,6 @@ List countedMoviesDirector = [];
 List countedMoviesActor = [];
 List countedTVShowsDirector = [];
 List countedTVShowsActor = [];
-
-Future<String> _loadJSONFile() async {
-  return await rootBundle.loadString('assets/oscars_api.json');
-}
 
 bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
   String jsonString = json.encode(map);
@@ -59,11 +47,11 @@ class _PersonResultState extends State<PersonResult> {
         .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
         .replaceAll(" ", "-");
     final response =
-        await http.get(Uri.parse('$link${presult["id"]}-$name$api_key_actor'));
+        await http.get(Uri.parse('$PERSON_LINK${presult["id"]}-$name$API_KEY'));
     json = jsonDecode(response.body);
     if (response.statusCode == 200) {
-      final r2 = await http
-          .get(Uri.parse('$link${presult["id"]}-$name$api_key_movie'));
+      final r2 = await http.get(
+          Uri.parse('$PERSON_LINK${presult["id"]}-$name$MOVIE_CREDITS_LINK'));
       if (r2.statusCode == 200) {
         List movieCast = [];
         for (Map movie in jsonDecode(r2.body)['cast']) {
@@ -84,34 +72,32 @@ class _PersonResultState extends State<PersonResult> {
         }
         json['movie_credits_cast'] = movieCast;
         for (var element in movieCast) {
-          if (containsMap(seenMovies, ["Movies", element["id"]])) {
+          if (containsMap(currentUser.seenMovies, ["Movies", element["id"]])) {
             if (!countedMoviesActor.contains(element["id"].toString())) {
               stats += 1;
-              if (containsMap(
-                  favMovies, ['Movies', element["id"].toString()])) {
+              if (containsMap(currentUser.favMovies,
+                  ['Movies', element["id"].toString()])) {
                 scoreActor += 3;
               }
-              print(rewatchedMovies.keys
-                  .toList()
-                  .contains(element["id"].toString()));
-              if (rewatchedMovies.keys
+              if (currentUser.rewatchedMovies.keys
                   .toList()
                   .contains(element["id"].toString())) {
-                scoreActor += rewatchedMovies[element["id"].toString()] as int;
+                scoreActor += currentUser
+                    .rewatchedMovies[element["id"].toString()] as int;
               } else {
                 scoreActor += 2;
               }
               countedMoviesActor.add(element["id"].toString());
             }
-          } else if (containsMap(
-                  watchlist, ['Movies', element["id"].toString()]) &&
+          } else if (containsMap(currentUser.watchlist,
+                  ['Movies', element["id"].toString()]) &&
               !countedMoviesActor.contains(element["id"].toString())) {
             scoreActor += 1;
             countedMoviesActor.add(element["id"].toString());
           }
         }
-        final r3 =
-            await http.get(Uri.parse('$link${presult["id"]}-$name$api_key_tv'));
+        final r3 = await http.get(Uri.parse(
+            '$PERSON_LINK${presult["id"]}-$name$TV_SHOW_CREDITS_LINK'));
         if (r3.statusCode == 200) {
           List tvCast = [];
           for (Map show in jsonDecode(r3.body)['cast']) {
@@ -127,19 +113,20 @@ class _PersonResultState extends State<PersonResult> {
           }
           json['tv_credits_cast'] = tvCast;
           for (var element in tvCast) {
-            if (containsMap(seenTVShows, ["TVShows", element["id"]])) {
+            if (containsMap(
+                currentUser.seenTVShows, ["TVShows", element["id"]])) {
               if (!countedTVShowsActor.contains(element["id"].toString())) {
                 stats_tv += 1;
-                if (containsMap(
-                    favTVShows, ['TVShows', element["id"].toString()])) {
+                if (containsMap(currentUser.favTVShows,
+                    ['TVShows', element["id"].toString()])) {
                   scoreActor += 3;
                 } else {
                   scoreActor += 2;
                 }
                 countedTVShowsActor.add(element["id"].toString());
               }
-            } else if (containsMap(
-                    watchlistTVShows, ['TVShows', element["id"].toString()]) &&
+            } else if (containsMap(currentUser.watchlistTVShows,
+                    ['TVShows', element["id"].toString()]) &&
                 !countedTVShowsActor.contains(element["id"].toString())) {
               scoreActor += 1;
               countedTVShowsActor.add(element["id"].toString());
@@ -156,24 +143,27 @@ class _PersonResultState extends State<PersonResult> {
         }
         json['movie_credits_crew'] = movieCrew;
         for (var element in movieCrew) {
-          if (containsMap(seenMovies, ["Movies", element["id"].toString()])) {
+          if (containsMap(
+              currentUser.seenMovies, ["Movies", element["id"].toString()])) {
             if (element["job"] == "Director" &&
                 !countedMoviesDirector.contains(element["id"].toString())) {
               stats_dir += 1;
-              if (containsMap(
-                  favMovies, ['Movies', element["id"].toString()])) {
+              if (containsMap(currentUser.favMovies,
+                  ['Movies', element["id"].toString()])) {
                 scoreDirector += 3;
               }
-              if (rewatchedMovies.keys.toList().contains(element["id"])) {
-                scoreDirector +=
-                    int.parse(rewatchedMovies[element["id"].toString()]);
+              if (currentUser.rewatchedMovies.keys
+                  .toList()
+                  .contains(element["id"])) {
+                scoreDirector += int.parse(
+                    currentUser.rewatchedMovies[element["id"].toString()]);
               } else {
                 scoreDirector += 2;
               }
               countedMoviesDirector.add(element["id"].toString());
             }
-          } else if (containsMap(
-                  watchlist, ['Movies', element["id"].toString()]) &&
+          } else if (containsMap(currentUser.watchlist,
+                  ['Movies', element["id"].toString()]) &&
               element["job"] == "Director" &&
               !countedMoviesDirector.contains(element["id"].toString())) {
             scoreDirector += 1;
@@ -183,8 +173,8 @@ class _PersonResultState extends State<PersonResult> {
             allDirMovies += 1;
           }
         }
-        final r4 =
-            await http.get(Uri.parse('$link${presult["id"]}-$name$api_key_tv'));
+        final r4 = await http.get(Uri.parse(
+            '$PERSON_LINK${presult["id"]}-$name$TV_SHOW_CREDITS_LINK'));
         if (r4.statusCode == 200) {
           List tvCrew = [];
           for (Map show in jsonDecode(r4.body)['crew']) {
@@ -194,21 +184,21 @@ class _PersonResultState extends State<PersonResult> {
           }
           json['tv_credits_crew'] = tvCrew;
           for (var element in tvCrew) {
-            if (containsMap(
-                seenTVShows, ["TVShows", element["id"].toString()])) {
+            if (containsMap(currentUser.seenTVShows,
+                ["TVShows", element["id"].toString()])) {
               if (element["job"] == "Director" &&
                   !countedTVShowsDirector.contains(element["id"].toString())) {
                 stats_dir += 1;
-                if (containsMap(
-                    favTVShows, ['TVShows', element["id"].toString()])) {
+                if (containsMap(currentUser.favTVShows,
+                    ['TVShows', element["id"].toString()])) {
                   scoreDirector += 3;
                 } else {
                   scoreDirector += 1;
                 }
                 countedTVShowsDirector.add(element["id"].toString());
               }
-            } else if (containsMap(
-                    watchlistTVShows, ['TVShows', element["id"].toString()]) &&
+            } else if (containsMap(currentUser.watchlistTVShows,
+                    ['TVShows', element["id"].toString()]) &&
                 element["job"] == "Director" &&
                 !countedTVShowsDirector.contains(element["id"].toString())) {
               scoreDirector += 1;
@@ -219,14 +209,14 @@ class _PersonResultState extends State<PersonResult> {
               allDirMovies += 1;
             }
           }
-          // Map oscars = await parseJSONFile();
           if (oscars.keys.contains(presult["id"])) {
             json['num_oscars'] = oscars[presult["id"]]['num_oscars'];
           } else {
             json['num_oscars'] = 0;
           }
-          var userDoc =
-              FirebaseFirestore.instance.collection(uid).doc("FavDirectors");
+          var userDoc = FirebaseFirestore.instance
+              .collection(currentUser.uid)
+              .doc("FavDirectors");
           Map<Object, Object?> directorStats = {};
           directorStats[personResult['id'].toString()] = scoreDirector;
           await userDoc.update(directorStats);
@@ -249,8 +239,9 @@ class _PersonResultState extends State<PersonResult> {
             json["director_ranking"] = num;
             json["allDirMovies"] = allDirMovies;
           });
-          var ActorDoc =
-              FirebaseFirestore.instance.collection(uid).doc("FavActors");
+          var ActorDoc = FirebaseFirestore.instance
+              .collection(currentUser.uid)
+              .doc("FavActors");
           Map<Object, Object?> actorStats = {};
           actorStats[personResult['id'].toString()] = scoreActor;
           await ActorDoc.update(actorStats);
@@ -272,25 +263,26 @@ class _PersonResultState extends State<PersonResult> {
             }
             json["actor_ranking"] = num;
           });
-          favActors = [];
-          favDirectors = [];
+          currentUser.favActors = [];
+          currentUser.favDirectors = [];
           await FirebaseFirestore.instance
-              .collection(uid)
+              .collection(currentUser.uid)
               .get()
               .then((QuerySnapshot querySnapshot) {
             for (var doc in querySnapshot.docs) {
-              if (doc.id == "FavActors" && favActors.isEmpty) {
+              if (doc.id == "FavActors" && currentUser.favActors.isEmpty) {
                 Map tempFavActors = doc.data() as Map;
-                favActors = tempFavActors.entries
+                currentUser.favActors = tempFavActors.entries
                     .map((entry) => [entry.value, entry.key])
                     .toList();
-                favActors.sort((a, b) => b[0].compareTo(a[0]));
-              } else if (doc.id == "FavDirectors" && favDirectors.isEmpty) {
+                currentUser.favActors.sort((a, b) => b[0].compareTo(a[0]));
+              } else if (doc.id == "FavDirectors" &&
+                  currentUser.favDirectors.isEmpty) {
                 Map tempFavDirectors = doc.data() as Map;
-                favDirectors = tempFavDirectors.entries
+                currentUser.favDirectors = tempFavDirectors.entries
                     .map((entry) => [entry.value, entry.key])
                     .toList();
-                favDirectors.sort((a, b) => b[0].compareTo(a[0]));
+                currentUser.favDirectors.sort((a, b) => b[0].compareTo(a[0]));
               }
             }
           });
@@ -316,24 +308,6 @@ class _PersonResultState extends State<PersonResult> {
     scoreDirector = 0;
     countedMoviesDirector = [];
     countedMoviesActor = [];
-    int selectedIndex = 0;
-
-    final List<Widget> pages = [
-      const MyApp(),
-      const Playlists(),
-      const Search(),
-      const Friends(),
-      const Profile(),
-      // Add more pages here
-    ];
-
-    void _onItemTapped(int index) {
-      selectedIndex = index;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
-      );
-    }
 
     return Scaffold(
       appBar: const CustomAppBar(),
@@ -382,8 +356,8 @@ class _PersonResultState extends State<PersonResult> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(27),
                                 image: DecorationImage(
-                                  image: NetworkImage(
-                                      imgLink + snapshot.data!['profile_path']),
+                                  image: NetworkImage(IMG_LINK +
+                                      snapshot.data!['profile_path']),
                                   fit: BoxFit.fitWidth,
                                 ),
                               ),
@@ -521,179 +495,73 @@ class _PersonResultState extends State<PersonResult> {
     );
   }
 
+  Widget buildMediaRow(BuildContext context, List<dynamic> mediaList, int index,
+      String mediaType, bool isCrew) {
+    int leftIndex = index * 3;
+    int middleIndex = index * 3 + 1;
+    int rightIndex = index * 3 + 2;
+
+    Widget buildMediaItem(dynamic media) {
+      if (media == null || media["poster_path"] == null) return Container();
+
+      return GestureDetector(
+        onTap: () {
+          var route;
+          if (mediaType == 'Movies') {
+            var tempMovie = Movie(
+                id: media['id'],
+                title: media['title'],
+                coverPhoto: media['poster_path']);
+            route = MaterialPageRoute(
+                builder: (context) => MovieResult(movie: tempMovie));
+          } else {
+            var tempTvShow = TVShow(
+                id: media['id'],
+                title: media['name'],
+                coverPhoto: media['poster_photo']);
+            route = MaterialPageRoute(
+                builder: (context) => TVShowResult(tvshow: tempTvShow));
+          }
+          Navigator.push(context, route);
+        },
+        child: isCrew
+            ? seenCrew(context, media, mediaType)
+            : seen(context, media, mediaType),
+      );
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        if (leftIndex < mediaList.length) buildMediaItem(mediaList[leftIndex]),
+        if (middleIndex < mediaList.length)
+          buildMediaItem(mediaList[middleIndex]),
+        if (rightIndex < mediaList.length)
+          buildMediaItem(mediaList[rightIndex]),
+      ],
+    );
+  }
+
   cast(BuildContext context, data) {
     return DefaultTabController(
       length: 2,
       child: Column(
         children: [
-          const TabBar(
-            tabs: [
-              Tab(text: 'Movies'),
-              Tab(text: 'TV Shows'),
-            ],
-          ),
+          // TabBar code
           Expanded(
             child: TabBarView(
               children: [
                 ListView.builder(
                   scrollDirection: Axis.vertical,
-                  itemCount: (data!['movie_credits_cast'].length / 3).ceil(),
-                  itemBuilder: (context, index) {
-                    final leftMovieIndex = index * 3;
-                    final middleMovieIndex = index * 3 + 1;
-                    final rightMovieIndex = index * 3 + 2;
-                    final leftMovie =
-                        (leftMovieIndex < data!['movie_credits_cast'].length)
-                            ? data!['movie_credits_cast'][leftMovieIndex]
-                            : null;
-                    final middleMovie =
-                        (middleMovieIndex < data!['movie_credits_cast'].length)
-                            ? data!['movie_credits_cast'][middleMovieIndex]
-                            : null;
-                    final rightMovie =
-                        (rightMovieIndex < data!['movie_credits_cast'].length)
-                            ? data!['movie_credits_cast'][rightMovieIndex]
-                            : null;
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        if (leftMovie != null &&
-                            leftMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              movieResult = [
-                                leftMovie['id'],
-                                leftMovie['title'],
-                                "Movies",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const MovieResult()),
-                              );
-                            },
-                            child: seen(context, leftMovie, "Movies"),
-                          ),
-                        if (middleMovie != null &&
-                            middleMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              movieResult = [
-                                middleMovie['id'],
-                                middleMovie['title'],
-                                "Movies",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const MovieResult()),
-                              );
-                            },
-                            child: seen(context, middleMovie, "Movies"),
-                          ),
-                        if (rightMovie != null &&
-                            rightMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              movieResult = [
-                                rightMovie['id'],
-                                rightMovie['title'],
-                                "Movies",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const MovieResult()),
-                              );
-                            },
-                            child: seen(context, rightMovie, "Movies"),
-                          ),
-                      ],
-                    );
-                  },
+                  itemCount: (data['movie_credits_cast'].length / 3).ceil(),
+                  itemBuilder: (context, index) => buildMediaRow(context,
+                      data['movie_credits_cast'], index, "Movies", false),
                 ),
                 ListView.builder(
                   scrollDirection: Axis.vertical,
-                  itemCount: (data!['tv_credits_cast'].length / 3).ceil(),
-                  itemBuilder: (context, index) {
-                    final leftMovieIndex = index * 3;
-                    final middleMovieIndex = index * 3 + 1;
-                    final rightMovieIndex = index * 3 + 2;
-                    final leftMovie =
-                        (leftMovieIndex < data!['tv_credits_cast'].length)
-                            ? data!['tv_credits_cast'][leftMovieIndex]
-                            : null;
-                    final middleMovie =
-                        (middleMovieIndex < data!['tv_credits_cast'].length)
-                            ? data!['tv_credits_cast'][middleMovieIndex]
-                            : null;
-                    final rightMovie =
-                        (rightMovieIndex < data!['tv_credits_cast'].length)
-                            ? data!['tv_credits_cast'][rightMovieIndex]
-                            : null;
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        if (leftMovie != null &&
-                            leftMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              tvShowResult = [
-                                leftMovie['id'],
-                                leftMovie['name'],
-                                "TVShows",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const TVShowResult()),
-                              );
-                            },
-                            child: seen(context, leftMovie, "TVShows"),
-                          ),
-                        if (middleMovie != null &&
-                            middleMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              tvShowResult = [
-                                middleMovie['id'],
-                                middleMovie['name'],
-                                "TVShows",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const TVShowResult()),
-                              );
-                            },
-                            child: seen(context, middleMovie, "TVShows"),
-                          ),
-                        if (rightMovie != null &&
-                            rightMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              tvShowResult = [
-                                rightMovie['id'],
-                                rightMovie['name'],
-                                "TVShows",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const TVShowResult()),
-                              );
-                            },
-                            child: seen(context, rightMovie, "TVShows"),
-                          ),
-                      ],
-                    );
-                  },
+                  itemCount: (data['tv_credits_cast'].length / 3).ceil(),
+                  itemBuilder: (context, index) => buildMediaRow(context,
+                      data['tv_credits_cast'], index, "TVShows", false),
                 ),
               ],
             ),
@@ -708,174 +576,21 @@ class _PersonResultState extends State<PersonResult> {
       length: 2,
       child: Column(
         children: [
-          const TabBar(
-            tabs: [
-              Tab(text: 'Movies'),
-              Tab(text: 'TV Shows'),
-            ],
-          ),
+          // TabBar code
           Expanded(
             child: TabBarView(
               children: [
                 ListView.builder(
                   scrollDirection: Axis.vertical,
-                  itemCount: (data!['movie_credits_crew'].length / 3).ceil(),
-                  itemBuilder: (context, index) {
-                    final leftMovieIndex = index * 3;
-                    final middleMovieIndex = index * 3 + 1;
-                    final rightMovieIndex = index * 3 + 2;
-                    final leftMovie =
-                        (leftMovieIndex < data!['movie_credits_crew'].length)
-                            ? data!['movie_credits_crew'][leftMovieIndex]
-                            : null;
-                    final middleMovie =
-                        (middleMovieIndex < data!['movie_credits_crew'].length)
-                            ? data!['movie_credits_crew'][middleMovieIndex]
-                            : null;
-                    final rightMovie =
-                        (rightMovieIndex < data!['movie_credits_crew'].length)
-                            ? data!['movie_credits_crew'][rightMovieIndex]
-                            : null;
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        if (leftMovie != null &&
-                            leftMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              movieResult = [
-                                leftMovie['id'],
-                                leftMovie['title'],
-                                "Movies",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const MovieResult()),
-                              );
-                            },
-                            child: seenCrew(context, leftMovie, "Movies"),
-                          ),
-                        if (middleMovie != null &&
-                            middleMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              movieResult = [
-                                middleMovie['id'],
-                                middleMovie['title'],
-                                "Movies",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const MovieResult()),
-                              );
-                            },
-                            child: seenCrew(context, middleMovie, "Movies"),
-                          ),
-                        if (rightMovie != null &&
-                            rightMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              movieResult = [
-                                rightMovie['id'],
-                                rightMovie['title'],
-                                "Movies",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const MovieResult()),
-                              );
-                            },
-                            child: seenCrew(context, rightMovie, "Movies"),
-                          ),
-                      ],
-                    );
-                  },
+                  itemCount: (data['movie_credits_cast'].length / 3).ceil(),
+                  itemBuilder: (context, index) => buildMediaRow(context,
+                      data['movie_credits_cast'], index, "Movies", true),
                 ),
                 ListView.builder(
                   scrollDirection: Axis.vertical,
-                  itemCount: (data!['tv_credits_crew'].length / 3).ceil(),
-                  itemBuilder: (context, index) {
-                    final leftMovieIndex = index * 3;
-                    final middleMovieIndex = index * 3 + 1;
-                    final rightMovieIndex = index * 3 + 2;
-                    final leftMovie =
-                        (leftMovieIndex < data!['tv_credits_crew'].length)
-                            ? data!['tv_credits_crew'][leftMovieIndex]
-                            : null;
-                    final middleMovie =
-                        (middleMovieIndex < data!['tv_credits_crew'].length)
-                            ? data!['tv_credits_crew'][middleMovieIndex]
-                            : null;
-                    final rightMovie =
-                        (rightMovieIndex < data!['tv_credits_crew'].length)
-                            ? data!['tv_credits_crew'][rightMovieIndex]
-                            : null;
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        if (leftMovie != null &&
-                            leftMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              tvShowResult = [
-                                leftMovie['id'],
-                                leftMovie['name'],
-                                "TVShows",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const TVShowResult()),
-                              );
-                            },
-                            child: seenCrew(context, leftMovie, "TVShows"),
-                          ),
-                        if (middleMovie != null &&
-                            middleMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              tvShowResult = [
-                                middleMovie['id'],
-                                middleMovie['name'],
-                                "TVShows",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const TVShowResult()),
-                              );
-                            },
-                            child: seenCrew(context, middleMovie, "TVShows"),
-                          ),
-                        if (rightMovie != null &&
-                            rightMovie["poster_path"] != null)
-                          GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              tvShowResult = [
-                                rightMovie['id'],
-                                rightMovie['name'],
-                                "TVShows",
-                              ];
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const TVShowResult()),
-                              );
-                            },
-                            child: seenCrew(context, rightMovie, "TVShows"),
-                          ),
-                      ],
-                    );
-                  },
+                  itemCount: (data['tv_credits_cast'].length / 3).ceil(),
+                  itemBuilder: (context, index) => buildMediaRow(
+                      context, data['tv_credits_cast'], index, "TVShows", true),
                 ),
               ],
             ),
@@ -896,8 +611,8 @@ class _PersonResultState extends State<PersonResult> {
   }
 
   seen(BuildContext context, movie, type) {
-    if (!containsMap(seenMovies, [type, movie['id']]) &&
-        !containsMap(seenTVShows, [type, movie['id']])) {
+    if (!containsMap(currentUser.seenMovies, [type, movie['id']]) &&
+        !containsMap(currentUser.seenTVShows, [type, movie['id']])) {
       return Stack(
         children: [
           Container(
@@ -907,7 +622,7 @@ class _PersonResultState extends State<PersonResult> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(27),
               image: DecorationImage(
-                image: NetworkImage(imgLink + movie['poster_path']),
+                image: NetworkImage(IMG_LINK + movie['poster_path']),
                 fit: BoxFit.fitWidth,
               ),
             ),
@@ -963,7 +678,7 @@ class _PersonResultState extends State<PersonResult> {
                 ],
               ),
               image: DecorationImage(
-                image: NetworkImage(imgLink + movie['poster_path']),
+                image: NetworkImage(IMG_LINK + movie['poster_path']),
                 fit: BoxFit.fitWidth,
               ),
             ),
@@ -1032,8 +747,8 @@ class _PersonResultState extends State<PersonResult> {
   }
 
   seenCrew(BuildContext context, movie, type) {
-    if (!containsMap(seenMovies, [type, movie['id']]) &&
-        !containsMap(seenTVShows, [type, movie['id']])) {
+    if (!containsMap(currentUser.seenMovies, [type, movie['id']]) &&
+        !containsMap(currentUser.seenTVShows, [type, movie['id']])) {
       return Stack(
         children: [
           Container(
@@ -1043,7 +758,7 @@ class _PersonResultState extends State<PersonResult> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(27),
               image: DecorationImage(
-                image: NetworkImage(imgLink + movie['poster_path']),
+                image: NetworkImage(IMG_LINK + movie['poster_path']),
                 fit: BoxFit.fitWidth,
               ),
             ),
@@ -1099,7 +814,7 @@ class _PersonResultState extends State<PersonResult> {
                 ],
               ),
               image: DecorationImage(
-                image: NetworkImage(imgLink + movie['poster_path']),
+                image: NetworkImage(IMG_LINK + movie['poster_path']),
                 fit: BoxFit.fitWidth,
               ),
             ),

@@ -10,36 +10,8 @@ class Login extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    uid = '';
-    country = '';
-    calendar = {};
-    allMovies = [];
-    favActors = [];
-    favDirectors = [];
-    favMovies = [];
-    favTVShows = [];
-    seenMovies = [];
-    idsExplorePage = [];
-    seenTVShows = [];
-    watchlist = [];
-    watchlistTVShows = [];
-    movieResult = [];
-    tvShowResult = [];
-    reviews = {};
-    rewatchedMovies = {};
-    playlists = {};
-    personResult = {};
-    oscars = {};
-    seenWith = {};
-    favsPage = [];
-    settings = {};
-    friends = [];
-    favsPageTVShows = [];
-    seenPage = [];
-    seenPageTVShows = [];
-    watchPageTVShows = [];
-    watchPage = [];
-    oscarsPage = [];
+    currentUser.clearUser();
+    currentUser.clearUserData();
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     late String email, password;
 
@@ -180,7 +152,8 @@ class Login extends StatelessWidget {
                               .then((_) {
                             Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(builder: (context) => const MyApp()),
+                              MaterialPageRoute(
+                                  builder: (context) => const MyApp()),
                             );
                           });
                         } on FirebaseAuthException catch (e) {
@@ -199,8 +172,10 @@ class Login extends StatelessWidget {
                       'Don\'t have an account? Sign up',
                     ),
                     onTap: () {
-                      Navigator.pushReplacement(context,
-                          MaterialPageRoute(builder: (context) => const SignUp()));
+                      Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const SignUp()));
                     },
                   ),
                   const SizedBox(height: 20),

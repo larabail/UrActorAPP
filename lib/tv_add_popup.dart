@@ -1,24 +1,13 @@
-// ignore_for_file: use_build_context_synchronously, non_constant_identifier_names
+// ignore_for_file: use_build_context_synchronously, non_constant_identifier_names, library_private_types_in_public_api
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
+import 'common/constants.dart';
 import 'list_result.dart';
 import 'playlists.dart';
 import 'dart:convert';
 import 'main.dart';
-
-String search_by_nameTv =
-    'https://api.themoviedb.org/3/search/tv?api_key=700cd4fab994df56eb41b34d38c4762a&query=';
-String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-String linkTv = "https://api.themoviedb.org/3/tv/";
-String img = 'https://image.tmdb.org/t/p/original/';
-
-final myController = TextEditingController(text: "");
-
-String _searchTermTv = '';
-String _movie = "";
-FirebaseFirestore db = FirebaseFirestore.instance;
 
 class TvAddDialogue extends StatefulWidget {
   const TvAddDialogue({super.key});
@@ -28,14 +17,18 @@ class TvAddDialogue extends StatefulWidget {
 }
 
 class _TvAddDialogueState extends State<TvAddDialogue> {
+  final myController = TextEditingController(text: "");
+
+  String _searchTermTv = '';
+  String _movie = "";
+  FirebaseFirestore db = FirebaseFirestore.instance;
   Future<List> searchData(String searchTerm) async {
-    // print(searchTerm);
     if (searchTerm != "") {
       String name = searchTerm
           .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
           .replaceAll(" ", "+");
       String searchLink = "";
-      searchLink = '$search_by_nameTv$name';
+      searchLink = '$SEARCH_BY_NAME_TV_SHOW_LINK$name';
       final response = await http.get(Uri.parse(searchLink));
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
@@ -43,7 +36,7 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
         for (final result in json['results']) {
           String resultSearchLink = '';
           resultSearchLink =
-              '$linkTv${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$api_key_actor';
+              '$TV_SHOW_LINK${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$API_KEY';
           final response2 = await http.get(Uri.parse(resultSearchLink));
           if (response2.statusCode == 200) {
             final json2 = jsonDecode(response2.body);
@@ -65,7 +58,6 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
 
   void addTvSubmit() async {
     String docIDString = list_result["id"].toString();
-    print(_movie);
 
     var userDoc = db.collection("Watchlists").doc(docIDString);
     await userDoc.update({
@@ -81,15 +73,15 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
         List users = keysOfDoc['Users'] as List;
         for (var element in users) {
           Map el = element as Map;
-          if (el.keys.contains(uid)) {
-            playlists[doc.id] = doc.data();
+          if (el.keys.contains(currentUser.uid)) {
+            currentUser.playlists[doc.id] = doc.data();
           }
         }
       }
     });
 
     list_result["TVShows"] =
-        playlists[list_result["id"].toString()]["TV Shows"];
+        currentUser.playlists[list_result["id"].toString()]["TV Shows"];
 
     Navigator.pop(context);
     Navigator.pushReplacement(
@@ -193,7 +185,7 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
                                     borderRadius: BorderRadius.circular(10),
                                     image: DecorationImage(
                                       image: NetworkImage(
-                                          img + item['poster_path']),
+                                          IMG_LINK + item['poster_path']),
                                       fit: BoxFit.cover,
                                     ),
                                   ),
