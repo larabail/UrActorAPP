@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/TVShow.dart';
-import 'appbar.dart';
-import 'bottom_app_bar.dart';
+import 'common/appbar.dart';
+import 'common/bottom_app_bar.dart';
 import 'common/constants.dart';
 import 'person_result.dart';
 import 'movie_result.dart';

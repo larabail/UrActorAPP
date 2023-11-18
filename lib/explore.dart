@@ -1,16 +1,14 @@
-// ignore_for_file: no_leading_underscores_for_local_identifiers, constant_identifier_names, non_constant_identifier_names
 import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'appbar.dart';
-import 'bottom_app_bar.dart';
+import 'common/appbar.dart';
+import 'common/bottom_app_bar.dart';
+import 'common/constants.dart';
 import 'friends.dart';
 import 'objects/Movie.dart';
 import 'playlists.dart';
 import 'profile.dart';
 import 'search.dart';
-// import 'package:firebase_database/firebase_database.dart';
 import 'movie_result.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -18,17 +16,6 @@ import 'main.dart';
 import 'person_result.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 
-const String api_key_actor =
-    "?api_key=700cd4fab994df56eb41b34d38c4762a&include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc&adult=false&region=US";
-const String imgLink = 'https://image.tmdb.org/t/p/w500/';
-String watch_providers =
-    "/watch/providers?api_key=700cd4fab994df56eb41b34d38c4762a";
-const String GENRES_LINK =
-    "https://api.themoviedb.org/3/genre/movie/list?api_key=700cd4fab994df56eb41b34d38c4762a";
-String link = "https://api.themoviedb.org/3/movie/";
-String linkPerson = "https://api.themoviedb.org/3/person/";
-const String popularMoviesLink = "https://api.themoviedb.org/3/discover/movie";
-const String api_key = "?api_key=700cd4fab994df56eb41b34d38c4762a";
 List _items = [];
 int page = 1;
 int newItems = 0;
@@ -450,9 +437,6 @@ class _ExploreState extends State<Explore> {
 
   bool isFilterOpen = false;
 
-  String api_key_movie =
-      '/movie_credits?api_key=700cd4fab994df56eb41b34d38c4762a';
-  String api_key_tv = '/tv_credits?api_key=700cd4fab994df56eb41b34d38c4762a';
   int scoreActor = 0;
   int scoreDirector = 0;
   int stats = 0;
@@ -527,7 +511,7 @@ class _ExploreState extends State<Explore> {
   }
 
   Future<Map> getMovieData(String id) async {
-    final response = await http.get(Uri.parse('$link$id$api_key_actor'));
+    final response = await http.get(Uri.parse('$MOVIE_LINK$id$API_KEY'));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       if (json["backdrop_path"] == null) {
@@ -544,7 +528,8 @@ class _ExploreState extends State<Explore> {
           json['imdb_rating'] = "None";
           json['year'] = "None";
         }
-        final r2 = await http.get(Uri.parse('$link$id$watch_providers'));
+        final r2 =
+            await http.get(Uri.parse('$MOVIE_LINK$id$WATCH_PROVIDERS_LINK'));
         if (r2.statusCode == 200) {
           json['providers'] = [];
           if (jsonDecode(r2.body)["results"]
@@ -557,7 +542,7 @@ class _ExploreState extends State<Explore> {
                   .forEach(
                 (provider) async {
                   String name = provider['provider_name'];
-                  String photo = imgLink + provider['logo_path'];
+                  String photo = IMG_LINK + provider['logo_path'];
                   json['providers'].add([name, photo]);
                 },
               );
@@ -1146,7 +1131,7 @@ class _ExploreState extends State<Explore> {
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(27),
                                   child: Image.network(
-                                    imgLink + item["poster_path"],
+                                    IMG_LINK + item["poster_path"],
                                     fit: BoxFit.fitWidth,
                                   ),
                                 ),
@@ -1288,7 +1273,7 @@ class _ExploreState extends State<Explore> {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(27),
                             child: Image.network(
-                              imgLink + item["poster_path"],
+                              IMG_LINK + item["poster_path"],
                               fit: BoxFit.fitWidth,
                             ),
                           ),
@@ -1383,11 +1368,11 @@ class _ExploreState extends State<Explore> {
       actor_of_the_week = keys[0];
       Map json = {};
       final response =
-          await http.get(Uri.parse('$linkPerson$actor_of_the_week$api_key'));
+          await http.get(Uri.parse('$PERSON_LINK$actor_of_the_week$API_KEY'));
       json = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        final r2 = await http
-            .get(Uri.parse('$linkPerson$actor_of_the_week$api_key_movie'));
+        final r2 = await http.get(
+            Uri.parse('$PERSON_LINK$actor_of_the_week$MOVIE_CREDITS_LINK'));
         if (r2.statusCode == 200) {
           List movieCast = [];
           for (Map movie in jsonDecode(r2.body)['cast']) {
@@ -1439,8 +1424,8 @@ class _ExploreState extends State<Explore> {
               countedMoviesActor.add(element["id"].toString());
             }
           }
-          final r3 = await http
-              .get(Uri.parse('$linkPerson$actor_of_the_week$api_key_tv'));
+          final r3 = await http.get(
+              Uri.parse('$PERSON_LINK$actor_of_the_week$TV_SHOW_CREDITS_LINK'));
           if (r3.statusCode == 200) {
             List tvCast = [];
             for (Map show in jsonDecode(r3.body)['cast']) {
@@ -1516,8 +1501,8 @@ class _ExploreState extends State<Explore> {
               allDirMovies += 1;
             }
           }
-          final r4 = await http
-              .get(Uri.parse('$linkPerson$actor_of_the_week$api_key_tv'));
+          final r4 = await http.get(
+              Uri.parse('$PERSON_LINK$actor_of_the_week$TV_SHOW_CREDITS_LINK'));
           if (r4.statusCode == 200) {
             List tvCrew = [];
             for (Map show in jsonDecode(r4.body)['crew']) {
@@ -1653,8 +1638,8 @@ class _ExploreState extends State<Explore> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(27),
                                 image: DecorationImage(
-                                  image: NetworkImage(
-                                      imgLink + snapshot.data!['profile_path']),
+                                  image: NetworkImage(IMG_LINK +
+                                      snapshot.data!['profile_path']),
                                   fit: BoxFit.fitHeight,
                                 ),
                               ),

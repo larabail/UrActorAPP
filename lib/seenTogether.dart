@@ -2,8 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:uractor/friends.dart';
 
-import 'appbar.dart';
-import 'bottom_app_bar.dart';
+import 'common/appbar.dart';
+import 'common/bottom_app_bar.dart';
 import 'main.dart';
 import 'tabView.dart';
 
