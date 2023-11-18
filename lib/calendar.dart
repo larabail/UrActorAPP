@@ -1,5 +1,6 @@
-// ignore_for_file: unnecessary_brace_in_string_interps, no_leading_underscores_for_local_identifiers, avoid_function_literals_in_foreach_calls, use_build_context_synchronously
+// ignore_for_file: unnecessary_brace_in_string_interps, no_leading_underscores_for_local_identifiers, avoid_function_literals_in_foreach_calls, use_build_context_synchronously, library_private_types_in_public_api
 import 'package:flutter/material.dart';
+import 'common/constants.dart';
 import 'popups/add_to_calendar_pop_up.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
@@ -11,7 +12,6 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-const String imgLink = 'https://image.tmdb.org/t/p/w500/';
 DateTime selectedDate = DateTime.now();
 
 String dateForMap = '';
@@ -50,9 +50,17 @@ class _CalendarState extends State<Calendar> {
             currentUser.calendar[key] = []; // Clear the list
           }
         } else {
-          currentUser.calendar[key].removeWhere((movie) =>
+          List movies = currentUser.calendar[key];
+
+          int movieIndex = movies.indexWhere((movie) =>
               movie['id'].toString() == id.toString() &&
               movie['title'].toString() == title.toString());
+
+          if (movieIndex != -1) {
+            movies.removeAt(movieIndex);
+          }
+
+          break;
         }
       }
     }
@@ -76,8 +84,8 @@ class _CalendarState extends State<Calendar> {
             .then((QuerySnapshot querySnapshot) {
           querySnapshot.docs.forEach((doc) async {
             if (doc.id == "Movies") {
-              Map movies_result = doc.data() as Map;
-              w = movies_result["Seen"];
+              Map moviesResult = doc.data() as Map;
+              w = moviesResult["Seen"];
               int index = w.indexOf(id);
 
               if (index > -1) {
@@ -195,8 +203,6 @@ class _CalendarState extends State<Calendar> {
       } else {
         moviesOnDay = [];
       }
-      String link = 'https://api.themoviedb.org/3/movie/';
-      String api_key_actor = '?api_key=700cd4fab994df56eb41b34d38c4762a';
       int i = 0;
       movies = [];
       moviesOnDay.forEach((element) async {
@@ -205,12 +211,12 @@ class _CalendarState extends State<Calendar> {
             .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
             .replaceAll(" ", "-");
         final response =
-            await http.get(Uri.parse('${link}${id}-${name}${api_key_actor}'));
+            await http.get(Uri.parse('${MOVIE_LINK}${id}-${name}${API_KEY}'));
         if (response.statusCode == 200) {
           dynamic json = jsonDecode(response.body);
-          if (!containsMap(movies, json)) {
-            movies.add(json);
-          }
+          // if (!containsMap(movies, json)) {
+          movies.add(json);
+          // }
         } else {
           throw Exception('Failed to load movie details');
         }
@@ -273,7 +279,7 @@ class _CalendarState extends State<Calendar> {
                                                 decoration: BoxDecoration(
                                                   image: DecorationImage(
                                                     image: NetworkImage(
-                                                        imgLink +
+                                                        IMG_LINK +
                                                             event[
                                                                 'poster_path']),
                                                     fit: BoxFit.cover,
