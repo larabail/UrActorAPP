@@ -5,32 +5,12 @@ import 'package:uractor/objects/TVShow.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'common/constants.dart';
+import 'common/utils.dart';
 import 'main.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
-int scoreActor = 0;
-int scoreDirector = 0;
-int stats = 0;
-int stats_tv = 0;
-int allDirMovies = 0;
-int stats_dir = 0;
-List countedMoviesDirector = [];
-List countedMoviesActor = [];
-List countedTVShowsDirector = [];
-List countedTVShowsActor = [];
-
-bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
-  String jsonString = json.encode(map);
-  for (int i = 0; i < list.length; i++) {
-    if (json.encode(list[i]) == jsonString) {
-      return true;
-    }
-  }
-  return false;
-}
 
 class PersonResult extends StatefulWidget {
   const PersonResult({super.key});
@@ -40,6 +20,16 @@ class PersonResult extends StatefulWidget {
 }
 
 class _PersonResultState extends State<PersonResult> {
+  int scoreActor = 0;
+  int scoreDirector = 0;
+  int stats = 0;
+  int stats_tv = 0;
+  int allDirMovies = 0;
+  int stats_dir = 0;
+  List countedMoviesDirector = [];
+  List countedMoviesActor = [];
+  List countedTVShowsDirector = [];
+  List countedTVShowsActor = [];
   Map presult = personResult;
   Future<Map> getPersonData() async {
     Map json = {};
@@ -72,10 +62,11 @@ class _PersonResultState extends State<PersonResult> {
         }
         json['movie_credits_cast'] = movieCast;
         for (var element in movieCast) {
-          if (containsMap(currentUser.seenMovies, ["Movies", element["id"]])) {
+          if (Utils.contains_non_type(
+              currentUser.seenMovies, ["Movies", element["id"]])) {
             if (!countedMoviesActor.contains(element["id"].toString())) {
               stats += 1;
-              if (containsMap(currentUser.favMovies,
+              if (Utils.contains_non_type(currentUser.favMovies,
                   ['Movies', element["id"].toString()])) {
                 scoreActor += 3;
               }
@@ -89,7 +80,7 @@ class _PersonResultState extends State<PersonResult> {
               }
               countedMoviesActor.add(element["id"].toString());
             }
-          } else if (containsMap(currentUser.watchlist,
+          } else if (Utils.contains_non_type(currentUser.watchlist,
                   ['Movies', element["id"].toString()]) &&
               !countedMoviesActor.contains(element["id"].toString())) {
             scoreActor += 1;
@@ -113,11 +104,11 @@ class _PersonResultState extends State<PersonResult> {
           }
           json['tv_credits_cast'] = tvCast;
           for (var element in tvCast) {
-            if (containsMap(
+            if (Utils.contains_non_type(
                 currentUser.seenTVShows, ["TVShows", element["id"]])) {
               if (!countedTVShowsActor.contains(element["id"].toString())) {
                 stats_tv += 1;
-                if (containsMap(currentUser.favTVShows,
+                if (Utils.contains_non_type(currentUser.favTVShows,
                     ['TVShows', element["id"].toString()])) {
                   scoreActor += 3;
                 } else {
@@ -125,7 +116,7 @@ class _PersonResultState extends State<PersonResult> {
                 }
                 countedTVShowsActor.add(element["id"].toString());
               }
-            } else if (containsMap(currentUser.watchlistTVShows,
+            } else if (Utils.contains_non_type(currentUser.watchlistTVShows,
                     ['TVShows', element["id"].toString()]) &&
                 !countedTVShowsActor.contains(element["id"].toString())) {
               scoreActor += 1;
@@ -143,12 +134,12 @@ class _PersonResultState extends State<PersonResult> {
         }
         json['movie_credits_crew'] = movieCrew;
         for (var element in movieCrew) {
-          if (containsMap(
+          if (Utils.contains_non_type(
               currentUser.seenMovies, ["Movies", element["id"].toString()])) {
             if (element["job"] == "Director" &&
                 !countedMoviesDirector.contains(element["id"].toString())) {
               stats_dir += 1;
-              if (containsMap(currentUser.favMovies,
+              if (Utils.contains_non_type(currentUser.favMovies,
                   ['Movies', element["id"].toString()])) {
                 scoreDirector += 3;
               }
@@ -162,7 +153,7 @@ class _PersonResultState extends State<PersonResult> {
               }
               countedMoviesDirector.add(element["id"].toString());
             }
-          } else if (containsMap(currentUser.watchlist,
+          } else if (Utils.contains_non_type(currentUser.watchlist,
                   ['Movies', element["id"].toString()]) &&
               element["job"] == "Director" &&
               !countedMoviesDirector.contains(element["id"].toString())) {
@@ -184,12 +175,12 @@ class _PersonResultState extends State<PersonResult> {
           }
           json['tv_credits_crew'] = tvCrew;
           for (var element in tvCrew) {
-            if (containsMap(currentUser.seenTVShows,
+            if (Utils.contains_non_type(currentUser.seenTVShows,
                 ["TVShows", element["id"].toString()])) {
               if (element["job"] == "Director" &&
                   !countedTVShowsDirector.contains(element["id"].toString())) {
                 stats_dir += 1;
-                if (containsMap(currentUser.favTVShows,
+                if (Utils.contains_non_type(currentUser.favTVShows,
                     ['TVShows', element["id"].toString()])) {
                   scoreDirector += 3;
                 } else {
@@ -197,7 +188,7 @@ class _PersonResultState extends State<PersonResult> {
                 }
                 countedTVShowsDirector.add(element["id"].toString());
               }
-            } else if (containsMap(currentUser.watchlistTVShows,
+            } else if (Utils.contains_non_type(currentUser.watchlistTVShows,
                     ['TVShows', element["id"].toString()]) &&
                 element["job"] == "Director" &&
                 !countedTVShowsDirector.contains(element["id"].toString())) {
@@ -582,9 +573,9 @@ class _PersonResultState extends State<PersonResult> {
               children: [
                 ListView.builder(
                   scrollDirection: Axis.vertical,
-                  itemCount: (data['movie_credits_cast'].length / 3).ceil(),
+                  itemCount: (data['movie_credits_crew'].length / 3).ceil(),
                   itemBuilder: (context, index) => buildMediaRow(context,
-                      data['movie_credits_cast'], index, "Movies", true),
+                      data['movie_credits_crew'], index, "Movies", true),
                 ),
                 ListView.builder(
                   scrollDirection: Axis.vertical,
@@ -600,19 +591,10 @@ class _PersonResultState extends State<PersonResult> {
     );
   }
 
-  bool containsMap(List list, List map) {
-    for (int i = 0; i < list.length; i++) {
-      if ((list[i][1]).toString() == map[1].toString() &&
-          (list[i][0]).toString() == map[0].toString()) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   seen(BuildContext context, movie, type) {
-    if (!containsMap(currentUser.seenMovies, [type, movie['id']]) &&
-        !containsMap(currentUser.seenTVShows, [type, movie['id']])) {
+    if (!Utils.contains_non_type(currentUser.seenMovies, [type, movie['id']]) &&
+        !Utils.contains_non_type(
+            currentUser.seenTVShows, [type, movie['id']])) {
       return Stack(
         children: [
           Container(
@@ -747,8 +729,10 @@ class _PersonResultState extends State<PersonResult> {
   }
 
   seenCrew(BuildContext context, movie, type) {
-    if (!containsMap(currentUser.seenMovies, [type, movie['id']]) &&
-        !containsMap(currentUser.seenTVShows, [type, movie['id']])) {
+    print(movie);
+    if (!Utils.contains_non_type(currentUser.seenMovies, [type, movie['id']]) &&
+        !Utils.contains_non_type(
+            currentUser.seenTVShows, [type, movie['id']])) {
       return Stack(
         children: [
           Container(
