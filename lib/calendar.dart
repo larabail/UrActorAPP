@@ -206,7 +206,6 @@ class _CalendarState extends State<Calendar> {
             .replaceAll(" ", "-");
         final response =
             await http.get(Uri.parse('${link}${id}-${name}${api_key_actor}'));
-        // print('${link}${id}-${name}${api_key_actor}');
         if (response.statusCode == 200) {
           dynamic json = jsonDecode(response.body);
           if (!containsMap(movies, json)) {
@@ -244,7 +243,8 @@ class _CalendarState extends State<Calendar> {
                                                   id: event["id"].toString(),
                                                   title: event['title'],
                                                   coverPhoto:
-                                                      event["poster_path"] ?? "");
+                                                      event["poster_path"] ??
+                                                          "");
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
