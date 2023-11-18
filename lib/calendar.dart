@@ -14,7 +14,6 @@ import 'dart:convert';
 const String imgLink = 'https://image.tmdb.org/t/p/w500/';
 DateTime selectedDate = DateTime.now();
 
-String _selectedDay = '';
 String dateForMap = '';
 FirebaseFirestore db = FirebaseFirestore.instance;
 
