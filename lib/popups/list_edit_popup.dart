@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import '../common/constants.dart';
-import '../playlists.dart';
 import 'dart:convert';
 import '../list_result.dart';
+import '../objects/Playlist.dart';
 
 class ListEditDialogue extends StatefulWidget {
-  const ListEditDialogue({super.key});
+  final Playlist list_result;
+  const ListEditDialogue({Key? key, required this.list_result})
+      : super(key: key);
 
   @override
   _ListEditDialogueState createState() => _ListEditDialogueState();
@@ -79,9 +81,9 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
             await userDoc.update({"Name": listName});
             await userDoc.update({"CoverPhoto": cover});
             await userDoc.update({"AccessCode": accessCode});
-            list_result["AccessCode"] = accessCode;
-            list_result["Name"] = listName;
-            list_result["Backdrop"] = cover;
+            widget.list_result.accesscode = accessCode;
+            widget.list_result.name = listName;
+            widget.list_result.backdrop = cover;
             Navigator.pop(context);
           }
         }
@@ -117,7 +119,7 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(5, 40, 20, 5),
                   child: Text(
-                    'Modify "${list_result['Name']}"',
+                    'Modify "${widget.list_result.name}"',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -289,7 +291,7 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
                               Icon(Icons.check, color: Colors.green),
                               SizedBox(width: 10),
                               Text(
-                                'Add',
+                                'Accept',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
