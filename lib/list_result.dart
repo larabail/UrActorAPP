@@ -610,33 +610,25 @@ class _ListResultState extends State<ListResult> {
             if (list["Movies"].length > 0 && list["TVShows"].length > 0)
               DefaultTabController(
                 length: 2,
-                child: Column(
-                  children: [
-                    const TabBar(
-                      tabs: [
-                        Tab(text: 'Movies'),
-                        Tab(text: 'TV Shows'),
-                      ],
-                    ),
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height -
-                          MediaQuery.of(context)
-                              .padding
-                              .top - // Top padding or SafeArea height
-                          MediaQuery.of(context)
-                              .padding
-                              .bottom - // Bottom padding or SafeArea height
-                          155 -
-                          60 -
-                          MediaQuery.of(context).size.height * 0.25,
-                      child: TabBarView(
-                        children: [
-                          buildMediaList(list["Movies"], "Movies", context),
-                          buildMediaList(list["TVShows"], "TVShows", context),
+                child: Expanded(
+                  child: Column(
+                    children: [
+                      const TabBar(
+                        tabs: [
+                          Tab(text: 'Movies'),
+                          Tab(text: 'TV Shows'),
                         ],
                       ),
-                    ),
-                  ],
+                      Expanded(
+                        child: TabBarView(
+                          children: [
+                            buildMediaList(list["Movies"], "Movies", context),
+                            buildMediaList(list["TVShows"], "TVShows", context),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             if (list["Movies"].length > 0 && list["TVShows"].length == 0)

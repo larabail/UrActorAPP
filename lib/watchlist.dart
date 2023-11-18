@@ -27,24 +27,25 @@ class Watchlist extends StatelessWidget {
           ),
           DefaultTabController(
             length: 2,
-            child: Column(
-              children: [
-                const TabBar(
-                  tabs: [
-                    Tab(text: 'Movies'),
-                    Tab(text: 'TV Shows'),
-                  ],
-                ),
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.7,
-                  child: TabBarView(
-                    children: [
-                      MyTabView(favItems: currentUser.watchlist),
-                      MyTabView(favItems: currentUser.watchlistTVShows),
+            child: Expanded(
+              child: Column(
+                children: [
+                  const TabBar(
+                    tabs: [
+                      Tab(text: 'Movies'),
+                      Tab(text: 'TV Shows'),
                     ],
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        MyTabView(favItems: currentUser.watchlist),
+                        MyTabView(favItems: currentUser.watchlistTVShows),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           )
         ],
