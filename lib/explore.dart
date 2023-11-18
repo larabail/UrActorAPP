@@ -6,6 +6,7 @@ import 'package:flutter_svg/svg.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'friends.dart';
+import 'objects/Movie.dart';
 import 'playlists.dart';
 import 'profile.dart';
 import 'search.dart';
@@ -117,7 +118,7 @@ Future<void> deleteFromWatchedConfirmation(
   if (confirmed) {
     List w;
     await FirebaseFirestore.instance
-        .collection(uid)
+        .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) {
       querySnapshot.docs.forEach((doc) async {
@@ -129,12 +130,13 @@ Future<void> deleteFromWatchedConfirmation(
           if (index > -1) {
             w.removeAt(index);
           }
-          var userDoc =
-              FirebaseFirestore.instance.collection(uid).doc("Movies");
+          var userDoc = FirebaseFirestore.instance
+              .collection(currentUser.uid)
+              .doc("Movies");
           await userDoc.update({'Seen': w});
-          seenMovies = [];
+          currentUser.seenMovies = [];
           for (var element in w) {
-            seenMovies += [
+            currentUser.seenMovies += [
               ["Movies", element]
             ];
           }
@@ -147,7 +149,8 @@ Future<void> deleteFromWatchedConfirmation(
 }
 
 void markWatched(String id, String title, BuildContext context) async {
-  final userDoc = FirebaseFirestore.instance.collection(uid).doc('Movies');
+  final userDoc =
+      FirebaseFirestore.instance.collection(currentUser.uid).doc('Movies');
   id = id.toString();
   await userDoc.update({
     'Seen': FieldValue.arrayUnion([id])
@@ -155,16 +158,16 @@ void markWatched(String id, String title, BuildContext context) async {
   // store id in shared preferences or another way
   List w;
   await FirebaseFirestore.instance
-      .collection(uid)
+      .collection(currentUser.uid)
       .get()
       .then((QuerySnapshot querySnapshot) {
     querySnapshot.docs.forEach((doc) async {
       if (doc.id == "Movies") {
         Map moviesResult = doc.data() as Map;
         w = moviesResult["Seen"];
-        seenMovies = [];
+        currentUser.seenMovies = [];
         for (var element in w) {
-          seenMovies += [
+          currentUser.seenMovies += [
             ["Movies", element]
           ];
         }
@@ -174,10 +177,11 @@ void markWatched(String id, String title, BuildContext context) async {
 
   final today = DateTime.now();
 
-  final snapshot = await FirebaseFirestore.instance.collection(uid).get();
+  final snapshot =
+      await FirebaseFirestore.instance.collection(currentUser.uid).get();
   for (var doc in snapshot.docs) {
     if (doc.id == 'Calendar') {
-      if (!dontAskCalendar) {
+      if (!currentUser.dontAskCalendar) {
         addtoCalendar(id, title, today, context);
       }
     }
@@ -217,16 +221,17 @@ void addtoCalendar(
       ])
     };
 
-    final userDoc = FirebaseFirestore.instance.collection(uid).doc('Calendar');
+    final userDoc =
+        FirebaseFirestore.instance.collection(currentUser.uid).doc('Calendar');
     await userDoc.update(myObject);
-    calendar = {};
+    currentUser.calendar = {};
     await FirebaseFirestore.instance
-        .collection(uid)
+        .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) {
       querySnapshot.docs.forEach((doc) async {
         if (doc.id == "Calendar") {
-          calendar = doc.data() as Map;
+          currentUser.calendar = doc.data() as Map;
         }
       });
     });
@@ -234,20 +239,21 @@ void addtoCalendar(
 }
 
 void favorite(String id, context) async {
-  final userDoc = FirebaseFirestore.instance.collection(uid).doc("Favorites");
+  final userDoc =
+      FirebaseFirestore.instance.collection(currentUser.uid).doc("Favorites");
   await userDoc.update({
     'Movies': FieldValue.arrayUnion([id])
   });
-  favMovies = [];
+  currentUser.favMovies = [];
   await FirebaseFirestore.instance
-      .collection(uid)
+      .collection(currentUser.uid)
       .get()
       .then((QuerySnapshot querySnapshot) {
     for (var doc in querySnapshot.docs) {
       if (doc.id == "Favorites") {
         Map allFavs = doc.data() as Map;
         allFavs["Movies"].forEach((element) {
-          favMovies += [
+          currentUser.favMovies += [
             ["Movies", element]
           ];
         });
@@ -258,7 +264,7 @@ void favorite(String id, context) async {
 
 void unfavorite(String id, context) async {
   await FirebaseFirestore.instance
-      .collection(uid)
+      .collection(currentUser.uid)
       .get()
       .then((QuerySnapshot querySnapshot) async {
     for (var doc in querySnapshot.docs) {
@@ -269,12 +275,13 @@ void unfavorite(String id, context) async {
         if (index > -1) {
           movieInFavs.removeAt(index);
         }
-        final userDoc =
-            FirebaseFirestore.instance.collection(uid).doc("Favorites");
+        final userDoc = FirebaseFirestore.instance
+            .collection(currentUser.uid)
+            .doc("Favorites");
         await userDoc.update({'Movies': movieInFavs});
-        favMovies = [];
+        currentUser.favMovies = [];
         allFavs["Movies"].forEach((element) {
-          favMovies += [
+          currentUser.favMovies += [
             ["Movies", element]
           ];
         });
@@ -284,20 +291,21 @@ void unfavorite(String id, context) async {
 }
 
 void bookmark(String id, context) async {
-  final userDoc = FirebaseFirestore.instance.collection(uid).doc("Watchlist");
+  final userDoc =
+      FirebaseFirestore.instance.collection(currentUser.uid).doc("Watchlist");
   await userDoc.update({
     'Movies': FieldValue.arrayUnion([id])
   });
-  watchlist = [];
+  currentUser.watchlist = [];
   await FirebaseFirestore.instance
-      .collection(uid)
+      .collection(currentUser.uid)
       .get()
       .then((QuerySnapshot querySnapshot) {
     for (var doc in querySnapshot.docs) {
       if (doc.id == "Watchlist") {
         Map watchlistAll = doc.data() as Map;
         watchlistAll["Movies"].forEach((element) {
-          watchlist += [
+          currentUser.watchlist += [
             ["Movies", element]
           ];
         });
@@ -308,7 +316,7 @@ void bookmark(String id, context) async {
 
 void unbookmark(String id, context) async {
   await FirebaseFirestore.instance
-      .collection(uid)
+      .collection(currentUser.uid)
       .get()
       .then((QuerySnapshot querySnapshot) async {
     for (var doc in querySnapshot.docs) {
@@ -319,12 +327,13 @@ void unbookmark(String id, context) async {
         if (index > -1) {
           movieInWatchlist.removeAt(index);
         }
-        final userDoc =
-            FirebaseFirestore.instance.collection(uid).doc("Watchlist");
+        final userDoc = FirebaseFirestore.instance
+            .collection(currentUser.uid)
+            .doc("Watchlist");
         await userDoc.update({'Movies': movieInWatchlist});
-        watchlist = [];
+        currentUser.watchlist = [];
         watchlistAll["Movies"].forEach((element) {
-          watchlist += [
+          currentUser.watchlist += [
             ["Movies", element]
           ];
         });
@@ -339,7 +348,7 @@ void addToList(String id, String listId, List moviesinList, context) async {
       .collection("Watchlists")
       .doc(listId.toString());
   await userDoc.update({'Movies': moviesinList});
-  playlists = {};
+  currentUser.playlists = {};
   await FirebaseFirestore.instance
       .collection("Watchlists")
       .get()
@@ -349,8 +358,8 @@ void addToList(String id, String listId, List moviesinList, context) async {
       List users = keysOfDoc['Users'] as List;
       for (var element in users) {
         Map el = element as Map;
-        if (el.keys.contains(uid)) {
-          playlists[doc.id] = doc.data();
+        if (el.keys.contains(currentUser.uid)) {
+          currentUser.playlists[doc.id] = doc.data();
         }
       }
     }
@@ -365,7 +374,7 @@ void deleteFromList(
       .collection("Watchlists")
       .doc(listId.toString());
   await userDoc.update({'Movies': moviesinList});
-  playlists = {};
+  currentUser.playlists = {};
   await FirebaseFirestore.instance
       .collection("Watchlists")
       .get()
@@ -375,8 +384,8 @@ void deleteFromList(
       List users = keysOfDoc['Users'] as List;
       for (var element in users) {
         Map el = element as Map;
-        if (el.keys.contains(uid)) {
-          playlists[doc.id] = doc.data();
+        if (el.keys.contains(currentUser.uid)) {
+          currentUser.playlists[doc.id] = doc.data();
         }
       }
     }
@@ -395,21 +404,21 @@ bool containsList(List list, List map) {
 }
 
 void check(id) {
-  if (containsList(seenMovies, ['Movies', id])) {
+  if (containsList(currentUser.seenMovies, ['Movies', id])) {
     _isSeenTapped[id] = true;
     _imageSeenProviders[id] = 'assets/seen_after.png';
   } else {
     _isSeenTapped[id] = false;
     _imageSeenProviders[id] = 'assets/seen_before.png';
   }
-  if (containsList(watchlist, ['Movies', id])) {
+  if (containsList(currentUser.watchlist, ['Movies', id])) {
     _isWatchlistTapped[id] = true;
     _imageWatchlistProviders[id] = 'assets/watchlist_after.png';
   } else {
     _isWatchlistTapped[id] = false;
     _imageWatchlistProviders[id] = 'assets/watchlist_before.png';
   }
-  if (containsList(favMovies, ['Movies', id])) {
+  if (containsList(currentUser.favMovies, ['Movies', id])) {
     _isFavTapped[id] = true;
     _imageFavProviders[id] = 'assets/fav_after.png';
   } else {
@@ -538,9 +547,14 @@ class _ExploreState extends State<Explore> {
         final r2 = await http.get(Uri.parse('$link$id$watch_providers'));
         if (r2.statusCode == 200) {
           json['providers'] = [];
-          if (jsonDecode(r2.body)["results"].keys.contains(country)) {
-            if (jsonDecode(r2.body)["results"][country]['flatrate'] != null) {
-              jsonDecode(r2.body)["results"][country]['flatrate'].forEach(
+          if (jsonDecode(r2.body)["results"]
+              .keys
+              .contains(currentUser.country)) {
+            if (jsonDecode(r2.body)["results"][currentUser.country]
+                    ['flatrate'] !=
+                null) {
+              jsonDecode(r2.body)["results"][currentUser.country]['flatrate']
+                  .forEach(
                 (provider) async {
                   String name = provider['provider_name'];
                   String photo = imgLink + provider['logo_path'];
@@ -797,16 +811,20 @@ class _ExploreState extends State<Explore> {
                     return SizedBox(
                       height: 300,
                       child: ListView.builder(
-                        itemCount: (playlists.length / 2).ceil(),
+                        itemCount: (currentUser.playlists.length / 2).ceil(),
                         itemBuilder: (context, index) {
                           final leftMovieIndex = index * 2;
                           final rightMovieIndex = index * 2 + 1;
-                          final keyLeft = (leftMovieIndex < playlists.length)
-                              ? playlists.keys.elementAt(leftMovieIndex)
-                              : null;
-                          final keyRight = (rightMovieIndex < playlists.length)
-                              ? playlists.keys.elementAt(rightMovieIndex)
-                              : null;
+                          final keyLeft =
+                              (leftMovieIndex < currentUser.playlists.length)
+                                  ? currentUser.playlists.keys
+                                      .elementAt(leftMovieIndex)
+                                  : null;
+                          final keyRight =
+                              (rightMovieIndex < currentUser.playlists.length)
+                                  ? currentUser.playlists.keys
+                                      .elementAt(rightMovieIndex)
+                                  : null;
                           dynamic valueLeft,
                               imageLeft,
                               moviesLeft,
@@ -814,14 +832,19 @@ class _ExploreState extends State<Explore> {
                               imageRight,
                               moviesRight;
                           if (keyLeft != null) {
-                            valueLeft = playlists[keyLeft]['Name'];
-                            imageLeft = playlists[keyLeft]['CoverPhoto'];
-                            moviesLeft = playlists[keyLeft]['Movies'];
+                            valueLeft = currentUser.playlists[keyLeft]['Name'];
+                            imageLeft =
+                                currentUser.playlists[keyLeft]['CoverPhoto'];
+                            moviesLeft =
+                                currentUser.playlists[keyLeft]['Movies'];
                           }
                           if (keyRight != null) {
-                            valueRight = playlists[keyRight]['Name'];
-                            imageRight = playlists[keyRight]['CoverPhoto'];
-                            moviesRight = playlists[keyRight]['Movies'];
+                            valueRight =
+                                currentUser.playlists[keyRight]['Name'];
+                            imageRight =
+                                currentUser.playlists[keyRight]['CoverPhoto'];
+                            moviesRight =
+                                currentUser.playlists[keyRight]['Movies'];
                           }
                           return Row(
                             children: [
@@ -1085,15 +1108,20 @@ class _ExploreState extends State<Explore> {
                           child: GestureDetector(
                             onTap: () {
                               // Handle the click event here
-                              movieResult = [
-                                item['id'],
-                                item['title'],
-                                "Movies",
-                              ];
+                              // movieResult = [
+                              //   item['id'],
+                              //   item['title'],
+                              //   "Movies",
+                              // ];
+                              Movie tempMovie = Movie(
+                                  id: item["id"],
+                                  title: item["title"],
+                                  coverPhoto: item["poster_path"]);
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => const MovieResult()),
+                                    builder: (context) =>
+                                        MovieResult(movie: tempMovie)),
                               );
                             },
                             child: Container(
@@ -1223,26 +1251,21 @@ class _ExploreState extends State<Explore> {
             itemCount: rowItems.length,
             itemBuilder: (BuildContext context, int index) {
               var item = rowItems[index];
-
-              // Create your movie widget here using the data from `item`
-              // For example, you can create a GestureDetector or InkWell
-              // to handle movie selection or tap events.
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     GestureDetector(
                       onTap: () {
-                        // Handle the click event here
-                        movieResult = [
-                          item['id'],
-                          item['title'],
-                          "Movies",
-                        ];
+                        Movie tempMovie = Movie(
+                            id: item["id"],
+                            title: item["title"],
+                            coverPhoto: item["poster_path"]);
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const MovieResult()),
+                              builder: (context) =>
+                                  MovieResult(movie: tempMovie)),
                         );
                       },
                       child: Container(
@@ -1340,11 +1363,6 @@ class _ExploreState extends State<Explore> {
     Widget _buildContentView() {
       if (_carouselLoaded) {
         return _buildGridView();
-        // if (isGridMode) {
-        //   return _buildGridView();
-        // } else {
-        //   return _buildCarouselView();
-        // }
       } else {
         return const Center(
           child: CircularProgressIndicator(),
@@ -1393,28 +1411,29 @@ class _ExploreState extends State<Explore> {
           }
           json['movie_credits_cast'] = movieCast;
           for (var element in movieCast) {
-            if (containsMap(seenMovies, ["Movies", element["id"].toString()])) {
+            if (containsMap(
+                currentUser.seenMovies, ["Movies", element["id"].toString()])) {
               if (!countedMoviesActor.contains(element["id"].toString())) {
                 stats += 1;
-                if (containsMap(
-                    favMovies, ['Movies', element["id"].toString()])) {
+                if (containsMap(currentUser.favMovies,
+                    ['Movies', element["id"].toString()])) {
                   scoreActor += 3;
                 }
-                print(rewatchedMovies.keys
+                print(currentUser.rewatchedMovies.keys
                     .toList()
                     .contains(element["id"].toString()));
-                if (rewatchedMovies.keys
+                if (currentUser.rewatchedMovies.keys
                     .toList()
                     .contains(element["id"].toString())) {
-                  scoreActor +=
-                      rewatchedMovies[element["id"].toString()] as int;
+                  scoreActor += currentUser
+                      .rewatchedMovies[element["id"].toString()] as int;
                 } else {
                   scoreActor += 2;
                 }
                 countedMoviesActor.add(element["id"].toString());
               }
-            } else if (containsMap(
-                    watchlist, ['Movies', element["id"].toString()]) &&
+            } else if (containsMap(currentUser.watchlist,
+                    ['Movies', element["id"].toString()]) &&
                 !countedMoviesActor.contains(element["id"].toString())) {
               scoreActor += 1;
               countedMoviesActor.add(element["id"].toString());
@@ -1437,22 +1456,19 @@ class _ExploreState extends State<Explore> {
             }
             json['tv_credits_cast'] = tvCast;
             for (var element in tvCast) {
-              print(seenTVShows);
-              print(["TVShows", element["id"].toString()]);
-              if (containsMap(
-                  seenTVShows, ["TVShows", element["id"].toString()])) {
+              if (containsMap(currentUser.seenTVShows,
+                  ["TVShows", element["id"].toString()])) {
                 if (!countedTVShowsActor.contains(element["id"].toString())) {
-                  print(stats_tv);
                   stats_tv += 1;
-                  if (containsMap(
-                      favTVShows, ['TVShows', element["id"].toString()])) {
+                  if (containsMap(currentUser.favTVShows,
+                      ['TVShows', element["id"].toString()])) {
                     scoreActor += 3;
                   } else {
                     scoreActor += 2;
                   }
                   countedTVShowsActor.add(element["id"].toString());
                 }
-              } else if (containsMap(watchlistTVShows,
+              } else if (containsMap(currentUser.watchlistTVShows,
                       ['TVShows', element["id"].toString()]) &&
                   !countedTVShowsActor.contains(element["id"].toString())) {
                 scoreActor += 1;
@@ -1470,24 +1486,27 @@ class _ExploreState extends State<Explore> {
           }
           json['movie_credits_crew'] = movieCrew;
           for (var element in movieCrew) {
-            if (containsMap(seenMovies, ["Movies", element["id"].toString()])) {
+            if (containsMap(
+                currentUser.seenMovies, ["Movies", element["id"].toString()])) {
               if (element["job"] == "Director" &&
                   !countedMoviesDirector.contains(element["id"].toString())) {
                 stats_dir += 1;
-                if (containsMap(
-                    favMovies, ['Movies', element["id"].toString()])) {
+                if (containsMap(currentUser.favMovies,
+                    ['Movies', element["id"].toString()])) {
                   scoreDirector += 3;
                 }
-                if (rewatchedMovies.keys.toList().contains(element["id"])) {
-                  scoreDirector +=
-                      int.parse(rewatchedMovies[element["id"].toString()]);
+                if (currentUser.rewatchedMovies.keys
+                    .toList()
+                    .contains(element["id"])) {
+                  scoreDirector += int.parse(
+                      currentUser.rewatchedMovies[element["id"].toString()]);
                 } else {
                   scoreDirector += 2;
                 }
                 countedMoviesDirector.add(element["id"].toString());
               }
-            } else if (containsMap(
-                    watchlist, ['Movies', element["id"].toString()]) &&
+            } else if (containsMap(currentUser.watchlist,
+                    ['Movies', element["id"].toString()]) &&
                 element["job"] == "Director" &&
                 !countedMoviesDirector.contains(element["id"].toString())) {
               scoreDirector += 1;
@@ -1508,21 +1527,21 @@ class _ExploreState extends State<Explore> {
             }
             json['tv_credits_crew'] = tvCrew;
             for (var element in tvCrew) {
-              if (containsMap(
-                  seenTVShows, ["TVShows", element["id"].toString()])) {
+              if (containsMap(currentUser.seenTVShows,
+                  ["TVShows", element["id"].toString()])) {
                 if (element["job"] == "Director" &&
                     !countedTVShowsDirector
                         .contains(element["id"].toString())) {
                   stats_dir += 1;
-                  if (containsMap(
-                      favTVShows, ['TVShows', element["id"].toString()])) {
+                  if (containsMap(currentUser.favTVShows,
+                      ['TVShows', element["id"].toString()])) {
                     scoreDirector += 3;
                   } else {
                     scoreDirector += 1;
                   }
                   countedTVShowsDirector.add(element["id"].toString());
                 }
-              } else if (containsMap(watchlistTVShows,
+              } else if (containsMap(currentUser.watchlistTVShows,
                       ['TVShows', element["id"].toString()]) &&
                   element["job"] == "Director" &&
                   !countedTVShowsDirector.contains(element["id"].toString())) {
@@ -1534,18 +1553,12 @@ class _ExploreState extends State<Explore> {
                 allDirMovies += 1;
               }
             }
-            // Map oscars = await parseJSONFile();
-            // if (oscars.keys
-            //     .contains(actor_of_the_week.split("-")[0].toString())) {
-            //   json['num_oscars'] =
-            //       oscars[actor_of_the_week.split("-")[0]]['num_oscars'];
-            // } else {
-            //   json['num_oscars'] = 0;
-            // }
-            var userDoc =
-                FirebaseFirestore.instance.collection(uid).doc("FavDirectors");
-            var ActorDoc =
-                FirebaseFirestore.instance.collection(uid).doc("FavActors");
+            var userDoc = FirebaseFirestore.instance
+                .collection(currentUser.uid)
+                .doc("FavDirectors");
+            var ActorDoc = FirebaseFirestore.instance
+                .collection(currentUser.uid)
+                .doc("FavActors");
             Map<Object, Object?> directorStats = {};
             directorStats[personResult['id'].toString()] = scoreDirector;
             // await userDoc.update(directorStats);

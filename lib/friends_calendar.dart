@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'friends.dart';
+import 'objects/Movie.dart';
 import 'playlists.dart';
 import 'main.dart';
 import 'profile.dart';
@@ -174,16 +175,22 @@ class _FriendCalendarState extends State<FriendCalendar> {
                                           GestureDetector(
                                             onTap: () {
                                               // Handle the click event here
-                                              movieResult = [
-                                                event['id'],
-                                                event['title'],
-                                                "Movie",
-                                              ];
+                                              Movie tempMovie = Movie(
+                                                  id: event[id],
+                                                  title: event['title'],
+                                                  coverPhoto:
+                                                      event["poster_path"]);
+                                              // movieResult = [
+                                              //   event['id'],
+                                              //   event['title'],
+                                              //   "Movie",
+                                              // ];
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
                                                   builder: (context) =>
-                                                      const MovieResult(),
+                                                      MovieResult(
+                                                          movie: tempMovie),
                                                 ),
                                               );
                                             },

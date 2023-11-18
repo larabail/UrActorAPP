@@ -31,13 +31,13 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
             var userDoc =
                 FirebaseFirestore.instance.collection("Watchlists").doc(doc.id);
             Map newUser = {};
-            newUser[uid] = "Approved";
+            newUser[currentUser.uid] = "Approved";
             await userDoc.update({
               "Users": FieldValue.arrayUnion([newUser])
             });
             Navigator.pop(context);
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (context) => const Playlists()));
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (context) => const Playlists()));
           }
         }
       }

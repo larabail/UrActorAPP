@@ -4,6 +4,7 @@ import 'package:uractor/explore.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'friends.dart';
+import 'objects/Movie.dart';
 import 'playlists.dart';
 import 'main.dart';
 import 'profile.dart';
@@ -41,40 +42,40 @@ class _CalendarState extends State<Calendar> {
   DateTime _focusedDay = DateTime.now();
   String _selectedDay = DateTime.now().toIso8601String().split('T')[0];
   List _monthlyStats = [0, 0, 0];
-  final Map events = calendar;
+  final Map events = currentUser.calendar;
   void deleteMovieSubmit(String id, String title) async {
-    var userDoc = db.collection(uid).doc("Calendar");
-    for (String key in calendar.keys) {
+    var userDoc = db.collection(currentUser.uid).doc("Calendar");
+    for (String key in currentUser.calendar.keys) {
       if (key == _selectedDay) {
-        if (calendar[key].length == 1) {
-          var movie = calendar[key][0];
+        if (currentUser.calendar[key].length == 1) {
+          var movie = currentUser.calendar[key][0];
           if (movie['id'].toString() == id.toString() &&
               movie['title'].toString() == title.toString()) {
-            calendar[key] = []; // Clear the list
+            currentUser.calendar[key] = []; // Clear the list
           }
         } else {
-          calendar[key].removeWhere((movie) =>
+          currentUser.calendar[key].removeWhere((movie) =>
               movie['id'].toString() == id.toString() &&
               movie['title'].toString() == title.toString());
         }
       }
     }
     Map<Object, Object> updatedCalendar = {};
-    for (String key in calendar.keys) {
-      if (calendar[key].isNotEmpty) {
-        updatedCalendar[key] = calendar[key];
+    for (String key in currentUser.calendar.keys) {
+      if (currentUser.calendar[key].isNotEmpty) {
+        updatedCalendar[key] = currentUser.calendar[key];
       } else {
         updatedCalendar[key] = [];
       }
     }
     await userDoc.update(updatedCalendar);
 
-    if (rewatchedMovies.keys.toList().contains(id)) {
-      rewatchedMovies[id] -= 1;
-      if (rewatchedMovies[id] == 0) {
+    if (currentUser.rewatchedMovies.keys.toList().contains(id)) {
+      currentUser.rewatchedMovies[id] -= 1;
+      if (currentUser.rewatchedMovies[id] == 0) {
         List w;
         await FirebaseFirestore.instance
-            .collection(uid)
+            .collection(currentUser.uid)
             .get()
             .then((QuerySnapshot querySnapshot) {
           querySnapshot.docs.forEach((doc) async {
@@ -86,33 +87,34 @@ class _CalendarState extends State<Calendar> {
               if (index > -1) {
                 w.removeAt(index);
               }
-              var userDoc =
-                  FirebaseFirestore.instance.collection(uid).doc("Movies");
+              var userDoc = FirebaseFirestore.instance
+                  .collection(currentUser.uid)
+                  .doc("Movies");
               await userDoc.update({'Seen': w});
-              seenMovies = [];
+              currentUser.seenMovies = [];
               for (var element in w) {
-                seenMovies += [
+                currentUser.seenMovies += [
                   ["Movies", element]
                 ];
               }
               setState(() {
-                seenMovies = seenMovies;
+                currentUser.seenMovies = currentUser.seenMovies;
               });
             }
           });
         });
       }
-      userDoc = db.collection(uid).doc("Rewatched");
+      userDoc = db.collection(currentUser.uid).doc("Rewatched");
       Map<Object, Object> updatedRewatched = {};
-      for (String key in rewatchedMovies.keys) {
-        updatedRewatched[key] = rewatchedMovies[key];
+      for (String key in currentUser.rewatchedMovies.keys) {
+        updatedRewatched[key] = currentUser.rewatchedMovies[key];
       }
       await userDoc.update(updatedRewatched);
     }
 
     Navigator.pop(context);
     setState(() {
-      calendar = calendar;
+      currentUser.calendar = currentUser.calendar;
     });
   }
 
@@ -125,10 +127,10 @@ class _CalendarState extends State<Calendar> {
     double totalRating = 0; // Total rating of all movies in the month
     int movieCount = 0; // Total number of movies in the month
 
-    for (String key in calendar.keys) {
+    for (String key in currentUser.calendar.keys) {
       DateTime date = DateTime.parse(key);
       if (date.month == focusedDay.month && date.year == focusedDay.year) {
-        for (var movie in calendar[key]) {
+        for (var movie in currentUser.calendar[key]) {
           totalRuntime += movie['runtime'] ?? 0;
           totalRating += (movie["rating"] != "N/A") ? movie['rating'] : 0;
           movieCount++;
@@ -259,16 +261,22 @@ class _CalendarState extends State<Calendar> {
                                         children: [
                                           GestureDetector(
                                             onTap: () {
-                                              movieResult = [
-                                                event['id'],
-                                                event['title'],
-                                                "Movie",
-                                              ];
+                                              Movie tempMovie = Movie(
+                                                  id: event[id],
+                                                  title: event['title'],
+                                                  coverPhoto:
+                                                      event["poster_path"]);
+                                              // movieResult = [
+                                              //   event['id'],
+                                              //   event['title'],
+                                              //   "Movie",
+                                              // ];
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
                                                   builder: (context) =>
-                                                      const MovieResult(),
+                                                      MovieResult(
+                                                          movie: tempMovie),
                                                 ),
                                               );
                                             },
@@ -509,25 +517,32 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
           .toList(),
     };
     // print(friendsWatchedWith);
-    if (calendar.keys.toList().contains(dateForMap)) {
-      calendar[dateForMap].add(myObject);
+    if (currentUser.calendar.keys.toList().contains(dateForMap)) {
+      currentUser.calendar[dateForMap].add(myObject);
     } else {
-      calendar[dateForMap] = [
+      currentUser.calendar[dateForMap] = [
         myObject,
       ];
     }
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     for (var friend in friendsWatchedWith.keys) {
       myObject["friends"] = [
-        uid,
+        currentUser.uid,
       ];
+      for (var friend2 in friendsWatchedWith.keys) {
+        if (friendsWatchedWith[friend] == true) {
+          if (!myObject["friends"].contains(friend2) && friend != friend2) {
+            myObject["friends"].add(friend2);
+          }
+        }
+      }
       if (friendsWatchedWith[friend] == true) {
-        if (seenWith.containsKey(friend) &&
-            !seenWith[friend]["Movies"].contains(id.toString())) {
-          seenWith[friend]["Movies"].add(id.toString());
-        } else if (!seenWith.containsKey(friend)) {
-          seenWith[friend] = {"Movies": [], "TVShows": []};
-          seenWith[friend]["Movies"].add(id.toString());
+        if (currentUser.seenWith.containsKey(friend) &&
+            !currentUser.seenWith[friend]["Movies"].contains(id.toString())) {
+          currentUser.seenWith[friend]["Movies"].add(id.toString());
+        } else if (!currentUser.seenWith.containsKey(friend)) {
+          currentUser.seenWith[friend] = {"Movies": [], "TVShows": []};
+          currentUser.seenWith[friend]["Movies"].add(id.toString());
         }
         // Update Calendar
         var userDoc =
@@ -568,13 +583,18 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
             if (moviesMap.containsKey(id)) {
               List existingList = moviesMap[id]["friends"];
               for (String person in watchedWithList) {
-                if (!existingList.contains(person)) {
+                if (!existingList.contains(person) && person != friend) {
                   existingList.add(person);
                 }
+              }
+              if (!existingList.contains(currentUser.uid)) {
+                existingList.add(currentUser.uid);
               }
               moviesMap[id] = {"friends": existingList};
               transaction.update(userDoc2, {"Movies": moviesMap});
             } else {
+              watchedWithList.remove(friend);
+              watchedWithList.add(currentUser.uid);
               moviesMap[id] = {"friends": watchedWithList};
               transaction.update(userDoc2, {"Movies": moviesMap});
             }
@@ -609,7 +629,8 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
       }
     }
 
-    DocumentReference userDoc2 = firestore.collection(uid).doc("SeenWith");
+    DocumentReference userDoc2 =
+        firestore.collection(currentUser.uid).doc("SeenWith");
     Map<String, dynamic> item = {};
     List<dynamic> watchedWithList = friendsWatchedWith.keys
         .where((key) => friendsWatchedWith[key] == true)
@@ -664,40 +685,41 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
     }).catchError((error) {
       print("Failed to update document: $error");
     });
-    var userDoc = db.collection(uid).doc("Calendar");
+    var userDoc = db.collection(currentUser.uid).doc("Calendar");
     Map<Object, Object> updatedCalendar = {};
-    for (String key in calendar.keys) {
-      updatedCalendar[key] = calendar[key];
+    for (String key in currentUser.calendar.keys) {
+      updatedCalendar[key] = currentUser.calendar[key];
     }
     await userDoc.update(updatedCalendar);
 
-    if (rewatchedMovies.keys.toList().contains(id)) {
-      rewatchedMovies[id] += 1;
+    if (currentUser.rewatchedMovies.keys.toList().contains(id)) {
+      currentUser.rewatchedMovies[id] += 1;
     } else {
-      rewatchedMovies[id] = 1;
+      currentUser.rewatchedMovies[id] = 1;
     }
 
-    userDoc = db.collection(uid).doc("Rewatched");
+    userDoc = db.collection(currentUser.uid).doc("Rewatched");
     Map<Object, Object> updatedRewatched = {};
-    for (String key in rewatchedMovies.keys) {
-      updatedRewatched[key] = rewatchedMovies[key];
+    for (String key in currentUser.rewatchedMovies.keys) {
+      updatedRewatched[key] = currentUser.rewatchedMovies[key];
     }
     await userDoc.update(updatedRewatched);
 
-    if (!containsList(seenMovies, ["Movies", id])) {
-      final userDoc = FirebaseFirestore.instance.collection(uid).doc('Movies');
+    if (!containsList(currentUser.seenMovies, ["Movies", id])) {
+      final userDoc =
+          FirebaseFirestore.instance.collection(currentUser.uid).doc('Movies');
       id = id.toString();
       await userDoc.update({
         'Seen': FieldValue.arrayUnion([id])
       });
-      seenMovies += [
+      currentUser.seenMovies += [
         ["Movies", id]
       ];
     }
 
     Navigator.pop(context);
     setState(() {
-      calendar = calendar;
+      currentUser.calendar = currentUser.calendar;
     });
   }
 
@@ -841,11 +863,11 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                   height: 125, // Set your desired height here
                   child: ListView.builder(
                     shrinkWrap: true,
-                    itemCount: friends.length,
+                    itemCount: currentUser.friends.length,
                     itemBuilder: (context, friendIndex) {
                       return FutureBuilder<DocumentSnapshot>(
                         future: FirebaseFirestore.instance
-                            .collection(friends[friendIndex])
+                            .collection(currentUser.friends[friendIndex])
                             .doc('Settings')
                             .get(),
                         builder: (context, snapshot) {
@@ -890,15 +912,15 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                                   ),
                                 ],
                               ),
-                              value: selectedFriends.keys
-                                      .toList()
-                                      .contains(friends[friendIndex])
-                                  ? selectedFriends[friends[friendIndex]]
+                              value: selectedFriends.keys.toList().contains(
+                                      currentUser.friends[friendIndex])
+                                  ? selectedFriends[
+                                      currentUser.friends[friendIndex]]
                                   : false,
                               onChanged: (bool? value) {
                                 setState(() {
-                                  selectedFriends[friends[friendIndex]] =
-                                      value!;
+                                  selectedFriends[currentUser
+                                      .friends[friendIndex]] = value!;
                                 });
                               },
                             );

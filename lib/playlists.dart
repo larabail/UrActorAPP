@@ -4,12 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
-import 'friends.dart';
-import 'profile.dart';
-import 'search.dart';
 import 'main.dart';
 import 'list_result.dart';
-
 import 'list_add_popup.dart';
 import 'list_join_popup.dart';
 
@@ -27,7 +23,7 @@ class _PlaylistsState extends State<Playlists> {
   bool isAddListPanelOpen = false;
 
   Future<void> _refreshPlaylists() async {
-    playlists = {};
+    currentUser.playlists = {};
     await FirebaseFirestore.instance
         .collection("Watchlists")
         .get()
@@ -37,10 +33,10 @@ class _PlaylistsState extends State<Playlists> {
         List users = keysOfDoc['Users'] as List;
         for (var element in users) {
           Map el = element as Map;
-          if (el.keys.contains(uid)) {
+          if (el.keys.contains(currentUser.uid)) {
             Map docData = doc.data() as Map;
             docData["id"] = doc.id;
-            playlists[doc.id] = docData;
+            currentUser.playlists[doc.id] = docData;
           }
         }
       }
@@ -54,7 +50,9 @@ class _PlaylistsState extends State<Playlists> {
       builder: (BuildContext context) {
         return const ListJoinDialogue();
       },
-    );
+    ).then((_) {
+      setState(() {});
+    });
   }
 
   void _toggleAddListPanel() {
@@ -63,30 +61,13 @@ class _PlaylistsState extends State<Playlists> {
       builder: (BuildContext context) {
         return const ListAddDialogue();
       },
-    );
+    ).then((_) {
+      setState(() {});
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    int selectedIndex = 0;
-
-    final List<Widget> pages = [
-      const MyApp(),
-      const Playlists(),
-      const Search(),
-      const Friends(),
-      const Profile(),
-      // Add more pages here
-    ];
-
-    void _onItemTapped(int index) {
-      selectedIndex = index;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
-      );
-    }
-
     return Scaffold(
       appBar: const CustomAppBar(),
       body: SingleChildScrollView(
@@ -157,14 +138,15 @@ class _PlaylistsState extends State<Playlists> {
                 height: MediaQuery.of(context).size.height * 0.75,
                 child: Center(
                   child: ListView.builder(
-                    itemCount: playlists.length,
+                    itemCount: currentUser.playlists.length,
                     itemBuilder: (context, index) {
-                      String key = playlists.keys.elementAt(index);
-                      dynamic value = playlists[key]['Name'];
-                      dynamic image = playlists[key]['CoverPhoto'];
-                      dynamic movies = playlists[key]['Movies'];
-                      dynamic tvshows = playlists[key]['TV Shows'];
-                      dynamic accessCode = playlists[key]['AccessCode'];
+                      String key = currentUser.playlists.keys.elementAt(index);
+                      dynamic value = currentUser.playlists[key]['Name'];
+                      dynamic image = currentUser.playlists[key]['CoverPhoto'];
+                      dynamic movies = currentUser.playlists[key]['Movies'];
+                      dynamic tvshows = currentUser.playlists[key]['TV Shows'];
+                      dynamic accessCode =
+                          currentUser.playlists[key]['AccessCode'];
                       return GestureDetector(
                         onTap: () {
                           // Handle the click event here
@@ -174,7 +156,8 @@ class _PlaylistsState extends State<Playlists> {
                           list_result["Name"] = value;
                           list_result["AccessCode"] = accessCode;
                           list_result["id"] = key;
-                          list_result["Users"] = playlists[key]["Users"];
+                          list_result["Users"] =
+                              currentUser.playlists[key]["Users"];
                           Navigator.push(
                             context,
                             MaterialPageRoute(
