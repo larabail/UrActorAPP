@@ -2,8 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:uractor/friends.dart';
 
-import 'appbar.dart';
-import 'bottom_app_bar.dart';
+import 'common/appbar.dart';
+import 'common/bottom_app_bar.dart';
 import 'main.dart';
 import 'tabView.dart';
 
@@ -31,38 +31,41 @@ class SeenTogether extends StatelessWidget {
           ),
           DefaultTabController(
             length: 2,
-            child: Column(
-              children: [
-                const TabBar(
-                  tabs: [
-                    Tab(text: 'Movies'),
-                    Tab(text: 'TV Shows'),
-                  ],
-                ),
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.65,
-                  child: TabBarView(
-                    children: [
-                      MyTabView(favItems: [
-                        for (String movieId in (currentUser.seenWith[friendUid]
-                                    ["Movies"] as List<dynamic>?)
-                                ?.reversed
-                                .toList() ??
-                            [])
-                          ["Movies", movieId]
-                      ]),
-                      MyTabView(favItems: [
-                        for (String movieId in (currentUser.seenWith[friendUid]
-                                    ["TVShows"] as List<dynamic>?)
-                                ?.reversed
-                                .toList() ??
-                            [])
-                          ["TVShows", movieId]
-                      ]),
+            child: Expanded(
+              child: Column(
+                children: [
+                  const TabBar(
+                    tabs: [
+                      Tab(text: 'Movies'),
+                      Tab(text: 'TV Shows'),
                     ],
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        MyTabView(favItems: [
+                          for (String movieId
+                              in (currentUser.seenWith[friendUid]["Movies"]
+                                          as List<dynamic>?)
+                                      ?.reversed
+                                      .toList() ??
+                                  [])
+                            ["Movies", movieId]
+                        ]),
+                        MyTabView(favItems: [
+                          for (String movieId
+                              in (currentUser.seenWith[friendUid]["TVShows"]
+                                          as List<dynamic>?)
+                                      ?.reversed
+                                      .toList() ??
+                                  [])
+                            ["TVShows", movieId]
+                        ]),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           )
         ],

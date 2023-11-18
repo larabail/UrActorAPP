@@ -3,29 +3,26 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
-import 'common/constants.dart';
-import 'playlists.dart';
 import 'dart:convert';
-import 'list_result.dart';
+import 'dart:math';
+import '../common/constants.dart';
+import '../main.dart';
 
-class ListEditDialogue extends StatefulWidget {
-  const ListEditDialogue({super.key});
+class ListAddDialogue extends StatefulWidget {
+  const ListAddDialogue({super.key});
 
   @override
-  _ListEditDialogueState createState() => _ListEditDialogueState();
+  _ListAddDialogueState createState() => _ListAddDialogueState();
 }
 
-class _ListEditDialogueState extends State<ListEditDialogue> {
-  final list_name_controller = listName != ""
-      ? TextEditingController(text: listName)
-      : TextEditingController(text: "");
-  final access_code_controller = accessCode != ""
-      ? TextEditingController(text: accessCode)
-      : TextEditingController(text: "");
+class _ListAddDialogueState extends State<ListAddDialogue> {
+  final myController = TextEditingController(text: "");
 
   String _searchTermMovie = '';
+  String cover = "";
+  String _listName = "";
+  String _accessCode = "";
   FirebaseFirestore db = FirebaseFirestore.instance;
-
   int _selectedIndex = 0;
   Future<List> searchData(String searchTerm) async {
     // print(searchTerm);
@@ -65,28 +62,51 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
     }
   }
 
-  void editListSubmit() async {
+  void addListSubmit() async {
+    int docID = Random().nextInt(10000000);
+    QuerySnapshot querySnapshot = await db.collection("Watchlists").get();
+    List<QueryDocumentSnapshot> data3 = querySnapshot.docs;
+    List lists_already = [];
+
+    for (var doc in data3) {
+      lists_already.add(int.parse(doc.id));
+      // Note: In Flutter, you cannot use sessionStorage. Instead, you can store data using shared_preferences or other state management solutions.
+    }
+
+    while (lists_already.contains(docID)) {
+      docID = Random().nextInt(10000000);
+    }
+    String docIDString = docID.toString();
+
+    var userDoc = db.collection("Watchlists").doc(docIDString);
+    await userDoc.set({"AccessCode": _accessCode});
+    await userDoc.update({"CoverPhoto": cover});
+    await userDoc.update({"Movies": []});
+    await userDoc.update({"TV Shows": []});
+    await userDoc.update({"Name": _listName});
+
+    Map<String, dynamic> users = {currentUser.uid: "Owner"};
+    await userDoc.update({
+      "Users": FieldValue.arrayUnion([users])
+    });
+
     await FirebaseFirestore.instance
         .collection("Watchlists")
         .get()
-        .then((QuerySnapshot querySnapshot) async {
+        .then((QuerySnapshot querySnapshot) {
       for (var doc in querySnapshot.docs) {
-        Map docData = doc.data() as Map;
-        if (originalListName == (docData["Name"])) {
-          if (docData["AccessCode"] == originalAccessCode) {
-            var userDoc =
-                FirebaseFirestore.instance.collection("Watchlists").doc(doc.id);
-            await userDoc.update({"Name": listName});
-            await userDoc.update({"CoverPhoto": cover});
-            await userDoc.update({"AccessCode": accessCode});
-            list_result["AccessCode"] = accessCode;
-            list_result["Name"] = listName;
-            list_result["Backdrop"] = cover;
-            Navigator.pop(context);
+        Map keysOfDoc = doc.data() as Map;
+        List users = keysOfDoc['Users'] as List;
+        for (var element in users) {
+          Map el = element as Map;
+          if (el.keys.contains(currentUser.uid)) {
+            currentUser.playlists[doc.id] = doc.data();
           }
         }
       }
     });
+
+    Navigator.pop(context);
   }
 
   @override
@@ -104,21 +124,21 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
     return Stack(
       children: <Widget>[
         Container(
-          padding:
-              const EdgeInsets.only(left: 20, top: 10, right: 20, bottom: 20),
           decoration: BoxDecoration(
             color: Colors.grey[900],
             borderRadius: BorderRadius.circular(10.0),
           ),
+          padding:
+              const EdgeInsets.only(left: 20, top: 20, right: 20, bottom: 20),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(5, 40, 20, 5),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(5, 10, 20, 5),
                   child: Text(
-                    'Modify "${list_result['Name']}"',
-                    style: const TextStyle(
+                    'Create a New List',
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -127,7 +147,6 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
                 Padding(
                   padding: const EdgeInsets.all(10.0),
                   child: TextFormField(
-                    controller: list_name_controller,
                     validator: (String? value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter a list name';
@@ -138,7 +157,7 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
                       labelText: 'List Name',
                     ),
                     onChanged: (value) {
-                      listName = value;
+                      _listName = value;
                     },
                   ),
                 ),
@@ -232,12 +251,11 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
                 Padding(
                   padding: const EdgeInsets.all(10.0),
                   child: TextFormField(
-                    controller: access_code_controller,
                     decoration: const InputDecoration(
                       labelText: 'Access Code For Other People',
                     ),
                     onChanged: (value) {
-                      accessCode = value;
+                      _accessCode = value;
                     },
                   ),
                 ),
@@ -265,7 +283,7 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
                                 'Cancel',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 16,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -275,7 +293,7 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          editListSubmit();
+                          addListSubmit();
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -292,7 +310,7 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
                                 'Add',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 16,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
