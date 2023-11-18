@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import '../common/constants.dart';
-import '../list_result.dart';
-import '../playlists.dart';
 import 'dart:convert';
 import '../main.dart';
+import '../objects/Playlist.dart';
 
 class TvAddDialogue extends StatefulWidget {
-  const TvAddDialogue({super.key});
+  final Playlist list_result;
+  const TvAddDialogue({Key? key, required this.list_result}) : super(key: key);
 
   @override
   _TvAddDialogueState createState() => _TvAddDialogueState();
@@ -57,7 +57,7 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
   }
 
   void addTvSubmit() async {
-    String docIDString = list_result["id"].toString();
+    String docIDString = widget.list_result.id.toString();
 
     var userDoc = db.collection("Watchlists").doc(docIDString);
     await userDoc.update({
@@ -80,12 +80,12 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
       }
     });
 
-    list_result["TVShows"] =
-        currentUser.playlists[list_result["id"].toString()]["TV Shows"];
+    widget.list_result.tvshows =
+        currentUser.playlists[widget.list_result.id.toString()]["TV Shows"];
 
     Navigator.pop(context);
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => ListResult()));
+    // Navigator.pushReplacement(
+    //     context, MaterialPageRoute(builder: (context) => ListResult()));
   }
 
   @override
@@ -106,7 +106,7 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 5),
               child: Text(
-                'Add a TV Show to "${list_result["Name"]}"',
+                'Add a TV Show to "${widget.list_result.name}"',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
