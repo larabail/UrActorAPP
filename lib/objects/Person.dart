@@ -1,12 +1,11 @@
 class Person {
   final String name;
-  final DateTime? birthDate;
-  final String? biography;
+  final String id;
+  final Map data;
 
   Person({
-    required String id,
+    required this.id,
     required this.name,
-    this.birthDate,
-    this.biography,
+    required this.data,
   });
 }

@@ -11,6 +11,7 @@ import 'friends_profile.dart';
 import 'main.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'objects/Person.dart';
 import 'objects/TVShow.dart';
 import 'person_result.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
@@ -1329,12 +1330,17 @@ class _TVShowResultState extends State<TVShowResult> {
                                   const EdgeInsets.fromLTRB(5.0, 0.0, 5.0, 0.0),
                               child: GestureDetector(
                                 onTap: () {
-                                  personResult = person;
+                                  Person personResult = Person(
+                                      id: person["id"].toString(),
+                                      name: person["name"].toString(),
+                                      data: person);
+
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) =>
-                                            const PersonResult()),
+                                        builder: (context) => PersonResult(
+                                              personResult: personResult,
+                                            )),
                                   );
                                 },
                                 child: Column(

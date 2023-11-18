@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:uractor/objects/Person.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'common/constants.dart';
@@ -1160,7 +1161,7 @@ class _ExploreState extends State<Explore> {
                 .collection(currentUser.uid)
                 .doc("FavActors");
             Map<Object, Object?> directorStats = {};
-            directorStats[personResult['id'].toString()] = scoreDirector;
+            directorStats[json['id'].toString()] = scoreDirector;
             // await userDoc.update(directorStats);
             await ActorDoc.get().then((DocumentSnapshot doc) async {
               Map info = doc.data() as Map;
@@ -1240,11 +1241,16 @@ class _ExploreState extends State<Explore> {
                         itemBuilder: (BuildContext context, int index) {
                           return GestureDetector(
                             onTap: () {
-                              personResult = snapshot.data!;
+                              Person personResult = Person(
+                                  id: snapshot.data!["id"].toString(),
+                                  name: snapshot.data!["name"].toString(),
+                                  data: snapshot.data!);
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => const PersonResult()),
+                                    builder: (context) => PersonResult(
+                                          personResult: personResult,
+                                        )),
                               );
                             },
                             child: Container(
