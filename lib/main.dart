@@ -298,7 +298,6 @@ class _MyHomePageState extends State<MyHomePage> {
                           (movies?.length ?? 0) + (tvshows?.length ?? 0);
 
                       if (index == 5 && currentUser.playlists.length > 6) {
-                        // This is the last item, return the "See All" button
                         return GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -371,9 +370,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 crossAxisAlignment: CrossAxisAlignment
                                     .stretch, // Align children to stretch to fill the row height
                                 children: [
-                                  // Cover Image
                                   AspectRatio(
-                                    // Use AspectRatio to ensure the image is square
                                     aspectRatio: 1, // Equal width and height
                                     child: Container(
                                       decoration: BoxDecoration(
@@ -387,8 +384,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                   ),
                                   const SizedBox(
                                       width:
-                                          10), // You can remove this if you don't want any space between the image and the text
-                                  // Title and Content Count
+                                          10), 
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:

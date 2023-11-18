@@ -3,22 +3,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
+import 'common/constants.dart';
 import 'list_result.dart';
 import 'playlists.dart';
 import 'dart:convert';
 import 'main.dart';
-
-String search_by_nameMovie =
-    'https://api.themoviedb.org/3/search/movie?api_key=700cd4fab994df56eb41b34d38c4762a&query=';
-String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-String linkMovie = "https://api.themoviedb.org/3/movie/";
-String img = 'https://image.tmdb.org/t/p/original/';
-
-final myController = TextEditingController(text: "");
-
-String _searchTermMovie = '';
-String _movie = "";
-FirebaseFirestore db = FirebaseFirestore.instance;
 
 class MovieAddDialogue extends StatefulWidget {
   const MovieAddDialogue({super.key});
@@ -28,14 +17,18 @@ class MovieAddDialogue extends StatefulWidget {
 }
 
 class _MovieAddDialogueState extends State<MovieAddDialogue> {
+  final myController = TextEditingController(text: "");
+
+  String _searchTermMovie = '';
+  String _movie = "";
+  FirebaseFirestore db = FirebaseFirestore.instance;
   Future<List> searchData(String searchTerm) async {
-    // print(searchTerm);
     if (searchTerm != "") {
       String name = searchTerm
           .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
           .replaceAll(" ", "+");
       String searchLink = "";
-      searchLink = '$search_by_nameMovie$name';
+      searchLink = '$SEARCH_BY_NAME_MOVIE_LINK$name';
       final response = await http.get(Uri.parse(searchLink));
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
@@ -43,7 +36,7 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
         for (final result in json['results']) {
           String resultSearchLink = '';
           resultSearchLink =
-              '$linkMovie${result["id"]}-${result["title"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$api_key_actor';
+              '$MOVIE_LINK${result["id"]}-${result["title"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$API_KEY';
           final response2 = await http.get(Uri.parse(resultSearchLink));
           if (response2.statusCode == 200) {
             final json2 = jsonDecode(response2.body);
@@ -65,7 +58,6 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
 
   void addMovieSubmit() async {
     String docIDString = list_result["id"].toString();
-    print(_movie);
 
     var userDoc = db.collection("Watchlists").doc(docIDString);
     await userDoc.update({
@@ -88,7 +80,8 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
       }
     });
 
-    list_result["Movies"] = currentUser.playlists[list_result["id"].toString()]["Movies"];
+    list_result["Movies"] =
+        currentUser.playlists[list_result["id"].toString()]["Movies"];
 
     Navigator.pop(context);
     Navigator.pushReplacement(
@@ -192,7 +185,7 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
                                     borderRadius: BorderRadius.circular(10),
                                     image: DecorationImage(
                                       image: NetworkImage(
-                                          img + item['poster_path']),
+                                          IMG_LINK + item['poster_path']),
                                       fit: BoxFit.cover,
                                     ),
                                   ),

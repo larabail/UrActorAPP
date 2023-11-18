@@ -5,21 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:math';
+import 'common/constants.dart';
 import 'main.dart';
-
-String search_by_nameMovie =
-    'https://api.themoviedb.org/3/search/movie?api_key=700cd4fab994df56eb41b34d38c4762a&query=';
-String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-String linkMovie = "https://api.themoviedb.org/3/movie/";
-String img = 'https://image.tmdb.org/t/p/original/';
-
-final myController = TextEditingController(text: "");
-
-String _searchTermMovie = '';
-String cover = "";
-String _listName = "";
-String _accessCode = "";
-FirebaseFirestore db = FirebaseFirestore.instance;
 
 class ListAddDialogue extends StatefulWidget {
   const ListAddDialogue({super.key});
@@ -29,6 +16,13 @@ class ListAddDialogue extends StatefulWidget {
 }
 
 class _ListAddDialogueState extends State<ListAddDialogue> {
+  final myController = TextEditingController(text: "");
+
+  String _searchTermMovie = '';
+  String cover = "";
+  String _listName = "";
+  String _accessCode = "";
+  FirebaseFirestore db = FirebaseFirestore.instance;
   int _selectedIndex = 0;
   Future<List> searchData(String searchTerm) async {
     // print(searchTerm);
@@ -37,7 +31,7 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
           .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
           .replaceAll(" ", "+");
       String searchLink = "";
-      searchLink = '$search_by_nameMovie$name';
+      searchLink = '$SEARCH_BY_NAME_MOVIE_LINK$name';
       final response = await http.get(Uri.parse(searchLink));
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
@@ -45,7 +39,7 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
         for (final result in json['results']) {
           String resultSearchLink = '';
           resultSearchLink =
-              '$linkMovie${result["id"]}-${result["title"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$api_key_actor';
+              '$MOVIE_LINK${result["id"]}-${result["title"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$API_KEY';
           final response2 = await http.get(Uri.parse(resultSearchLink));
           if (response2.statusCode == 200) {
             final json2 = jsonDecode(response2.body);
@@ -215,7 +209,7 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
                               Map<String, dynamic> item = snapshot.data?[index];
                               bool isSelected = index == _selectedIndex;
                               if (isSelected) {
-                                cover = img + item["backdrop_path"];
+                                cover = IMG_LINK + item["backdrop_path"];
                               }
                               return Container(
                                 width: 100,
@@ -226,7 +220,8 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
                                     onTap: () {
                                       setState(() {
                                         _selectedIndex = index;
-                                        cover = img + item["backdrop_path"];
+                                        cover =
+                                            IMG_LINK + item["backdrop_path"];
                                       });
                                     },
                                     child: Container(
@@ -234,7 +229,7 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
                                         borderRadius: BorderRadius.circular(10),
                                         image: DecorationImage(
                                           image: NetworkImage(
-                                              img + item['poster_path']),
+                                              IMG_LINK + item['poster_path']),
                                           fit: BoxFit.cover,
                                         ),
                                         border: isSelected

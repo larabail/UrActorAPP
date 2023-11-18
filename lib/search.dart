@@ -5,6 +5,7 @@ import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
+import 'common/constants.dart';
 import 'person_result.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
@@ -24,21 +25,12 @@ class Search extends StatefulWidget {
 class _SearchResultState extends State<Search> {
   @override
   Widget build(BuildContext context) {
-    String searchByName =
-        'https://api.themoviedb.org/3/search/multi?api_key=700cd4fab994df56eb41b34d38c4762a&query=';
-    String linkMovie = "https://api.themoviedb.org/3/movie/";
-    String linkTVSHOW = "https://api.themoviedb.org/3/tv/";
-
-    String apiKeyActor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-    String link = "https://api.themoviedb.org/3/person/";
-    String img = 'https://image.tmdb.org/t/p/w500/';
-
     Future<List> searchData() async {
       List<Map<String, dynamic>> results = [];
       String searchLink = "";
       if (_searchTermActor != "") {
         searchLink =
-            '$searchByName${_searchTermActor.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}';
+            '$SEARCH_BY_NAME_MULTI_LINK${_searchTermActor.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}';
         final response = await http.get(Uri.parse(searchLink));
         if (response.statusCode == 200) {
           final json = jsonDecode(response.body);
@@ -47,15 +39,15 @@ class _SearchResultState extends State<Search> {
             Map jsonResult = result as Map;
             if (jsonResult.keys.contains("profile_path")) {
               resultSearchLink =
-                  '$link${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$apiKeyActor';
+                  '$PERSON_LINK${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$API_KEY';
             } else if (jsonResult.keys.contains("title") &&
                 jsonResult.keys.contains("poster_path")) {
               resultSearchLink =
-                  '$linkMovie${result["id"]}-${result["title"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$apiKeyActor';
+                  '$MOVIE_LINK${result["id"]}-${result["title"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$API_KEY';
             } else if (jsonResult.keys.contains("name") &&
                 jsonResult.keys.contains("poster_path")) {
               resultSearchLink =
-                  '$linkTVSHOW${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$apiKeyActor';
+                  '$TV_SHOW_LINK${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$API_KEY';
             }
             if (resultSearchLink != "") {
               final response2 = await http.get(Uri.parse(resultSearchLink));
@@ -78,7 +70,7 @@ class _SearchResultState extends State<Search> {
     String getDefaultImagePath(String? imagePath) {
       const defaultPath =
           'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
-      return imagePath == null ? defaultPath : img + imagePath;
+      return imagePath == null ? defaultPath : IMG_LINK + imagePath;
     }
 
     void handleTap(BuildContext context, Map<String, dynamic> item) {
@@ -141,84 +133,82 @@ class _SearchResultState extends State<Search> {
           children: [
             SingleChildScrollView(
               child: Container(
-                child: Container(
-                  height: MediaQuery.of(context).size.height - 176,
-                  margin: const EdgeInsets.all(10.0),
-                  child: Column(
-                    children: [
-                      TextField(
-                        decoration: const InputDecoration(
-                          prefixIcon: Icon(Icons.search),
-                          hintText: 'Enter name of person/movie/show...',
-                          hintStyle: TextStyle(color: Colors.grey),
-                          enabledBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(color: Colors.grey),
-                          ),
+                height: MediaQuery.of(context).size.height - 176,
+                margin: const EdgeInsets.all(10.0),
+                child: Column(
+                  children: [
+                    TextField(
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.search),
+                        hintText: 'Enter name of person/movie/show...',
+                        hintStyle: TextStyle(color: Colors.grey),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey),
                         ),
-                        onChanged: (value) {
-                          setState(() {
-                            _searchTermActor = value;
-                          });
-                        },
-                        onSubmitted: (value) {
-                          setState(() {
-                            _searchTermActor = value;
-                          });
-                        },
                       ),
-                      Expanded(
-                        child: FutureBuilder<List>(
-                          future: searchData(),
-                          builder: (context, snapshot) {
-                            if (snapshot.hasData) {
-                              final people = snapshot.data!;
-                              return SizedBox(
-                                width: MediaQuery.of(context).size.width,
-                                height: MediaQuery.of(context).size.height,
-                                child: ListView.builder(
-                                  shrinkWrap: true,
-                                  itemCount: (people.length / 3).ceil(),
-                                  itemBuilder: (context, index) {
-                                    final leftPersonIndex = index * 3;
-                                    final middlePersonIndex = index * 3 + 1;
-                                    final rightPersonIndex = index * 3 + 2;
-                                    final leftPerson =
-                                        (leftPersonIndex < people.length)
-                                            ? people[leftPersonIndex]
-                                            : null;
-                                    final middlePerson =
-                                        (middlePersonIndex < people.length)
-                                            ? people[middlePersonIndex]
-                                            : null;
-                                    final rightPerson =
-                                        (rightPersonIndex < people.length)
-                                            ? people[rightPersonIndex]
-                                            : null;
+                      onChanged: (value) {
+                        setState(() {
+                          _searchTermActor = value;
+                        });
+                      },
+                      onSubmitted: (value) {
+                        setState(() {
+                          _searchTermActor = value;
+                        });
+                      },
+                    ),
+                    Expanded(
+                      child: FutureBuilder<List>(
+                        future: searchData(),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData) {
+                            final people = snapshot.data!;
+                            return SizedBox(
+                              width: MediaQuery.of(context).size.width,
+                              height: MediaQuery.of(context).size.height,
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: (people.length / 3).ceil(),
+                                itemBuilder: (context, index) {
+                                  final leftPersonIndex = index * 3;
+                                  final middlePersonIndex = index * 3 + 1;
+                                  final rightPersonIndex = index * 3 + 2;
+                                  final leftPerson =
+                                      (leftPersonIndex < people.length)
+                                          ? people[leftPersonIndex]
+                                          : null;
+                                  final middlePerson =
+                                      (middlePersonIndex < people.length)
+                                          ? people[middlePersonIndex]
+                                          : null;
+                                  final rightPerson =
+                                      (rightPersonIndex < people.length)
+                                          ? people[rightPersonIndex]
+                                          : null;
 
-                                    return Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceAround,
-                                      children: [
-                                        buildItem(context, leftPerson),
-                                        buildItem(context, middlePerson),
-                                        buildItem(context, rightPerson),
-                                      ],
-                                    );
-                                  },
-                                ),
-                              );
-                            } else if (snapshot.hasError) {
-                              return const Center(
-                                  child: Text("Failed to load movie details"));
-                            } else {
-                              return const Center(
-                                  child: CircularProgressIndicator());
-                            }
-                          },
-                        ),
+                                  return Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceAround,
+                                    children: [
+                                      buildItem(context, leftPerson),
+                                      buildItem(context, middlePerson),
+                                      buildItem(context, rightPerson),
+                                    ],
+                                  );
+                                },
+                              ),
+                            );
+                          } else if (snapshot.hasError) {
+                            return const Center(
+                                child: Text("Failed to load movie details"));
+                          } else {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          }
+                        },
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
