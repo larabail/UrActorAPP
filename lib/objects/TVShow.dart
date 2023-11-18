@@ -22,7 +22,6 @@ class TVShow extends MediaItem {
   }
 
   bool isSeen() {
-    print(currentUser.seenTVShows);
     return Utils.contains(currentUser.seenTVShows, ['TVShows', id], "TVShows");
   }
 

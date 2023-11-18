@@ -1533,7 +1533,6 @@ class _MovieResultState extends State<MovieResult> {
                               : 10,
                           itemBuilder: (BuildContext context, int index) {
                             Map person = snapshot.data!['cast'][index];
-                            print(person);
                             if (person['profile_path'] == null) {
                               person['profile_path'] =
                                   "https://cdn-icons-png.flaticon.com/512/3088/3088765.png";

@@ -90,14 +90,11 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
           'https://api.themoviedb.org/3/configuration/countries?api_key=700cd4fab994df56eb41b34d38c4762a'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        // print(data);
         setState(() {
           countries = List<Country>.from(
               data.map((country) => Country.fromJson(country)));
         });
         selectedCountryObject = findCountryByIsoCode(selectedCountry);
-      } else {
-        print('Failed to fetch countries');
       }
     } catch (e) {
       print('Error: $e');
@@ -674,7 +671,6 @@ class _ProfileState extends State<Profile> {
           entryDate.isBefore(endOfWeek);
     }));
 
-    // print(tempData);
     for (int i = 0; i <= endOfWeek.difference(startOfWeek).inDays; i++) {
       DateTime currentDay = startOfWeek.add(Duration(days: i));
       if (!tempData.keys.toList().contains(
