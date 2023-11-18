@@ -1,20 +1,17 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'common/constants.dart';
-import 'friends.dart';
 import 'objects/Movie.dart';
-import 'playlists.dart';
-import 'profile.dart';
-import 'search.dart';
 import 'movie_result.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'main.dart';
 import 'person_result.dart';
-import 'package:carousel_slider/carousel_slider.dart';
 
 List _items = [];
 int page = 1;
@@ -34,7 +31,6 @@ int added = 0;
 String actor_of_the_week = "";
 
 bool areAllFiltersPresent(List<String> genreFilters, List genreMaps) {
-  // Check if all genre filters are present in the list of maps
   return genreFilters
       .every((filter) => genreMaps.any((map) => map['name'] == filter));
 }
@@ -55,16 +51,6 @@ class Genre {
   }
 }
 
-// bool containsMap(List list, Map map) {
-//   String jsonString = json.encode(map);
-//   for (int i = 0; i < list.length; i++) {
-//     if (json.encode(list[i]) == jsonString) {
-//       return true;
-//     }
-//   }
-//   return false;
-// }
-
 bool containsMap(List list, List map) {
   for (int i = 0; i < list.length; i++) {
     if ((list[i][1]).toString() == map[1].toString() &&
@@ -77,7 +63,6 @@ bool containsMap(List list, List map) {
 
 Future<void> deleteFromWatchedConfirmation(
     String id, BuildContext context) async {
-  // Display a dialog box for confirmation. You will have to create a custom dialog for this.
   bool confirmed = await showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -416,8 +401,6 @@ void check(id) {
   _isListsTapped[id] = false;
 }
 
-final GlobalKey<CarouselSliderState> _sliderKey = GlobalKey();
-
 class Explore extends StatefulWidget {
   const Explore({super.key});
 
@@ -428,7 +411,6 @@ class Explore extends StatefulWidget {
 class _ExploreState extends State<Explore> {
   bool _carouselLoaded = false;
   List<String> filters = [];
-  int _currentSlide = 0;
   List<Map<String, dynamic>> movies = [];
   bool isGridMode = false;
   List genres = [];
@@ -472,7 +454,6 @@ class _ExploreState extends State<Explore> {
     }
     if (filters.isNotEmpty || _inMyProviders) {
       _items = [];
-      _currentSlide = 0;
       await getData();
       page = 1;
       setState(() {});
@@ -496,18 +477,7 @@ class _ExploreState extends State<Explore> {
         ids.add(element);
       }
     }
-    // docIds.shuffle();
-    // var element = docIds[0];
-    // added = 0;
-    // DocumentSnapshot snapshot2 = await FirebaseFirestore.instance
-    //     .collection("AllMoviesIds")
-    //     .doc(element)
-    //     .get();
-
-    // Map json2 = snapshot2.data() as Map;
     idsExplorePage.addAll(ids);
-    // print(idsExplorePage.length);
-    // docIds.remove(element);
   }
 
   Future<Map> getMovieData(String id) async {
@@ -573,126 +543,6 @@ class _ExploreState extends State<Explore> {
     });
   }
 
-  // Future<void> getData() async {
-  //   if (idsExplorePage.isEmpty) {
-  //     await getAllMovies();
-  //   }
-  //   // print(idsExplorePage);
-  //   int i = itemsPerPage * (page - 1);
-  //   idsExplorePage.shuffle();
-  //   List moviesData = [];
-  //   for (String id in idsExplorePage) {
-  //     if (i < itemsPerPage * page) {
-  //       await FirebaseFirestore.instance
-  //           .collection("AllMovies")
-  //           .doc(id)
-  //           .get()
-  //           .then((DocumentSnapshot snapshot) async {
-  //         Map data = snapshot.data() as Map;
-  //         Map allData = snapshot.data() as Map;
-  //         double imdbRating = 0.0;
-  //         if (allData.keys.contains("imdb_data")) {
-  //           if (allData["imdb_data"] != null) {
-  //             if (allData["imdb_data"]["imdbRating"] != "N/A" &&
-  //                 allData["imdb_data"]["imdbRating"] != null) {
-  //               imdbRating = double.parse(allData["imdb_data"]["imdbRating"]);
-  //             }
-  //           }
-  //         }
-  //         if (imdbRating > 5.0 &&
-  //             allData["runtime"] > 60 &&
-  //             allData["original_language"] == "en" &&
-  //             allData["poster_path"] != null &&
-  //             allData["backdrop_path"] != null) {
-  //           String name = allData["title"]
-  //               .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
-  //               .replaceAll(" ", "-");
-  //           if (_inMyProviders) {
-  //             final response = await http.get(
-  //                 Uri.parse('$link${allData["id"]}-$name$watch_providers'));
-  //             if (response.statusCode == 200) {
-  //               final data = json.decode(response.body);
-  //               if (data["results"].keys.toList().contains(country)) {
-  //                 if (data["results"][country]
-  //                     .keys
-  //                     .toList()
-  //                     .contains("flatrate")) {
-  //                   List providersForMovie =
-  //                       data["results"][country]['flatrate'];
-  //                   bool inMyProviders = containsIdInMap(
-  //                       settings["providers"], providersForMovie);
-  //                   if (inMyProviders) {
-  //                     if (filters.isNotEmpty) {
-  //                       if (data.keys.toList().contains("genres")) {
-  //                         bool allFiltersPresent =
-  //                             areAllFiltersPresent(filters, data["genres"]);
-  //                         if (allFiltersPresent &&
-  //                             allData["poster_path"] != null &&
-  //                             !containsList(
-  //                                 seenMovies, ["Movies", data["id"]])) {
-  //                           moviesData.add(snapshot.data());
-  //                         }
-  //                       }
-  //                     } else if (allData["poster_path"] != null &&
-  //                         !containsList(seenMovies, ["Movies", data["id"]])) {
-  //                       moviesData.add(snapshot.data());
-  //                     }
-  //                   }
-  //                 }
-  //               }
-  //             } else {
-  //               print('Failed to fetch countries');
-  //             }
-  //           } else {
-  //             if (filters.isNotEmpty) {
-  //               // print(data["genres"]);
-  //               if (data.keys.toList().contains("genres")) {
-  //                 bool allFiltersPresent =
-  //                     areAllFiltersPresent(filters, data["genres"]);
-  //                 if (allFiltersPresent &&
-  //                     allData["poster_path"] != null &&
-  //                     !containsList(seenMovies, ["Movies", data["id"]])) {
-  //                   moviesData.add(snapshot.data());
-  //                 }
-  //               }
-  //             } else if (allData["poster_path"] != null &&
-  //                 !containsList(seenMovies, ["Movies", data["id"]])) {
-  //               moviesData.add(snapshot.data());
-  //             }
-  //           }
-  //         }
-  //       });
-  //       i++;
-  //     } else {
-  //       break;
-  //     }
-  //     added += 1;
-  //   }
-  //   for (var element in moviesData) {
-  //     if (!containsMap(_items, element)) {
-  //       _items.add(element);
-  //       check(element["id"].toString());
-  //     }
-  //   }
-  //   print(added);
-  //   if (added == idsExplorePage.length) {
-  //     await getAllMovies();
-  //   }
-  //   if (moviesData.length < 10) {
-  //     _loadMoreItems();
-  //   }
-
-  //   genres = await _fetchGenres();
-  //   setState(() {
-  //     _carouselLoaded = true;
-  //   });
-  // }
-
-  void _loadMoreItems() {
-    page += 1;
-    getData();
-  }
-
   @override
   void initState() {
     super.initState();
@@ -706,52 +556,10 @@ class _ExploreState extends State<Explore> {
     super.dispose();
   }
 
-  void _scrollListener() {
-    // if (_scrollController.position.pixels ==
-    //         _scrollController.position.maxScrollExtent ||
-    //     _items.length < 10) {
-    //   setState(() {
-    //     _loadMoreItems();
-    //   });
-    // }
-  }
-
-  Future<List<dynamic>> _fetchGenres() async {
-    final response = await http.get(Uri.parse(GENRES_LINK));
-    List<Genre> genresResult = [];
-    if (response.statusCode == 200) {
-      for (Map genre in jsonDecode(response.body)["genres"]) {
-        if (genre["name"] != "TV Movie") {
-          genresResult.add(Genre(genre["name"], false));
-        }
-      }
-      return genresResult;
-    } else {
-      throw Exception('Failed to load genres');
-    }
-  }
+  void _scrollListener() {}
 
   @override
   Widget build(BuildContext context) {
-    int selectedIndex = 0;
-
-    final List<Widget> pages = [
-      const MyApp(),
-      const Playlists(),
-      const Search(),
-      const Friends(),
-      const Profile(),
-      // Add more pages here
-    ];
-
-    void _onItemTapped(int index) {
-      selectedIndex = index;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
-      );
-    }
-
     void _onTap(String type, String id, String title) {
       setState(
         () {
@@ -1027,187 +835,6 @@ class _ExploreState extends State<Explore> {
       );
     }
 
-    Widget _buildToggleViewButton() {
-      return IconButton(
-        icon: Icon(isGridMode ? Icons.view_carousel : Icons.grid_on),
-        onPressed: () {
-          setState(() {
-            isGridMode = !isGridMode;
-          });
-        },
-      );
-    }
-
-    Widget _buildFiltersSection() {
-      // Replace this with your actual filters UI
-      return IconButton(
-        icon: Icon(isFilterOpen ? Icons.check : Icons.filter_list),
-        onPressed: toggleFilter,
-      );
-    }
-
-// Combine the button and the filters using Stack
-    Widget _buildToggleViewAndFilters() {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Call your function to build the filters section
-          _buildFiltersSection(),
-          // Call your function to build the button
-          _buildToggleViewButton(),
-        ],
-      );
-    }
-
-    Widget _buildCarouselView() {
-      return ListView.builder(
-        itemCount: _items.length,
-        itemBuilder: (BuildContext context, int index) {
-          // Let's say the first item is our carousel
-          if (index == 0) {
-            return Center(
-              child: CarouselSlider(
-                options: CarouselOptions(
-                  initialPage: _currentSlide,
-                  enableInfiniteScroll: false,
-                  onPageChanged: (index, reason) {
-                    setState(() {
-                      _currentSlide = index; // Updating the current slide index
-                      // if (_currentSlide == _items.length - 10 ||
-                      //     _items.length < 10) {
-                      //   // We are at the last slide, so load more items
-                      //   _loadMoreItems();
-                      // }
-                    });
-                  },
-                  height: MediaQuery.of(context).size.height * 0.725,
-                ),
-                items: _items.map((item) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Opacity(
-                          opacity:
-                              _currentSlide == _items.indexOf(item) ? 1.0 : 0.3,
-                          child: GestureDetector(
-                            onTap: () {
-                              // Handle the click event here
-                              // movieResult = [
-                              //   item['id'],
-                              //   item['title'],
-                              //   "Movies",
-                              // ];
-                              Movie tempMovie = Movie(
-                                  id: item["id"],
-                                  title: item["title"],
-                                  coverPhoto: item["poster_path"]);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        MovieResult(movie: tempMovie)),
-                              );
-                            },
-                            child: Container(
-                              margin:
-                                  const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                              width: MediaQuery.of(context).size.width * 0.8,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(27),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color.fromARGB(
-                                              255, 114, 113, 113)
-                                          .withOpacity(0.5),
-                                      spreadRadius: 1,
-                                      blurRadius: 10,
-                                      offset: const Offset(
-                                          2, 2), // changes position of shadow
-                                    ),
-                                  ],
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(27),
-                                  child: Image.network(
-                                    IMG_LINK + item["poster_path"],
-                                    fit: BoxFit.fitWidth,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 10.0,
-                        ), // You can adjust this value as needed
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            GestureDetector(
-                              onTap: () => _onTap(
-                                  'seen', item["id"].toString(), item["title"]),
-                              child: Container(
-                                margin: const EdgeInsets.fromLTRB(
-                                    0.0, 10.0, 10.0, 10.0),
-                                child: Image.asset(
-                                  _imageSeenProviders[item["id"].toString()],
-                                  height: 40,
-                                ),
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () => _onTap('watchlist',
-                                  item["id"].toString(), item["title"]),
-                              child: Container(
-                                margin: const EdgeInsets.fromLTRB(
-                                    0.0, 10.0, 10.0, 10.0),
-                                child: Image.asset(
-                                  _imageWatchlistProviders[
-                                      item["id"].toString()],
-                                  height: 40,
-                                ),
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () => _onTap(
-                                  'fav', item["id"].toString(), item["title"]),
-                              child: Container(
-                                margin: const EdgeInsets.fromLTRB(
-                                    0.0, 10.0, 10.0, 10.0),
-                                child: Image.asset(
-                                  _imageFavProviders[item["id"].toString()],
-                                  height: 40,
-                                ),
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () => _onTap(
-                                  'list', item["id"].toString(), item["title"]),
-                              child: Container(
-                                margin: const EdgeInsets.fromLTRB(
-                                    0.0, 10.0, 10.0, 10.0),
-                                child: Image.asset(
-                                  _imageListsProviders[item["id"].toString()],
-                                  height: 40,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            );
-          }
-          return null;
-        },
-      );
-    }
-
     Widget _buildGridView() {
       // Replace this with your grid content
       return ListView.builder(
@@ -1404,9 +1031,6 @@ class _ExploreState extends State<Explore> {
                     ['Movies', element["id"].toString()])) {
                   scoreActor += 3;
                 }
-                print(currentUser.rewatchedMovies.keys
-                    .toList()
-                    .contains(element["id"].toString()));
                 if (currentUser.rewatchedMovies.keys
                     .toList()
                     .contains(element["id"].toString())) {
