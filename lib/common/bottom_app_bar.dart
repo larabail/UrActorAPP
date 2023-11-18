@@ -1,4 +1,6 @@
 // common_bottom_app_bar.dart
+// ignore_for_file: must_be_immutable
+
 import 'package:flutter/material.dart';
 import 'package:uractor/playlists.dart';
 import 'package:uractor/profile.dart';
@@ -6,7 +8,6 @@ import 'package:uractor/profile.dart';
 import '../friends.dart';
 import '../main.dart';
 
-// ignore: must_be_immutable
 class CommonBottomAppBar extends StatelessWidget {
   int _selectedIndex = 0;
   CommonBottomAppBar(int selectedIndex, {super.key}) {
@@ -22,7 +23,7 @@ class CommonBottomAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    void _onItemTapped(int index) {
+    void onItemTapped(int index) {
       _selectedIndex = index;
       Navigator.push(
         context,
@@ -45,10 +46,6 @@ class CommonBottomAppBar extends StatelessWidget {
           icon: Icon(Icons.library_books_rounded),
           label: 'Library',
         ),
-        // const BottomNavigationBarItem(
-        //   icon: Icon(Icons.search),
-        //   label: 'Search',
-        // ),
         const BottomNavigationBarItem(
           label: 'Friends',
           icon: Icon(Icons.contacts),
@@ -68,7 +65,7 @@ class CommonBottomAppBar extends StatelessWidget {
         ),
       ],
       currentIndex: _selectedIndex >= 0 ? _selectedIndex : 0,
-      onTap: _onItemTapped,
+      onTap: onItemTapped,
     );
   }
 }
