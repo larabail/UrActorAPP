@@ -36,7 +36,7 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
         .update({
       'friends': FieldValue.arrayUnion([recipientUID]),
     });
-    friends.add(senderUID);
+    currentUser.friends.add(senderUID);
   }
 
   void rejectFriendRequest(String recipientUID, String senderUID) async {

@@ -33,8 +33,9 @@ class CommonBottomAppBar extends StatelessWidget {
     }
 
     return BottomNavigationBar(
-      selectedItemColor:
-          _selectedIndex >= 0 ? const Color.fromARGB(250, 224, 190, 78) : Colors.grey,
+      selectedItemColor: _selectedIndex >= 0
+          ? const Color.fromARGB(250, 224, 190, 78)
+          : Colors.grey,
       unselectedItemColor: Colors.grey,
       type: BottomNavigationBarType.fixed,
       items: [
@@ -56,11 +57,11 @@ class CommonBottomAppBar extends StatelessWidget {
         ),
         BottomNavigationBarItem(
           label: 'Profile',
-          icon: settings["profile_photo"] != "" &&
-                  settings["profile_photo"] != null
+          icon: currentUser.settings["profile_photo"] != "" &&
+                  currentUser.settings["profile_photo"] != null
               ? ClipOval(
                   child: Image.network(
-                  settings["profile_photo"],
+                  currentUser.settings["profile_photo"],
                   height: 27,
                   width: 27,
                   fit: BoxFit.cover,

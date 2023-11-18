@@ -1,5 +1,7 @@
-// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously
+// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, no_leading_underscores_for_local_identifiers
 
+import 'common/utils.dart';
+import 'common/constants.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' as intl;
@@ -7,13 +9,8 @@ import 'appbar.dart';
 import 'bottom_app_bar.dart';
 import 'friends.dart';
 import 'friends_profile.dart';
-import 'profile.dart';
-import 'search.dart';
 import 'main.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'playlists.dart';
-import 'rating_popup.dart';
+import 'objects/Movie.dart';
 import 'person_result.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'dart:async';
@@ -29,711 +26,41 @@ bool _isTappedFav = false;
 bool _isTappedList = false;
 String reviewId = "";
 Map reviewInfo = {};
-final myController = TextEditingController(text: "");
 
 class MovieResult extends StatefulWidget {
-  const MovieResult({super.key});
+  final Movie movie;
+  const MovieResult({Key? key, required this.movie}) : super(key: key);
 
   @override
   _MovieResultState createState() => _MovieResultState();
 }
 
-bool containsMap(List list, List map) {
-  for (int i = 0; i < list.length; i++) {
-    if ((list[i][1]).toString() == map[1].toString() &&
-        (list[i][0]) as String == "Movies") {
-      return true;
-    }
-  }
-  return false;
-}
-
-void check() {
-  if (containsMap(seenMovies, ['Movies', movieResult[0]])) {
-    _isTappedSeen = true;
-    _imageProviderSeen = 'assets/seen_after.png';
-  } else {
-    _isTappedSeen = false;
-    _imageProviderSeen = 'assets/seen_before.png';
-  }
-  if (containsMap(watchlist, ['Movies', movieResult[0]])) {
-    _isTappedWatchlist = true;
-    _imageProviderWatchlist = 'assets/watchlist_after.png';
-  } else {
-    _isTappedWatchlist = false;
-    _imageProviderWatchlist = 'assets/watchlist_before.png';
-  }
-  if (containsMap(favMovies, ['Movies', movieResult[0]])) {
-    _isTappedFav = true;
-    _imageProviderFav = 'assets/fav_after.png';
-  } else {
-    _isTappedFav = false;
-    _imageProviderFav = 'assets/fav_before.png';
-  }
-
-  if (reviews.keys.toList().contains(movieResult[0].toString())) {
-    reviewed = true;
-  }
-}
-
 class _MovieResultState extends State<MovieResult> {
-  final String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-  String credits = "/credits?api_key=700cd4fab994df56eb41b34d38c4762a";
-  final String imgLink = 'https://image.tmdb.org/t/p/w500';
-  String link = "https://api.themoviedb.org/3/movie/";
-  String watch_providers =
-      "/watch/providers?api_key=700cd4fab994df56eb41b34d38c4762a";
-  String video = "/videos?api_key=700cd4fab994df56eb41b34d38c4762a";
-
-  Future<void> deleteFromWatchedConfirmation(
-      String id, BuildContext context) async {
-    // Display a dialog box for confirmation. You will have to create a custom dialog for this.
-    bool confirmed = await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirmation'),
-          content: const Text('Delete from watched?'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('No'),
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-            ),
-            TextButton(
-              child: const Text('Yes'),
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmed) {
-      List w;
-      await FirebaseFirestore.instance
-          .collection(uid)
-          .get()
-          .then((QuerySnapshot querySnapshot) {
-        querySnapshot.docs.forEach((doc) async {
-          if (doc.id == "Movies") {
-            Map movies_result = doc.data() as Map;
-            w = movies_result["Seen"];
-            int index = w.indexOf(id);
-
-            if (index > -1) {
-              w.removeAt(index);
-            }
-            var userDoc =
-                FirebaseFirestore.instance.collection(uid).doc("Movies");
-            await userDoc.update({'Seen': w});
-            seenMovies = [];
-            for (var element in w) {
-              seenMovies += [
-                ["Movies", element]
-              ];
-            }
-            setState(() {
-              seenMovies = seenMovies;
-            });
-          }
-        });
-      });
-    } else {
+  final myController = TextEditingController(text: "");
+  void check() {
+    if (widget.movie.isSeen()) {
+      _isTappedSeen = true;
       _imageProviderSeen = 'assets/seen_after.png';
-    }
-  }
-
-  void writeReview(id, context) {
-    reviewId = id.toString();
-    // Show the dialog like this
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return const RatingDialog();
-      },
-    );
-  }
-
-  void editReview(id, context) {
-    reviewId = id.toString();
-    reviewInfo = reviews[id.toString()];
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return const RatingDialog();
-      },
-    );
-  }
-
-  void incrementWatched(String value, String id) {
-    if (value != "") {
-      var userDoc = FirebaseFirestore.instance.collection(uid).doc("Rewatched");
-      Map<String, int> doc = {};
-      rewatchedMovies[id] = int.parse(value);
-      doc[id] = int.parse(value);
-      userDoc.update(doc);
-    }
-  }
-
-  Future<void> deleteReview(id, context) async {
-    reviews.remove(id.toString());
-    reviewInfo = {};
-    reviewed = false;
-    await FirebaseFirestore.instance
-        .collection(uid)
-        .get()
-        .then((QuerySnapshot querySnapshot) async {
-      for (var doc in querySnapshot.docs) {
-        if (doc.id == "Reviews") {
-          Map allreviews = doc.data() as Map;
-          List reviewsInList = allreviews["Seen"] as List;
-          List tempReviewsInList = [];
-          for (var element in reviewsInList) {
-            element = element as Map;
-            if (element.keys.toList()[0].toString() != id.toString()) {
-              tempReviewsInList.add(element);
-            }
-          }
-          final userDoc =
-              FirebaseFirestore.instance.collection(uid).doc("Reviews");
-          await userDoc.update({'Seen': tempReviewsInList});
-          reviews = {};
-          for (var element in tempReviewsInList) {
-            element = element as Map;
-            reviews[element.keys.toList()[0]] =
-                element[element.keys.toList()[0]];
-          }
-          setState(() {
-            reviews = reviews;
-          });
-        }
-      }
-    });
-  }
-
-  void markWatched(String id, String title, int runtime, double rating,
-      BuildContext context) async {
-    final userDoc = FirebaseFirestore.instance.collection(uid).doc('Movies');
-    id = id.toString();
-    await userDoc.update({
-      'Seen': FieldValue.arrayUnion([id])
-    });
-    // store id in shared preferences or another way
-    List w;
-    await FirebaseFirestore.instance
-        .collection(uid)
-        .get()
-        .then((QuerySnapshot querySnapshot) {
-      querySnapshot.docs.forEach((doc) async {
-        if (doc.id == "Movies") {
-          Map movies_result = doc.data() as Map;
-          w = movies_result["Seen"];
-          seenMovies = [];
-          for (var element in w) {
-            seenMovies += [
-              ["Movies", element]
-            ];
-          }
-        }
-      });
-    });
-
-    final today = DateTime.now();
-
-    final snapshot = await FirebaseFirestore.instance.collection(uid).get();
-    for (var doc in snapshot.docs) {
-      if (doc.id == 'Calendar') {
-        if (!dontAskCalendar) {
-          addtoCalendar(id, title, runtime, rating, today, context);
-        } else {
-          setState(() {
-            seenMovies = seenMovies;
-          });
-        }
-      }
-    }
-  }
-
-  void addtoCalendar(String id, String title, int runtime, double imdbRating,
-      DateTime today, BuildContext context) async {
-    final confirmed = await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirm'),
-          content: const Text('Did you watch this movie today?'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-            ),
-            TextButton(
-              child: const Text('Yes'),
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmed) {
-      final myObject = {
-        today.toString().split(" ")[0]: FieldValue.arrayUnion([
-          {'id': id, 'title': title, 'runtime': runtime, 'rating': imdbRating}
-        ])
-      };
-
-      final userDoc =
-          FirebaseFirestore.instance.collection(uid).doc('Calendar');
-      await userDoc.update(myObject);
-      calendar = {};
-      await FirebaseFirestore.instance
-          .collection(uid)
-          .get()
-          .then((QuerySnapshot querySnapshot) {
-        querySnapshot.docs.forEach((doc) async {
-          if (doc.id == "Calendar") {
-            calendar = doc.data() as Map;
-          }
-        });
-      });
-    }
-    setState(() {
-      calendar = calendar;
-    });
-  }
-
-  void favorite(String id, context) async {
-    final userDoc = FirebaseFirestore.instance.collection(uid).doc("Favorites");
-    await userDoc.update({
-      'Movies': FieldValue.arrayUnion([id])
-    });
-    favMovies = [];
-    await FirebaseFirestore.instance
-        .collection(uid)
-        .get()
-        .then((QuerySnapshot querySnapshot) {
-      for (var doc in querySnapshot.docs) {
-        if (doc.id == "Favorites") {
-          Map allFavs = doc.data() as Map;
-          allFavs["Movies"].forEach((element) {
-            favMovies += [
-              ["Movies", element]
-            ];
-          });
-        }
-      }
-    });
-    setState(() {
-      favMovies = favMovies;
-    });
-  }
-
-  void unfavorite(String id, context) async {
-    await FirebaseFirestore.instance
-        .collection(uid)
-        .get()
-        .then((QuerySnapshot querySnapshot) async {
-      for (var doc in querySnapshot.docs) {
-        if (doc.id == "Favorites") {
-          Map allFavs = doc.data() as Map;
-          List movieInFavs = allFavs["Movies"];
-          int index = movieInFavs.indexOf(id);
-          if (index > -1) {
-            movieInFavs.removeAt(index);
-          }
-          final userDoc =
-              FirebaseFirestore.instance.collection(uid).doc("Favorites");
-          await userDoc.update({'Movies': movieInFavs});
-          favMovies = [];
-          allFavs["Movies"].forEach((element) {
-            favMovies += [
-              ["Movies", element]
-            ];
-          });
-          setState(() {
-            favMovies = favMovies;
-          });
-        }
-      }
-    });
-  }
-
-  void bookmark(String id, context) async {
-    final userDoc = FirebaseFirestore.instance.collection(uid).doc("Watchlist");
-    await userDoc.update({
-      'Movies': FieldValue.arrayUnion([id])
-    });
-    watchlist = [];
-    await FirebaseFirestore.instance
-        .collection(uid)
-        .get()
-        .then((QuerySnapshot querySnapshot) {
-      for (var doc in querySnapshot.docs) {
-        if (doc.id == "Watchlist") {
-          Map watchlistAll = doc.data() as Map;
-          watchlistAll["Movies"].forEach((element) {
-            watchlist += [
-              ["Movies", element]
-            ];
-          });
-        }
-      }
-    });
-    setState(() {
-      watchlist = watchlist;
-    });
-  }
-
-  void unbookmark(String id, context) async {
-    await FirebaseFirestore.instance
-        .collection(uid)
-        .get()
-        .then((QuerySnapshot querySnapshot) async {
-      for (var doc in querySnapshot.docs) {
-        if (doc.id == "Watchlist") {
-          Map watchlistAll = doc.data() as Map;
-          List movieInWatchlist = watchlistAll["Movies"];
-          int index = movieInWatchlist.indexOf(id);
-          if (index > -1) {
-            movieInWatchlist.removeAt(index);
-          }
-          final userDoc =
-              FirebaseFirestore.instance.collection(uid).doc("Watchlist");
-          await userDoc.update({'Movies': movieInWatchlist});
-          watchlist = [];
-          watchlistAll["Movies"].forEach((element) {
-            watchlist += [
-              ["Movies", element]
-            ];
-          });
-          setState(() {
-            watchlist = watchlist;
-          });
-        }
-      }
-    });
-  }
-
-  Future<List<String>> getProfilePhotos(List uids) async {
-    List<String> profilePhotos = [];
-
-    for (String tempUid in uids) {
-      var document = await FirebaseFirestore.instance
-          .collection(tempUid)
-          .doc("Settings")
-          .get();
-      if (document.exists && document.data()!.containsKey('profile_photo')) {
-        print(tempUid);
-        profilePhotos.add(document.data()!['profile_photo']);
-      } else {
-        profilePhotos.add(""); //eplace with your default image URL
-      }
-    }
-
-    return profilePhotos;
-  }
-
-  void addToList(String id, String listId, List moviesinList, context) async {
-    moviesinList.add(id);
-    final userDoc = FirebaseFirestore.instance
-        .collection("Watchlists")
-        .doc(listId.toString());
-    await userDoc.update({'Movies': moviesinList});
-    playlists = {};
-    await FirebaseFirestore.instance
-        .collection("Watchlists")
-        .get()
-        .then((QuerySnapshot querySnapshot) {
-      for (var doc in querySnapshot.docs) {
-        Map keysOfDoc = doc.data() as Map;
-        List users = keysOfDoc['Users'] as List;
-        for (var element in users) {
-          Map el = element as Map;
-          if (el.keys.contains(uid)) {
-            playlists[doc.id] = doc.data();
-          }
-        }
-      }
-    });
-    Navigator.pop(context);
-  }
-
-  void deleteFromList(
-      String id, String listId, List moviesinList, context) async {
-    moviesinList.remove(id);
-    final userDoc = FirebaseFirestore.instance
-        .collection("Watchlists")
-        .doc(listId.toString());
-    await userDoc.update({'Movies': moviesinList});
-    playlists = {};
-    await FirebaseFirestore.instance
-        .collection("Watchlists")
-        .get()
-        .then((QuerySnapshot querySnapshot) {
-      for (var doc in querySnapshot.docs) {
-        Map keysOfDoc = doc.data() as Map;
-        List users = keysOfDoc['Users'] as List;
-        for (var element in users) {
-          Map el = element as Map;
-          if (el.keys.contains(uid)) {
-            playlists[doc.id] = doc.data();
-          }
-        }
-      }
-    });
-    Navigator.pop(context);
-  }
-
-  Future<Map> getMovieData() async {
-    List movieData = movieResult;
-    if (rewatchedMovies.keys.toList().contains(movieData[0])) {
-      movieData.add(rewatchedMovies[movieData[0]]);
-    } else if (containsMap(seenMovies, ['Movies', movieResult[0]])) {
-      movieData.add(1);
     } else {
-      movieData.add(0);
+      _isTappedSeen = false;
+      _imageProviderSeen = 'assets/seen_before.png';
     }
-    movieData.add(null);
-    if (reviewed) {
-      movieData[4] = (reviews[movieData[0].toString()] as Map);
-    }
-    // myController.text = movieData[3].toString();
-    String name = movieData[1]
-        .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
-        .replaceAll(" ", "-");
-    final response =
-        await http.get(Uri.parse('$link${movieData[0]}-$name$api_key_actor'));
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      json["times_seen"] = movieData[3];
-      json["review"] = movieData[4];
-      json["seen_dates"] = [];
-      for (String key in calendar.keys) {
-        for (var movie in calendar[key]) {
-          if (movie['id'] == movieData[0].toString()) {
-            json["seen_dates"].add([key, movie["friends"]]);
-          }
-        }
-      }
-      json["seen_dates"].sort((a, b) {
-        // Assuming 'a' and 'b' are lists where the first item is the date string.
-        // Parse the date strings to DateTime objects for comparison.
-        var dateA = DateTime.parse(a[0]);
-        var dateB = DateTime.parse(b[0]);
-        // Use compareTo for comparison and multiply by -1 to get descending order.
-        return dateB.compareTo(dateA);
-      });
-
-      if (json["backdrop_path"] == null) {
-        json["backdrop_path"] = "";
-      }
-      var imdbId = json['imdb_id'];
-      if (imdbId != null) {
-        String link2 = 'https://www.omdbapi.com/?i=$imdbId&apikey=768d2cf9';
-        final r = await http.get(Uri.parse(link2));
-        if (r.statusCode == 200) {
-          if (jsonDecode(r.body)["imdbRating"] != null &&
-              jsonDecode(r.body)["imdbRating"] != "N/A") {
-            json["imdb_rating"] = jsonDecode(r.body)["imdbRating"];
-          } else {
-            json["imdb_rating"] = "0.0";
-          }
-          json['year'] = jsonDecode(r.body)['Year'];
-          final r2 = await http
-              .get(Uri.parse('$link${movieData[0]}-$name$watch_providers'));
-          if (r2.statusCode == 200) {
-            json['providers'] = [];
-            if (jsonDecode(r2.body)["results"].keys.contains(country)) {
-              if (jsonDecode(r2.body)["results"][country]['flatrate'] != null) {
-                jsonDecode(r2.body)["results"][country]['flatrate'].forEach(
-                  (provider) async {
-                    String name = provider['provider_name'];
-                    String photo = imgLink + provider['logo_path'];
-                    json['providers'].add([name, photo]);
-                  },
-                );
-                final r3 = await http
-                    .get(Uri.parse('$link${movieData[0]}-$name$credits'));
-                if (r3.statusCode == 200) {
-                  json['cast'] = jsonDecode(r3.body)["cast"];
-                  json['crew'] = jsonDecode(r3.body)["crew"];
-                  final r4 = await http
-                      .get(Uri.parse('$link${movieData[0]}-$name$video'));
-                  if (r4.statusCode == 200) {
-                    bool got = false;
-                    jsonDecode(r4.body)['results'].forEach((element) {
-                      if (element['site'] == "YouTube" &&
-                          element['type'] == "Trailer" &&
-                          !got) {
-                        json['trailer'] = element;
-                        got = true;
-                      }
-                    });
-                    return json;
-                  }
-                  throw Exception('Failed to load movie details');
-                }
-                throw Exception('Failed to load movie details');
-              } else {
-                json['providers'] = [];
-                final r3 = await http
-                    .get(Uri.parse('$link${movieData[0]}-$name$credits'));
-                if (r3.statusCode == 200) {
-                  json['cast'] = jsonDecode(r3.body)["cast"];
-                  json['crew'] = jsonDecode(r3.body)["crew"];
-                  final r4 = await http
-                      .get(Uri.parse('$link${movieData[0]}-$name$video'));
-                  if (r4.statusCode == 200) {
-                    bool got = false;
-                    jsonDecode(r4.body)['results'].forEach((element) {
-                      if (element['site'] == "YouTube" &&
-                          element['type'] == "Trailer" &&
-                          !got) {
-                        json['trailer'] = element;
-                        got = true;
-                      }
-                    });
-                    return json;
-                  }
-                  throw Exception('Failed to load movie details');
-                }
-                throw Exception('Failed to load movie details');
-              }
-            } else {
-              json['providers'] = [];
-              final r3 = await http
-                  .get(Uri.parse('$link${movieData[0]}-$name$credits'));
-              if (r3.statusCode == 200) {
-                json['cast'] = jsonDecode(r3.body)["cast"];
-                json['crew'] = jsonDecode(r3.body)["crew"];
-                final r4 = await http
-                    .get(Uri.parse('$link${movieData[0]}-$name$video'));
-                if (r4.statusCode == 200) {
-                  bool got = false;
-                  jsonDecode(r4.body)['results'].forEach((element) {
-                    if (element['site'] == "YouTube" &&
-                        element['type'] == "Trailer" &&
-                        !got) {
-                      json['trailer'] = element;
-                      got = true;
-                    }
-                  });
-                  return json;
-                }
-                throw Exception('Failed to load movie details');
-              }
-              throw Exception('Failed to load movie details');
-            }
-          } else {
-            throw Exception('Failed to load movie details');
-          }
-        } else {
-          throw Exception('Failed to load movie details');
-        }
-      } else {
-        json['imdb_rating'] = "0.0";
-        json['year'] = "None";
-        final r2 = await http
-            .get(Uri.parse('$link${movieData[0]}-$name$watch_providers'));
-        if (r2.statusCode == 200) {
-          json['providers'] = [];
-          if (jsonDecode(r2.body)["results"].keys.contains(country)) {
-            if (jsonDecode(r2.body)["results"][country]['flatrate'] != null) {
-              jsonDecode(r2.body)["results"][country]['flatrate'].forEach(
-                (provider) async {
-                  String name = provider['provider_name'];
-                  String photo = imgLink + provider['logo_path'];
-                  json['providers'].add([name, photo]);
-                },
-              );
-              final r3 = await http
-                  .get(Uri.parse('$link${movieData[0]}-$name$credits'));
-              if (r3.statusCode == 200) {
-                json['cast'] = jsonDecode(r3.body)["cast"];
-                json['crew'] = jsonDecode(r3.body)["crew"];
-                final r4 = await http
-                    .get(Uri.parse('$link${movieData[0]}-$name$video'));
-                if (r4.statusCode == 200) {
-                  bool got = false;
-                  jsonDecode(r4.body)['results'].forEach((element) {
-                    if (element['site'] == "YouTube" &&
-                        element['type'] == "Trailer" &&
-                        !got) {
-                      json['trailer'] = element;
-                      got = true;
-                    }
-                  });
-                  return json;
-                }
-                throw Exception('Failed to load movie details');
-              }
-              throw Exception('Failed to load movie details');
-            } else {
-              json['providers'] = [];
-              final r3 = await http
-                  .get(Uri.parse('$link${movieData[0]}-$name$credits'));
-              if (r3.statusCode == 200) {
-                json['cast'] = jsonDecode(r3.body)["cast"];
-                json['crew'] = jsonDecode(r3.body)["crew"];
-                final r4 = await http
-                    .get(Uri.parse('$link${movieData[0]}-$name$video'));
-                if (r4.statusCode == 200) {
-                  bool got = false;
-                  jsonDecode(r4.body)['results'].forEach((element) {
-                    if (element['site'] == "YouTube" &&
-                        element['type'] == "Trailer" &&
-                        !got) {
-                      json['trailer'] = element;
-                      got = true;
-                    }
-                  });
-                  return json;
-                }
-                throw Exception('Failed to load movie details');
-              }
-              throw Exception('Failed to load movie details');
-            }
-          } else {
-            json['providers'] = [];
-            final r3 =
-                await http.get(Uri.parse('$link${movieData[0]}-$name$credits'));
-            if (r3.statusCode == 200) {
-              json['cast'] = jsonDecode(r3.body)["cast"];
-              json['crew'] = jsonDecode(r3.body)["crew"];
-              final r4 =
-                  await http.get(Uri.parse('$link${movieData[0]}-$name$video'));
-              if (r4.statusCode == 200) {
-                bool got = false;
-                jsonDecode(r4.body)['results'].forEach((element) {
-                  if (element['site'] == "YouTube" &&
-                      element['type'] == "Trailer" &&
-                      !got) {
-                    json['trailer'] = element;
-                    got = true;
-                  }
-                });
-                return json;
-              }
-              throw Exception('Failed to load movie details');
-            }
-            throw Exception('Failed to load movie details');
-          }
-        } else {
-          throw Exception('Failed to load movie details');
-        }
-      }
+    if (widget.movie.isBookmarked()) {
+      _isTappedWatchlist = true;
+      _imageProviderWatchlist = 'assets/watchlist_after.png';
     } else {
-      throw Exception('Failed to load movie details');
+      _isTappedWatchlist = false;
+      _imageProviderWatchlist = 'assets/watchlist_before.png';
+    }
+    if (widget.movie.isFavorite()) {
+      _isTappedFav = true;
+      _imageProviderFav = 'assets/fav_after.png';
+    } else {
+      _isTappedFav = false;
+      _imageProviderFav = 'assets/fav_before.png';
+    }
+    if (currentUser.reviews.keys.toList().contains(widget.movie.id)) {
+      reviewed = true;
     }
   }
 
@@ -742,301 +69,295 @@ class _MovieResultState extends State<MovieResult> {
     reviewed = false;
     check();
 
-    int selectedIndex = 0;
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (rewatchedMovies.keys.toList().contains(movieResult[0].toString())) {
+      if (currentUser.rewatchedMovies.keys.toList().contains(widget.movie.id)) {
         myController.text =
-            (rewatchedMovies[movieResult[0].toString()]).toString();
-      } else if (containsMap(seenMovies, ['Movies', movieResult[0]])) {
+            (currentUser.rewatchedMovies[widget.movie.id]).toString();
+      } else if (widget.movie.isSeen()) {
         myController.text = "1";
       } else {
         myController.text = "0";
       }
     });
 
-    // ignore: no_leading_underscores_for_local_identifiers
-    void _onTap(
-        String type, String id, String title, int runtime, double rating) {
-      setState(
-        () {
-          switch (type) {
-            case 'seen':
-              _isTappedSeen = !_isTappedSeen;
-              if (_isTappedSeen) {
-                markWatched(id, title, runtime, rating, context);
-              } else {
-                deleteFromWatchedConfirmation(id, context);
-              }
-              break;
-            case 'watchlist':
-              _isTappedWatchlist = !_isTappedWatchlist;
-              if (_isTappedWatchlist) {
-                bookmark(id, context);
-              } else {
-                unbookmark(id, context);
-              }
-              break;
-            case 'fav':
-              _isTappedFav = !_isTappedFav;
-              if (_isTappedFav) {
-                favorite(id, context);
-              } else {
-                unfavorite(id, context);
-              }
-              break;
-            case 'list':
-              _isTappedList = !_isTappedList;
-              if (_isTappedList) {
-                _imageProviderList = 'assets/playlists_after.png';
-                showModalBottomSheet(
-                  context: context,
-                  builder: (_) {
-                    return SizedBox(
-                      height: 300,
-                      child: ListView.builder(
-                        itemCount: (playlists.length / 2).ceil(),
-                        itemBuilder: (context, index) {
-                          final leftMovieIndex = index * 2;
-                          final rightMovieIndex = index * 2 + 1;
-                          final keyLeft = (leftMovieIndex < playlists.length)
-                              ? playlists.keys.elementAt(leftMovieIndex)
-                              : null;
-                          final keyRight = (rightMovieIndex < playlists.length)
-                              ? playlists.keys.elementAt(rightMovieIndex)
-                              : null;
-                          dynamic valueLeft,
-                              imageLeft,
-                              moviesLeft,
-                              valueRight,
-                              imageRight,
-                              moviesRight;
-                          if (keyLeft != null) {
-                            valueLeft = playlists[keyLeft]['Name'];
-                            imageLeft = playlists[keyLeft]['CoverPhoto'];
-                            moviesLeft = playlists[keyLeft]['Movies'];
-                          }
-                          if (keyRight != null) {
-                            valueRight = playlists[keyRight]['Name'];
-                            imageRight = playlists[keyRight]['CoverPhoto'];
-                            moviesRight = playlists[keyRight]['Movies'];
-                          }
-                          return Row(
-                            children: [
-                              if (keyLeft != null)
-                                GestureDetector(
-                                  onTap: () {
-                                    if (moviesLeft.contains(id)) {
-                                      deleteFromList(
-                                          id, keyLeft, moviesLeft, context);
-                                    } else {
-                                      addToList(
-                                          id, keyLeft, moviesLeft, context);
-                                    }
-                                  },
-                                  child: Stack(
-                                    children: [
-                                      Container(
-                                        margin: const EdgeInsets.fromLTRB(
-                                            10.0, 10.0, 5.0, 0),
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.45,
-                                        height:
-                                            MediaQuery.of(context).size.height *
-                                                0.18,
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(27),
-                                          image: DecorationImage(
-                                            image: NetworkImage(imageLeft),
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned.fill(
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(27),
-                                            gradient: LinearGradient(
-                                              begin: Alignment.topCenter,
-                                              end: Alignment.bottomCenter,
-                                              colors: [
-                                                Colors.transparent,
-                                                Colors.black.withOpacity(1),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.fromLTRB(
-                                            5.0, 10.0, 10.0, 0),
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.45,
-                                        height:
-                                            MediaQuery.of(context).size.height *
-                                                0.18,
-                                        // Use Align to position the text
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Align(
-                                            alignment: Alignment.bottomRight,
-                                            child: Text(
-                                              valueLeft,
-                                              style: const TextStyle(
-                                                color: Colors
-                                                    .white, // Make sure the text is visible on the gradient
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                letterSpacing: 1.25,
-                                                wordSpacing: 1.75,
-                                                height: 1.5,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      if (moviesLeft.contains(id))
-                                        const Positioned(
-                                          top: 10,
-                                          right: 10,
-                                          child: Icon(Icons.check_circle,
-                                              color: Colors.green),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              if (keyRight != null)
-                                GestureDetector(
-                                  onTap: () {
-                                    if (moviesRight.contains(id)) {
-                                      deleteFromList(
-                                          id, keyRight, moviesRight, context);
-                                    } else {
-                                      addToList(
-                                          id, keyRight, moviesRight, context);
-                                    }
-                                  },
-                                  child: Stack(
-                                    children: [
-                                      Container(
-                                        margin: const EdgeInsets.fromLTRB(
-                                            5.0, 10.0, 10.0, 0),
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.45,
-                                        height:
-                                            MediaQuery.of(context).size.height *
-                                                0.18,
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(27),
-                                          image: DecorationImage(
-                                            image: NetworkImage(imageRight),
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned.fill(
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(27),
-                                            gradient: LinearGradient(
-                                              begin: Alignment.topCenter,
-                                              end: Alignment.bottomCenter,
-                                              colors: [
-                                                Colors.transparent,
-                                                Colors.black.withOpacity(1),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.fromLTRB(
-                                            5.0, 10.0, 10.0, 0),
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.45,
-                                        height:
-                                            MediaQuery.of(context).size.height *
-                                                0.18,
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Align(
-                                            alignment: Alignment.bottomRight,
-                                            child: Text(
-                                              valueRight,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                letterSpacing: 1.25,
-                                                wordSpacing: 1.75,
-                                                height: 1.5,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      if (moviesRight.contains(id))
-                                        const Positioned(
-                                          top: 10,
-                                          right: 10,
-                                          child: Icon(Icons.check_circle,
-                                              color: Colors.green),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          );
-                        },
-                      ),
-                    );
-                  },
-                ).then((value) => {
-                      setState(() {
-                        _imageProviderList = 'assets/playlists_before.png';
-                        _isTappedList = !_isTappedList;
-                      })
-                    });
-              } else {
-                _imageProviderList = 'assets/playlists_before.png';
-              }
-              break;
-            default:
-              break;
+    Future<void> _onTap(String type, String id, String title, int runtime,
+        double rating) async {
+      bool success = false;
+      switch (type) {
+        case 'seen':
+          _isTappedSeen = !_isTappedSeen;
+          if (_isTappedSeen) {
+            success = await FirebaseUtils.markWatched(
+                id, title, runtime, rating, context, "Movies");
+            setState(() {
+              currentUser.seenMovies = currentUser.seenMovies;
+            });
+          } else {
+            success = await FirebaseUtils.deleteFromWatchedConfirmation(
+                id, context, "Movies");
+            setState(() {
+              currentUser.seenMovies = currentUser.seenMovies;
+            });
           }
-        },
-      );
-    }
+          break;
+        case 'watchlist':
+          _isTappedWatchlist = !_isTappedWatchlist;
+          if (_isTappedWatchlist) {
+            success = await FirebaseUtils.bookmark(id, context, "Movies");
+            setState(() {
+              currentUser.watchlist = currentUser.watchlist;
+            });
+          } else {
+            success = await FirebaseUtils.unbookmark(id, context, "Movies");
+            setState(() {
+              currentUser.watchlist = currentUser.watchlist;
+            });
+          }
+          break;
+        case 'fav':
+          _isTappedFav = !_isTappedFav;
+          if (_isTappedFav) {
+            success = await FirebaseUtils.favorite(id, context, "Movies");
+            setState(() {
+              currentUser.favMovies = currentUser.favMovies;
+            });
+          } else {
+            success = await FirebaseUtils.unfavorite(id, context, "Movies");
+            setState(() {
+              currentUser.favMovies = currentUser.favMovies;
+            });
+          }
+          break;
+        case 'list':
+          _isTappedList = !_isTappedList;
+          if (_isTappedList) {
+            _imageProviderList = 'assets/playlists_after.png';
+            showModalBottomSheet(
+              context: context,
+              builder: (_) {
+                return SizedBox(
+                  height: 300,
+                  child: ListView.builder(
+                    itemCount: (currentUser.playlists.length / 2).ceil(),
+                    itemBuilder: (context, index) {
+                      final leftMovieIndex = index * 2;
+                      final rightMovieIndex = index * 2 + 1;
+                      final keyLeft = (leftMovieIndex <
+                              currentUser.playlists.length)
+                          ? currentUser.playlists.keys.elementAt(leftMovieIndex)
+                          : null;
+                      final keyRight =
+                          (rightMovieIndex < currentUser.playlists.length)
+                              ? currentUser.playlists.keys
+                                  .elementAt(rightMovieIndex)
+                              : null;
+                      dynamic valueLeft,
+                          imageLeft,
+                          moviesLeft,
+                          valueRight,
+                          imageRight,
+                          moviesRight;
+                      if (keyLeft != null) {
+                        valueLeft = currentUser.playlists[keyLeft]['Name'];
+                        imageLeft =
+                            currentUser.playlists[keyLeft]['CoverPhoto'];
+                        moviesLeft = currentUser.playlists[keyLeft]['Movies'];
+                      }
+                      if (keyRight != null) {
+                        valueRight = currentUser.playlists[keyRight]['Name'];
+                        imageRight =
+                            currentUser.playlists[keyRight]['CoverPhoto'];
+                        moviesRight = currentUser.playlists[keyRight]['Movies'];
+                      }
+                      return Row(
+                        children: [
+                          if (keyLeft != null)
+                            GestureDetector(
+                              onTap: () {
+                                if (moviesLeft.contains(id)) {
+                                  FirebaseUtils.deleteFromList(id, keyLeft,
+                                      moviesLeft, context, "Movies");
+                                } else {
+                                  FirebaseUtils.addToList(id, keyLeft,
+                                      moviesLeft, context, "Movies");
+                                }
+                              },
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        10.0, 10.0, 5.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.45,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.18,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(27),
+                                      image: DecorationImage(
+                                        image: NetworkImage(imageLeft),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned.fill(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(27),
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Colors.transparent,
+                                            Colors.black.withOpacity(1),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        5.0, 10.0, 10.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.45,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.18,
+                                    // Use Align to position the text
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Align(
+                                        alignment: Alignment.bottomRight,
+                                        child: Text(
+                                          valueLeft,
+                                          style: const TextStyle(
+                                            color: Colors
+                                                .white, // Make sure the text is visible on the gradient
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1.25,
+                                            wordSpacing: 1.75,
+                                            height: 1.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  if (moviesLeft.contains(id))
+                                    const Positioned(
+                                      top: 10,
+                                      right: 10,
+                                      child: Icon(Icons.check_circle,
+                                          color: Colors.green),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          if (keyRight != null)
+                            GestureDetector(
+                              onTap: () {
+                                if (moviesRight.contains(id)) {
+                                  FirebaseUtils.deleteFromList(id, keyRight,
+                                      moviesRight, context, "Movies");
+                                } else {
+                                  FirebaseUtils.addToList(id, keyRight,
+                                      moviesRight, context, "Movies");
+                                }
+                              },
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        5.0, 10.0, 10.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.45,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.18,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(27),
+                                      image: DecorationImage(
+                                        image: NetworkImage(imageRight),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned.fill(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(27),
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Colors.transparent,
+                                            Colors.black.withOpacity(1),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        5.0, 10.0, 10.0, 0),
+                                    width: MediaQuery.of(context).size.width *
+                                        0.45,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.18,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Align(
+                                        alignment: Alignment.bottomRight,
+                                        child: Text(
+                                          valueRight,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1.25,
+                                            wordSpacing: 1.75,
+                                            height: 1.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  if (moviesRight.contains(id))
+                                    const Positioned(
+                                      top: 10,
+                                      right: 10,
+                                      child: Icon(Icons.check_circle,
+                                          color: Colors.green),
+                                    ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                );
+              },
+            ).then((value) => {
+                  setState(() {
+                    _imageProviderList = 'assets/playlists_before.png';
+                    _isTappedList = !_isTappedList;
+                  })
+                });
+          } else {
+            _imageProviderList = 'assets/playlists_before.png';
+          }
+          break;
+        default:
+          break;
+      }
 
-    final List<Widget> pages = [
-      const MyApp(),
-      const Playlists(),
-      const Search(),
-      const Friends(),
-      const Profile(),
-      // Add more pages here
-    ];
-
-    void _onItemTapped(int index) {
-      selectedIndex = index;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
-      );
+      if (success) {
+        setState(() {});
+      }
     }
 
     return Scaffold(
       appBar: const CustomAppBar(),
       body: FutureBuilder<Map>(
-        future: getMovieData(),
+        future: widget.movie.getExtendedMovieData(),
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
           if (snapshot.hasData) {
             return SingleChildScrollView(
@@ -1056,7 +377,7 @@ class _MovieResultState extends State<MovieResult> {
                               borderRadius: BorderRadius.circular(10),
                               image: DecorationImage(
                                 image: NetworkImage(
-                                  imgLink + snapshot.data!['backdrop_path'],
+                                  IMG_LINK + snapshot.data!['backdrop_path'],
                                 ),
                                 fit: BoxFit.cover,
                               ),
@@ -1229,12 +550,15 @@ class _MovieResultState extends State<MovieResult> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       GestureDetector(
-                        onTap: () => _onTap(
-                            'seen',
-                            snapshot.data!["id"].toString(),
-                            snapshot.data!["title"],
-                            snapshot.data!["runtime"],
-                            double.parse(snapshot.data!["imdb_rating"])),
+                        onTap: () {
+                          _onTap(
+                              'seen',
+                              snapshot.data!["id"].toString(),
+                              snapshot.data!["title"],
+                              snapshot.data!["runtime"],
+                              double.parse(snapshot.data!["imdb_rating"]));
+                          setState(() {});
+                        },
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -1245,12 +569,15 @@ class _MovieResultState extends State<MovieResult> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => _onTap(
-                            'watchlist',
-                            snapshot.data!["id"].toString(),
-                            snapshot.data!["title"],
-                            snapshot.data!["runtime"],
-                            double.parse(snapshot.data!["imdb_rating"])),
+                        onTap: () {
+                          _onTap(
+                              'watchlist',
+                              snapshot.data!["id"].toString(),
+                              snapshot.data!["title"],
+                              snapshot.data!["runtime"],
+                              double.parse(snapshot.data!["imdb_rating"]));
+                          setState(() {});
+                        },
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -1261,12 +588,15 @@ class _MovieResultState extends State<MovieResult> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => _onTap(
-                            'fav',
-                            snapshot.data!["id"].toString(),
-                            snapshot.data!["title"],
-                            snapshot.data!["runtime"],
-                            double.parse(snapshot.data!["imdb_rating"])),
+                        onTap: () {
+                          _onTap(
+                              'fav',
+                              snapshot.data!["id"].toString(),
+                              snapshot.data!["title"],
+                              snapshot.data!["runtime"],
+                              double.parse(snapshot.data!["imdb_rating"]));
+                          setState(() {});
+                        },
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -1277,12 +607,15 @@ class _MovieResultState extends State<MovieResult> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => _onTap(
-                            'list',
-                            snapshot.data!["id"].toString(),
-                            snapshot.data!["title"],
-                            snapshot.data!["runtime"],
-                            double.parse(snapshot.data!["imdb_rating"])),
+                        onTap: () {
+                          _onTap(
+                              'list',
+                              snapshot.data!["id"].toString(),
+                              snapshot.data!["title"],
+                              snapshot.data!["runtime"],
+                              double.parse(snapshot.data!["imdb_rating"]));
+                          setState(() {});
+                        },
                         child: Container(
                           margin:
                               const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
@@ -1351,9 +684,14 @@ class _MovieResultState extends State<MovieResult> {
                                           MainAxisAlignment.center,
                                       children: [
                                         GestureDetector(
-                                          onTap: () {
-                                            editReview(
-                                                snapshot.data!["id"], context);
+                                          onTap: () async {
+                                            bool success =
+                                                await FirebaseUtils.editReview(
+                                                    snapshot.data!["id"],
+                                                    context);
+                                            if (success) {
+                                              setState(() {});
+                                            }
                                           },
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(
@@ -1381,9 +719,14 @@ class _MovieResultState extends State<MovieResult> {
                                         ),
                                         const SizedBox(width: 20),
                                         GestureDetector(
-                                          onTap: () {
-                                            deleteReview(
-                                                snapshot.data!["id"], context);
+                                          onTap: () async {
+                                            bool success = await FirebaseUtils
+                                                .deleteReview(
+                                                    snapshot.data!["id"],
+                                                    context);
+                                            if (success) {
+                                              setState(() {});
+                                            }
                                           },
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(
@@ -1417,15 +760,17 @@ class _MovieResultState extends State<MovieResult> {
                             ),
                           ),
                         ]),
-                  if (!reviewed &&
-                      containsMap(seenMovies,
-                          ['Movies', snapshot.data!["id"].toString()]))
+                  if (!reviewed && widget.movie.isSeen())
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         ElevatedButton(
-                            onPressed: () {
-                              writeReview(snapshot.data!["id"], context);
+                            onPressed: () async {
+                              bool success = await FirebaseUtils.writeReview(
+                                  snapshot.data!["id"], context);
+                              if (success) {
+                                setState(() {});
+                              }
                             },
                             child: const Text('Write A Review')),
                       ],
@@ -1471,7 +816,7 @@ class _MovieResultState extends State<MovieResult> {
                                     borderRadius: BorderRadius.circular(10),
                                     image: DecorationImage(
                                       image: NetworkImage(
-                                        imgLink +
+                                        IMG_LINK +
                                             snapshot.data!['providers'][index]
                                                 [1],
                                       ),
@@ -1517,7 +862,7 @@ class _MovieResultState extends State<MovieResult> {
                       ),
                       keyboardType: TextInputType.number,
                       onChanged: (value) {
-                        incrementWatched(
+                        FirebaseUtils.incrementWatched(
                             value.toString(),
                             snapshot.data!["id"]
                                 .toString()); // replace 'yourDocumentId' with your actual document ID
@@ -1525,7 +870,7 @@ class _MovieResultState extends State<MovieResult> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  if (containsMap(seenMovies, ['Movies', movieResult[0]]))
+                  if (widget.movie.isSeen())
                     ExpansionTile(
                       title: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -1544,27 +889,6 @@ class _MovieResultState extends State<MovieResult> {
                         ],
                       ),
                       children: [
-                        // if ((snapshot.data!['seen_dates'] as List).isNotEmpty)
-                        //   Padding(
-                        //     padding: const EdgeInsets.all(12.0),
-                        //     child: Row(
-                        //       children: [
-                        //         const SizedBox(
-                        //             width: 16), // Added margin to the left
-                        //         const Icon(Icons.access_time,
-                        //             color: Colors.green),
-                        //         const SizedBox(width: 8),
-                        //         Text(
-                        //           "Last watched: ${intl.DateFormat('dd MMMM, yyyy').format(DateTime.parse(snapshot.data!['seen_dates'][0][0]))}",
-                        //           style: const TextStyle(
-                        //               fontSize: 16,
-                        //               fontWeight: FontWeight.bold,
-                        //               color: Colors.green),
-                        //         ),
-                        //       ],
-                        //     ),
-                        //   ),
-                        // Rest of the dates in a smaller font
                         if ((snapshot.data!['seen_dates'] as List).isNotEmpty)
                           Padding(
                             padding:
@@ -1573,9 +897,7 @@ class _MovieResultState extends State<MovieResult> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: (snapshot.data!['seen_dates'] as List)
                                   .map<Widget>((date) {
-                                // Assuming date[1] is a list of friend UIDs who watched the movie on this date
-                                List friendsWhoWatched =
-                                    date[1] ?? [];
+                                List friendsWhoWatched = date[1] ?? [];
                                 return Padding(
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 2.0),
@@ -1600,8 +922,9 @@ class _MovieResultState extends State<MovieResult> {
                                       Expanded(
                                         child: FutureBuilder<List<String>>(
                                           // Assuming getProfilePhotos returns a Future of List<String> where each String is a URL
-                                          future: getProfilePhotos(
-                                              friendsWhoWatched),
+                                          future:
+                                              FirebaseUtils.getProfilePhotos(
+                                                  friendsWhoWatched),
                                           builder: (context, snapshot) {
                                             if (snapshot.connectionState ==
                                                 ConnectionState.waiting) {
@@ -1682,10 +1005,10 @@ class _MovieResultState extends State<MovieResult> {
                                   color: Colors.red),
                             ),
                           ),
-                        if (seenWith.entries
+                        if (currentUser.seenWith.entries
                             .where((entry) =>
                                 entry.value["Movies"]
-                                    ?.contains(movieResult[0].toString()) ??
+                                    ?.contains(widget.movie.id) ??
                                 false)
                             .isNotEmpty)
                           const Text("People watched with",
@@ -1694,10 +1017,10 @@ class _MovieResultState extends State<MovieResult> {
                               )),
                         FutureBuilder(
                           future: Future.wait(
-                            seenWith.entries
+                            currentUser.seenWith.entries
                                 .where((entry) =>
                                     entry.value["Movies"]
-                                        ?.contains(movieResult[0].toString()) ??
+                                        ?.contains(widget.movie.id) ??
                                     false)
                                 .map((entry) => FirebaseFirestore.instance
                                     .collection(entry.key)
@@ -1843,14 +1166,14 @@ class _MovieResultState extends State<MovieResult> {
                                         child: SingleChildScrollView(
                                           child: Column(
                                             children: List.generate(
-                                              friends.length,
+                                              currentUser.friends.length,
                                               (friendIndex) {
                                                 return FutureBuilder<
                                                     DocumentSnapshot>(
                                                   future: FirebaseFirestore
                                                       .instance
-                                                      .collection(
-                                                          friends[friendIndex])
+                                                      .collection(currentUser
+                                                          .friends[friendIndex])
                                                       .doc('Settings')
                                                       .get(),
                                                   builder: (context, snapshot) {
@@ -1921,16 +1244,19 @@ class _MovieResultState extends State<MovieResult> {
                                                         value: selectedFriends
                                                                 .keys
                                                                 .toList()
-                                                                .contains(friends[
+                                                                .contains(currentUser
+                                                                        .friends[
                                                                     friendIndex])
                                                             ? selectedFriends[
-                                                                friends[
+                                                                currentUser
+                                                                        .friends[
                                                                     friendIndex]]
                                                             : false,
                                                         onChanged:
                                                             (bool? value) {
                                                           setState(() {
-                                                            selectedFriends[friends[
+                                                            selectedFriends[currentUser
+                                                                        .friends[
                                                                     friendIndex]] =
                                                                 value!;
                                                           });
@@ -1954,10 +1280,7 @@ class _MovieResultState extends State<MovieResult> {
                                         TextButton(
                                           child: const Text('Apply'),
                                           onPressed: () async {
-                                            // TODO: Update the Firebase database with the selected friends
-                                            // Implement the logic to update the 'seenWith' document for both the current user and the selected friends
-                                            String id =
-                                                movieResult[0].toString();
+                                            String id = widget.movie.id;
                                             FirebaseFirestore firestore =
                                                 FirebaseFirestore.instance;
                                             for (String friend
@@ -1971,20 +1294,23 @@ class _MovieResultState extends State<MovieResult> {
                                                 'Seen':
                                                     FieldValue.arrayUnion([id])
                                               });
-                                              if (seenWith
+                                              if (currentUser.seenWith
                                                       .containsKey(friend) &&
-                                                  !seenWith[friend]["Movies"]
+                                                  !currentUser.seenWith[friend]
+                                                          ["Movies"]
                                                       .contains(
                                                           id.toString())) {
-                                                seenWith[friend]["Movies"]
+                                                currentUser.seenWith[friend]
+                                                        ["Movies"]
                                                     .add(id.toString());
-                                              } else if (!seenWith
+                                              } else if (!currentUser.seenWith
                                                   .containsKey(friend)) {
-                                                seenWith[friend] = {
+                                                currentUser.seenWith[friend] = {
                                                   "Movies": [],
                                                   "TVShows": []
                                                 };
-                                                seenWith[friend]["Movies"]
+                                                currentUser.seenWith[friend]
+                                                        ["Movies"]
                                                     .add(id.toString());
                                               }
                                               DocumentReference userDoc2 =
@@ -1993,7 +1319,7 @@ class _MovieResultState extends State<MovieResult> {
                                                       .doc("SeenWith");
                                               Map<String, dynamic> item = {};
                                               List<dynamic> watchedWithList = [
-                                                uid
+                                                currentUser.uid
                                               ];
                                               item[id] = watchedWithList;
                                               await firestore.runTransaction(
@@ -2065,7 +1391,7 @@ class _MovieResultState extends State<MovieResult> {
                                             }
                                             DocumentReference userDoc2 =
                                                 firestore
-                                                    .collection(uid)
+                                                    .collection(currentUser.uid)
                                                     .doc("SeenWith");
 
                                             Map<String, dynamic> item = {};
@@ -2213,7 +1539,7 @@ class _MovieResultState extends State<MovieResult> {
                                   "https://cdn-icons-png.flaticon.com/512/3088/3088765.png";
                             } else {
                               person['profile_path'] =
-                                  imgLink + person['profile_path'];
+                                  IMG_LINK + person['profile_path'];
                             }
                             return Padding(
                               padding:
@@ -2224,7 +1550,8 @@ class _MovieResultState extends State<MovieResult> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => const PersonResult()),
+                                        builder: (context) =>
+                                            const PersonResult()),
                                   );
                                 },
                                 child: Column(
@@ -2295,7 +1622,8 @@ class _MovieResultState extends State<MovieResult> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => const PersonResult()),
+                                          builder: (context) =>
+                                              const PersonResult()),
                                     );
                                   },
                                   child: Text(
@@ -2325,7 +1653,8 @@ class _MovieResultState extends State<MovieResult> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => const PersonResult()),
+                                          builder: (context) =>
+                                              const PersonResult()),
                                     );
                                   },
                                   child: Text(
