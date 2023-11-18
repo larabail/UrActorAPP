@@ -468,203 +468,206 @@ class _ListResultState extends State<ListResult> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: const CustomAppBar(),
-        body: Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 0),
-              height: MediaQuery.of(context).size.height * 0.25,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(27),
-              ),
-              child: Stack(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      image: DecorationImage(
-                        image: NetworkImage(
-                          widget.list_result.backdrop,
-                        ),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(1),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Align(
-                      alignment: Alignment.bottomRight,
-                      child: Text(
-                        widget.list_result.name,
-                        style: const TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.5,
-                          wordSpacing: 2,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(100),
-                          color: Colors.black.withOpacity(0.5),
-                        ),
-                        child:
-                            Column(mainAxisSize: MainAxisSize.min, children: [
-                          IconButton(
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => InfoButtonDialog(
-                                  list_result: widget.list_result,
-                                ),
-                              ).then((_) {
-                                setState(() {});
-                              });
-                            },
-                            icon: const Icon(
-                              Icons.more_vert,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ])),
-                  ),
-                ],
-              ),
+    print(widget.list_result.movies);
+    print(widget.list_result.tvshows);
+    return Scaffold(
+      appBar: const CustomAppBar(),
+      body: Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 0),
+            height: MediaQuery.of(context).size.height * 0.25,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(27),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Stack(
               children: [
-                GestureDetector(
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return MovieAddDialogue(
-                          list_result: widget.list_result,
-                        );
-                      },
-                    ).then((value) => setState(() {}));
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[900],
-                      borderRadius: BorderRadius.circular(10),
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    image: DecorationImage(
+                      image: NetworkImage(
+                        widget.list_result.backdrop,
+                      ),
+                      fit: BoxFit.cover,
                     ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.movie, color: Colors.green),
-                        SizedBox(width: 10),
-                        Text(
-                          'Add Movie',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(1),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(
-                    width:
-                        20), // Optional: To add some space between the buttons
-                GestureDetector(
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return TvAddDialogue(
-                          list_result: widget.list_result,
-                        );
-                      },
-                    ).then((value) => setState(() {}));
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[900],
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.tv, color: Colors.green),
-                        SizedBox(width: 10),
-                        Text(
-                          'Add TV Show',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Align(
+                    alignment: Alignment.bottomRight,
+                    child: Text(
+                      widget.list_result.name,
+                      style: const TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                        wordSpacing: 2,
+                        height: 1.5,
+                      ),
                     ),
                   ),
+                ),
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(100),
+                        color: Colors.black.withOpacity(0.5),
+                      ),
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        IconButton(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => InfoButtonDialog(
+                                list_result: widget.list_result,
+                              ),
+                            ).then((_) {
+                              setState(() {});
+                            });
+                          },
+                          icon: const Icon(
+                            Icons.more_vert,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ])),
                 ),
               ],
             ),
-            if (widget.list_result.movies.isNotEmpty &&
-                widget.list_result.tvshows.isNotEmpty)
-              DefaultTabController(
-                length: 2,
-                child: Expanded(
-                  child: Column(
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return MovieAddDialogue(
+                        list_result: widget.list_result,
+                      );
+                    },
+                  ).then((value) => setState(() {}));
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[900],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Row(
                     children: [
-                      const TabBar(
-                        tabs: [
-                          Tab(text: 'Movies'),
-                          Tab(text: 'TV Shows'),
-                        ],
-                      ),
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            buildMediaList(
-                                widget.list_result.movies, "Movies", context),
-                            buildMediaList(
-                                widget.list_result.tvshows, "TVShows", context),
-                          ],
+                      Icon(Icons.movie, color: Colors.green),
+                      SizedBox(width: 10),
+                      Text(
+                        'Add Movie',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-            if (widget.list_result.movies.isNotEmpty &&
-                widget.list_result.tvshows.isEmpty)
-              buildMediaList(widget.list_result.movies, "Movies", context),
-            if (widget.list_result.tvshows.isNotEmpty &&
-                widget.list_result.movies.isEmpty)
-              buildMediaList(widget.list_result.tvshows, "TVShows", context),
-          ],
-        ),
-        bottomNavigationBar: CommonBottomAppBar(-1),
+              const SizedBox(
+                  width: 20), // Optional: To add some space between the buttons
+              GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return TvAddDialogue(
+                        list_result: widget.list_result,
+                      );
+                    },
+                  ).then((value) => setState(() {}));
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[900],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.tv, color: Colors.green),
+                      SizedBox(width: 10),
+                      Text(
+                        'Add TV Show',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (widget.list_result.movies.isNotEmpty &&
+              widget.list_result.tvshows.isNotEmpty)
+            DefaultTabController(
+              length: 2,
+              child: Expanded(
+                child: Column(
+                  children: [
+                    const TabBar(
+                      tabs: [
+                        Tab(text: 'Movies'),
+                        Tab(text: 'TV Shows'),
+                      ],
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          buildMediaList(
+                              widget.list_result.movies, "Movies", context),
+                          buildMediaList(
+                              widget.list_result.tvshows, "TVShows", context),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (widget.list_result.movies.isNotEmpty &&
+              widget.list_result.tvshows.isEmpty)
+            Expanded(
+              child:
+                  buildMediaList(widget.list_result.movies, "Movies", context),
+            ),
+          if (widget.list_result.tvshows.isNotEmpty &&
+              widget.list_result.movies.isEmpty)
+            Expanded(
+              child: buildMediaList(
+                  widget.list_result.tvshows, "TVShows", context),
+            ),
+        ],
       ),
+      bottomNavigationBar: CommonBottomAppBar(-1),
     );
   }
 }
