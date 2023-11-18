@@ -9,6 +9,7 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
+import 'common/constants.dart';
 import 'objects/Movie.dart';
 import 'main.dart';
 import 'person_result.dart';
@@ -20,8 +21,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'theme_provider.dart';
-
-const String imgLink = 'https://image.tmdb.org/t/p/w500/';
 
 class Country {
   final String isoCode;
@@ -59,8 +58,8 @@ class Provider {
       image: json['logo_path'],
       name: json['provider_name'],
       id: json['provider_id'].toString(),
-      isSelected:
-          currentUser.settings["providers"].contains(json['provider_id'].toString()),
+      isSelected: currentUser.settings["providers"]
+          .contains(json['provider_id'].toString()),
     );
   }
 }
@@ -128,13 +127,15 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
   }
 
   Future<void> updateCountry(Country element) async {
-    var userDoc = FirebaseFirestore.instance.collection(currentUser.uid).doc("Country");
+    var userDoc =
+        FirebaseFirestore.instance.collection(currentUser.uid).doc("Country");
     await userDoc.update({'Country': element.isoCode});
     currentUser.country = element.isoCode;
   }
 
   Future<void> updateSettings(element, newValue) async {
-    var userDoc = FirebaseFirestore.instance.collection(currentUser.uid).doc("Settings");
+    var userDoc =
+        FirebaseFirestore.instance.collection(currentUser.uid).doc("Settings");
     currentUser.settings[element] = newValue;
     await userDoc.set(currentUser.settings as Map<String, dynamic>);
   }
@@ -221,8 +222,10 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                     value: currentUser.dontAskCalendar,
                     onChanged: (value) {
                       setState(() {
-                        currentUser.dontAskCalendar = !currentUser.dontAskCalendar;
-                        updateSettings("dontAskCalendar", currentUser.dontAskCalendar);
+                        currentUser.dontAskCalendar =
+                            !currentUser.dontAskCalendar;
+                        updateSettings(
+                            "dontAskCalendar", currentUser.dontAskCalendar);
                       });
                     },
                     activeColor: Colors.green,
@@ -255,18 +258,20 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                           setState(() {
                             provider.isSelected = !provider.isSelected;
                             if (provider.isSelected) {
-                              currentUser.settings["providers"].add(provider.id.toString());
+                              currentUser.settings["providers"]
+                                  .add(provider.id.toString());
                             } else {
                               currentUser.settings["providers"]
                                   .remove(provider.id.toString());
                             }
-                            updateSettings("providers", currentUser.settings["providers"]);
+                            updateSettings(
+                                "providers", currentUser.settings["providers"]);
                           });
                         },
                         child: Stack(
                           children: [
                             Image.network(
-                              imgLink + provider.image,
+                              IMG_LINK + provider.image,
                               width: double.infinity,
                               height: 150.0,
                               fit: BoxFit.cover,
@@ -373,8 +378,6 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
   }
 }
 
-const String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-String link = "https://api.themoviedb.org/3/movie/";
 int weekOffset = 0; // This will be used to go to previous or next weeks
 
 final months = [
@@ -473,8 +476,10 @@ class _ProfileState extends State<Profile> {
   }
 
   _loadCurrentUsername() async {
-    DocumentSnapshot settingsDoc =
-        await FirebaseFirestore.instance.collection(currentUser.uid).doc('Settings').get();
+    DocumentSnapshot settingsDoc = await FirebaseFirestore.instance
+        .collection(currentUser.uid)
+        .doc('Settings')
+        .get();
     setState(() {
       currentUsername = settingsDoc['username'];
       _usernameController.text = currentUsername ?? '';
@@ -535,19 +540,18 @@ class _ProfileState extends State<Profile> {
 
     Future<List<Map<String, dynamic>>> actorData() async {
       List<Map<String, dynamic>> favActsData = [];
-      const link = 'https://api.themoviedb.org/3/person/';
       int i = 0;
       for (List item in currentUser.favActors) {
         if (i < 9) {
           final response =
-              await http.get(Uri.parse('$link${item[1]}$api_key_actor'));
+              await http.get(Uri.parse('$PERSON_LINK${item[1]}$API_KEY'));
           if (response.statusCode == 200) {
             final json = jsonDecode(response.body);
             if (json['profile_path'] == null) {
               json['profile_path'] =
                   'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
             } else {
-              json['profile_path'] = imgLink + json['profile_path'];
+              json['profile_path'] = IMG_LINK + json['profile_path'];
             }
             favActsData.add(json);
           } else {
@@ -574,7 +578,7 @@ class _ProfileState extends State<Profile> {
 
       while (i < 18 && i < moviesTemp.length) {
         String completeLinkMovie =
-            link + moviesTemp[i][1].toString() + api_key_actor;
+            MOVIE_LINK + moviesTemp[i][1].toString() + API_KEY;
 
         final response = await http.get(Uri.parse(completeLinkMovie));
         if (response.statusCode == 200) {
@@ -622,7 +626,9 @@ class _ProfileState extends State<Profile> {
       await uploadTask.whenComplete(() => null);
       String downloadUrl = await ref.getDownloadURL();
 
-      var userDoc = FirebaseFirestore.instance.collection(currentUser.uid).doc("Settings");
+      var userDoc = FirebaseFirestore.instance
+          .collection(currentUser.uid)
+          .doc("Settings");
       await userDoc.update({'profile_photo': downloadUrl});
       currentUser.settings["profile_photo"] = downloadUrl;
 
@@ -635,19 +641,18 @@ class _ProfileState extends State<Profile> {
 
     Future<List<Map<String, dynamic>>> dirData() async {
       List<Map<String, dynamic>> favActsData = [];
-      const link = 'https://api.themoviedb.org/3/person/';
       int i = 0;
       for (List item in currentUser.favDirectors) {
         if (i < 9) {
           final response =
-              await http.get(Uri.parse('$link${item[1]}$api_key_actor'));
+              await http.get(Uri.parse('$PERSON_LINK${item[1]}$API_KEY'));
           if (response.statusCode == 200) {
             final json = jsonDecode(response.body);
             if (json['profile_path'] == null) {
               json['profile_path'] =
                   'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
             } else {
-              json['profile_path'] = imgLink + json['profile_path'];
+              json['profile_path'] = IMG_LINK + json['profile_path'];
             }
             favActsData.add(json);
           } else {
@@ -738,7 +743,7 @@ class _ProfileState extends State<Profile> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(27),
             image: DecorationImage(
-              image: NetworkImage(imgLink + imagePath),
+              image: NetworkImage(IMG_LINK + imagePath),
               fit: BoxFit.fitWidth,
             ),
           ),

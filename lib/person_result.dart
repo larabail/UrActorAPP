@@ -4,23 +4,13 @@ import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'appbar.dart';
 import 'bottom_app_bar.dart';
-import 'friends.dart';
-import 'profile.dart';
-import 'search.dart';
+import 'common/constants.dart';
 import 'main.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'playlists.dart';
-import 'package:flutter/services.dart' show rootBundle;
 
-const String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-const String imgLink = 'https://image.tmdb.org/t/p/w500/';
-String api_key_movie =
-    '/movie_credits?api_key=700cd4fab994df56eb41b34d38c4762a';
-String api_key_tv = '/tv_credits?api_key=700cd4fab994df56eb41b34d38c4762a';
-String link = "https://api.themoviedb.org/3/person/";
 int scoreActor = 0;
 int scoreDirector = 0;
 int stats = 0;
@@ -31,10 +21,6 @@ List countedMoviesDirector = [];
 List countedMoviesActor = [];
 List countedTVShowsDirector = [];
 List countedTVShowsActor = [];
-
-Future<String> _loadJSONFile() async {
-  return await rootBundle.loadString('assets/oscars_api.json');
-}
 
 bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
   String jsonString = json.encode(map);
@@ -61,11 +47,11 @@ class _PersonResultState extends State<PersonResult> {
         .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
         .replaceAll(" ", "-");
     final response =
-        await http.get(Uri.parse('$link${presult["id"]}-$name$api_key_actor'));
+        await http.get(Uri.parse('$PERSON_LINK${presult["id"]}-$name$API_KEY'));
     json = jsonDecode(response.body);
     if (response.statusCode == 200) {
-      final r2 = await http
-          .get(Uri.parse('$link${presult["id"]}-$name$api_key_movie'));
+      final r2 = await http.get(
+          Uri.parse('$PERSON_LINK${presult["id"]}-$name$MOVIE_CREDITS_LINK'));
       if (r2.statusCode == 200) {
         List movieCast = [];
         for (Map movie in jsonDecode(r2.body)['cast']) {
@@ -110,8 +96,8 @@ class _PersonResultState extends State<PersonResult> {
             countedMoviesActor.add(element["id"].toString());
           }
         }
-        final r3 =
-            await http.get(Uri.parse('$link${presult["id"]}-$name$api_key_tv'));
+        final r3 = await http.get(Uri.parse(
+            '$PERSON_LINK${presult["id"]}-$name$TV_SHOW_CREDITS_LINK'));
         if (r3.statusCode == 200) {
           List tvCast = [];
           for (Map show in jsonDecode(r3.body)['cast']) {
@@ -187,8 +173,8 @@ class _PersonResultState extends State<PersonResult> {
             allDirMovies += 1;
           }
         }
-        final r4 =
-            await http.get(Uri.parse('$link${presult["id"]}-$name$api_key_tv'));
+        final r4 = await http.get(Uri.parse(
+            '$PERSON_LINK${presult["id"]}-$name$TV_SHOW_CREDITS_LINK'));
         if (r4.statusCode == 200) {
           List tvCrew = [];
           for (Map show in jsonDecode(r4.body)['crew']) {
@@ -223,7 +209,6 @@ class _PersonResultState extends State<PersonResult> {
               allDirMovies += 1;
             }
           }
-          // Map oscars = await parseJSONFile();
           if (oscars.keys.contains(presult["id"])) {
             json['num_oscars'] = oscars[presult["id"]]['num_oscars'];
           } else {
@@ -323,24 +308,6 @@ class _PersonResultState extends State<PersonResult> {
     scoreDirector = 0;
     countedMoviesDirector = [];
     countedMoviesActor = [];
-    int selectedIndex = 0;
-
-    final List<Widget> pages = [
-      const MyApp(),
-      const Playlists(),
-      const Search(),
-      const Friends(),
-      const Profile(),
-      // Add more pages here
-    ];
-
-    void _onItemTapped(int index) {
-      selectedIndex = index;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
-      );
-    }
 
     return Scaffold(
       appBar: const CustomAppBar(),
@@ -389,8 +356,8 @@ class _PersonResultState extends State<PersonResult> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(27),
                                 image: DecorationImage(
-                                  image: NetworkImage(
-                                      imgLink + snapshot.data!['profile_path']),
+                                  image: NetworkImage(IMG_LINK +
+                                      snapshot.data!['profile_path']),
                                   fit: BoxFit.fitWidth,
                                 ),
                               ),
@@ -655,7 +622,7 @@ class _PersonResultState extends State<PersonResult> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(27),
               image: DecorationImage(
-                image: NetworkImage(imgLink + movie['poster_path']),
+                image: NetworkImage(IMG_LINK + movie['poster_path']),
                 fit: BoxFit.fitWidth,
               ),
             ),
@@ -711,7 +678,7 @@ class _PersonResultState extends State<PersonResult> {
                 ],
               ),
               image: DecorationImage(
-                image: NetworkImage(imgLink + movie['poster_path']),
+                image: NetworkImage(IMG_LINK + movie['poster_path']),
                 fit: BoxFit.fitWidth,
               ),
             ),
@@ -791,7 +758,7 @@ class _PersonResultState extends State<PersonResult> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(27),
               image: DecorationImage(
-                image: NetworkImage(imgLink + movie['poster_path']),
+                image: NetworkImage(IMG_LINK + movie['poster_path']),
                 fit: BoxFit.fitWidth,
               ),
             ),
@@ -847,7 +814,7 @@ class _PersonResultState extends State<PersonResult> {
                 ],
               ),
               image: DecorationImage(
-                image: NetworkImage(imgLink + movie['poster_path']),
+                image: NetworkImage(IMG_LINK + movie['poster_path']),
                 fit: BoxFit.fitWidth,
               ),
             ),

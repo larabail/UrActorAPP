@@ -25,8 +25,6 @@ bool _isTappedFav = false;
 bool _isTappedList = false;
 
 class TVShowResult extends StatefulWidget {
-  // const TVShowResult({super.key});
-
   final TVShow tvshow;
   const TVShowResult({Key? key, required this.tvshow}) : super(key: key);
 
