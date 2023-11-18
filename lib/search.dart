@@ -77,9 +77,9 @@ class _SearchResultState extends State<Search> {
       if (item.containsKey("poster_path") && item.containsKey("title")) {
         // movieResult = [item['id'], item['title'], "Movies"];
         Movie tempMovie = Movie(
-            id: item['id'],
+            id: item['id'].toString(),
             title: item['title'],
-            coverPhoto: item['poster_path']);
+            coverPhoto: item['poster_path'] ?? "");
         Navigator.push(
             context,
             MaterialPageRoute(
@@ -88,9 +88,9 @@ class _SearchResultState extends State<Search> {
                     )));
       } else if (item.containsKey("poster_path") && item.containsKey("name")) {
         TVShow tempTvShow = TVShow(
-            id: item['id'],
+            id: item['id'].toString(),
             title: item['name'],
-            coverPhoto: item['poster_path']);
+            coverPhoto: item['poster_path'] ?? "");
         Navigator.push(
             context,
             MaterialPageRoute(
@@ -105,7 +105,7 @@ class _SearchResultState extends State<Search> {
     }
 
     Widget buildItem(BuildContext context, Map<String, dynamic>? item) {
-      if (item == null) return SizedBox();
+      if (item == null) return const SizedBox();
       item['profile_path'] = getDefaultImagePath(item['profile_path']);
 
       return GestureDetector(
