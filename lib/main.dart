@@ -346,7 +346,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
                       return GestureDetector(
                           onTap: () {
-                            Playlist list_result = Playlist(
+                            Playlist listResult = Playlist(
                                 id: key.toString(),
                                 name: value.toString(),
                                 backdrop: image.toString(),
@@ -358,7 +358,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               context,
                               MaterialPageRoute(
                                   builder: (context) => ListResult(
-                                        list_result: list_result,
+                                        list_result: listResult,
                                       )),
                             );
                           },
