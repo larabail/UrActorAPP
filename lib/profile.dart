@@ -724,7 +724,7 @@ class _ProfileState extends State<Profile> {
             tempMovie = Movie(
                 id: item['id'].toString(),
                 title: item['title'],
-                coverPhoto: item["poster_path"]);
+                coverPhoto: item["poster_path"] ?? "");
           } else {
             personResult = item;
           }

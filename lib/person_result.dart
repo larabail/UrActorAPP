@@ -497,19 +497,19 @@ class _PersonResultState extends State<PersonResult> {
 
       return GestureDetector(
         onTap: () {
-          var route;
+          MaterialPageRoute route;
           if (mediaType == 'Movies') {
             var tempMovie = Movie(
-                id: media['id'],
+                id: media['id'].toString(),
                 title: media['title'],
-                coverPhoto: media['poster_path']);
+                coverPhoto: media['poster_path'] ?? "");
             route = MaterialPageRoute(
                 builder: (context) => MovieResult(movie: tempMovie));
           } else {
             var tempTvShow = TVShow(
-                id: media['id'],
+                id: media['id'].toString(),
                 title: media['name'],
-                coverPhoto: media['poster_photo']);
+                coverPhoto: media['poster_photo'] ?? "");
             route = MaterialPageRoute(
                 builder: (context) => TVShowResult(tvshow: tempTvShow));
           }
@@ -539,6 +539,14 @@ class _PersonResultState extends State<PersonResult> {
       child: Column(
         children: [
           // TabBar code
+          const TabBar(
+            labelColor: null,
+            unselectedLabelColor: null,
+            tabs: [
+              Tab(text: 'Movies'),
+              Tab(text: 'TV Shows'),
+            ],
+          ),
           Expanded(
             child: TabBarView(
               children: [
@@ -568,6 +576,14 @@ class _PersonResultState extends State<PersonResult> {
       child: Column(
         children: [
           // TabBar code
+          const TabBar(
+            labelColor: null,
+            unselectedLabelColor: null,
+            tabs: [
+              Tab(text: 'Movies'),
+              Tab(text: 'TV Shows'),
+            ],
+          ),
           Expanded(
             child: TabBarView(
               children: [
@@ -579,9 +595,9 @@ class _PersonResultState extends State<PersonResult> {
                 ),
                 ListView.builder(
                   scrollDirection: Axis.vertical,
-                  itemCount: (data['tv_credits_cast'].length / 3).ceil(),
+                  itemCount: (data['tv_credits_crew'].length / 3).ceil(),
                   itemBuilder: (context, index) => buildMediaRow(
-                      context, data['tv_credits_cast'], index, "TVShows", true),
+                      context, data['tv_credits_crew'], index, "TVShows", true),
                 ),
               ],
             ),
@@ -729,7 +745,6 @@ class _PersonResultState extends State<PersonResult> {
   }
 
   seenCrew(BuildContext context, movie, type) {
-    print(movie);
     if (!Utils.contains_non_type(currentUser.seenMovies, [type, movie['id']]) &&
         !Utils.contains_non_type(
             currentUser.seenTVShows, [type, movie['id']])) {

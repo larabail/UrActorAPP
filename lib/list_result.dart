@@ -390,12 +390,12 @@ class _ListResultState extends State<ListResult> {
                   ? Movie(
                       id: snapshot.data!['id'].toString(),
                       title: snapshot.data!['title'].toString(),
-                      coverPhoto: snapshot.data!['poster_path'].toString(),
+                      coverPhoto: snapshot.data!['poster_path'] ?? "",
                     )
                   : TVShow(
                       id: snapshot.data!['id'].toString(),
                       title: snapshot.data!['title'].toString(),
-                      coverPhoto: snapshot.data!['poster_path'].toString(),
+                      coverPhoto: snapshot.data!['poster_path'] ?? "",
                     );
               Navigator.push(
                 context,
