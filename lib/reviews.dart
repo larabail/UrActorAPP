@@ -155,14 +155,14 @@ class _ReviewsState extends State<Reviews> {
                         MediaItem tempItem;
                         if (snapshot.data!['type'] == "Movies") {
                           tempItem = Movie(
-                              id: snapshot.data!['id'],
+                              id: snapshot.data!['id'].toString(),
                               title: snapshot.data!['title'],
-                              coverPhoto: snapshot.data!['poster_path']);
+                              coverPhoto: snapshot.data!['poster_path'] ?? "");
                         } else {
                           tempItem = TVShow(
-                              id: snapshot.data!['id'],
+                              id: snapshot.data!['id'].toString(),
                               title: snapshot.data!['title'],
-                              coverPhoto: snapshot.data!['poster_path']);
+                              coverPhoto: snapshot.data!['poster_path'] ?? "");
                         }
                         Navigator.push(
                           context,
