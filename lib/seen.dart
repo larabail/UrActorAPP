@@ -25,24 +25,27 @@ class Seen extends StatelessWidget {
           ),
           DefaultTabController(
             length: 2,
-            child: Column(
-              children: [
-                const TabBar(
-                  tabs: [
-                    Tab(text: 'Movies'),
-                    Tab(text: 'TV Shows'),
-                  ],
-                ),
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.7,
-                  child: TabBarView(
-                    children: [
-                      MyTabView(favItems: currentUser.seenMovies),
-                      MyTabView(favItems: currentUser.seenTVShows),
+            child: Expanded(
+              // Wrap the TabBar and TabBarView with Expanded
+              child: Column(
+                children: [
+                  const TabBar(
+                    tabs: [
+                      Tab(text: 'Movies'),
+                      Tab(text: 'TV Shows'),
                     ],
                   ),
-                ),
-              ],
+                  Expanded(
+                    // This Expanded widget is for the TabBarView
+                    child: TabBarView(
+                      children: [
+                        MyTabView(favItems: currentUser.seenMovies),
+                        MyTabView(favItems: currentUser.seenTVShows),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           )
         ],
