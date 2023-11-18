@@ -6,10 +6,11 @@ import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'main.dart';
 import 'list_result.dart';
+import 'objects/Playlist.dart';
 import 'popups/list_add_popup.dart';
 import 'popups/list_join_popup.dart';
 
-Map list_result = {};
+// Map list_result = {};
 
 class Playlists extends StatefulWidget {
   const Playlists({super.key});
@@ -150,18 +151,20 @@ class _PlaylistsState extends State<Playlists> {
                       return GestureDetector(
                         onTap: () {
                           // Handle the click event here
-                          list_result["Movies"] = movies;
-                          list_result["TVShows"] = tvshows;
-                          list_result["Backdrop"] = image;
-                          list_result["Name"] = value;
-                          list_result["AccessCode"] = accessCode;
-                          list_result["id"] = key;
-                          list_result["Users"] =
-                              currentUser.playlists[key]["Users"];
+                          Playlist listResult = Playlist(
+                              id: key.toString(),
+                              name: value.toString(),
+                              backdrop: image.toString(),
+                              movies: movies,
+                              tvshows: tvshows,
+                              accesscode: accessCode.toString(),
+                              users: currentUser.playlists[key]["Users"]);
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => ListResult()),
+                                builder: (context) => ListResult(
+                                      list_result: listResult,
+                                    )),
                           );
                         },
                         child: Container(
