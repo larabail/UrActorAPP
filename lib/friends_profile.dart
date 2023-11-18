@@ -10,6 +10,7 @@ import 'friends.dart';
 import 'friends_calendar.dart';
 import 'objects/Movie.dart';
 import 'main.dart';
+import 'objects/Person.dart';
 import 'person_result.dart';
 import 'movie_result.dart';
 import 'package:http/http.dart' as http;
@@ -447,7 +448,8 @@ class _FriendProfileState extends State<FriendProfile> {
                                       Movie tempMovie = Movie(
                                           id: snapshot.data!['id'].toString(),
                                           title: snapshot.data!['title'],
-                                          coverPhoto: snapshot.data!['poster'] ?? "");
+                                          coverPhoto:
+                                              snapshot.data!['poster'] ?? "");
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
@@ -725,12 +727,17 @@ class _FriendProfileState extends State<FriendProfile> {
                                 final person = persons[index];
                                 return GestureDetector(
                                   onTap: () {
-                                    personResult = person;
+                                    Person personResult = Person(
+                                        id: person["id"].toString(),
+                                        name: person["name"].toString(),
+                                        data: person);
+
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) =>
-                                              const PersonResult()),
+                                          builder: (context) => PersonResult(
+                                                personResult: personResult,
+                                              )),
                                     );
                                   },
                                   child: Container(
@@ -804,12 +811,17 @@ class _FriendProfileState extends State<FriendProfile> {
                                 final person = persons[index];
                                 return GestureDetector(
                                   onTap: () {
-                                    personResult = person;
+                                    Person personResult = Person(
+                                        id: person["id"].toString(),
+                                        name: person["name"].toString(),
+                                        data: person);
+
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) =>
-                                              const PersonResult()),
+                                          builder: (context) => PersonResult(
+                                                personResult: personResult,
+                                              )),
                                     );
                                   },
                                   child: Container(

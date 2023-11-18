@@ -31,7 +31,7 @@ import 'theme_provider.dart';
 import 'package:http/http.dart' as http;
 
 List idsExplorePage = [];
-Map personResult = {};
+// Map personResult = {};
 Map oscars = {};
 late AppUser currentUser;
 
