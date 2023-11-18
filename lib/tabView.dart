@@ -55,12 +55,12 @@ class ItemCard extends StatelessWidget {
                 tempMediaItem = Movie(
                     id: snapshot.data!['id'].toString(),
                     title: snapshot.data!['title'],
-                    coverPhoto: snapshot.data!['poster']);
+                    coverPhoto: snapshot.data!['poster'] ?? "");
               } else {
                 tempMediaItem = TVShow(
                     id: snapshot.data!['id'].toString(),
                     title: snapshot.data!['title'],
-                    coverPhoto: snapshot.data!['poster']);
+                    coverPhoto: snapshot.data!['poster'] ?? "");
               }
               Navigator.push(
                 context,

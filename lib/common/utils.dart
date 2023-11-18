@@ -592,6 +592,7 @@ class ApiUtils {
 
   static Future<Map<String, dynamic>> fetchMovieDetails(
       String movieId, String name) async {
+    print('$MOVIE_LINK$movieId-$name$API_KEY');
     final movieResponse =
         await http.get(Uri.parse('$MOVIE_LINK$movieId-$name$API_KEY'));
     if (movieResponse.statusCode != 200) {
