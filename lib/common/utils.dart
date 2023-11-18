@@ -462,7 +462,6 @@ class FirebaseUtils {
           .doc("Settings")
           .get();
       if (document.exists && document.data()!.containsKey('profile_photo')) {
-        // print(tempUid);
         profilePhotos.add(document.data()!['profile_photo']);
       } else {
         profilePhotos.add(""); //eplace with your default image URL
@@ -592,7 +591,6 @@ class ApiUtils {
 
   static Future<Map<String, dynamic>> fetchMovieDetails(
       String movieId, String name) async {
-    print('$MOVIE_LINK$movieId-$name$API_KEY');
     final movieResponse =
         await http.get(Uri.parse('$MOVIE_LINK$movieId-$name$API_KEY'));
     if (movieResponse.statusCode != 200) {
