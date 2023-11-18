@@ -444,17 +444,15 @@ class _FriendProfileState extends State<FriendProfile> {
                                 if (snapshot.hasData) {
                                   return GestureDetector(
                                     onTap: () {
-                                      // movieResult = [
-                                      //   snapshot.data!['id'],
-                                      //   snapshot.data!['title'],
-                                      //   snapshot.data!['type'],
-                                      // ];
+                                      Movie tempMovie = Movie(
+                                          id: snapshot.data!['id'].toString(),
+                                          title: snapshot.data!['title'],
+                                          coverPhoto: snapshot.data!['poster'] ?? "");
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                            builder: (context) => MovieResult(
-                                                movie:
-                                                    snapshot.data! as Movie)),
+                                            builder: (context) =>
+                                                MovieResult(movie: tempMovie)),
                                       );
                                     },
                                     child: Container(
@@ -646,9 +644,9 @@ class _FriendProfileState extends State<FriendProfile> {
                                 return GestureDetector(
                                   onTap: () {
                                     Movie tempMovie = Movie(
-                                        id: movie['id'],
+                                        id: movie['id'].toString(),
                                         title: movie['title'],
-                                        coverPhoto: movie["poster_path"]);
+                                        coverPhoto: movie["poster_path"] ?? "");
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(

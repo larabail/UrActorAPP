@@ -241,10 +241,10 @@ class _CalendarState extends State<Calendar> {
                                           GestureDetector(
                                             onTap: () {
                                               Movie tempMovie = Movie(
-                                                  id: event[id],
+                                                  id: event["id"].toString(),
                                                   title: event['title'],
                                                   coverPhoto:
-                                                      event["poster_path"]);
+                                                      event["poster_path"] ?? "");
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(

@@ -27,7 +27,8 @@ class TVShow extends MediaItem {
   }
 
   bool isBookmarked() {
-    return Utils.contains(currentUser.watchlistTVShows, ['TVShows', id], "TVShows");
+    return Utils.contains(
+        currentUser.watchlistTVShows, ['TVShows', id], "TVShows");
   }
 
   bool isFavorite() {

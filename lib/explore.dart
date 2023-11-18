@@ -6,6 +6,7 @@ import 'package:flutter_svg/svg.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'common/constants.dart';
+import 'common/utils.dart';
 import 'objects/Movie.dart';
 import 'movie_result.dart';
 import 'dart:convert';
@@ -49,16 +50,6 @@ class Genre {
       return 'assets/${name.toLowerCase()}_before.svg';
     }
   }
-}
-
-bool containsMap(List list, List map) {
-  for (int i = 0; i < list.length; i++) {
-    if ((list[i][1]).toString() == map[1].toString() &&
-        (list[i][0]).toString() == map[0].toString()) {
-      return true;
-    }
-  }
-  return false;
 }
 
 Future<void> deleteFromWatchedConfirmation(
@@ -870,9 +861,9 @@ class _ExploreState extends State<Explore> {
                     GestureDetector(
                       onTap: () {
                         Movie tempMovie = Movie(
-                            id: item["id"],
+                            id: item["id"].toString(),
                             title: item["title"],
-                            coverPhoto: item["poster_path"]);
+                            coverPhoto: item["poster_path"] ?? "");
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -1023,11 +1014,11 @@ class _ExploreState extends State<Explore> {
           }
           json['movie_credits_cast'] = movieCast;
           for (var element in movieCast) {
-            if (containsMap(
+            if (Utils.contains_non_type(
                 currentUser.seenMovies, ["Movies", element["id"].toString()])) {
               if (!countedMoviesActor.contains(element["id"].toString())) {
                 stats += 1;
-                if (containsMap(currentUser.favMovies,
+                if (Utils.contains_non_type(currentUser.favMovies,
                     ['Movies', element["id"].toString()])) {
                   scoreActor += 3;
                 }
@@ -1041,7 +1032,7 @@ class _ExploreState extends State<Explore> {
                 }
                 countedMoviesActor.add(element["id"].toString());
               }
-            } else if (containsMap(currentUser.watchlist,
+            } else if (Utils.contains_non_type(currentUser.watchlist,
                     ['Movies', element["id"].toString()]) &&
                 !countedMoviesActor.contains(element["id"].toString())) {
               scoreActor += 1;
@@ -1065,11 +1056,11 @@ class _ExploreState extends State<Explore> {
             }
             json['tv_credits_cast'] = tvCast;
             for (var element in tvCast) {
-              if (containsMap(currentUser.seenTVShows,
+              if (Utils.contains_non_type(currentUser.seenTVShows,
                   ["TVShows", element["id"].toString()])) {
                 if (!countedTVShowsActor.contains(element["id"].toString())) {
                   stats_tv += 1;
-                  if (containsMap(currentUser.favTVShows,
+                  if (Utils.contains_non_type(currentUser.favTVShows,
                       ['TVShows', element["id"].toString()])) {
                     scoreActor += 3;
                   } else {
@@ -1077,7 +1068,7 @@ class _ExploreState extends State<Explore> {
                   }
                   countedTVShowsActor.add(element["id"].toString());
                 }
-              } else if (containsMap(currentUser.watchlistTVShows,
+              } else if (Utils.contains_non_type(currentUser.watchlistTVShows,
                       ['TVShows', element["id"].toString()]) &&
                   !countedTVShowsActor.contains(element["id"].toString())) {
                 scoreActor += 1;
@@ -1095,12 +1086,12 @@ class _ExploreState extends State<Explore> {
           }
           json['movie_credits_crew'] = movieCrew;
           for (var element in movieCrew) {
-            if (containsMap(
+            if (Utils.contains_non_type(
                 currentUser.seenMovies, ["Movies", element["id"].toString()])) {
               if (element["job"] == "Director" &&
                   !countedMoviesDirector.contains(element["id"].toString())) {
                 stats_dir += 1;
-                if (containsMap(currentUser.favMovies,
+                if (Utils.contains_non_type(currentUser.favMovies,
                     ['Movies', element["id"].toString()])) {
                   scoreDirector += 3;
                 }
@@ -1114,7 +1105,7 @@ class _ExploreState extends State<Explore> {
                 }
                 countedMoviesDirector.add(element["id"].toString());
               }
-            } else if (containsMap(currentUser.watchlist,
+            } else if (Utils.contains_non_type(currentUser.watchlist,
                     ['Movies', element["id"].toString()]) &&
                 element["job"] == "Director" &&
                 !countedMoviesDirector.contains(element["id"].toString())) {
@@ -1136,13 +1127,13 @@ class _ExploreState extends State<Explore> {
             }
             json['tv_credits_crew'] = tvCrew;
             for (var element in tvCrew) {
-              if (containsMap(currentUser.seenTVShows,
+              if (Utils.contains_non_type(currentUser.seenTVShows,
                   ["TVShows", element["id"].toString()])) {
                 if (element["job"] == "Director" &&
                     !countedTVShowsDirector
                         .contains(element["id"].toString())) {
                   stats_dir += 1;
-                  if (containsMap(currentUser.favTVShows,
+                  if (Utils.contains_non_type(currentUser.favTVShows,
                       ['TVShows', element["id"].toString()])) {
                     scoreDirector += 3;
                   } else {
@@ -1150,7 +1141,7 @@ class _ExploreState extends State<Explore> {
                   }
                   countedTVShowsDirector.add(element["id"].toString());
                 }
-              } else if (containsMap(currentUser.watchlistTVShows,
+              } else if (Utils.contains_non_type(currentUser.watchlistTVShows,
                       ['TVShows', element["id"].toString()]) &&
                   element["job"] == "Director" &&
                   !countedTVShowsDirector.contains(element["id"].toString())) {
