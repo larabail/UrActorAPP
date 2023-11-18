@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/objects/Movie.dart';
+import 'package:uractor/objects/Person.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
@@ -13,7 +14,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class PersonResult extends StatefulWidget {
-  const PersonResult({super.key});
+  final Person personResult;
+  const PersonResult({Key? key, required this.personResult}) : super(key: key);
 
   @override
   _PersonResultState createState() => _PersonResultState();
@@ -30,18 +32,18 @@ class _PersonResultState extends State<PersonResult> {
   List countedMoviesActor = [];
   List countedTVShowsDirector = [];
   List countedTVShowsActor = [];
-  Map presult = personResult;
+  // Map presult = widget.personResult.data;
   Future<Map> getPersonData() async {
     Map json = {};
-    String name = presult['name']
+    String name = widget.personResult.name
         .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
         .replaceAll(" ", "-");
-    final response =
-        await http.get(Uri.parse('$PERSON_LINK${presult["id"]}-$name$API_KEY'));
+    final response = await http
+        .get(Uri.parse('$PERSON_LINK${widget.personResult.id}-$name$API_KEY'));
     json = jsonDecode(response.body);
     if (response.statusCode == 200) {
-      final r2 = await http.get(
-          Uri.parse('$PERSON_LINK${presult["id"]}-$name$MOVIE_CREDITS_LINK'));
+      final r2 = await http.get(Uri.parse(
+          '$PERSON_LINK${widget.personResult.id}-$name$MOVIE_CREDITS_LINK'));
       if (r2.statusCode == 200) {
         List movieCast = [];
         for (Map movie in jsonDecode(r2.body)['cast']) {
@@ -88,7 +90,7 @@ class _PersonResultState extends State<PersonResult> {
           }
         }
         final r3 = await http.get(Uri.parse(
-            '$PERSON_LINK${presult["id"]}-$name$TV_SHOW_CREDITS_LINK'));
+            '$PERSON_LINK${widget.personResult.id}-$name$TV_SHOW_CREDITS_LINK'));
         if (r3.statusCode == 200) {
           List tvCast = [];
           for (Map show in jsonDecode(r3.body)['cast']) {
@@ -165,7 +167,7 @@ class _PersonResultState extends State<PersonResult> {
           }
         }
         final r4 = await http.get(Uri.parse(
-            '$PERSON_LINK${presult["id"]}-$name$TV_SHOW_CREDITS_LINK'));
+            '$PERSON_LINK${widget.personResult.id}-$name$TV_SHOW_CREDITS_LINK'));
         if (r4.statusCode == 200) {
           List tvCrew = [];
           for (Map show in jsonDecode(r4.body)['crew']) {
@@ -200,8 +202,8 @@ class _PersonResultState extends State<PersonResult> {
               allDirMovies += 1;
             }
           }
-          if (oscars.keys.contains(presult["id"])) {
-            json['num_oscars'] = oscars[presult["id"]]['num_oscars'];
+          if (oscars.keys.contains(widget.personResult.id)) {
+            json['num_oscars'] = oscars[widget.personResult.id]['num_oscars'];
           } else {
             json['num_oscars'] = 0;
           }
@@ -209,7 +211,7 @@ class _PersonResultState extends State<PersonResult> {
               .collection(currentUser.uid)
               .doc("FavDirectors");
           Map<Object, Object?> directorStats = {};
-          directorStats[personResult['id'].toString()] = scoreDirector;
+          directorStats[widget.personResult.id.toString()] = scoreDirector;
           await userDoc.update(directorStats);
           await userDoc.get().then((DocumentSnapshot doc) async {
             Map info = doc.data() as Map;
@@ -223,7 +225,7 @@ class _PersonResultState extends State<PersonResult> {
             int num = 0;
             for (var act in actrs) {
               num++;
-              if (act[1].toString() == presult["id"].toString()) {
+              if (act[1].toString() == widget.personResult.id.toString()) {
                 break;
               }
             }
@@ -234,7 +236,7 @@ class _PersonResultState extends State<PersonResult> {
               .collection(currentUser.uid)
               .doc("FavActors");
           Map<Object, Object?> actorStats = {};
-          actorStats[personResult['id'].toString()] = scoreActor;
+          actorStats[widget.personResult.id.toString()] = scoreActor;
           await ActorDoc.update(actorStats);
           await ActorDoc.get().then((DocumentSnapshot doc) async {
             Map info = doc.data() as Map;
@@ -248,7 +250,7 @@ class _PersonResultState extends State<PersonResult> {
             int num = 0;
             for (var act in actrs) {
               num++;
-              if (act[1].toString() == presult["id"].toString()) {
+              if (act[1].toString() == widget.personResult.id.toString()) {
                 break;
               }
             }

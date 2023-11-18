@@ -12,6 +12,7 @@ import 'common/bottom_app_bar.dart';
 import 'common/constants.dart';
 import 'objects/Movie.dart';
 import 'main.dart';
+import 'objects/Person.dart';
 import 'person_result.dart';
 import 'movie_result.dart';
 import 'login.dart';
@@ -711,7 +712,7 @@ class _ProfileState extends State<Profile> {
         BuildContext context, Map<String, dynamic> item, String type) {
       String imagePath =
           type == "Movies" ? item['poster_path'] : item['profile_path'];
-      String navigateTo = type == "Movies" ? 'MovieResult' : 'PersonResult';
+      // String navigateTo = type == "Movies" ? 'MovieResult' : 'PersonResult';
 
       return GestureDetector(
         onTap: () {
@@ -721,16 +722,25 @@ class _ProfileState extends State<Profile> {
                 id: item['id'].toString(),
                 title: item['title'],
                 coverPhoto: item["poster_path"] ?? "");
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => MovieResult(movie: tempMovie)),
+            );
           } else {
-            personResult = item;
+            Person personResult = Person(
+                id: item["id"].toString(),
+                name: item["name"].toString(),
+                data: item);
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => PersonResult(
+                        personResult: personResult,
+                      )),
+            );
           }
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => navigateTo == 'MovieResult'
-                    ? MovieResult(movie: tempMovie)
-                    : const PersonResult()),
-          );
         },
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),

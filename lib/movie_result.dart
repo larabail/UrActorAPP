@@ -11,6 +11,7 @@ import 'friends.dart';
 import 'friends_profile.dart';
 import 'main.dart';
 import 'objects/Movie.dart';
+import 'objects/Person.dart';
 import 'person_result.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'dart:async';
@@ -1545,12 +1546,17 @@ class _MovieResultState extends State<MovieResult> {
                                   const EdgeInsets.fromLTRB(5.0, 0.0, 5.0, 0.0),
                               child: GestureDetector(
                                 onTap: () {
-                                  personResult = person;
+                                  Person personResult = Person(
+                                      id: person["id"].toString(),
+                                      name: person["name"].toString(),
+                                      data: person);
+
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) =>
-                                            const PersonResult()),
+                                        builder: (context) => PersonResult(
+                                              personResult: personResult,
+                                            )),
                                   );
                                 },
                                 child: Column(
@@ -1617,12 +1623,17 @@ class _MovieResultState extends State<MovieResult> {
                             if (index == 0 && director != null) {
                               return GestureDetector(
                                   onTap: () {
-                                    personResult = director;
+                                    Person personResult = Person(
+                                        id: director["id"].toString(),
+                                        name: director["name"].toString(),
+                                        data: director);
+
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) =>
-                                              const PersonResult()),
+                                          builder: (context) => PersonResult(
+                                                personResult: personResult,
+                                              )),
                                     );
                                   },
                                   child: Text(
@@ -1648,12 +1659,17 @@ class _MovieResultState extends State<MovieResult> {
                                   snapshot.data!['crew'][adjustedIndex];
                               return GestureDetector(
                                   onTap: () {
-                                    personResult = person;
+                                    Person personResult = Person(
+                                        id: person["id"].toString(),
+                                        name: person["name"].toString(),
+                                        data: person);
+
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) =>
-                                              const PersonResult()),
+                                          builder: (context) => PersonResult(
+                                                personResult: personResult,
+                                              )),
                                     );
                                   },
                                   child: Text(

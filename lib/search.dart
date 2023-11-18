@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:uractor/objects/Movie.dart';
+import 'package:uractor/objects/Person.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
@@ -9,7 +10,6 @@ import 'common/constants.dart';
 import 'person_result.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
-import 'main.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -98,9 +98,16 @@ class _SearchResultState extends State<Search> {
                       tvshow: tempTvShow,
                     )));
       } else {
-        personResult = item;
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => const PersonResult()));
+        Person personResult = Person(
+            id: item["id"].toString(),
+            name: item["name"].toString(),
+            data: item);
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => PersonResult(
+                      personResult: personResult,
+                    )));
       }
     }
 
