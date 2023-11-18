@@ -4,13 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import '../common/constants.dart';
-import '../list_result.dart';
-import '../playlists.dart';
 import 'dart:convert';
 import '../main.dart';
+import '../objects/Playlist.dart';
 
 class MovieAddDialogue extends StatefulWidget {
-  const MovieAddDialogue({super.key});
+  final Playlist list_result;
+  const MovieAddDialogue({Key? key, required this.list_result})
+      : super(key: key);
 
   @override
   _MovieAddDialogueState createState() => _MovieAddDialogueState();
@@ -57,7 +58,7 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
   }
 
   void addMovieSubmit() async {
-    String docIDString = list_result["id"].toString();
+    String docIDString = widget.list_result.id.toString();
 
     var userDoc = db.collection("Watchlists").doc(docIDString);
     await userDoc.update({
@@ -80,12 +81,12 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
       }
     });
 
-    list_result["Movies"] =
-        currentUser.playlists[list_result["id"].toString()]["Movies"];
+    widget.list_result.movies =
+        currentUser.playlists[widget.list_result.id.toString()]["Movies"];
 
     Navigator.pop(context);
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => ListResult()));
+    // Navigator.pushReplacement(
+    //     context, MaterialPageRoute(builder: (context) => ListResult()));
   }
 
   @override
@@ -106,7 +107,7 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 5),
               child: Text(
-                'Add a movie to "${list_result["Name"]}"',
+                'Add a movie to "${widget.list_result.name}"',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,

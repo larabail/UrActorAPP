@@ -8,6 +8,7 @@ import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'objects/Media.dart';
 import 'objects/Movie.dart';
+import 'objects/Playlist.dart';
 import 'playlists.dart';
 import 'main.dart';
 import 'movie_result.dart';
@@ -19,13 +20,10 @@ import 'popups/list_edit_popup.dart';
 import 'popups/movie_add_popup.dart';
 import 'popups/tv_add_popup.dart';
 
-String cover = "";
-String listName = "";
-String accessCode = "";
-String originalListName = "";
-String originalAccessCode = "";
-
 class InfoButtonDialog extends StatefulWidget {
+  final Playlist list_result;
+  const InfoButtonDialog({Key? key, required this.list_result})
+      : super(key: key);
   @override
   _InfoButtonDialogState createState() => _InfoButtonDialogState();
 }
@@ -41,7 +39,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
 
   @override
   Widget build(BuildContext context) {
-    Map userCurrent = list_result['Users'].firstWhere(
+    Map userCurrent = widget.list_result.users.firstWhere(
         (item) => item.containsKey(currentUser.uid) as bool,
         orElse: () => null);
     String role = userCurrent[currentUser.uid];
@@ -59,7 +57,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              "AccessCode: ${list_result['AccessCode']}",
+              "AccessCode: ${widget.list_result.accesscode}",
               style: const TextStyle(
                 fontSize: 18,
                 color: Colors.white,
@@ -75,7 +73,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
             ),
             const SizedBox(height: 10),
             FutureBuilder(
-              future: Future.wait((list_result['Users'] as List<dynamic>)
+              future: Future.wait((widget.list_result.users)
                   .map((user) => getUserData(user.keys.toList()[0]))),
               builder: (context,
                   AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
@@ -115,7 +113,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                               icon: const Icon(Icons.remove_circle,
                                   color: Colors.red),
                               onPressed: () async {
-                                Map itemToRemove = list_result['Users']
+                                Map itemToRemove = widget.list_result.users
                                     .firstWhere(
                                         (item) =>
                                             item.containsKey(userData["uid"])
@@ -123,7 +121,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                                         orElse: () => null);
                                 FirebaseFirestore.instance
                                     .collection('Watchlists')
-                                    .doc(list_result["id"])
+                                    .doc(widget.list_result.id)
                                     .update({
                                   'Users':
                                       FieldValue.arrayRemove([itemToRemove])
@@ -146,8 +144,9 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                                   }
                                 });
                                 setState(() {
-                                  list_result["Users"] = currentUser
-                                      .playlists[list_result["id"]]["Users"];
+                                  widget.list_result.users = currentUser
+                                          .playlists[widget.list_result.id]
+                                      ["Users"];
                                 });
                               },
                             ),
@@ -164,14 +163,16 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                 if (role == "Owner")
                   GestureDetector(
                     onTap: () {
-                      cover = list_result["Backdrop"];
-                      originalListName = list_result["Name"];
-                      originalAccessCode = list_result["AccessCode"];
-                      listName = list_result["Name"];
-                      accessCode = list_result["AccessCode"];
+                      cover = widget.list_result.backdrop;
+                      originalListName = widget.list_result.name;
+                      originalAccessCode = widget.list_result.accesscode;
+                      listName = widget.list_result.name;
+                      accessCode = widget.list_result.accesscode;
                       showDialog(
                         context: context,
-                        builder: (context) => const ListEditDialogue(),
+                        builder: (context) => ListEditDialogue(
+                          list_result: widget.list_result,
+                        ),
                       ).then((_) {
                         Navigator.pop(context);
                       });
@@ -205,15 +206,17 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                       Navigator.pop(context);
                       showDialog(
                         context: context,
-                        builder: (context) => AlertButtonDialogue(),
+                        builder: (context) => AlertButtonDialogue(
+                          list_result: widget.list_result,
+                        ),
                       );
                     } else {
-                      Map itemToRemove = list_result['Users'].firstWhere(
+                      Map itemToRemove = widget.list_result.users.firstWhere(
                           (item) => item.containsKey(currentUser.uid) as bool,
                           orElse: () => null);
                       FirebaseFirestore.instance
                           .collection('Watchlists')
-                          .doc(list_result["id"])
+                          .doc(widget.list_result.id)
                           .update({
                         'Users': FieldValue.arrayRemove([itemToRemove])
                       });
@@ -275,6 +278,9 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
 }
 
 class AlertButtonDialogue extends StatelessWidget {
+  final Playlist list_result;
+  const AlertButtonDialogue({Key? key, required this.list_result})
+      : super(key: key);
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -290,7 +296,7 @@ class AlertButtonDialogue extends StatelessWidget {
             currentUser.playlists = {};
             await FirebaseFirestore.instance
                 .collection("Watchlists")
-                .doc(list_result["id"])
+                .doc(list_result.id)
                 .delete();
             await FirebaseFirestore.instance
                 .collection("Watchlists")
@@ -337,13 +343,22 @@ bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
   return false;
 }
 
+String cover = "";
+String listName = "";
+String accessCode = "";
+String originalListName = "";
+String originalAccessCode = "";
+
 class ListResult extends StatefulWidget {
+  final Playlist list_result;
+  const ListResult({Key? key, required this.list_result}) : super(key: key);
+
   @override
   _ListResultState createState() => _ListResultState();
 }
 
 class _ListResultState extends State<ListResult> {
-  Map list = list_result;
+  // Map list = list_result;
   List<Map<String, dynamic>> moviesList = [];
 
   Future<Map<String, dynamic>> getData(id, type) async {
@@ -472,7 +487,7 @@ class _ListResultState extends State<ListResult> {
                       borderRadius: BorderRadius.circular(10),
                       image: DecorationImage(
                         image: NetworkImage(
-                          list['Backdrop'],
+                          widget.list_result.backdrop,
                         ),
                         fit: BoxFit.cover,
                       ),
@@ -496,7 +511,7 @@ class _ListResultState extends State<ListResult> {
                     child: Align(
                       alignment: Alignment.bottomRight,
                       child: Text(
-                        list['Name'],
+                        widget.list_result.name,
                         style: const TextStyle(
                           fontSize: 30,
                           fontWeight: FontWeight.bold,
@@ -520,7 +535,9 @@ class _ListResultState extends State<ListResult> {
                             onPressed: () {
                               showDialog(
                                 context: context,
-                                builder: (context) => InfoButtonDialog(),
+                                builder: (context) => InfoButtonDialog(
+                                  list_result: widget.list_result,
+                                ),
                               ).then((_) {
                                 setState(() {});
                               });
@@ -543,9 +560,11 @@ class _ListResultState extends State<ListResult> {
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
-                        return const MovieAddDialogue();
+                        return MovieAddDialogue(
+                          list_result: widget.list_result,
+                        );
                       },
-                    );
+                    ).then((value) => setState(() {}));
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -578,9 +597,11 @@ class _ListResultState extends State<ListResult> {
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
-                        return const TvAddDialogue();
+                        return TvAddDialogue(
+                          list_result: widget.list_result,
+                        );
                       },
-                    );
+                    ).then((value) => setState(() {}));
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -607,7 +628,8 @@ class _ListResultState extends State<ListResult> {
                 ),
               ],
             ),
-            if (list["Movies"].length > 0 && list["TVShows"].length > 0)
+            if (widget.list_result.movies.isNotEmpty &&
+                widget.list_result.tvshows.isNotEmpty)
               DefaultTabController(
                 length: 2,
                 child: Expanded(
@@ -622,8 +644,10 @@ class _ListResultState extends State<ListResult> {
                       Expanded(
                         child: TabBarView(
                           children: [
-                            buildMediaList(list["Movies"], "Movies", context),
-                            buildMediaList(list["TVShows"], "TVShows", context),
+                            buildMediaList(
+                                widget.list_result.movies, "Movies", context),
+                            buildMediaList(
+                                widget.list_result.tvshows, "TVShows", context),
                           ],
                         ),
                       ),
@@ -631,10 +655,12 @@ class _ListResultState extends State<ListResult> {
                   ),
                 ),
               ),
-            if (list["Movies"].length > 0 && list["TVShows"].length == 0)
-              buildMediaList(list["Movies"], "Movies", context),
-            if (list["TVShows"].length > 0 && list["Movies"].length == 0)
-              buildMediaList(list["TVShows"], "TVShows", context),
+            if (widget.list_result.movies.isNotEmpty &&
+                widget.list_result.tvshows.isEmpty)
+              buildMediaList(widget.list_result.movies, "Movies", context),
+            if (widget.list_result.tvshows.isNotEmpty &&
+                widget.list_result.movies.isEmpty)
+              buildMediaList(widget.list_result.tvshows, "TVShows", context),
           ],
         ),
         bottomNavigationBar: CommonBottomAppBar(-1),
