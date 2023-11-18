@@ -7,8 +7,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'appbar.dart';
-import 'bottom_app_bar.dart';
+import 'common/appbar.dart';
+import 'common/bottom_app_bar.dart';
 import 'common/constants.dart';
 import 'objects/Movie.dart';
 import 'main.dart';
@@ -722,7 +722,7 @@ class _ProfileState extends State<Profile> {
           Movie tempMovie = Movie(id: "", title: "", coverPhoto: "");
           if (type == "Movies") {
             tempMovie = Movie(
-                id: item['id'],
+                id: item['id'].toString(),
                 title: item['title'],
                 coverPhoto: item["poster_path"]);
           } else {
@@ -1075,8 +1075,7 @@ class _ProfileState extends State<Profile> {
                                     context, actorData(), 'PersonResult'),
                                 buildTabContent(
                                     context, dirData(), 'PersonResult'),
-                                buildTabContent(
-                                    context, topMovies(), 'MovieResult'),
+                                buildTabContent(context, topMovies(), 'Movies'),
                               ],
                             ),
                           ),

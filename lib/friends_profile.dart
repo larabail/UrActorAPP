@@ -1,13 +1,14 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:uractor/profile.dart';
-import 'appbar.dart';
-import 'bottom_app_bar.dart';
+import 'package:uractor/common/constants.dart';
+import 'common/appbar.dart';
+import 'common/bottom_app_bar.dart';
+import 'common/utils.dart';
 import 'friends.dart';
 import 'friends_calendar.dart';
 import 'objects/Movie.dart';
-import 'playlists.dart';
-import 'search.dart';
 import 'main.dart';
 import 'person_result.dart';
 import 'movie_result.dart';
@@ -16,26 +17,7 @@ import 'dart:convert';
 
 import 'seenTogether.dart';
 
-const String imgLink = 'https://image.tmdb.org/t/p/w500/';
-
-const String api_key_actor = "?api_key=700cd4fab994df56eb41b34d38c4762a";
-String link = "https://api.themoviedb.org/3/movie/";
 int weekOffset = 0; // This will be used to go to previous or next weeks
-
-final months = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December"
-];
 
 class FriendProfile extends StatefulWidget {
   const FriendProfile({super.key, required String friendUID});
@@ -64,7 +46,7 @@ class _FriendProfileState extends State<FriendProfile> {
 
     while (i < 18 && i < moviesTemp.length) {
       String completeLinkMovie =
-          link + moviesTemp[i][1].toString() + api_key_actor;
+          MOVIE_LINK + moviesTemp[i][1].toString() + API_KEY;
 
       final response = await http.get(Uri.parse(completeLinkMovie));
       if (response.statusCode == 200) {
@@ -78,26 +60,16 @@ class _FriendProfileState extends State<FriendProfile> {
     return movies;
   }
 
-  bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
-    String jsonString = json.encode(map);
-    for (int i = 0; i < list.length; i++) {
-      if (json.encode(list[i]) == jsonString) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  String link = "https://api.themoviedb.org/3/movie/";
   List<Map<String, dynamic>> movies = [];
   Future<Map<String, dynamic>> getData(id, type) async {
     Map<String, dynamic> data = {};
+    String link;
     if (type == "TVShows") {
-      link = 'https://api.themoviedb.org/3/tv/';
+      link = TV_SHOW_LINK;
     } else {
-      link = 'https://api.themoviedb.org/3/movie/';
+      link = MOVIE_LINK;
     }
-    final response = await http.get(Uri.parse('$link$id$api_key_actor'));
+    final response = await http.get(Uri.parse('$link$id$API_KEY'));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       if (type == "TVShows") {
@@ -108,11 +80,11 @@ class _FriendProfileState extends State<FriendProfile> {
       if (json['poster_path'] == null) {
         data['poster'] = 'assets/question_mark.png';
       } else {
-        data['poster'] = imgLink + json['poster_path'];
+        data['poster'] = IMG_LINK + json['poster_path'];
       }
       data['id'] = json['id'];
       data['type'] = type;
-      if (!containsMap(movies, data)) {
+      if (!Utils.containsMap(movies, data)) {
         movies.add(data);
       }
     } else {
@@ -163,7 +135,6 @@ class _FriendProfileState extends State<FriendProfile> {
 
   @override
   Widget build(BuildContext context) {
-    int selectedIndex = 0;
     DateTime now = DateTime.now();
     DateTime startOfWeek =
         now.subtract(Duration(days: now.weekday - 1 + (7 * weekOffset)));
@@ -171,19 +142,18 @@ class _FriendProfileState extends State<FriendProfile> {
 
     Future<List<Map<String, dynamic>>> actorData() async {
       List<Map<String, dynamic>> favActsData = [];
-      const link = 'https://api.themoviedb.org/3/person/';
       int i = 0;
       for (List item in friendFavActors) {
         if (i < 9) {
           final response =
-              await http.get(Uri.parse('$link${item[1]}$api_key_actor'));
+              await http.get(Uri.parse('$PERSON_LINK${item[1]}$API_KEY'));
           if (response.statusCode == 200) {
             final json = jsonDecode(response.body);
             if (json['profile_path'] == null) {
               json['profile_path'] =
                   'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
             } else {
-              json['profile_path'] = imgLink + json['profile_path'];
+              json['profile_path'] = IMG_LINK + json['profile_path'];
             }
             favActsData.add(json);
           } else {
@@ -199,19 +169,18 @@ class _FriendProfileState extends State<FriendProfile> {
 
     Future<List<Map<String, dynamic>>> dirData() async {
       List<Map<String, dynamic>> favActsData = [];
-      const link = 'https://api.themoviedb.org/3/person/';
       int i = 0;
       for (List item in friendFavDirectors) {
         if (i < 9) {
           final response =
-              await http.get(Uri.parse('$link${item[1]}$api_key_actor'));
+              await http.get(Uri.parse('$PERSON_LINK${item[1]}$API_KEY'));
           if (response.statusCode == 200) {
             final json = jsonDecode(response.body);
             if (json['profile_path'] == null) {
               json['profile_path'] =
                   'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
             } else {
-              json['profile_path'] = imgLink + json['profile_path'];
+              json['profile_path'] = IMG_LINK + json['profile_path'];
             }
             favActsData.add(json);
           } else {
@@ -225,15 +194,6 @@ class _FriendProfileState extends State<FriendProfile> {
       return favActsData;
     }
 
-    final List<Widget> pages = [
-      const MyApp(),
-      const Playlists(),
-      const Search(),
-      const Friends(),
-      const Profile(),
-      // Add more pages here
-    ];
-
     Map filteredData = {};
 
     Map tempData = Map.fromEntries(friendCalendar.entries.where((entry) {
@@ -242,7 +202,6 @@ class _FriendProfileState extends State<FriendProfile> {
           entryDate.isBefore(endOfWeek);
     }));
 
-    // print(tempData);
     for (int i = 0; i <= endOfWeek.difference(startOfWeek).inDays; i++) {
       DateTime currentDay = startOfWeek.add(Duration(days: i));
       if (!tempData.keys.toList().contains(
@@ -260,14 +219,6 @@ class _FriendProfileState extends State<FriendProfile> {
                 .toIso8601String()
                 .split("T")[0]];
       }
-    }
-
-    void _onItemTapped(int index) {
-      selectedIndex = index;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
-      );
     }
 
     int maxMovies = 0;
@@ -716,7 +667,7 @@ class _FriendProfileState extends State<FriendProfile> {
                                       borderRadius: BorderRadius.circular(27),
                                       image: DecorationImage(
                                         image: NetworkImage(
-                                          imgLink + movie['poster_path'],
+                                          IMG_LINK + movie['poster_path'],
                                         ),
                                         fit: BoxFit.fitWidth,
                                       ),
@@ -795,7 +746,7 @@ class _FriendProfileState extends State<FriendProfile> {
                                       borderRadius: BorderRadius.circular(27),
                                       image: DecorationImage(
                                         image: NetworkImage(
-                                          imgLink + person['profile_path'],
+                                          IMG_LINK + person['profile_path'],
                                         ),
                                         fit: BoxFit.fitWidth,
                                       ),
@@ -874,7 +825,7 @@ class _FriendProfileState extends State<FriendProfile> {
                                       borderRadius: BorderRadius.circular(27),
                                       image: DecorationImage(
                                         image: NetworkImage(
-                                          imgLink + person['profile_path'],
+                                          IMG_LINK + person['profile_path'],
                                         ),
                                         fit: BoxFit.fitWidth,
                                       ),

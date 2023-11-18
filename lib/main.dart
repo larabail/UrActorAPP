@@ -7,8 +7,8 @@ import 'package:uractor/objects/User.dart';
 import 'common/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
-import 'appbar.dart';
-import 'bottom_app_bar.dart';
+import 'common/appbar.dart';
+import 'common/bottom_app_bar.dart';
 import 'calendar.dart';
 import 'favorites.dart';
 import 'list_result.dart';
@@ -146,6 +146,7 @@ class _MyHomePageState extends State<MyHomePage> {
     int selectedIndex = 0;
     Future<MediaItem> getData(id, type) async {
       MediaItem item;
+      String link;
       if (type == "TVShows") {
         link = TV_SHOW_LINK;
       } else {
@@ -382,9 +383,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(
-                                      width:
-                                          10), 
+                                  const SizedBox(width: 10),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:

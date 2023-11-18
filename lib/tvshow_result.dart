@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'appbar.dart';
-import 'bottom_app_bar.dart';
+import 'common/appbar.dart';
+import 'common/bottom_app_bar.dart';
 import 'common/constants.dart';
 import 'common/utils.dart';
 import 'friends.dart';
@@ -32,16 +32,6 @@ class TVShowResult extends StatefulWidget {
   _TVShowResultState createState() => _TVShowResultState();
 }
 
-bool containsMap(List list, List map) {
-  for (int i = 0; i < list.length; i++) {
-    if ((list[i][1]) as String == map[1].toString() &&
-        (list[i][0]) as String == map[0].toString()) {
-      return true;
-    }
-  }
-  return false;
-}
-
 class _TVShowResultState extends State<TVShowResult> {
   Future<Map> getMovieData() async {
     List movieData = [widget.tvshow.id, "TVShows"];
@@ -50,7 +40,6 @@ class _TVShowResultState extends State<TVShowResult> {
         .replaceAll(" ", "-");
     final response =
         await http.get(Uri.parse('$TV_SHOW_LINK${movieData[0]}-$name$API_KEY'));
-    print('$TV_SHOW_LINK${movieData[0]}-$name$API_KEY');
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
@@ -783,64 +772,7 @@ class _TVShowResultState extends State<TVShowResult> {
                       ],
                     ),
                   ),
-                  // Container(
-                  //   margin: const EdgeInsets.all(10.0), // set margin here
-                  //   child: const Text(
-                  //     "Where to Watch?",
-                  //     style: TextStyle(fontSize: 18),
-                  //   ),
-                  // ),
-                  // if (snapshot.data!['providers'].length != 0)
-                  //   Container(
-                  //     height: 30, // fixed height
-                  //     margin: const EdgeInsets.fromLTRB(30.0, 5.0, 0, 5.0),
-                  //     child: ListView.builder(
-                  //       scrollDirection: Axis.horizontal,
-                  //       itemCount: snapshot.data!['providers'].length,
-                  //       itemBuilder: (BuildContext context, int index) {
-                  //         return Container(
-                  //           margin: const EdgeInsets.only(right: 10),
-                  //           height: 40,
-                  //           width: 40,
-                  //           decoration: BoxDecoration(
-                  //             borderRadius: BorderRadius.circular(10),
-                  //             image: DecorationImage(
-                  //               image: NetworkImage(
-                  //                 imgLink +
-                  //                     snapshot.data!['providers'][index][1],
-                  //               ),
-                  //               fit: BoxFit.cover,
-                  //             ),
-                  //           ),
-                  //         );
-                  //       },
-                  //     ),
-                  //   ),
-                  // if (snapshot.data!['providers'].length == 0)
-                  //   Container(
-                  //     margin: const EdgeInsets.all(10.0), // set margin here
-                  //     child: const Text(
-                  //       "Nowhere at the moment",
-                  //       style: TextStyle(fontSize: 18),
-                  //     ),
-                  //   ),
-                  // SizedBox(
-                  //   width: 200,
-                  //   child: TextField(
-                  //     controller: TextEditingController(),
-                  //     decoration: const InputDecoration(
-                  //       labelText: 'Times Seen',
-                  //       hintStyle: TextStyle(color: Colors.grey),
-                  //       enabledBorder: UnderlineInputBorder(
-                  //         borderSide: BorderSide(color: Colors.grey),
-                  //       ),
-                  //       labelStyle: TextStyle(color: Colors.grey),
-                  //       border: OutlineInputBorder(),
-                  //     ),
-                  //     keyboardType: TextInputType.number,
-                  //   ),
-                  // ),
-                  if (containsMap(
+                  if (Utils.contains_non_type(
                       currentUser.seenTVShows, ['TVShows', widget.tvshow.id]))
                     ExpansionTile(
                       title: const Row(
@@ -860,28 +792,6 @@ class _TVShowResultState extends State<TVShowResult> {
                         ],
                       ),
                       children: [
-                        // if ((snapshot.data!['seen_dates'] as List).isNotEmpty)
-                        //   Padding(
-                        //     padding: const EdgeInsets.all(12.0),
-                        //     child: Row(
-                        //       children: [
-                        //         const SizedBox(
-                        //             width: 16), // Added margin to the left
-                        //         const Icon(Icons.access_time,
-                        //             color: Colors.green),
-                        //         const SizedBox(width: 8),
-                        //         Text(
-                        //           "Last watched: ${intl.DateFormat('dd MMMM, yyyy').format(DateTime.parse(snapshot.data!['seen_dates'][0][0]))}",
-                        //           style: const TextStyle(
-                        //               fontSize: 16,
-                        //               fontWeight: FontWeight.bold,
-                        //               color: Colors.green),
-                        //         ),
-                        //       ],
-                        //     ),
-                        //   ),
-                        // Rest of the dates in a smaller font
-
                         FutureBuilder(
                           future: Future.wait(
                             currentUser.seenWith.entries
@@ -1384,7 +1294,6 @@ class _TVShowResultState extends State<TVShowResult> {
                         ),
                       ],
                     ),
-
                   const Row(
                     children: [],
                   ),
@@ -1465,32 +1374,6 @@ class _TVShowResultState extends State<TVShowResult> {
                           },
                         ),
                       ),
-                      // Container(
-                      //   width: MediaQuery.of(context).size.width,
-                      //   margin: const EdgeInsets.fromLTRB(30.0, 20.0, 0, 5.0),
-                      //   child: const Text(
-                      //     "Main Crew:",
-                      //     style: TextStyle(fontSize: 18),
-                      //   ),
-                      // ),
-                      // Container(
-                      //   width: MediaQuery.of(context).size.width * 1,
-                      //   height: 100,
-                      //   margin: const EdgeInsets.fromLTRB(30.0, 5.0, 0, 5.0),
-                      //   child: ListView.builder(
-                      //     scrollDirection: Axis.vertical,
-                      //     itemCount: snapshot.data!['crew'].length < 5
-                      //         ? snapshot.data!['crew'].length
-                      //         : 5,
-                      //     itemBuilder: (BuildContext context, int index) {
-                      //       Map person = snapshot.data!['crew'][index];
-                      //       return Text(
-                      //         "${person['job']}: ${person['name']}",
-                      //         style: const TextStyle(fontSize: 15),
-                      //       );
-                      //     },
-                      //   ),
-                      // ),
                     ],
                   ),
                   Builder(

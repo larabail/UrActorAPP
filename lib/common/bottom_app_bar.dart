@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:uractor/playlists.dart';
 import 'package:uractor/profile.dart';
 
-import 'friends.dart';
-import 'main.dart';
+import '../friends.dart';
+import '../main.dart';
 
 // ignore: must_be_immutable
 class CommonBottomAppBar extends StatelessWidget {
