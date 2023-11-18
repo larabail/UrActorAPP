@@ -1,8 +1,8 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
-import 'appbar.dart';
-import 'bottom_app_bar.dart';
+import 'common/appbar.dart';
+import 'common/bottom_app_bar.dart';
 import 'friends.dart';
 import 'objects/Movie.dart';
 import 'playlists.dart';

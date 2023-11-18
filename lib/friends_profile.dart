@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/profile.dart';
-import 'appbar.dart';
-import 'bottom_app_bar.dart';
+import 'common/appbar.dart';
+import 'common/bottom_app_bar.dart';
 import 'friends.dart';
 import 'friends_calendar.dart';
 import 'objects/Movie.dart';

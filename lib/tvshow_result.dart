@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'appbar.dart';
-import 'bottom_app_bar.dart';
+import 'common/appbar.dart';
+import 'common/bottom_app_bar.dart';
 import 'common/constants.dart';
 import 'common/utils.dart';
 import 'friends.dart';

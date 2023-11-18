@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../movie_result.dart';
-import '../rating_popup.dart';
+import '../popups/rating_popup.dart';
 import 'constants.dart';
 
 class Utils {
@@ -16,6 +16,16 @@ class Utils {
     String jsonString = json.encode(map);
     for (int i = 0; i < list.length; i++) {
       if (json.encode(list[i]) == jsonString) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static bool containsList(List list, List map) {
+    for (int i = 0; i < list.length; i++) {
+      if ((list[i][1]).toString() == map[1].toString() &&
+          (list[i][0]) as String == "Movies") {
         return true;
       }
     }

@@ -18,3 +18,5 @@ const String PERSON_LINK = "https://api.themoviedb.org/3/person/";
 
 const String MOVIE_CREDITS_LINK = '/movie_credits$API_KEY';
 const String TV_SHOW_CREDITS_LINK = '/tv_credits$API_KEY';
+const String GENRES_LINK =
+    "https://api.themoviedb.org/3/genre/movie/list$API_KEY";
