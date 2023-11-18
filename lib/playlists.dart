@@ -2,12 +2,12 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'appbar.dart';
-import 'bottom_app_bar.dart';
+import 'common/appbar.dart';
+import 'common/bottom_app_bar.dart';
 import 'main.dart';
 import 'list_result.dart';
-import 'list_add_popup.dart';
-import 'list_join_popup.dart';
+import 'popups/list_add_popup.dart';
+import 'popups/list_join_popup.dart';
 
 Map list_result = {};
 
