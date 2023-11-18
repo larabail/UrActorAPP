@@ -151,7 +151,7 @@ class _PlaylistsState extends State<Playlists> {
                       return GestureDetector(
                         onTap: () {
                           // Handle the click event here
-                          Playlist list_result = Playlist(
+                          Playlist listResult = Playlist(
                               id: key.toString(),
                               name: value.toString(),
                               backdrop: image.toString(),
@@ -163,22 +163,9 @@ class _PlaylistsState extends State<Playlists> {
                             context,
                             MaterialPageRoute(
                                 builder: (context) => ListResult(
-                                      list_result: list_result,
+                                      list_result: listResult,
                                     )),
                           );
-                          // list_result["Movies"] = movies;
-                          // list_result["TVShows"] = tvshows;
-                          // list_result["Backdrop"] = image;
-                          // list_result["Name"] = value;
-                          // list_result["AccessCode"] = accessCode;
-                          // list_result["id"] = key;
-                          // list_result["Users"] =
-                          //     currentUser.playlists[key]["Users"];
-                          // Navigator.push(
-                          //   context,
-                          //   MaterialPageRoute(
-                          //       builder: (context) => ListResult()),
-                          // );
                         },
                         child: Container(
                           margin:
