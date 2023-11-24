@@ -88,8 +88,8 @@ class FirebaseUtils {
           .then((QuerySnapshot querySnapshot) {
         querySnapshot.docs.forEach((doc) async {
           if (doc.id == type) {
-            Map movies_result = doc.data() as Map;
-            w = movies_result["Seen"];
+            Map moviesResult = doc.data() as Map;
+            w = moviesResult["Seen"];
             int index = w.indexOf(id);
 
             if (index > -1) {
