@@ -137,6 +137,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) {
+      currentUser = AppUser(uid: "");
       Future.delayed(Duration.zero, () {
         Navigator.pushReplacement(
           context,
