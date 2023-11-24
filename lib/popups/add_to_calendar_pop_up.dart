@@ -21,7 +21,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
   final myController = TextEditingController(text: "");
 
   String _searchTermMovie = '';
-  String _movie = "";
+  Map _movie = {};
   Future<List> searchData(String searchTerm) async {
     // print(searchTerm);
     if (searchTerm != "") {
@@ -282,10 +282,9 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
       ];
     }
 
-    Navigator.pop(context);
-    setState(() {
-      currentUser.calendar = currentUser.calendar;
-    });
+    // setState(() {
+    //   currentUser.calendar = currentUser.calendar;
+    // });
   }
 
   Map<String, bool> selectedFriends = {};
@@ -294,6 +293,8 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
   void initState() {
     super.initState();
   }
+
+  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -377,20 +378,28 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                           itemCount: snapshot.data?.length,
                           itemBuilder: (context, index) {
                             Map<String, dynamic> item = snapshot.data?[index];
+                            bool isSelected = index == _selectedIndex;
+                            if (isSelected) {
+                              _movie = item;
+                            }
                             return Container(
                               width: 100,
                               margin: const EdgeInsets.symmetric(horizontal: 5),
                               child: GridTile(
                                 child: GestureDetector(
                                   onTap: () {
-                                    _movie = item["id"].toString();
-                                    addMovieSubmit(
-                                        item["id"].toString(),
-                                        item["title"].toString(),
-                                        item["runtime"],
-                                        double.parse(item["imdbRating"]),
-                                        selectedFriends);
+                                    setState(() {
+                                      _selectedIndex = index;
+                                      _movie = item;
+                                    });
                                   },
+                                  // _movie = item["id"].toString();
+                                  // addMovieSubmit(
+                                  //     item["id"].toString(),
+                                  //     item["title"].toString(),
+                                  //     item["runtime"],
+                                  //     double.parse(item["imdbRating"]),
+                                  //     selectedFriends);
                                   child: Container(
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(10),
@@ -399,6 +408,10 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                                             IMG_LINK + item['poster_path']),
                                         fit: BoxFit.cover,
                                       ),
+                                      border: isSelected
+                                          ? Border.all(
+                                              color: Colors.blue, width: 3)
+                                          : null,
                                     ),
                                   ),
                                 ),
@@ -411,91 +424,93 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                   ),
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(20, 40, 20, 5),
-                child: Text(
-                  'Did you watch it with anyone?',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+              if (currentUser.friends.isNotEmpty)
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(20, 40, 20, 5),
+                  child: Text(
+                    'Did you watch it with anyone?',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: SizedBox(
-                  height: 125, // Set your desired height here
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: currentUser.friends.length,
-                    itemBuilder: (context, friendIndex) {
-                      return FutureBuilder<DocumentSnapshot>(
-                        future: FirebaseFirestore.instance
-                            .collection(currentUser.friends[friendIndex])
-                            .doc('Settings')
-                            .get(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                                child: CircularProgressIndicator());
-                          } else if (snapshot.hasError) {
-                            return Text('Error: ${snapshot.error}');
-                          } else if (!snapshot.hasData ||
-                              !snapshot.data!.exists) {
-                            return const Text('No data found');
-                          } else {
-                            var data =
-                                snapshot.data!.data() as Map<String, dynamic>;
-                            String userName = data['username'] ?? '';
-                            String profilePath = data['profile_photo'] ?? '';
-                            return CheckboxListTile(
-                              title: Row(
-                                children: [
-                                  ClipOval(
-                                    child: profilePath != ""
-                                        ? Image.network(
-                                            profilePath,
-                                            height: 25,
-                                            width: 25,
-                                            fit: BoxFit.cover,
-                                          )
-                                        : Image.asset(
-                                            'assets/main_profile.png',
-                                            height: 25,
-                                            width: 25,
-                                            fit: BoxFit.cover,
-                                          ),
-                                  ),
-                                  const SizedBox(width: 16.0),
-                                  Expanded(
-                                    child: Text(
-                                      userName,
-                                      style: const TextStyle(fontSize: 16.0),
+              if (currentUser.friends.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: SizedBox(
+                    height: 125, // Set your desired height here
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: currentUser.friends.length,
+                      itemBuilder: (context, friendIndex) {
+                        return FutureBuilder<DocumentSnapshot>(
+                          future: FirebaseFirestore.instance
+                              .collection(currentUser.friends[friendIndex])
+                              .doc('Settings')
+                              .get(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            } else if (snapshot.hasError) {
+                              return Text('Error: ${snapshot.error}');
+                            } else if (!snapshot.hasData ||
+                                !snapshot.data!.exists) {
+                              return const Text('No data found');
+                            } else {
+                              var data =
+                                  snapshot.data!.data() as Map<String, dynamic>;
+                              String userName = data['username'] ?? '';
+                              String profilePath = data['profile_photo'] ?? '';
+                              return CheckboxListTile(
+                                title: Row(
+                                  children: [
+                                    ClipOval(
+                                      child: profilePath != ""
+                                          ? Image.network(
+                                              profilePath,
+                                              height: 25,
+                                              width: 25,
+                                              fit: BoxFit.cover,
+                                            )
+                                          : Image.asset(
+                                              'assets/main_profile.png',
+                                              height: 25,
+                                              width: 25,
+                                              fit: BoxFit.cover,
+                                            ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              value: selectedFriends.keys.toList().contains(
-                                      currentUser.friends[friendIndex])
-                                  ? selectedFriends[
-                                      currentUser.friends[friendIndex]]
-                                  : false,
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  selectedFriends[currentUser
-                                      .friends[friendIndex]] = value!;
-                                });
-                              },
-                            );
-                          }
-                        },
-                      );
-                    },
+                                    const SizedBox(width: 16.0),
+                                    Expanded(
+                                      child: Text(
+                                        userName,
+                                        style: const TextStyle(fontSize: 16.0),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                value: selectedFriends.keys.toList().contains(
+                                        currentUser.friends[friendIndex])
+                                    ? selectedFriends[
+                                        currentUser.friends[friendIndex]]
+                                    : false,
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    selectedFriends[currentUser
+                                        .friends[friendIndex]] = value!;
+                                  });
+                                },
+                              );
+                            }
+                          },
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
               Padding(
                 padding: const EdgeInsets.all(10.0),
                 child: Row(
@@ -521,6 +536,34 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                               width: 10,
                             ),
                             Text("Cancel")
+                          ],
+                        )),
+                    ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          addMovieSubmit(
+                              _movie["id"].toString(),
+                              _movie["title"].toString(),
+                              _movie["runtime"],
+                              double.parse(_movie["imdbRating"]),
+                              selectedFriends);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[900],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(
+                              Icons.check,
+                              color: Colors.green,
+                            ),
+                            SizedBox(
+                              width: 10,
+                            ),
+                            Text("Accept")
                           ],
                         )),
                   ],
