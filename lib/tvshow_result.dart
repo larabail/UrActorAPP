@@ -503,7 +503,7 @@ class _TVShowResultState extends State<TVShowResult> {
                             child: Text(
                               "${snapshot.data!['name']} (${snapshot.data!['year']})",
                               style: const TextStyle(
-                                fontSize: 30,
+                                fontSize: 25,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.5,
                                 wordSpacing: 2,
