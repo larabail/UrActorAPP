@@ -257,6 +257,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ],
               ),
               GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
                 shrinkWrap: true,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
@@ -298,7 +299,9 @@ class _MyHomePageState extends State<MyHomePage> {
                           children: [
                             const Icon(Icons.library_books,
                                 color: Colors.white, size: 20),
-                            const SizedBox(width: 10),
+                            const SizedBox(
+                              width: 10,
+                            ),
                             Column(
                               children: [
                                 const Text(
