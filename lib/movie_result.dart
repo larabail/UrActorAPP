@@ -96,7 +96,6 @@ class _MovieResultState extends State<MovieResult> {
                 id, context, "Movies");
           }
           if (success) {
-            print(_isTappedSeen);
             setState(() {
               _imageProviderSeen = _isTappedSeen
                   ? 'assets/seen_after.png'
@@ -649,7 +648,9 @@ class _MovieResultState extends State<MovieResult> {
                       ),
                     ],
                   ),
-                  if (reviewed)
+                  if (reviewed &&
+                      snapshot.data!.keys.contains("review") &&
+                      snapshot.data!["review"] != null)
                     ExpansionTile(
                         title: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -791,7 +792,9 @@ class _MovieResultState extends State<MovieResult> {
                               bool success = await FirebaseUtils.writeReview(
                                   snapshot.data!["id"], context);
                               if (success) {
-                                setState(() {});
+                                setState(() {
+                                  currentUser.reviews = currentUser.reviews;
+                                });
                               }
                             },
                             child: const Text('Write A Review')),
