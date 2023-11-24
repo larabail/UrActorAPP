@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'main.dart';
-import 'tabView.dart';
+import 'common/tabView.dart';
 
 // ignore: use_key_in_widget_constructors
 class Favorites extends StatelessWidget {

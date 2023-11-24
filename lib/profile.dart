@@ -21,7 +21,7 @@ import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:convert';
 import 'package:provider/provider.dart';
-import 'theme_provider.dart';
+import 'common/theme_provider.dart';
 
 class Country {
   final String isoCode;
