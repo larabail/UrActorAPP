@@ -16,17 +16,9 @@ import 'person_result.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'dart:async';
 
-String _imageProviderSeen = 'assets/seen_before.png';
-String _imageProviderWatchlist = 'assets/watchlist_before.png';
-bool reviewed = false;
-String _imageProviderList = 'assets/playlists_before.png';
-String _imageProviderFav = 'assets/fav_before.png';
-bool _isTappedSeen = false;
-bool _isTappedWatchlist = false;
-bool _isTappedFav = false;
-bool _isTappedList = false;
 String reviewId = "";
 Map reviewInfo = {};
+bool reviewed = false;
 
 class MovieResult extends StatefulWidget {
   final Movie movie;
@@ -38,6 +30,15 @@ class MovieResult extends StatefulWidget {
 
 class _MovieResultState extends State<MovieResult> {
   final myController = TextEditingController(text: "");
+  bool isExpanded = false;
+  String _imageProviderSeen = 'assets/seen_before.png';
+  String _imageProviderWatchlist = 'assets/watchlist_before.png';
+  String _imageProviderList = 'assets/playlists_before.png';
+  String _imageProviderFav = 'assets/fav_before.png';
+  bool _isTappedSeen = false;
+  bool _isTappedWatchlist = false;
+  bool _isTappedFav = false;
+  bool _isTappedList = false;
   void check() {
     if (widget.movie.isSeen()) {
       _isTappedSeen = true;
@@ -90,14 +91,16 @@ class _MovieResultState extends State<MovieResult> {
           if (_isTappedSeen) {
             success = await FirebaseUtils.markWatched(
                 id, title, runtime, rating, context, "Movies");
-            setState(() {
-              currentUser.seenMovies = currentUser.seenMovies;
-            });
           } else {
             success = await FirebaseUtils.deleteFromWatchedConfirmation(
                 id, context, "Movies");
+          }
+          if (success) {
+            print(_isTappedSeen);
             setState(() {
-              currentUser.seenMovies = currentUser.seenMovies;
+              _imageProviderSeen = _isTappedSeen
+                  ? 'assets/seen_after.png'
+                  : 'assets/seen_before.png';
             });
           }
           break;
@@ -349,10 +352,6 @@ class _MovieResultState extends State<MovieResult> {
         default:
           break;
       }
-
-      if (success) {
-        setState(() {});
-      }
     }
 
     return Scaffold(
@@ -432,25 +431,47 @@ class _MovieResultState extends State<MovieResult> {
                       snapshot.data!['overview'] != "")
                     Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Align(
-                        alignment: Alignment.bottomRight,
-                        child: Container(
-                          height: 85, // fixed height
-                          padding: const EdgeInsets.all(8), // optional padding
-                          child: ListView(
-                            children: [
-                              Text(
-                                snapshot.data!['overview'],
-                                textAlign: TextAlign.justify,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  wordSpacing: 2,
-                                  height: 1.5,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding:
+                                const EdgeInsets.all(8), // Optional padding
+                            constraints: BoxConstraints(
+                              maxHeight: isExpanded
+                                  ? double.infinity
+                                  : 85, // Max height constraint
+                            ),
+                            child: Text(
+                              snapshot.data!['overview'],
+                              textAlign: TextAlign.justify,
+                              overflow: TextOverflow.fade,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                wordSpacing: 2,
+                                height: 1.5,
+                              ),
+                            ),
+                          ),
+                          if (!isExpanded &&
+                              snapshot.data!['overview'].length > 100)
+                            InkWell(
+                              onTap: () {
+                                setState(() {
+                                  isExpanded = true;
+                                });
+                              },
+                              child: Container(
+                                width: double
+                                    .infinity, // Ensures the container takes full width
+                                child: const Text(
+                                  "Read All",
+                                  textAlign: TextAlign
+                                      .right, // Aligns text to the right
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
+                            ),
+                        ],
                       ),
                     ),
                   Container(
@@ -879,7 +900,7 @@ class _MovieResultState extends State<MovieResult> {
                           Icon(Icons.history),
                           SizedBox(width: 8),
                           Text(
-                            "Watching History",
+                            "Viewing History",
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 15,
@@ -980,7 +1001,6 @@ class _MovieResultState extends State<MovieResult> {
                                                 ),
                                               );
                                             } else {
-                                              // In case there's no data yet (which shouldn't happen since we're checking ConnectionState above)
                                               return const SizedBox.shrink();
                                             }
                                           },
@@ -994,12 +1014,11 @@ class _MovieResultState extends State<MovieResult> {
                           ),
                         if ((snapshot.data!['seen_dates'] as List).isNotEmpty)
                           const SizedBox(height: 15),
-                        // Message when 'seen_dates' is empty
                         if ((snapshot.data!['seen_dates'] as List).isEmpty)
                           const Padding(
                             padding: EdgeInsets.all(12.0),
                             child: Text(
-                              "No watching history available.",
+                              "No viewing history available.",
                               style: TextStyle(
                                   fontSize: 16,
                                   fontStyle: FontStyle.italic,
@@ -1510,9 +1529,6 @@ class _MovieResultState extends State<MovieResult> {
                         ),
                       ],
                     ),
-                  const Row(
-                    children: [],
-                  ),
                   Column(
                     children: [
                       Container(
@@ -1608,7 +1624,7 @@ class _MovieResultState extends State<MovieResult> {
                         height: 100,
                         margin: const EdgeInsets.fromLTRB(30.0, 5.0, 0, 5.0),
                         child: ListView.builder(
-                          scrollDirection: Axis.vertical,
+                          physics: NeverScrollableScrollPhysics(),
                           itemCount: snapshot.data!['crew'].length < 5
                               ? snapshot.data!['crew'].length
                               : 5,
