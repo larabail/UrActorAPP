@@ -236,12 +236,19 @@ class _CalendarState extends State<Calendar> {
                           style: const TextStyle(
                               fontSize: 20, fontWeight: FontWeight.bold),
                         ),
+                        const SizedBox(
+                          height: 10,
+                        ),
                         Expanded(
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: [
-                              ...movies
-                                  .map((event) => Column(
+                            child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            ...movies
+                                .map((event) => Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal:
+                                              8.0), // Adjust the padding value as needed
+                                      child: Column(
                                         children: [
                                           GestureDetector(
                                             onTap: () {
@@ -261,17 +268,13 @@ class _CalendarState extends State<Calendar> {
                                               );
                                             },
                                             child: ClipRRect(
-                                              // Wrap the container with ClipRRect
                                               borderRadius: BorderRadius.circular(
-                                                  50), // Set the border radius here
+                                                  30), // Set the border radius here
                                               child: Container(
-                                                margin:
-                                                    const EdgeInsets.fromLTRB(
-                                                        5.0, 7.0, 5.0, 0),
                                                 width: MediaQuery.of(context)
                                                         .size
                                                         .width *
-                                                    0.3,
+                                                    0.32,
                                                 height: MediaQuery.of(context)
                                                         .size
                                                         .height *
@@ -301,11 +304,11 @@ class _CalendarState extends State<Calendar> {
                                             color: Colors.red,
                                           ),
                                         ],
-                                      ))
-                                  .toList(),
-                            ],
-                          ),
-                        ),
+                                      ),
+                                    ))
+                                .toList(),
+                          ],
+                        )),
                       ],
                     ),
                   ),
