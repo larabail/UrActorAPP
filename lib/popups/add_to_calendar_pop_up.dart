@@ -1,3 +1,5 @@
+// ignore_for_file: library_private_types_in_public_api
+// ignore_for_file: use_build_context_synchronously, non_constant_identifier_names
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -5,7 +7,7 @@ import 'dart:convert';
 
 import '../common/constants.dart';
 import '../common/utils.dart';
-import '../main.dart'; // ignore_for_file: use_build_context_synchronously, non_constant_identifier_names
+import '../main.dart';
 
 class CalendarAddDialogue extends StatefulWidget {
   final String dateForMap;
@@ -81,7 +83,6 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
           .where((key) => friendsWatchedWith[key] == true)
           .toList(),
     };
-    // print(friendsWatchedWith);
     if (currentUser.calendar.keys.toList().contains(widget.dateForMap)) {
       currentUser.calendar[widget.dateForMap].add(myObject);
     } else {
@@ -109,14 +110,12 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
           currentUser.seenWith[friend] = {"Movies": [], "TVShows": []};
           currentUser.seenWith[friend]["Movies"].add(id.toString());
         }
-        // Update Calendar
         var userDoc =
             FirebaseFirestore.instance.collection(friend).doc("Calendar");
         await userDoc.update({
           widget.dateForMap: FieldValue.arrayUnion([myObject])
         });
 
-        // Update Seen movies
         userDoc = FirebaseFirestore.instance.collection(friend).doc("Movies");
         await userDoc.update({
           'Seen': FieldValue.arrayUnion([id])
@@ -130,9 +129,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
             .toList();
         item[id] = watchedWithList;
 
-        // Run a transaction to ensure atomic updates
         await firestore.runTransaction((transaction) async {
-          // Get the document snapshot
           DocumentSnapshot snapshot = await transaction.get(userDoc2);
 
           if (!snapshot.exists) {
@@ -177,17 +174,14 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
           print("Failed to update document: $error");
         });
 
-        // Update Rewatched
         userDoc =
             FirebaseFirestore.instance.collection(friend).doc("Rewatched");
         DocumentSnapshot doc = await userDoc.get();
         if (doc.exists) {
           Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
           if (data.containsKey(id)) {
-            // Increment the count if movie id exists
             await userDoc.update({id: FieldValue.increment(1)});
           } else {
-            // Add the movie id with count 1 if it doesn't exist
             await userDoc.update({id: 1});
           }
         }
@@ -203,26 +197,19 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
     item[id] = watchedWithList;
     myObject["friends"] = watchedWithList;
 
-    // Run a transaction to ensure atomic updates
     firestore.runTransaction((transaction) async {
-      // Get the document snapshot
       DocumentSnapshot snapshot = await transaction.get(userDoc2);
 
       if (!snapshot.exists) {
         throw Exception("Document does not exist!");
       }
-
-      // Get the current data
       Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
 
-      // Check if 'Movies' map exists and if the 'id' is already a key in the 'Movies' map
       if (data.containsKey('Movies') &&
           data['Movies'] is Map<String, dynamic>) {
         Map<String, dynamic> moviesMap = data['Movies'];
 
-        // Check if the 'id' already exists in the 'Movies' map
         if (moviesMap.containsKey(id)) {
-          // If it exists, append the new list to the existing one
           List existingList = moviesMap[id]["friends"];
           for (String person in watchedWithList) {
             if (!existingList.contains(person)) {
@@ -231,13 +218,10 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
           }
           moviesMap[id] = {"friends": existingList};
         } else {
-          // If the 'id' doesn't exist, add the new key-value pair
           moviesMap[id] = {"friends": watchedWithList};
         }
-        // Update the 'Movies' map
         transaction.update(userDoc2, {'Movies': moviesMap});
       } else {
-        // If 'Movies' map doesn't exist, create it and add the 'id' and list
         transaction.set(
             userDoc2,
             {
@@ -281,10 +265,6 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
         ["Movies", id]
       ];
     }
-
-    // setState(() {
-    //   currentUser.calendar = currentUser.calendar;
-    // });
   }
 
   Map<String, bool> selectedFriends = {};
