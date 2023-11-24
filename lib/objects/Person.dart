@@ -279,7 +279,6 @@ class Person {
           personStats["stats_tv"] = statsTv;
           personStats["stats_dir"] = statsDir;
           personStats["allDirMovies"] = allDirMovies;
-          print(json["known_for_department"]);
           return json;
         } else {
           throw Exception('Failed to load movie details');
