@@ -5,8 +5,8 @@ import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/TVShow.dart';
 
 // import 'main.dart';
-import 'movie_result.dart';
-import 'tvshow_result.dart';
+import '../movie_result.dart';
+import '../tvshow_result.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
