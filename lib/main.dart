@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:uractor/objects/Playlist.dart';
 import 'package:uractor/objects/User.dart';
+import 'package:uractor/upcoming.dart';
 
 import 'common/constants.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +15,6 @@ import 'calendar.dart';
 import 'favorites.dart';
 import 'list_result.dart';
 import 'login.dart';
-import 'explore.dart';
 import 'movie_result.dart';
 import 'objects/Media.dart';
 import 'objects/Movie.dart';
@@ -214,10 +214,11 @@ class _MyHomePageState extends State<MyHomePage> {
                       child: const Row(
                         children: [
                           Icon(Icons.calendar_month),
+                          SizedBox(width: 10),
                           Text(
                             'Your Calendar',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 14,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -229,8 +230,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (context) => const Explore()),
+                        MaterialPageRoute(builder: (context) => Upcoming()),
                       );
                     },
                     child: Container(
@@ -242,11 +242,12 @@ class _MyHomePageState extends State<MyHomePage> {
                       padding: const EdgeInsets.all(10),
                       child: const Row(
                         children: [
-                          Icon(Icons.explore),
+                          Icon(Icons.upcoming_rounded),
+                          SizedBox(width: 10),
                           Text(
-                            'Explore Movies',
+                            'Upcoming Movies',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 14,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
