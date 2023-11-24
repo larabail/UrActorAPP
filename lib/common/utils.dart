@@ -55,73 +55,24 @@ class Utils {
 class FirebaseUtils {
   static Future<bool> deleteFromWatchedConfirmation(
       String id, BuildContext context, String type) async {
-    // Display a dialog box for confirmation. You will have to create a custom dialog for this.
-    bool confirmed = await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirmation'),
-          content: const Text('Delete from watched?'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('No'),
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-            ),
-            TextButton(
-              child: const Text('Yes'),
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-            ),
-          ],
-        );
-      },
-    );
+    var userDoc =
+        FirebaseFirestore.instance.collection(currentUser.uid).doc(type);
+    DocumentSnapshot docSnapshot = await userDoc.get();
 
-    if (confirmed) {
-      List w;
-      await FirebaseFirestore.instance
-          .collection(currentUser.uid)
-          .get()
-          .then((QuerySnapshot querySnapshot) {
-        querySnapshot.docs.forEach((doc) async {
-          if (doc.id == type) {
-            Map moviesResult = doc.data() as Map;
-            w = moviesResult["Seen"];
-            int index = w.indexOf(id);
+    if (docSnapshot.exists) {
+      Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+      List<dynamic> items = data['Seen'] ?? [];
 
-            if (index > -1) {
-              w.removeAt(index);
-            }
-            var userDoc = FirebaseFirestore.instance
-                .collection(currentUser.uid)
-                .doc(type);
-            await userDoc.update({'Seen': w});
-            if (type == "Movies") {
-              currentUser.seenMovies = [];
-            } else {
-              currentUser.seenTVShows = [];
-            }
+      items.remove(id);
+      await userDoc.update({'Seen': items});
 
-            for (var element in w) {
-              if (type == "Movies") {
-                currentUser.seenMovies += [
-                  [type, element]
-                ];
-              } else {
-                currentUser.seenTVShows += [
-                  [type, element]
-                ];
-              }
-            }
-          }
-        });
-      });
-      return true;
+      if (type == "Movies") {
+        currentUser.seenMovies.removeWhere((pair) => pair[1] == id);
+      } else if (type == "TVShows") {
+        currentUser.seenTVShows.removeWhere((pair) => pair[1] == id);
+      }
     }
-    return false;
+    return true;
   }
 
   static Future<bool> writeReview(id, context) {
@@ -206,7 +157,6 @@ class FirebaseUtils {
     await userDoc.update({
       'Seen': FieldValue.arrayUnion([id])
     });
-    // store id in shared preferences or another way
     List w;
     await FirebaseFirestore.instance
         .collection(currentUser.uid)
