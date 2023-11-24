@@ -414,7 +414,7 @@ class _MovieResultState extends State<MovieResult> {
                             child: Text(
                               "${snapshot.data!['title']} (${snapshot.data!['year']})",
                               style: const TextStyle(
-                                fontSize: 30,
+                                fontSize: 25,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.5,
                                 wordSpacing: 2,

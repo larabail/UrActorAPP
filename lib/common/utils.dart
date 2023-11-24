@@ -589,14 +589,9 @@ class ApiUtils {
     DateTime now = DateTime.now();
     String formattedDate = DateFormat('yyyy-MM-dd').format(now);
     DateTime oneMonthLater = DateTime(now.year, now.month + 1, now.day);
-
-    // Handle the edge case for the last month of the year
     if (now.month == 12) {
       oneMonthLater = DateTime(now.year + 1, 1, now.day);
     }
-
-    // Handle cases where the next month doesn't have the same day number
-    // (e.g., going from January 31st to February)
     while (oneMonthLater.month != ((now.month % 12) + 1)) {
       oneMonthLater = DateTime(
           oneMonthLater.year, oneMonthLater.month, oneMonthLater.day - 1);
