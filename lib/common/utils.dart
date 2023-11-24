@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:uractor/objects/Movie.dart';
 
 import '../main.dart';
 import '../movie_result.dart';
@@ -581,5 +583,40 @@ class ApiUtils {
     seenDates
         .sort((a, b) => DateTime.parse(b[0]).compareTo(DateTime.parse(a[0])));
     return seenDates;
+  }
+
+  static Future<List> getUpcomingMovies() async {
+    DateTime now = DateTime.now();
+    String formattedDate = DateFormat('yyyy-MM-dd').format(now);
+    DateTime oneMonthLater = DateTime(now.year, now.month + 1, now.day);
+
+    // Handle the edge case for the last month of the year
+    if (now.month == 12) {
+      oneMonthLater = DateTime(now.year + 1, 1, now.day);
+    }
+
+    // Handle cases where the next month doesn't have the same day number
+    // (e.g., going from January 31st to February)
+    while (oneMonthLater.month != ((now.month % 12) + 1)) {
+      oneMonthLater = DateTime(
+          oneMonthLater.year, oneMonthLater.month, oneMonthLater.day - 1);
+    }
+
+    String formattedDateOneMonth =
+        DateFormat('yyyy-MM-dd').format(oneMonthLater);
+    final responseUpcomingMovies = await http.get(Uri.parse(
+        "https://api.themoviedb.org/3/discover/movie$API_KEY&include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc&with_release_type=2|3&release_date.gte=$formattedDate&release_date.lte=$formattedDateOneMonth"));
+    List upcomingMovies = [];
+    if (responseUpcomingMovies.statusCode == 200) {
+      final upcomingMoviesJson = jsonDecode(responseUpcomingMovies.body);
+      for (Map movie in upcomingMoviesJson["results"]) {
+        Movie tempMovie = Movie(
+            id: movie["id"].toString(),
+            title: movie["title"],
+            coverPhoto: movie["poster_path"]);
+        upcomingMovies.add(tempMovie);
+      }
+    }
+    return upcomingMovies;
   }
 }

@@ -474,6 +474,7 @@ class _ExploreState extends State<Explore> {
 
   Future<Map> getMovieData(String id) async {
     final response = await http.get(Uri.parse('$MOVIE_LINK$id$API_KEY'));
+
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       if (json["backdrop_path"] == null) {
