@@ -202,8 +202,9 @@ class _PersonResultState extends State<PersonResult> {
               allDirMovies += 1;
             }
           }
-          if (oscars.keys.contains(widget.personResult.id)) {
-            json['num_oscars'] = oscars[widget.personResult.id]['num_oscars'];
+          if (oscars.keys.contains(widget.personResult.id.toString())) {
+            json['num_oscars'] =
+                oscars[widget.personResult.id.toString()]['num_oscars'];
           } else {
             json['num_oscars'] = 0;
           }

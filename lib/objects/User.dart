@@ -174,7 +174,7 @@ class AppUser {
         .then((QuerySnapshot querySnapshot) {
       for (var doc in querySnapshot.docs) {
         Map d = doc.data() as Map;
-        oscars[d["tmdb_id"]] = doc.data();
+        oscars[d["tmdb_id"].toString()] = doc.data();
       }
     });
     return true;
