@@ -1,4 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// ignore_for_file: library_private_types_in_public_api
+
 import 'package:flutter/material.dart';
 import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/Person.dart';
@@ -10,8 +11,6 @@ import 'common/utils.dart';
 import 'main.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 class PersonResult extends StatefulWidget {
   final Person personResult;
@@ -22,291 +21,12 @@ class PersonResult extends StatefulWidget {
 }
 
 class _PersonResultState extends State<PersonResult> {
-  int scoreActor = 0;
-  int scoreDirector = 0;
-  int stats = 0;
-  int stats_tv = 0;
-  int allDirMovies = 0;
-  int stats_dir = 0;
-  List countedMoviesDirector = [];
-  List countedMoviesActor = [];
-  List countedTVShowsDirector = [];
-  List countedTVShowsActor = [];
-  // Map presult = widget.personResult.data;
-  Future<Map> getPersonData() async {
-    Map json = {};
-    String name = widget.personResult.name
-        .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
-        .replaceAll(" ", "-");
-    final response = await http
-        .get(Uri.parse('$PERSON_LINK${widget.personResult.id}-$name$API_KEY'));
-    json = jsonDecode(response.body);
-    if (response.statusCode == 200) {
-      final r2 = await http.get(Uri.parse(
-          '$PERSON_LINK${widget.personResult.id}-$name$MOVIE_CREDITS_LINK'));
-      if (r2.statusCode == 200) {
-        List movieCast = [];
-        for (Map movie in jsonDecode(r2.body)['cast']) {
-          if (movie["poster_path"] != null) {
-            if (!movie["character"].toString().toLowerCase().contains("self") &&
-                !movie["character"]
-                    .toString()
-                    .toLowerCase()
-                    .contains("archived") &&
-                !movie["character"]
-                    .toString()
-                    .toLowerCase()
-                    .contains("uncredited") &&
-                movie["character"].toString() != "") {
-              movieCast.add(movie);
-            }
-          }
-        }
-        json['movie_credits_cast'] = movieCast;
-        for (var element in movieCast) {
-          if (Utils.contains_non_type(
-              currentUser.seenMovies, ["Movies", element["id"]])) {
-            if (!countedMoviesActor.contains(element["id"].toString())) {
-              stats += 1;
-              if (Utils.contains_non_type(currentUser.favMovies,
-                  ['Movies', element["id"].toString()])) {
-                scoreActor += 3;
-              }
-              if (currentUser.rewatchedMovies.keys
-                  .toList()
-                  .contains(element["id"].toString())) {
-                scoreActor += currentUser
-                    .rewatchedMovies[element["id"].toString()] as int;
-              } else {
-                scoreActor += 2;
-              }
-              countedMoviesActor.add(element["id"].toString());
-            }
-          } else if (Utils.contains_non_type(currentUser.watchlist,
-                  ['Movies', element["id"].toString()]) &&
-              !countedMoviesActor.contains(element["id"].toString())) {
-            scoreActor += 1;
-            countedMoviesActor.add(element["id"].toString());
-          }
-        }
-        final r3 = await http.get(Uri.parse(
-            '$PERSON_LINK${widget.personResult.id}-$name$TV_SHOW_CREDITS_LINK'));
-        if (r3.statusCode == 200) {
-          List tvCast = [];
-          for (Map show in jsonDecode(r3.body)['cast']) {
-            if (show["poster_path"] != null) {
-              if (!show["character"]
-                      .toString()
-                      .toLowerCase()
-                      .contains("self") &&
-                  show["character"].toString() != "") {
-                tvCast.add(show);
-              }
-            }
-          }
-          json['tv_credits_cast'] = tvCast;
-          for (var element in tvCast) {
-            if (Utils.contains_non_type(
-                currentUser.seenTVShows, ["TVShows", element["id"]])) {
-              if (!countedTVShowsActor.contains(element["id"].toString())) {
-                stats_tv += 1;
-                if (Utils.contains_non_type(currentUser.favTVShows,
-                    ['TVShows', element["id"].toString()])) {
-                  scoreActor += 3;
-                } else {
-                  scoreActor += 2;
-                }
-                countedTVShowsActor.add(element["id"].toString());
-              }
-            } else if (Utils.contains_non_type(currentUser.watchlistTVShows,
-                    ['TVShows', element["id"].toString()]) &&
-                !countedTVShowsActor.contains(element["id"].toString())) {
-              scoreActor += 1;
-              countedTVShowsActor.add(element["id"].toString());
-            }
-          }
-        } else {
-          throw Exception('Failed to load movie details');
-        }
-        List movieCrew = [];
-        for (Map movie in jsonDecode(r2.body)['crew']) {
-          if (movie["poster_path"] != null && movie["job"] != "Thanks") {
-            movieCrew.add(movie);
-          }
-        }
-        json['movie_credits_crew'] = movieCrew;
-        for (var element in movieCrew) {
-          if (Utils.contains_non_type(
-              currentUser.seenMovies, ["Movies", element["id"].toString()])) {
-            if (element["job"] == "Director" &&
-                !countedMoviesDirector.contains(element["id"].toString())) {
-              stats_dir += 1;
-              if (Utils.contains_non_type(currentUser.favMovies,
-                  ['Movies', element["id"].toString()])) {
-                scoreDirector += 3;
-              }
-              if (currentUser.rewatchedMovies.keys
-                  .toList()
-                  .contains(element["id"])) {
-                scoreDirector += int.parse(
-                    currentUser.rewatchedMovies[element["id"].toString()]);
-              } else {
-                scoreDirector += 2;
-              }
-              countedMoviesDirector.add(element["id"].toString());
-            }
-          } else if (Utils.contains_non_type(currentUser.watchlist,
-                  ['Movies', element["id"].toString()]) &&
-              element["job"] == "Director" &&
-              !countedMoviesDirector.contains(element["id"].toString())) {
-            scoreDirector += 1;
-            countedMoviesDirector.add(element["id"].toString());
-          }
-          if (element["job"] == "Director") {
-            allDirMovies += 1;
-          }
-        }
-        final r4 = await http.get(Uri.parse(
-            '$PERSON_LINK${widget.personResult.id}-$name$TV_SHOW_CREDITS_LINK'));
-        if (r4.statusCode == 200) {
-          List tvCrew = [];
-          for (Map show in jsonDecode(r4.body)['crew']) {
-            if (show["poster_path"] != null) {
-              tvCrew.add(show);
-            }
-          }
-          json['tv_credits_crew'] = tvCrew;
-          for (var element in tvCrew) {
-            if (Utils.contains_non_type(currentUser.seenTVShows,
-                ["TVShows", element["id"].toString()])) {
-              if (element["job"] == "Director" &&
-                  !countedTVShowsDirector.contains(element["id"].toString())) {
-                stats_dir += 1;
-                if (Utils.contains_non_type(currentUser.favTVShows,
-                    ['TVShows', element["id"].toString()])) {
-                  scoreDirector += 3;
-                } else {
-                  scoreDirector += 1;
-                }
-                countedTVShowsDirector.add(element["id"].toString());
-              }
-            } else if (Utils.contains_non_type(currentUser.watchlistTVShows,
-                    ['TVShows', element["id"].toString()]) &&
-                element["job"] == "Director" &&
-                !countedTVShowsDirector.contains(element["id"].toString())) {
-              scoreDirector += 1;
-              countedTVShowsDirector.add(element["id"].toString());
-            }
-
-            if (element["job"] == "Director") {
-              allDirMovies += 1;
-            }
-          }
-          if (oscars.keys.contains(widget.personResult.id.toString())) {
-            json['num_oscars'] =
-                oscars[widget.personResult.id.toString()]['num_oscars'];
-          } else {
-            json['num_oscars'] = 0;
-          }
-          var userDoc = FirebaseFirestore.instance
-              .collection(currentUser.uid)
-              .doc("FavDirectors");
-          Map<Object, Object?> directorStats = {};
-          directorStats[widget.personResult.id.toString()] = scoreDirector;
-          await userDoc.update(directorStats);
-          await userDoc.get().then((DocumentSnapshot doc) async {
-            Map info = doc.data() as Map;
-            List actrs = [];
-            info.forEach((key, value) {
-              List item = [value, key];
-              actrs.add(item);
-            });
-            actrs.sort((a, b) => a[0].compareTo(b[0]));
-            actrs = actrs.reversed.toList();
-            int num = 0;
-            for (var act in actrs) {
-              num++;
-              if (act[1].toString() == widget.personResult.id.toString()) {
-                break;
-              }
-            }
-            json["director_ranking"] = num;
-            json["allDirMovies"] = allDirMovies;
-          });
-          var ActorDoc = FirebaseFirestore.instance
-              .collection(currentUser.uid)
-              .doc("FavActors");
-          Map<Object, Object?> actorStats = {};
-          actorStats[widget.personResult.id.toString()] = scoreActor;
-          await ActorDoc.update(actorStats);
-          await ActorDoc.get().then((DocumentSnapshot doc) async {
-            Map info = doc.data() as Map;
-            List actrs = [];
-            info.forEach((key, value) {
-              List item = [value, key];
-              actrs.add(item);
-            });
-            actrs.sort((a, b) => a[0].compareTo(b[0]));
-            actrs = actrs.reversed.toList();
-            int num = 0;
-            for (var act in actrs) {
-              num++;
-              if (act[1].toString() == widget.personResult.id.toString()) {
-                break;
-              }
-            }
-            json["actor_ranking"] = num;
-          });
-          currentUser.favActors = [];
-          currentUser.favDirectors = [];
-          await FirebaseFirestore.instance
-              .collection(currentUser.uid)
-              .get()
-              .then((QuerySnapshot querySnapshot) {
-            for (var doc in querySnapshot.docs) {
-              if (doc.id == "FavActors" && currentUser.favActors.isEmpty) {
-                Map tempFavActors = doc.data() as Map;
-                currentUser.favActors = tempFavActors.entries
-                    .map((entry) => [entry.value, entry.key])
-                    .toList();
-                currentUser.favActors.sort((a, b) => b[0].compareTo(a[0]));
-              } else if (doc.id == "FavDirectors" &&
-                  currentUser.favDirectors.isEmpty) {
-                Map tempFavDirectors = doc.data() as Map;
-                currentUser.favDirectors = tempFavDirectors.entries
-                    .map((entry) => [entry.value, entry.key])
-                    .toList();
-                currentUser.favDirectors.sort((a, b) => b[0].compareTo(a[0]));
-              }
-            }
-          });
-          return json;
-        } else {
-          throw Exception('Failed to load movie details');
-        }
-      } else {
-        throw Exception('Failed to load movie details');
-      }
-    } else {
-      throw Exception('Failed to load movie details');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    scoreActor = 0;
-    stats = 0;
-    stats_tv = 0;
-    stats_dir = 0;
-    allDirMovies = 0;
-    scoreDirector = 0;
-    countedMoviesDirector = [];
-    countedMoviesActor = [];
-
     return Scaffold(
       appBar: const CustomAppBar(),
       body: FutureBuilder<Map>(
-        future: getPersonData(),
+        future: widget.personResult.getPersonData(currentUser, oscars),
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
           if (snapshot.hasData) {
             return SingleChildScrollView(
@@ -378,18 +98,20 @@ class _PersonResultState extends State<PersonResult> {
                           child: Column(
                             children: [
                               Text(
-                                "Actor ranking: #${snapshot.data!['actor_ranking']} ($scoreActor)",
+                                "Actor ranking: #${snapshot.data!['actor_ranking']} (${widget.personResult.personStats['scoreActor']})",
                                 style: const TextStyle(fontSize: 16),
                               ),
-                              if (allDirMovies != 0)
+                              if (widget.personResult
+                                      .personStats['allDirMovies'] !=
+                                  0)
                                 Text(
-                                  "Director ranking: #${snapshot.data!['director_ranking']} ($scoreDirector)",
+                                  "Director ranking: #${snapshot.data!['director_ranking']} (${widget.personResult.personStats['scoreDirector']})",
                                   style: const TextStyle(fontSize: 16),
                                 ),
                               if (snapshot.data!['movie_credits_cast'].length !=
                                   0)
                                 Text(
-                                  "Actor Movie Progress: $stats / ${(snapshot.data!['movie_credits_cast'].length)} (${double.parse((stats / (snapshot.data!['movie_credits_cast'].length) * 100).toStringAsFixed(2))}%)",
+                                  "Actor Movie Progress: ${widget.personResult.personStats['stats']} / ${(snapshot.data!['movie_credits_cast'].length)} (${double.parse((widget.personResult.personStats['stats'] / (snapshot.data!['movie_credits_cast'].length) * 100).toStringAsFixed(2))}%)",
                                   style: const TextStyle(fontSize: 16),
                                 ),
                               if (snapshot.data!['movie_credits_cast'].length !=
@@ -397,35 +119,42 @@ class _PersonResultState extends State<PersonResult> {
                                 Padding(
                                   padding: const EdgeInsets.all(10.0),
                                   child: LinearProgressIndicator(
-                                    value: stats /
+                                    value: widget
+                                            .personResult.personStats['stats'] /
                                         (snapshot.data!['movie_credits_cast']
                                             .length),
                                   ),
                                 ),
                               if (snapshot.data!['tv_credits_cast'].length != 0)
                                 Text(
-                                  "Actor TV Show Progress: $stats_tv / ${(snapshot.data!['tv_credits_cast'].length)} (${double.parse((stats_tv / (snapshot.data!['tv_credits_cast'].length) * 100).toStringAsFixed(2))}%)",
+                                  "Actor TV Show Progress: ${widget.personResult.personStats['stats_tv']} / ${(snapshot.data!['tv_credits_cast'].length)} (${double.parse((widget.personResult.personStats['stats_tv'] / (snapshot.data!['tv_credits_cast'].length) * 100).toStringAsFixed(2))}%)",
                                   style: const TextStyle(fontSize: 16),
                                 ),
                               if (snapshot.data!['tv_credits_cast'].length != 0)
                                 Padding(
                                   padding: const EdgeInsets.all(10.0),
                                   child: LinearProgressIndicator(
-                                    value: stats_tv /
+                                    value: widget.personResult
+                                            .personStats['stats_tv'] /
                                         (snapshot
                                             .data!['tv_credits_cast'].length),
                                   ),
                                 ),
-                              if (allDirMovies != 0)
+                              if (widget.personResult
+                                      .personStats['allDirMovies'] !=
+                                  0)
                                 Text(
-                                  "Director Progress: $stats_dir / ${(snapshot.data!['allDirMovies'])} (${double.parse((stats_dir / (snapshot.data!['allDirMovies']) * 100).toStringAsFixed(2))}%)",
+                                  "Director Progress: ${widget.personResult.personStats['stats_dir']} / ${(snapshot.data!['allDirMovies'])} (${double.parse((widget.personResult.personStats['stats_dir'] / (snapshot.data!['allDirMovies']) * 100).toStringAsFixed(2))}%)",
                                   style: const TextStyle(fontSize: 16),
                                 ),
-                              if (allDirMovies != 0)
+                              if (widget.personResult
+                                      .personStats["allDirMovies"] !=
+                                  0)
                                 Padding(
                                   padding: const EdgeInsets.all(10.0),
                                   child: LinearProgressIndicator(
-                                    value: stats_dir /
+                                    value: widget.personResult
+                                            .personStats['stats_dir'] /
                                         (snapshot.data!['allDirMovies']),
                                   ),
                                 ),
@@ -434,7 +163,8 @@ class _PersonResultState extends State<PersonResult> {
                         ),
                       ]),
                   if (snapshot.data!['movie_credits_crew'].length != 0 &&
-                      snapshot.data!["movie_credits_cast"].length != 0)
+                      snapshot.data!["movie_credits_cast"].length != 0 &&
+                      snapshot.data!["known_for_department"] == "Acting")
                     DefaultTabController(
                       length: 2,
                       child: Column(
@@ -453,6 +183,33 @@ class _PersonResultState extends State<PersonResult> {
                               children: [
                                 cast(context, snapshot.data),
                                 crew(context, snapshot.data)
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (snapshot.data!['movie_credits_crew'].length != 0 &&
+                      snapshot.data!["movie_credits_cast"].length != 0 &&
+                      snapshot.data!["known_for_department"] != "Acting")
+                    DefaultTabController(
+                      length: 2,
+                      child: Column(
+                        children: [
+                          const TabBar(
+                            labelColor: null,
+                            unselectedLabelColor: null,
+                            tabs: [
+                              Tab(text: 'As Part of the Crew'),
+                              Tab(text: 'As Part of the Cast'),
+                            ],
+                          ),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.46,
+                            child: TabBarView(
+                              children: [
+                                crew(context, snapshot.data),
+                                cast(context, snapshot.data),
                               ],
                             ),
                           ),
@@ -537,77 +294,121 @@ class _PersonResultState extends State<PersonResult> {
   }
 
   cast(BuildContext context, data) {
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        children: [
-          // TabBar code
-          const TabBar(
-            labelColor: null,
-            unselectedLabelColor: null,
-            tabs: [
-              Tab(text: 'Movies'),
-              Tab(text: 'TV Shows'),
-            ],
-          ),
-          Expanded(
-            child: TabBarView(
-              children: [
-                ListView.builder(
-                  scrollDirection: Axis.vertical,
-                  itemCount: (data['movie_credits_cast'].length / 3).ceil(),
-                  itemBuilder: (context, index) => buildMediaRow(context,
-                      data['movie_credits_cast'], index, "Movies", false),
-                ),
-                ListView.builder(
-                  scrollDirection: Axis.vertical,
-                  itemCount: (data['tv_credits_cast'].length / 3).ceil(),
-                  itemBuilder: (context, index) => buildMediaRow(context,
-                      data['tv_credits_cast'], index, "TVShows", false),
-                ),
+    if (data['movie_credits_cast'].length > 0 &&
+        data['tv_credits_cast'].length > 0) {
+      return DefaultTabController(
+        length: 2,
+        child: Column(
+          children: [
+            // TabBar code
+            const TabBar(
+              labelColor: null,
+              unselectedLabelColor: null,
+              tabs: [
+                Tab(text: 'Movies'),
+                Tab(text: 'TV Shows'),
               ],
             ),
-          ),
-        ],
-      ),
-    );
+            Expanded(
+              child: TabBarView(
+                children: [
+                  ListView.builder(
+                    scrollDirection: Axis.vertical,
+                    itemCount: (data['movie_credits_cast'].length / 3).ceil(),
+                    itemBuilder: (context, index) => buildMediaRow(context,
+                        data['movie_credits_cast'], index, "Movies", false),
+                  ),
+                  ListView.builder(
+                    scrollDirection: Axis.vertical,
+                    itemCount: (data['tv_credits_cast'].length / 3).ceil(),
+                    itemBuilder: (context, index) => buildMediaRow(context,
+                        data['tv_credits_cast'], index, "TVShows", false),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (data['movie_credits_cast'].length > 0 &&
+        data['tv_credits_cast'].length == 0) {
+      return Expanded(
+        child: ListView.builder(
+          scrollDirection: Axis.vertical,
+          itemCount: (data['movie_credits_cast'].length / 3).ceil(),
+          itemBuilder: (context, index) => buildMediaRow(
+              context, data['movie_credits_cast'], index, "Movies", false),
+        ),
+      );
+    } else {
+      return Expanded(
+        child: ListView.builder(
+          scrollDirection: Axis.vertical,
+          itemCount: (data['tv_credits_cast'].length / 3).ceil(),
+          itemBuilder: (context, index) => buildMediaRow(
+              context, data['tv_credits_cast'], index, "TVShows", false),
+        ),
+      );
+    }
   }
 
   crew(BuildContext context, data) {
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        children: [
-          // TabBar code
-          const TabBar(
-            labelColor: null,
-            unselectedLabelColor: null,
-            tabs: [
-              Tab(text: 'Movies'),
-              Tab(text: 'TV Shows'),
-            ],
-          ),
-          Expanded(
-            child: TabBarView(
-              children: [
-                ListView.builder(
-                  scrollDirection: Axis.vertical,
-                  itemCount: (data['movie_credits_crew'].length / 3).ceil(),
-                  itemBuilder: (context, index) => buildMediaRow(context,
-                      data['movie_credits_crew'], index, "Movies", true),
-                ),
-                ListView.builder(
-                  scrollDirection: Axis.vertical,
-                  itemCount: (data['tv_credits_crew'].length / 3).ceil(),
-                  itemBuilder: (context, index) => buildMediaRow(
-                      context, data['tv_credits_crew'], index, "TVShows", true),
-                ),
+    if (data['movie_credits_crew'].length > 0 &&
+        data['tv_credits_crew'].length > 0) {
+      return DefaultTabController(
+        length: 2,
+        child: Column(
+          children: [
+            // TabBar code
+            const TabBar(
+              labelColor: null,
+              unselectedLabelColor: null,
+              tabs: [
+                Tab(text: 'Movies'),
+                Tab(text: 'TV Shows'),
               ],
             ),
-          ),
-        ],
-      ),
-    );
+            Expanded(
+              child: TabBarView(
+                children: [
+                  ListView.builder(
+                    scrollDirection: Axis.vertical,
+                    itemCount: (data['movie_credits_crew'].length / 3).ceil(),
+                    itemBuilder: (context, index) => buildMediaRow(context,
+                        data['movie_credits_crew'], index, "Movies", true),
+                  ),
+                  ListView.builder(
+                    scrollDirection: Axis.vertical,
+                    itemCount: (data['tv_credits_crew'].length / 3).ceil(),
+                    itemBuilder: (context, index) => buildMediaRow(context,
+                        data['tv_credits_crew'], index, "TVShows", true),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (data['movie_credits_crew'].length > 0 &&
+        data['tv_credits_crew'].length == 0) {
+      return Expanded(
+        child: ListView.builder(
+          scrollDirection: Axis.vertical,
+          itemCount: (data['movie_credits_crew'].length / 3).ceil(),
+          itemBuilder: (context, index) => buildMediaRow(
+              context, data['movie_credits_crew'], index, "Movies", true),
+        ),
+      );
+    } else {
+      return Expanded(
+        child: ListView.builder(
+          scrollDirection: Axis.vertical,
+          itemCount: (data['tv_credits_crew'].length / 3).ceil(),
+          itemBuilder: (context, index) => buildMediaRow(
+              context, data['tv_credits_crew'], index, "TVShows", true),
+        ),
+      );
+    }
   }
 
   seen(BuildContext context, movie, type) {
