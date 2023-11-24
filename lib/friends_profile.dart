@@ -660,7 +660,7 @@ class _FriendProfileState extends State<FriendProfile> {
                                     margin: const EdgeInsets.fromLTRB(
                                         5.0, 10.0, 10.0, 0),
                                     width: MediaQuery.of(context).size.width *
-                                        0.28,
+                                        0.31,
                                     height: MediaQuery.of(context).size.height *
                                         0.18,
                                     decoration: BoxDecoration(
@@ -744,9 +744,9 @@ class _FriendProfileState extends State<FriendProfile> {
                                     margin: const EdgeInsets.fromLTRB(
                                         5.0, 10.0, 10.0, 0),
                                     width: MediaQuery.of(context).size.width *
-                                        0.28,
+                                        0.31,
                                     height: MediaQuery.of(context).size.height *
-                                        0.18,
+                                        0.15,
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(27),
                                       image: DecorationImage(
@@ -828,7 +828,7 @@ class _FriendProfileState extends State<FriendProfile> {
                                     margin: const EdgeInsets.fromLTRB(
                                         5.0, 10.0, 10.0, 0),
                                     width: MediaQuery.of(context).size.width *
-                                        0.28,
+                                        0.31,
                                     height: MediaQuery.of(context).size.height *
                                         0.18,
                                     decoration: BoxDecoration(
