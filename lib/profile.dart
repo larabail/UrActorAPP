@@ -765,6 +765,7 @@ class _ProfileState extends State<Profile> {
           if (snapshot.hasData) {
             final items = snapshot.data!;
             return ListView.builder(
+              physics: NeverScrollableScrollPhysics(),
               shrinkWrap: true,
               itemCount: 3, // adjust based on your requirements
               itemBuilder: (context, index) {
