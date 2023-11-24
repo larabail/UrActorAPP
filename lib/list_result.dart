@@ -468,8 +468,6 @@ class _ListResultState extends State<ListResult> {
 
   @override
   Widget build(BuildContext context) {
-    print(widget.list_result.movies);
-    print(widget.list_result.tvshows);
     return Scaffold(
       appBar: const CustomAppBar(),
       body: Column(
