@@ -27,7 +27,11 @@ class _SearchResultState extends State<Search> {
     String getDefaultImagePath(String? imagePath) {
       const defaultPath =
           'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
-      return imagePath == null ? defaultPath : IMG_LINK + imagePath;
+      return imagePath == null ||
+              imagePath ==
+                  "https://cdn-icons-png.flaticon.com/512/3088/3088765.png"
+          ? defaultPath
+          : IMG_LINK + imagePath;
     }
 
     void handleTap(BuildContext context, Map item) {
@@ -77,20 +81,38 @@ class _SearchResultState extends State<Search> {
       } else {
         item['profile_path'] = getDefaultImagePath(item['profile_path']);
       }
-
       return GestureDetector(
         onTap: () => handleTap(context, item),
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
-          width: MediaQuery.of(context).size.width * 0.28,
-          height: MediaQuery.of(context).size.height * 0.18,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(27),
-            image: DecorationImage(
-              image: NetworkImage(item['profile_path']),
-              fit: BoxFit.fitWidth,
+        child: Column(
+          children: [
+            Container(
+              margin:
+                  const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
+              width: MediaQuery.of(context).size.width * 0.28,
+              height: MediaQuery.of(context).size.height * 0.18,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(27),
+                image: DecorationImage(
+                  image: NetworkImage(item['profile_path']),
+                  fit: BoxFit.fitWidth,
+                ),
+              ),
             ),
-          ),
+            SizedBox(
+              width: MediaQuery.of(context).size.width * 0.28,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Text(
+                  item['title'] ??
+                      (item["name"] ??
+                          'Unkown'), // Replace 'title' with the appropriate key
+                  style: const TextStyle(
+                    fontSize: 14, // Adjust the font size as needed
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }

@@ -647,4 +647,24 @@ class ApiUtils {
       return [];
     }
   }
+
+  static Future<List> searchTvShows(String searchTerm) async {
+    if (searchTerm != "") {
+      String name = searchTerm
+          .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
+          .replaceAll(" ", "+");
+      String searchLink = "";
+      searchLink = '$SEARCH_BY_NAME_TV_SHOW_LINK$name';
+      final response = await http.get(Uri.parse(searchLink));
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+
+        return json['results'];
+      } else {
+        throw Exception('Failed to load tv show details');
+      }
+    } else {
+      return [];
+    }
+  }
 }
