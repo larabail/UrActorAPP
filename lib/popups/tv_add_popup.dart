@@ -2,9 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:http/http.dart' as http;
+import 'package:uractor/common/utils.dart';
 import '../common/constants.dart';
-import 'dart:convert';
 import '../main.dart';
 import '../objects/Playlist.dart';
 
@@ -22,25 +21,6 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
   String _searchTermTv = '';
   String _movie = "";
   FirebaseFirestore db = FirebaseFirestore.instance;
-  Future<List> searchData(String searchTerm) async {
-    if (searchTerm != "") {
-      String name = searchTerm
-          .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
-          .replaceAll(" ", "+");
-      String searchLink = "";
-      searchLink = '$SEARCH_BY_NAME_TV_SHOW_LINK$name';
-      final response = await http.get(Uri.parse(searchLink));
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-
-        return json['results'];
-      } else {
-        throw Exception('Failed to load tv show details');
-      }
-    } else {
-      return [];
-    }
-  }
 
   void addTvSubmit() async {
     String docIDString = widget.list_result.id.toString();
@@ -121,7 +101,7 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
                 onChanged: (value) {
                   setState(() {
                     _searchTermTv = value;
-                    searchData(_searchTermTv);
+                    ApiUtils.searchTvShows(_searchTermTv);
                   });
                 },
               ),
@@ -136,7 +116,7 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: FutureBuilder<List>(
-                  future: searchData(_searchTermTv),
+                  future: ApiUtils.searchTvShows(_searchTermTv),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
