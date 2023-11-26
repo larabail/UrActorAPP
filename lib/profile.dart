@@ -18,8 +18,6 @@ import 'movie_result.dart';
 import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:convert';
-import 'package:provider/provider.dart';
-import 'common/theme_provider.dart';
 
 class Profile extends StatefulWidget {
   const Profile();
@@ -502,30 +500,24 @@ class _ProfileState extends State<Profile> {
                                       padding: const EdgeInsets.all(12.0),
                                       child: Column(
                                         children: [
-                                          Consumer<ThemeProvider>(builder:
-                                              (context, themeProvider, child) {
-                                            return Row(
-                                              children: [
-                                                const Icon(
-                                                    Icons.record_voice_over,
-                                                    size: 30,
-                                                    color: Colors.blue),
-                                                const SizedBox(width: 10),
-                                                Expanded(
-                                                  child: Text(
-                                                    "Record: $maxMovies movies in a day",
-                                                    style: TextStyle(
-                                                      fontSize: 18,
-                                                      color: themeProvider
-                                                              .isDarkMode
-                                                          ? Colors.yellow
-                                                          : Colors.green,
-                                                    ),
+                                          Row(
+                                            children: [
+                                              const Icon(
+                                                  Icons.record_voice_over,
+                                                  size: 30,
+                                                  color: Colors.blue),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  "Record: $maxMovies movies in a day",
+                                                  style: const TextStyle(
+                                                    fontSize: 18,
+                                                    color: Colors.yellow,
                                                   ),
                                                 ),
-                                              ],
-                                            );
-                                          }),
+                                              ),
+                                            ],
+                                          ),
                                           const SizedBox(height: 10),
                                           Row(
                                             children: [
