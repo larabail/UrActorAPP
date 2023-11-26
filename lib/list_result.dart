@@ -20,15 +20,14 @@ import 'popups/list_edit_popup.dart';
 import 'popups/movie_add_popup.dart';
 import 'popups/tv_add_popup.dart';
 
-class InfoButtonDialog extends StatefulWidget {
+class ListInfoDialog extends StatefulWidget {
   final Playlist list_result;
-  const InfoButtonDialog({Key? key, required this.list_result})
-      : super(key: key);
+  const ListInfoDialog({Key? key, required this.list_result}) : super(key: key);
   @override
-  _InfoButtonDialogState createState() => _InfoButtonDialogState();
+  _ListInfoDialogState createState() => _ListInfoDialogState();
 }
 
-class _InfoButtonDialogState extends State<InfoButtonDialog> {
+class _ListInfoDialogState extends State<ListInfoDialog> {
   Future<Map<String, dynamic>> getUserData(String uid) async {
     DocumentSnapshot doc =
         await FirebaseFirestore.instance.collection(uid).doc("Settings").get();
@@ -435,9 +434,17 @@ class _ListResultState extends State<ListResult> {
             ),
           );
         } else if (snapshot.hasError) {
-          return const Center(child: Text("Failed to load movie details"));
+          return Container(
+              margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
+              width: MediaQuery.of(context).size.width * 0.28,
+              height: MediaQuery.of(context).size.height * 0.18,
+              child: const Center(child: Text("Failed to load movie details")));
         } else {
-          return const Center(child: CircularProgressIndicator());
+          return Container(
+              margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
+              width: MediaQuery.of(context).size.width * 0.28,
+              height: MediaQuery.of(context).size.height * 0.18,
+              child: const Center(child: CircularProgressIndicator()));
         }
       },
     );
@@ -508,15 +515,30 @@ class _ListResultState extends State<ListResult> {
                   padding: const EdgeInsets.all(16.0),
                   child: Align(
                     alignment: Alignment.bottomRight,
-                    child: Text(
-                      widget.list_result.name,
-                      style: const TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
-                        wordSpacing: 2,
-                        height: 1.5,
-                      ),
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.end, // Align text to the right
+                      mainAxisSize: MainAxisSize.min, // Fit to content
+                      children: [
+                        Text(
+                          widget.list_result.name,
+                          style: const TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.5,
+                            wordSpacing: 2,
+                            height: 1.5,
+                          ),
+                        ),
+                        // Add your count text here
+                        Text(
+                          'Movies: ${widget.list_result.movies.length}, TV Shows: ${widget.list_result.tvshows.length}',
+                          style: const TextStyle(
+                            fontSize: 15, // Adjust the font size as needed
+                            color: Colors.grey, // Adjust the color as needed
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -532,7 +554,7 @@ class _ListResultState extends State<ListResult> {
                           onPressed: () {
                             showDialog(
                               context: context,
-                              builder: (context) => InfoButtonDialog(
+                              builder: (context) => ListInfoDialog(
                                 list_result: widget.list_result,
                               ),
                             ).then((_) {
@@ -586,8 +608,7 @@ class _ListResultState extends State<ListResult> {
                   ),
                 ),
               ),
-              const SizedBox(
-                  width: 20), // Optional: To add some space between the buttons
+              const SizedBox(width: 20),
               GestureDetector(
                 onTap: () {
                   showDialog(
