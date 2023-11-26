@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../main.dart';
-import '../common/theme_provider.dart';
 
 class AppUser {
   String uid;
@@ -110,7 +109,6 @@ class AppUser {
         } else if (doc.id == "Settings") {
           settings = doc.data() as Map;
           dontAskCalendar = settings["dontAskCalendar"];
-          themeProvider.setDarkMode(settings["darkMode"]);
         } else if (doc.id == "Reviews" && reviews.keys.isEmpty) {
           Map reviewsMap = doc.data() as Map;
           List reviewsList = reviewsMap["Seen"];

@@ -4,11 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-// import 'package:provider/provider.dart';
 import 'dart:convert';
 
 import '../common/constants.dart';
-// import '../common/theme_provider.dart';
 import '../login.dart';
 import '../main.dart';
 
@@ -170,32 +168,6 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                   color: Colors.white,
                 ),
               ),
-              // Center(
-              //   child: Consumer<ThemeProvider>(
-              //     builder: (context, themeProvider, child) {
-              //       return Row(
-              //         mainAxisAlignment: MainAxisAlignment.center,
-              //         children: [
-              //           const Icon(Icons.wb_sunny, color: Colors.yellow),
-              //           const SizedBox(width: 16),
-              //           Switch(
-              //             value: themeProvider.isDarkMode,
-              //             onChanged: (value) {
-              //               themeProvider.toggleDarkMode();
-              //               updateSettings(
-              //                   "darkMode", themeProvider.isDarkMode);
-              //             },
-              //             activeColor: Colors.green,
-              //           ),
-              //           const SizedBox(width: 16),
-              //           const Icon(Icons.nightlight_round,
-              //               color: Colors.blueAccent),
-              //         ],
-              //       );
-              //     },
-              //   ),
-              // ),
-              // const SizedBox(width: 20),
               const Text(
                 '"Did you watch this movie today?" reminders',
                 style: TextStyle(fontSize: 18, color: Colors.white),

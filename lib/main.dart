@@ -26,8 +26,6 @@ import 'watchlist.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:provider/provider.dart';
-import 'common/theme_provider.dart';
 import 'package:http/http.dart' as http;
 
 List idsExplorePage = [];
@@ -48,63 +46,32 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => themeProvider,
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) {
-          return MaterialApp(
-            title: 'UrActor',
-            theme: themeProvider.isDarkMode
-                ? ThemeData.dark().copyWith(
-                    scaffoldBackgroundColor: const Color(0xFF121212),
-                    appBarTheme: const AppBarTheme(
-                      color: Color(0xFF121212),
-                    ),
-                    switchTheme: SwitchThemeData(
-                      thumbColor: MaterialStateProperty.all<Color>(
-                          const Color.fromARGB(248, 241, 105, 56)),
-                      trackColor: MaterialStateProperty.all<Color>(
-                          const Color.fromARGB(250, 224, 190, 78)),
-                    ),
-                    indicatorColor: const Color.fromARGB(250, 224, 190, 78),
-                    tabBarTheme: const TabBarTheme(
-                      labelColor: Color.fromARGB(250, 224, 190, 78),
-                      unselectedLabelColor: Colors
-                          .grey, // Set your desired color for unselected tabs
-                      indicatorColor: Color.fromARGB(250, 224, 190, 78),
-                    ),
-                    bottomNavigationBarTheme:
-                        const BottomNavigationBarThemeData(
-                      selectedItemColor: Color.fromARGB(250, 224, 190, 78),
-                      backgroundColor: Color(0xFF121212),
-                    ),
-                  )
-                : ThemeData.light().copyWith(
-                    appBarTheme: const AppBarTheme(
-                      color: Colors.white,
-                    ),
-                    tabBarTheme: const TabBarTheme(
-                      labelColor: Color.fromARGB(255, 150, 127, 52),
-                      unselectedLabelColor: Colors
-                          .grey, // Set your desired color for unselected tabs
-                      indicatorColor: Color.fromARGB(255, 150, 127, 52),
-                    ),
-                    switchTheme: SwitchThemeData(
-                      thumbColor: MaterialStateProperty.all<Color>(
-                          const Color.fromARGB(248, 241, 105, 56)),
-                      trackColor: MaterialStateProperty.all<Color>(
-                          const Color.fromARGB(250, 224, 190, 78)),
-                    ),
-                    indicatorColor: const Color.fromARGB(255, 150, 127, 52),
-                    bottomNavigationBarTheme:
-                        const BottomNavigationBarThemeData(
-                      selectedItemColor: Color.fromARGB(255, 150, 127, 52),
-                    ),
-                  ),
-            home: const MyHomePage(),
-          );
-        },
+    return MaterialApp(
+      title: 'UrActor',
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        appBarTheme: const AppBarTheme(
+          color: Color(0xFF121212),
+        ),
+        switchTheme: SwitchThemeData(
+          thumbColor: MaterialStateProperty.all<Color>(
+              const Color.fromARGB(248, 241, 105, 56)),
+          trackColor: MaterialStateProperty.all<Color>(
+              const Color.fromARGB(250, 224, 190, 78)),
+        ),
+        indicatorColor: const Color.fromARGB(250, 224, 190, 78),
+        tabBarTheme: const TabBarTheme(
+          labelColor: Color.fromARGB(250, 224, 190, 78),
+          unselectedLabelColor:
+              Colors.grey, // Set your desired color for unselected tabs
+          indicatorColor: Color.fromARGB(250, 224, 190, 78),
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          selectedItemColor: Color.fromARGB(250, 224, 190, 78),
+          backgroundColor: Color(0xFF121212),
+        ),
       ),
+      home: const MyHomePage(),
     );
   }
 }
