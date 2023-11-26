@@ -2,9 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:http/http.dart' as http;
 import '../common/constants.dart';
-import 'dart:convert';
+import '../common/utils.dart';
 import '../list_result.dart';
 import '../objects/Playlist.dart';
 
@@ -29,43 +28,6 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
   FirebaseFirestore db = FirebaseFirestore.instance;
 
   int _selectedIndex = 0;
-  Future<List> searchData(String searchTerm) async {
-    // print(searchTerm);
-    if (searchTerm != "") {
-      String name = searchTerm
-          .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
-          .replaceAll(" ", "+");
-      String searchLink = "";
-      searchLink = '$SEARCH_BY_NAME_MOVIE_LINK$name';
-      final response = await http.get(Uri.parse(searchLink));
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        List<Map<String, dynamic>> results = [];
-        for (final result in json['results']) {
-          String resultSearchLink = '';
-          resultSearchLink =
-              '$MOVIE_LINK${result["id"]}-${result["title"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$API_KEY';
-          final response2 = await http.get(Uri.parse(resultSearchLink));
-          if (response2.statusCode == 200) {
-            final json2 = jsonDecode(response2.body);
-            if (json2["poster_path"] != "" &&
-                json2["poster_path"] != null &&
-                json2["backdrop_path"] != null &&
-                json2["backdrop_path"] != "") {
-              results.add(json2);
-            }
-          } else {
-            throw Exception('Failed to load movie details');
-          }
-        }
-        return results;
-      } else {
-        throw Exception('Failed to load movie details');
-      }
-    } else {
-      return [];
-    }
-  }
 
   void editListSubmit() async {
     await FirebaseFirestore.instance
@@ -159,7 +121,7 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
                     onChanged: (value) {
                       setState(() {
                         _searchTermMovie = value;
-                        searchData(_searchTermMovie);
+                        ApiUtils.searchMovies(_searchTermMovie);
                       });
                     },
                   ),
@@ -173,7 +135,7 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
                       border: Border.all(color: Colors.grey),
                     ),
                     child: FutureBuilder<List>(
-                      future: searchData(_searchTermMovie),
+                      future: ApiUtils.searchMovies(_searchTermMovie),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -190,40 +152,45 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
                             itemCount: snapshot.data?.length,
                             itemBuilder: (context, index) {
                               Map<String, dynamic> item = snapshot.data?[index];
-                              bool isSelected = index == _selectedIndex;
-                              if (isSelected) {
-                                cover = IMG_LINK + item["backdrop_path"];
-                              }
-                              return Container(
-                                width: 100,
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 5),
-                                child: GridTile(
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        _selectedIndex = index;
-                                        cover =
-                                            IMG_LINK + item["backdrop_path"];
-                                      });
-                                    },
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(10),
-                                        image: DecorationImage(
-                                          image: NetworkImage(
-                                              IMG_LINK + item['poster_path']),
-                                          fit: BoxFit.cover,
+                              if (item['poster_path'] != null &&
+                                  item["backdrop_path"] != null) {
+                                bool isSelected = index == _selectedIndex;
+                                if (isSelected) {
+                                  cover = IMG_LINK + item["backdrop_path"];
+                                }
+                                return Container(
+                                  width: 100,
+                                  margin:
+                                      const EdgeInsets.symmetric(horizontal: 5),
+                                  child: GridTile(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          _selectedIndex = index;
+                                          cover =
+                                              IMG_LINK + item["backdrop_path"];
+                                        });
+                                      },
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          image: DecorationImage(
+                                            image: NetworkImage(
+                                                IMG_LINK + item['poster_path']),
+                                            fit: BoxFit.cover,
+                                          ),
+                                          border: isSelected
+                                              ? Border.all(
+                                                  color: Colors.blue, width: 3)
+                                              : null,
                                         ),
-                                        border: isSelected
-                                            ? Border.all(
-                                                color: Colors.blue, width: 3)
-                                            : null,
                                       ),
                                     ),
                                   ),
-                                ),
-                              );
+                                );
+                              }
+                              return null;
                             },
                           );
                         }

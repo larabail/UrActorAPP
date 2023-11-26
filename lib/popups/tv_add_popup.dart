@@ -32,22 +32,8 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
       final response = await http.get(Uri.parse(searchLink));
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
-        List<Map<String, dynamic>> results = [];
-        for (final result in json['results']) {
-          String resultSearchLink = '';
-          resultSearchLink =
-              '$TV_SHOW_LINK${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$API_KEY';
-          final response2 = await http.get(Uri.parse(resultSearchLink));
-          if (response2.statusCode == 200) {
-            final json2 = jsonDecode(response2.body);
-            if (json2["poster_path"] != "" && json2["poster_path"] != null) {
-              results.add(json2);
-            }
-          } else {
-            throw Exception('Failed to load tv show details');
-          }
-        }
-        return results;
+
+        return json['results'];
       } else {
         throw Exception('Failed to load tv show details');
       }
@@ -84,8 +70,6 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
         currentUser.playlists[widget.list_result.id.toString()]["TV Shows"];
 
     Navigator.pop(context);
-    // Navigator.pushReplacement(
-    //     context, MaterialPageRoute(builder: (context) => ListResult()));
   }
 
   @override
@@ -171,28 +155,31 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
                         itemCount: snapshot.data?.length,
                         itemBuilder: (context, index) {
                           Map<String, dynamic> item = snapshot.data?[index];
-                          return Container(
-                            width: 100,
-                            margin: const EdgeInsets.symmetric(horizontal: 5),
-                            child: GridTile(
-                              child: GestureDetector(
-                                onTap: () {
-                                  _movie = item["id"].toString();
-                                  addTvSubmit();
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    image: DecorationImage(
-                                      image: NetworkImage(
-                                          IMG_LINK + item['poster_path']),
-                                      fit: BoxFit.cover,
+                          if (item["poster_path"] != null) {
+                            return Container(
+                              width: 100,
+                              margin: const EdgeInsets.symmetric(horizontal: 5),
+                              child: GridTile(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    _movie = item["id"].toString();
+                                    addTvSubmit();
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      image: DecorationImage(
+                                        image: NetworkImage(
+                                            IMG_LINK + item['poster_path']),
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                          );
+                            );
+                          }
+                          return null;
                         },
                       );
                     }
