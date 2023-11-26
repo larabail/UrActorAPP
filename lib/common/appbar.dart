@@ -1,6 +1,7 @@
 // custom_app_bar.dart
 import 'package:flutter/material.dart';
 
+import '../popups/settings_pop_up.dart';
 import '../search.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -31,6 +32,16 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             );
           },
           child: const Icon(Icons.search),
+        ),
+        const SizedBox(width: 16),
+        InkWell(
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (context) => const InfoButtonDialog(),
+            );
+          },
+          child: const Icon(Icons.settings),
         ),
         const SizedBox(
             width: 16), // Optional: to add some space on the right side

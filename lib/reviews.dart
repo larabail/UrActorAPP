@@ -241,13 +241,18 @@ class _ReviewsState extends State<Reviews> {
               ],
             );
           } else if (snapshot.hasError) {
-            return const Center(
-              child: Text("Failed to load movie details"),
-            );
+            return Container(
+                margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
+                width: MediaQuery.of(context).size.width * 0.28,
+                height: MediaQuery.of(context).size.height * 0.18,
+                child:
+                    const Center(child: Text("Failed to load movie details")));
           } else {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return Container(
+                margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
+                width: MediaQuery.of(context).size.width * 0.28,
+                height: MediaQuery.of(context).size.height * 0.18,
+                child: const Center(child: CircularProgressIndicator()));
           }
         });
   }

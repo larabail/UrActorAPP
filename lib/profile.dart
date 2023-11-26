@@ -15,447 +15,9 @@ import 'main.dart';
 import 'objects/Person.dart';
 import 'person_result.dart';
 import 'movie_result.dart';
-import 'login.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:convert';
-import 'package:provider/provider.dart';
-import 'common/theme_provider.dart';
-
-class Country {
-  final String isoCode;
-  final String englishName;
-  final String nativeName;
-
-  Country(
-      {required this.isoCode,
-      required this.englishName,
-      required this.nativeName});
-
-  factory Country.fromJson(Map<String, dynamic> json) {
-    return Country(
-      isoCode: json['iso_3166_1'],
-      englishName: json['english_name'],
-      nativeName: json['native_name'],
-    );
-  }
-}
-
-class Provider {
-  final String image;
-  final String name;
-  final String id;
-  bool isSelected;
-
-  Provider(
-      {required this.image,
-      required this.name,
-      required this.id,
-      required this.isSelected});
-
-  factory Provider.fromJson(Map<String, dynamic> json) {
-    return Provider(
-      image: json['logo_path'],
-      name: json['provider_name'],
-      id: json['provider_id'].toString(),
-      isSelected: currentUser.settings["providers"]
-          .contains(json['provider_id'].toString()),
-    );
-  }
-}
-
-class InfoButtonDialog extends StatefulWidget {
-  const InfoButtonDialog();
-
-  @override
-  _InfoButtonDialogState createState() => _InfoButtonDialogState();
-}
-
-class _InfoButtonDialogState extends State<InfoButtonDialog> {
-  String selectedCountry = currentUser.country;
-  List<Country> countries = [];
-  List<Provider> allProviders = [];
-  Country? selectedCountryObject;
-  @override
-  @override
-  void initState() {
-    super.initState();
-    fetchCountries();
-    fetchProviders();
-  }
-
-  Future<void> fetchCountries() async {
-    try {
-      final response = await http.get(Uri.parse(
-          'https://api.themoviedb.org/3/configuration/countries?api_key=700cd4fab994df56eb41b34d38c4762a'));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          countries = List<Country>.from(
-              data.map((country) => Country.fromJson(country)));
-        });
-        selectedCountryObject = findCountryByIsoCode(selectedCountry);
-      }
-    } catch (e) {
-      print('Error: $e');
-    }
-  }
-
-  Future<void> fetchProviders() async {
-    final response = await http.get(Uri.parse(
-        "https://api.themoviedb.org/3/watch/providers/movie?api_key=700cd4fab994df56eb41b34d38c4762a&watch_region=${currentUser.country}"));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      setState(() {
-        allProviders = List<Provider>.from(
-            data["results"].map((country) => Provider.fromJson(country)));
-      });
-    } else {
-      print('Failed to fetch providers');
-    }
-  }
-
-  // Helper function to find the Country object with the matching ISO code
-  Country? findCountryByIsoCode(String isoCode) {
-    return countries.firstWhere(
-      (country) => country.isoCode == isoCode,
-      orElse: () => countries[0],
-    );
-  }
-
-  Future<void> updateCountry(Country element) async {
-    var userDoc =
-        FirebaseFirestore.instance.collection(currentUser.uid).doc("Country");
-    await userDoc.update({'Country': element.isoCode});
-    currentUser.country = element.isoCode;
-  }
-
-  Future<void> updateSettings(element, newValue) async {
-    var userDoc =
-        FirebaseFirestore.instance.collection(currentUser.uid).doc("Settings");
-    currentUser.settings[element] = newValue;
-    await userDoc.set(currentUser.settings as Map<String, dynamic>);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[900],
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        padding: const EdgeInsets.all(25.0),
-        child: SizedBox(
-          width: 20,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "Country You're Viewing in",
-                style: TextStyle(fontSize: 18, color: Colors.white),
-              ),
-              DropdownButton<Country>(
-                value: selectedCountryObject,
-                onChanged: (Country? newValue) async {
-                  await updateCountry(newValue as Country);
-                  setState(() {
-                    selectedCountry = newValue.isoCode;
-                    selectedCountryObject = newValue;
-                  });
-                },
-                items:
-                    countries.map<DropdownMenuItem<Country>>((Country country) {
-                  return DropdownMenuItem<Country>(
-                    value: country,
-                    child: Text(country.englishName),
-                  );
-                }).toList(),
-                isExpanded: true,
-                underline: Container(
-                  height: 2,
-                  color: Colors.white,
-                ),
-              ),
-              Center(
-                child: Consumer<ThemeProvider>(
-                  builder: (context, themeProvider, child) {
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.wb_sunny, color: Colors.yellow),
-                        const SizedBox(width: 16),
-                        Switch(
-                          value: themeProvider.isDarkMode,
-                          onChanged: (value) {
-                            themeProvider.toggleDarkMode();
-                            updateSettings(
-                                "darkMode", themeProvider.isDarkMode);
-                          },
-                          activeColor: Colors.green,
-                        ),
-                        const SizedBox(width: 16),
-                        const Icon(Icons.nightlight_round,
-                            color: Colors.blueAccent),
-                      ],
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 20),
-              const Text(
-                '"Did you watch this movie today?" reminders',
-                style: TextStyle(fontSize: 18, color: Colors.white),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.check_box, color: Colors.yellow),
-                  const SizedBox(width: 16),
-                  Switch(
-                    value: currentUser.dontAskCalendar,
-                    onChanged: (value) {
-                      setState(() {
-                        currentUser.dontAskCalendar =
-                            !currentUser.dontAskCalendar;
-                        updateSettings(
-                            "dontAskCalendar", currentUser.dontAskCalendar);
-                      });
-                    },
-                    activeColor: Colors.green,
-                  ),
-                  const SizedBox(width: 16),
-                  const Icon(Icons.disabled_by_default,
-                      color: Colors.redAccent),
-                ],
-              ),
-              const Text(
-                'Your Providers',
-                style: TextStyle(fontSize: 18, color: Colors.white),
-              ),
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.18,
-                child: Padding(
-                  padding: const EdgeInsets.all(5.0),
-                  child: GridView.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      crossAxisSpacing: 8.0,
-                      mainAxisSpacing: 8.0,
-                    ),
-                    itemCount: allProviders.length,
-                    itemBuilder: (BuildContext context, int index) {
-                      Provider provider = allProviders[index];
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            provider.isSelected = !provider.isSelected;
-                            if (provider.isSelected) {
-                              currentUser.settings["providers"]
-                                  .add(provider.id.toString());
-                            } else {
-                              currentUser.settings["providers"]
-                                  .remove(provider.id.toString());
-                            }
-                            updateSettings(
-                                "providers", currentUser.settings["providers"]);
-                          });
-                        },
-                        child: Stack(
-                          children: [
-                            Image.network(
-                              IMG_LINK + provider.image,
-                              width: double.infinity,
-                              height: 150.0,
-                              fit: BoxFit.cover,
-                            ),
-                            Positioned(
-                              bottom: 0.0,
-                              left: 4.0,
-                              child: Text(
-                                provider.name,
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                            ),
-                            if (provider.isSelected)
-                              const Positioned(
-                                bottom: 4.0,
-                                right: 4.0,
-                                child: Icon(
-                                  Icons.check_circle,
-                                  color: Colors.green,
-                                  size: 24.0,
-                                ),
-                              ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  // Logout Button
-                  GestureDetector(
-                    onTap: () async {
-                      await FirebaseAuth.instance.signOut();
-                      Navigator.pop(context);
-                      Navigator.popUntil(context, (route) => route.isFirst);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const Login()),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.logout_outlined, color: Colors.white),
-                          SizedBox(width: 10),
-                          Text(
-                            'Logout',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Delete Button
-                  GestureDetector(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertButtonDialogue(),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.delete, color: Colors.red),
-                          SizedBox(width: 10),
-                          Text(
-                            'Delete',
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-int weekOffset = 0; // This will be used to go to previous or next weeks
-
-final months = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December"
-];
-
-class AlertButtonDialogue extends StatelessWidget {
-  TextEditingController passwordController = TextEditingController();
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Delete Account'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            'Are you sure you want to delete your account? This action will delete all your information.',
-            style: TextStyle(color: Colors.red),
-          ),
-          TextField(
-            controller: passwordController,
-            obscureText: true,
-            decoration: const InputDecoration(
-              hintText: "Enter your password",
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        ElevatedButton(
-          onPressed: () async {
-            CollectionReference collectionRef =
-                FirebaseFirestore.instance.collection(currentUser.uid);
-            QuerySnapshot snapshot = await collectionRef.get();
-            for (DocumentSnapshot docSnapshot in snapshot.docs) {
-              await docSnapshot.reference.delete();
-            }
-            User? user = FirebaseAuth.instance.currentUser;
-            AuthCredential credential = EmailAuthProvider.credential(
-              email: user!.email as String,
-              password: passwordController
-                  .text, // Replace 'user_password' with the user's password
-            );
-            await user.reauthenticateWithCredential(credential);
-
-            await user.delete();
-
-            Navigator.pop(context);
-            Navigator.popUntil(context, (route) => route.isFirst);
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const Login()),
-            );
-          },
-          style: ButtonStyle(
-            backgroundColor: MaterialStateProperty.all(Colors.red),
-          ),
-          child: const Text('Delete'),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context); // Close the dialog
-          },
-          child: const Text('Cancel'),
-        ),
-      ],
-    );
-  }
-}
 
 class Profile extends StatefulWidget {
   const Profile();
@@ -465,6 +27,23 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
+  int weekOffset = 0; // This will be used to go to previous or next weeks
+
+  final months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December"
+  ];
+
   final TextEditingController _usernameController = TextEditingController();
   String? currentUsername;
   @override
@@ -574,7 +153,7 @@ class _ProfileState extends State<Profile> {
 
       moviesTemp.sort((a, b) => b[0].compareTo(a[0]));
 
-      while (i < 18 && i < moviesTemp.length) {
+      while (i < 9 && i < moviesTemp.length) {
         String completeLinkMovie =
             MOVIE_LINK + moviesTemp[i][1].toString() + API_KEY;
 
@@ -708,99 +287,6 @@ class _ProfileState extends State<Profile> {
         maxMovies = movies.length;
       }
     }
-    Widget buildItem(
-        BuildContext context, Map<String, dynamic> item, String type) {
-      String imagePath =
-          type == "Movies" ? item['poster_path'] : item['profile_path'];
-      // String navigateTo = type == "Movies" ? 'MovieResult' : 'PersonResult';
-
-      return GestureDetector(
-        onTap: () {
-          Movie tempMovie = Movie(id: "", title: "", coverPhoto: "");
-          if (type == "Movies") {
-            tempMovie = Movie(
-                id: item['id'].toString(),
-                title: item['title'],
-                coverPhoto: item["poster_path"] ?? "");
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => MovieResult(movie: tempMovie)),
-            );
-          } else {
-            Person personResult = Person(
-                id: item["id"].toString(),
-                name: item["name"].toString(),
-                data: item);
-
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => PersonResult(
-                        personResult: personResult,
-                      )),
-            );
-          }
-        },
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
-          width: MediaQuery.of(context).size.width * 0.28,
-          height: MediaQuery.of(context).size.height * 0.18,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(27),
-            image: DecorationImage(
-              image: NetworkImage(IMG_LINK + imagePath),
-              fit: BoxFit.fitWidth,
-            ),
-          ),
-        ),
-      );
-    }
-
-    Widget buildTabContent(BuildContext context,
-        Future<List<Map<String, dynamic>>> futureData, String type) {
-      return FutureBuilder<List<Map<String, dynamic>>>(
-        future: futureData,
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            final items = snapshot.data!;
-            return ListView.builder(
-              physics: NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              itemCount: 3, // adjust based on your requirements
-              itemBuilder: (context, index) {
-                final leftItemIndex = index * 3;
-                final middleItemIndex = index * 3 + 1;
-                final rightItemIndex = index * 3 + 2;
-                final leftItem = (leftItemIndex < items.length)
-                    ? items[leftItemIndex]
-                    : null;
-                final middleItem = (middleItemIndex < items.length)
-                    ? items[middleItemIndex]
-                    : null;
-                final rightItem = (rightItemIndex < items.length)
-                    ? items[rightItemIndex]
-                    : null;
-
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    if (leftItem != null) buildItem(context, leftItem, type),
-                    if (middleItem != null)
-                      buildItem(context, middleItem, type),
-                    if (rightItem != null) buildItem(context, rightItem, type),
-                  ],
-                );
-              },
-            );
-          } else if (snapshot.hasError) {
-            return const Center(child: Text("Failed to load data"));
-          } else {
-            return const Center(child: CircularProgressIndicator());
-          }
-        },
-      );
-    }
 
     return Scaffold(
       appBar: const CustomAppBar(),
@@ -812,67 +298,80 @@ class _ProfileState extends State<Profile> {
                 Stack(
                   alignment: Alignment.center,
                   children: [
-                    ClipOval(
-                      child: currentUser.settings["profile_photo"] != ""
-                          ? Image.network(
-                              currentUser.settings["profile_photo"],
-                              height: 200,
-                              width: 200,
-                              fit: BoxFit.cover,
-                            )
-                          : Image.asset(
-                              'assets/main_profile.png',
-                              height: 200,
-                              width: 200,
-                              fit: BoxFit.cover,
-                            ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: CircleAvatar(
-                        backgroundColor:
-                            const Color.fromARGB(250, 224, 190, 78),
-                        child: IconButton(
-                          icon: const Icon(Icons.file_upload),
-                          color: Colors.black, // Icon color
-                          onPressed: () async {
-                            await uploadImage();
-                          },
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.only(left: 16.0, top: 10),
+                          child: Stack(
+                            alignment: Alignment
+                                .bottomRight, // Aligns the stack's children to the bottom right
+                            children: [
+                              ClipOval(
+                                child: currentUser.settings["profile_photo"] !=
+                                        ""
+                                    ? Image.network(
+                                        currentUser.settings["profile_photo"],
+                                        height: 100,
+                                        width: 100,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Image.asset(
+                                        'assets/main_profile.png',
+                                        height: 100,
+                                        width: 100,
+                                        fit: BoxFit.cover,
+                                      ),
+                              ),
+                              CircleAvatar(
+                                backgroundColor:
+                                    const Color.fromARGB(250, 224, 190, 78),
+                                child: IconButton(
+                                  icon: const Icon(Icons.file_upload),
+                                  color: Colors.black, // Icon color
+                                  onPressed: () async {
+                                    await uploadImage();
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                        Expanded(
+                          child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Container(
+                                          margin: const EdgeInsets.only(
+                                              left: 16.0), // Add margin here
+                                          child: TextField(
+                                            controller: _usernameController,
+                                            decoration: const InputDecoration(
+                                              labelText: 'Username',
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 2),
+                                      IconButton(
+                                        icon: const Icon(Icons.check),
+                                        onPressed: _updateUsername,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              )),
+                        ),
+                      ],
                     ),
                   ],
                 ),
                 Column(
                   children: [
-                    Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    margin: const EdgeInsets.only(
-                                        left: 16.0), // Add margin here
-                                    child: TextField(
-                                      controller: _usernameController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Username',
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                IconButton(
-                                  icon: const Icon(Icons.check),
-                                  onPressed: _updateUsername,
-                                ),
-                              ],
-                            ),
-                          ],
-                        )),
                     Container(
                         margin: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
@@ -1001,30 +500,24 @@ class _ProfileState extends State<Profile> {
                                       padding: const EdgeInsets.all(12.0),
                                       child: Column(
                                         children: [
-                                          Consumer<ThemeProvider>(builder:
-                                              (context, themeProvider, child) {
-                                            return Row(
-                                              children: [
-                                                const Icon(
-                                                    Icons.record_voice_over,
-                                                    size: 30,
-                                                    color: Colors.blue),
-                                                const SizedBox(width: 10),
-                                                Expanded(
-                                                  child: Text(
-                                                    "Record: $maxMovies movies in a day",
-                                                    style: TextStyle(
-                                                      fontSize: 18,
-                                                      color: themeProvider
-                                                              .isDarkMode
-                                                          ? Colors.yellow
-                                                          : Colors.green,
-                                                    ),
+                                          Row(
+                                            children: [
+                                              const Icon(
+                                                  Icons.record_voice_over,
+                                                  size: 30,
+                                                  color: Colors.blue),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  "Record: $maxMovies movies in a day",
+                                                  style: const TextStyle(
+                                                    fontSize: 18,
+                                                    color: Colors.yellow,
                                                   ),
                                                 ),
-                                              ],
-                                            );
-                                          }),
+                                              ),
+                                            ],
+                                          ),
                                           const SizedBox(height: 10),
                                           Row(
                                             children: [
@@ -1063,27 +556,274 @@ class _ProfileState extends State<Profile> {
                                 ),
                               ),
                             ])),
-                    DefaultTabController(
-                      length: 3,
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[900],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      margin: const EdgeInsets.all(5.0),
+                      padding: const EdgeInsets.all(10),
                       child: Column(
                         children: [
-                          const TabBar(
-                            tabs: [
-                              Tab(text: 'Fav. Actors'),
-                              Tab(text: 'Fav. Directors'),
-                              Tab(text: 'Most Seen'),
+                          const Row(
+                            children: [
+                              Icon(Icons.movie),
+                              SizedBox(width: 10),
+                              Text(
+                                'Most Seen Movies',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                           SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.655,
-                            child: TabBarView(
-                              children: [
-                                buildTabContent(
-                                    context, actorData(), 'PersonResult'),
-                                buildTabContent(
-                                    context, dirData(), 'PersonResult'),
-                                buildTabContent(context, topMovies(), 'Movies'),
-                              ],
+                            height: MediaQuery.of(context).size.height * 0.22,
+                            child: FutureBuilder<List<Map>>(
+                              future: topMovies(),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  final movies = snapshot.data!;
+                                  return ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: movies.length,
+                                    itemBuilder: (context, index) {
+                                      final movie = movies[index];
+                                      return GestureDetector(
+                                        onTap: () {
+                                          Movie tempMovie = Movie(
+                                              id: movie['id'].toString(),
+                                              title: movie['title'],
+                                              coverPhoto:
+                                                  movie["poster_path"] ?? "");
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    MovieResult(
+                                                        movie: tempMovie)),
+                                          );
+                                        },
+                                        child: Container(
+                                          margin: const EdgeInsets.fromLTRB(
+                                              5.0, 10.0, 10.0, 0),
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              0.31,
+                                          height: MediaQuery.of(context)
+                                                  .size
+                                                  .height *
+                                              0.18,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(27),
+                                            image: DecorationImage(
+                                              image: NetworkImage(
+                                                IMG_LINK + movie['poster_path'],
+                                              ),
+                                              fit: BoxFit.fitWidth,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                } else if (snapshot.hasError) {
+                                  return const Center(
+                                    child: Text("Failed to load movie details"),
+                                  );
+                                } else {
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[900],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      margin: const EdgeInsets.all(5.0),
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.theater_comedy),
+                              SizedBox(width: 10),
+                              Text(
+                                'Favorite Actors',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.22,
+                            child: FutureBuilder<List<Map>>(
+                              future: actorData(),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  final persons = snapshot.data!;
+                                  return ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: persons.length,
+                                    itemBuilder: (context, index) {
+                                      final person = persons[index];
+                                      return GestureDetector(
+                                        onTap: () {
+                                          Person personResult = Person(
+                                              id: person["id"].toString(),
+                                              name: person["name"].toString(),
+                                              data: person);
+
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    PersonResult(
+                                                      personResult:
+                                                          personResult,
+                                                    )),
+                                          );
+                                        },
+                                        child: Container(
+                                          margin: const EdgeInsets.fromLTRB(
+                                              5.0, 10.0, 10.0, 0),
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              0.31,
+                                          height: MediaQuery.of(context)
+                                                  .size
+                                                  .height *
+                                              0.15,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(27),
+                                            image: DecorationImage(
+                                              image: NetworkImage(
+                                                IMG_LINK +
+                                                    person['profile_path'],
+                                              ),
+                                              fit: BoxFit.fitWidth,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                } else if (snapshot.hasError) {
+                                  return const Center(
+                                    child: Text("Failed to load movie details"),
+                                  );
+                                } else {
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[900],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      margin: const EdgeInsets.all(5.0),
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.chair),
+                              SizedBox(width: 10),
+                              Text(
+                                'Favorite Directors',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.22,
+                            child: FutureBuilder<List<Map>>(
+                              future: dirData(),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  final persons = snapshot.data!;
+                                  return ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: persons.length,
+                                    itemBuilder: (context, index) {
+                                      final person = persons[index];
+                                      return GestureDetector(
+                                        onTap: () {
+                                          Person personResult = Person(
+                                              id: person["id"].toString(),
+                                              name: person["name"].toString(),
+                                              data: person);
+
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    PersonResult(
+                                                      personResult:
+                                                          personResult,
+                                                    )),
+                                          );
+                                        },
+                                        child: Container(
+                                          margin: const EdgeInsets.fromLTRB(
+                                              5.0, 10.0, 10.0, 0),
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              0.31,
+                                          height: MediaQuery.of(context)
+                                                  .size
+                                                  .height *
+                                              0.18,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(27),
+                                            image: DecorationImage(
+                                              image: NetworkImage(
+                                                IMG_LINK +
+                                                    person['profile_path'],
+                                              ),
+                                              fit: BoxFit.fitWidth,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                } else if (snapshot.hasError) {
+                                  return const Center(
+                                    child: Text("Failed to load movie details"),
+                                  );
+                                } else {
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
+                              },
                             ),
                           ),
                         ],
@@ -1092,21 +832,6 @@ class _ProfileState extends State<Profile> {
                   ],
                 ),
               ],
-            ),
-          ),
-          Positioned(
-            top: 16,
-            right: 16,
-            child: IconButton(
-              icon: const Icon(
-                Icons.settings,
-              ),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => const InfoButtonDialog(),
-                );
-              },
             ),
           ),
         ],
