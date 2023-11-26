@@ -214,9 +214,7 @@ class _CalendarState extends State<Calendar> {
             await http.get(Uri.parse('${MOVIE_LINK}${id}-${name}${API_KEY}'));
         if (response.statusCode == 200) {
           dynamic json = jsonDecode(response.body);
-          // if (!containsMap(movies, json)) {
           movies.add(json);
-          // }
         } else {
           throw Exception('Failed to load movie details');
         }

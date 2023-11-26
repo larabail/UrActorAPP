@@ -1,6 +1,7 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 import 'package:flutter/material.dart';
+import 'package:uractor/objects/Media.dart';
 import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/Person.dart';
 import 'package:uractor/objects/TVShow.dart';
@@ -34,34 +35,35 @@ class _SearchResultState extends State<Search> {
         final response = await http.get(Uri.parse(searchLink));
         if (response.statusCode == 200) {
           final json = jsonDecode(response.body);
-          for (final result in json['results']) {
-            String resultSearchLink = '';
-            Map jsonResult = result as Map;
-            if (jsonResult.keys.contains("profile_path")) {
-              resultSearchLink =
-                  '$PERSON_LINK${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$API_KEY';
-            } else if (jsonResult.keys.contains("title") &&
-                jsonResult.keys.contains("poster_path")) {
-              resultSearchLink =
-                  '$MOVIE_LINK${result["id"]}-${result["title"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$API_KEY';
-            } else if (jsonResult.keys.contains("name") &&
-                jsonResult.keys.contains("poster_path")) {
-              resultSearchLink =
-                  '$TV_SHOW_LINK${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$API_KEY';
-            }
-            if (resultSearchLink != "") {
-              final response2 = await http.get(Uri.parse(resultSearchLink));
-              if (response2.statusCode == 200) {
-                final json2 = jsonDecode(response2.body);
-                if (json2.keys.contains("poster_path")) {
-                  json2["profile_path"] = json2["poster_path"];
-                }
-                results.add(json2);
-              } else {
-                throw Exception('Failed to load movie details');
-              }
-            }
-          }
+          return json['results'];
+          // for (final result in json['results']) {
+          //   String resultSearchLink = '';
+          //   Map jsonResult = result as Map;
+          //   if (jsonResult.keys.contains("profile_path")) {
+          //     resultSearchLink =
+          //         '$PERSON_LINK${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$API_KEY';
+          //   } else if (jsonResult.keys.contains("title") &&
+          //       jsonResult.keys.contains("poster_path")) {
+          //     resultSearchLink =
+          //         '$MOVIE_LINK${result["id"]}-${result["title"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$API_KEY';
+          //   } else if (jsonResult.keys.contains("name") &&
+          //       jsonResult.keys.contains("poster_path")) {
+          //     resultSearchLink =
+          //         '$TV_SHOW_LINK${result["id"]}-${result["name"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$API_KEY';
+          //   }
+          //   if (resultSearchLink != "") {
+          //     final response2 = await http.get(Uri.parse(resultSearchLink));
+          //     if (response2.statusCode == 200) {
+          //       final json2 = jsonDecode(response2.body);
+          //       if (json2.keys.contains("poster_path")) {
+          //         json2["profile_path"] = json2["poster_path"];
+          //       }
+          //       results.add(json2);
+          //     } else {
+          //       throw Exception('Failed to load movie details');
+          //     }
+          //   }
+          // }
         }
       }
       return results;
@@ -73,7 +75,7 @@ class _SearchResultState extends State<Search> {
       return imagePath == null ? defaultPath : IMG_LINK + imagePath;
     }
 
-    void handleTap(BuildContext context, Map<String, dynamic> item) {
+    void handleTap(BuildContext context, Map item) {
       if (item.containsKey("poster_path") && item.containsKey("title")) {
         // movieResult = [item['id'], item['title'], "Movies"];
         Movie tempMovie = Movie(
@@ -111,9 +113,15 @@ class _SearchResultState extends State<Search> {
       }
     }
 
-    Widget buildItem(BuildContext context, Map<String, dynamic>? item) {
-      if (item == null) return const SizedBox();
-      item['profile_path'] = getDefaultImagePath(item['profile_path']);
+    Widget buildItem(BuildContext context, Map item) {
+      if (item.containsKey("poster_path") && item.containsKey("title")) {
+        // movieResult = [item['id'], item['title'], "Movies"];
+        item['profile_path'] = getDefaultImagePath(item['poster_path']);
+      } else if (item.containsKey("poster_path") && item.containsKey("name")) {
+        item['profile_path'] = getDefaultImagePath(item['poster_path']);
+      } else {
+        item['profile_path'] = getDefaultImagePath(item['profile_path']);
+      }
 
       return GestureDetector(
         onTap: () => handleTap(context, item),
