@@ -162,8 +162,10 @@ class _PersonResultState extends State<PersonResult> {
                           ),
                         ),
                       ]),
-                  if (snapshot.data!['movie_credits_crew'].length != 0 &&
-                      snapshot.data!["movie_credits_cast"].length != 0 &&
+                  if ((snapshot.data!['movie_credits_crew'].length != 0 ||
+                          snapshot.data!['tv_credits_crew'].length != 0) &&
+                      (snapshot.data!["movie_credits_cast"].length != 0 ||
+                          snapshot.data!['tv_credits_cast'].length != 0) &&
                       snapshot.data!["known_for_department"] == "Acting")
                     DefaultTabController(
                       length: 2,
@@ -189,8 +191,10 @@ class _PersonResultState extends State<PersonResult> {
                         ],
                       ),
                     ),
-                  if (snapshot.data!['movie_credits_crew'].length != 0 &&
-                      snapshot.data!["movie_credits_cast"].length != 0 &&
+                  if ((snapshot.data!['movie_credits_crew'].length != 0 ||
+                          snapshot.data!['tv_credits_crew'].length != 0) &&
+                      (snapshot.data!["movie_credits_cast"].length != 0 ||
+                          snapshot.data!['tv_credits_cast'].length != 0) &&
                       snapshot.data!["known_for_department"] != "Acting")
                     DefaultTabController(
                       length: 2,
@@ -208,25 +212,29 @@ class _PersonResultState extends State<PersonResult> {
                             height: MediaQuery.of(context).size.height * 0.46,
                             child: TabBarView(
                               children: [
-                                crew(context, snapshot.data),
-                                cast(context, snapshot.data),
+                                crew(context, snapshot.data!),
+                                cast(context, snapshot.data!),
                               ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  if (snapshot.data!['movie_credits_crew'].length == 0 &&
-                      snapshot.data!["movie_credits_cast"].length != 0)
+                  if ((snapshot.data!['movie_credits_crew'].length == 0 &&
+                          snapshot.data!['tv_credits_crew'].length == 0) &&
+                      (snapshot.data!["movie_credits_cast"].length != 0 ||
+                          snapshot.data!['tv_credits_cast'].length != 0))
                     SizedBox(
                       height: MediaQuery.of(context).size.height * 0.46,
-                      child: cast(context, snapshot.data),
+                      child: cast(context, snapshot.data!),
                     ),
-                  if (snapshot.data!['movie_credits_crew'].length != 0 &&
-                      snapshot.data!["movie_credits_cast"].length == 0)
+                  if ((snapshot.data!['movie_credits_crew'].length != 0 ||
+                          snapshot.data!['tv_credits_crew'].length != 0) &&
+                      (snapshot.data!["movie_credits_cast"].length == 0 &&
+                          snapshot.data!['tv_credits_cast'].length == 0))
                     SizedBox(
                       height: MediaQuery.of(context).size.height * 0.46,
-                      child: crew(context, snapshot.data),
+                      child: crew(context, snapshot.data!),
                     ),
                 ],
               ),
@@ -293,122 +301,100 @@ class _PersonResultState extends State<PersonResult> {
     );
   }
 
-  cast(BuildContext context, data) {
-    if (data['movie_credits_cast'].length > 0 &&
-        data['tv_credits_cast'].length > 0) {
-      return DefaultTabController(
-        length: 2,
-        child: Column(
-          children: [
-            // TabBar code
-            const TabBar(
-              labelColor: null,
-              unselectedLabelColor: null,
-              tabs: [
-                Tab(text: 'Movies'),
-                Tab(text: 'TV Shows'),
-              ],
-            ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  ListView.builder(
-                    scrollDirection: Axis.vertical,
-                    itemCount: (data['movie_credits_cast'].length / 3).ceil(),
-                    itemBuilder: (context, index) => buildMediaRow(context,
-                        data['movie_credits_cast'], index, "Movies", false),
-                  ),
-                  ListView.builder(
-                    scrollDirection: Axis.vertical,
-                    itemCount: (data['tv_credits_cast'].length / 3).ceil(),
-                    itemBuilder: (context, index) => buildMediaRow(context,
-                        data['tv_credits_cast'], index, "TVShows", false),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    } else if (data['movie_credits_cast'].length > 0 &&
-        data['tv_credits_cast'].length == 0) {
-      return Expanded(
-        child: ListView.builder(
-          scrollDirection: Axis.vertical,
-          itemCount: (data['movie_credits_cast'].length / 3).ceil(),
-          itemBuilder: (context, index) => buildMediaRow(
-              context, data['movie_credits_cast'], index, "Movies", false),
-        ),
-      );
-    } else {
-      return Expanded(
-        child: ListView.builder(
-          scrollDirection: Axis.vertical,
-          itemCount: (data['tv_credits_cast'].length / 3).ceil(),
-          itemBuilder: (context, index) => buildMediaRow(
-              context, data['tv_credits_cast'], index, "TVShows", false),
-        ),
-      );
+  Widget cast(BuildContext context, dynamic data) {
+    int tabCount = 0;
+    if (data['movie_credits_cast'].length > 0) tabCount++;
+    if (data['tv_credits_cast'].length > 0) tabCount++;
+
+    if (tabCount == 0) {
+      return Container();
     }
+
+    List<Tab> tabs = [];
+    List<Widget> tabViews = [];
+    if (data['movie_credits_cast'].length > 0) {
+      tabs.add(const Tab(text: 'Movies'));
+      tabViews.add(ListView.builder(
+        scrollDirection: Axis.vertical,
+        itemCount: (data['movie_credits_cast'].length / 3).ceil(),
+        itemBuilder: (context, index) => buildMediaRow(
+            context, data['movie_credits_cast'], index, "Movies", false),
+      ));
+    }
+    if (data['tv_credits_cast'].length > 0) {
+      tabs.add(const Tab(text: 'TV Shows'));
+      tabViews.add(ListView.builder(
+        scrollDirection: Axis.vertical,
+        itemCount: (data['tv_credits_cast'].length / 3).ceil(),
+        itemBuilder: (context, index) => buildMediaRow(
+            context, data['tv_credits_cast'], index, "TVShows", false),
+      ));
+    }
+
+    return DefaultTabController(
+      length: tabCount,
+      child: Column(
+        children: [
+          TabBar(
+            unselectedLabelColor: Colors.grey,
+            tabs: tabs,
+          ),
+          Expanded(
+            child: TabBarView(
+              children: tabViews,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  crew(BuildContext context, data) {
-    if (data['movie_credits_crew'].length > 0 &&
-        data['tv_credits_crew'].length > 0) {
-      return DefaultTabController(
-        length: 2,
-        child: Column(
-          children: [
-            // TabBar code
-            const TabBar(
-              labelColor: null,
-              unselectedLabelColor: null,
-              tabs: [
-                Tab(text: 'Movies'),
-                Tab(text: 'TV Shows'),
-              ],
-            ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  ListView.builder(
-                    scrollDirection: Axis.vertical,
-                    itemCount: (data['movie_credits_crew'].length / 3).ceil(),
-                    itemBuilder: (context, index) => buildMediaRow(context,
-                        data['movie_credits_crew'], index, "Movies", true),
-                  ),
-                  ListView.builder(
-                    scrollDirection: Axis.vertical,
-                    itemCount: (data['tv_credits_crew'].length / 3).ceil(),
-                    itemBuilder: (context, index) => buildMediaRow(context,
-                        data['tv_credits_crew'], index, "TVShows", true),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    } else if (data['movie_credits_crew'].length > 0 &&
-        data['tv_credits_crew'].length == 0) {
-      return Expanded(
-        child: ListView.builder(
-          scrollDirection: Axis.vertical,
-          itemCount: (data['movie_credits_crew'].length / 3).ceil(),
-          itemBuilder: (context, index) => buildMediaRow(
-              context, data['movie_credits_crew'], index, "Movies", true),
-        ),
-      );
-    } else {
-      return Expanded(
-        child: ListView.builder(
-          scrollDirection: Axis.vertical,
-          itemCount: (data['tv_credits_crew'].length / 3).ceil(),
-          itemBuilder: (context, index) => buildMediaRow(
-              context, data['tv_credits_crew'], index, "TVShows", true),
-        ),
-      );
+  Widget crew(BuildContext context, dynamic data) {
+    int tabCount = 0;
+    if (data['movie_credits_crew'].length > 0) tabCount++;
+    if (data['tv_credits_crew'].length > 0) tabCount++;
+
+    if (tabCount == 0) {
+      return Container();
     }
+
+    List<Tab> tabs = [];
+    List<Widget> tabViews = [];
+    if (data['movie_credits_crew'].length > 0) {
+      tabs.add(const Tab(text: 'Movies'));
+      tabViews.add(ListView.builder(
+        scrollDirection: Axis.vertical,
+        itemCount: (data['movie_credits_crew'].length / 3).ceil(),
+        itemBuilder: (context, index) => buildMediaRow(
+            context, data['movie_credits_crew'], index, "Movies", true),
+      ));
+    }
+    if (data['tv_credits_crew'].length > 0) {
+      tabs.add(const Tab(text: 'TV Shows'));
+      tabViews.add(ListView.builder(
+        scrollDirection: Axis.vertical,
+        itemCount: (data['tv_credits_crew'].length / 3).ceil(),
+        itemBuilder: (context, index) => buildMediaRow(
+            context, data['tv_credits_crew'], index, "TVShows", true),
+      ));
+    }
+
+    return DefaultTabController(
+      length: tabCount,
+      child: Column(
+        children: [
+          TabBar(
+            unselectedLabelColor: Colors.grey,
+            tabs: tabs,
+          ),
+          Expanded(
+            child: TabBarView(
+              children: tabViews,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   seen(BuildContext context, movie, type) {

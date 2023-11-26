@@ -45,7 +45,7 @@ class _FriendProfileState extends State<FriendProfile> {
 
     moviesTemp.sort((a, b) => b[0].compareTo(a[0]));
 
-    while (i < 18 && i < moviesTemp.length) {
+    while (i < 9 && i < moviesTemp.length) {
       String completeLinkMovie =
           MOVIE_LINK + moviesTemp[i][1].toString() + API_KEY;
 
@@ -410,7 +410,7 @@ class _FriendProfileState extends State<FriendProfile> {
                               child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Text(
-                                  'See All (${currentUser.seenWith[friendUid]["Movies"].length} items)',
+                                  'See All (${currentUser.seenWith[friendUid]["Movies"].length + currentUser.seenWith[friendUid]["TVShows"].length} items)',
                                   style: const TextStyle(
                                     color: Colors.grey,
                                     fontSize: 12,
@@ -607,7 +607,6 @@ class _FriendProfileState extends State<FriendProfile> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 10),
               Container(
                 decoration: BoxDecoration(
