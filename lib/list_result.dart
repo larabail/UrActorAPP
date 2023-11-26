@@ -571,6 +571,9 @@ class _ListResultState extends State<ListResult> {
               ],
             ),
           ),
+          const SizedBox(
+            height: 10,
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -644,6 +647,9 @@ class _ListResultState extends State<ListResult> {
                 ),
               ),
             ],
+          ),
+          const SizedBox(
+            height: 10,
           ),
           if (widget.list_result.movies.isNotEmpty &&
               widget.list_result.tvshows.isNotEmpty)

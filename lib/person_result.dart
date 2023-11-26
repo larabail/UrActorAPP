@@ -70,8 +70,12 @@ class _PersonResultState extends State<PersonResult> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(27),
                                 image: DecorationImage(
-                                  image: NetworkImage(IMG_LINK +
-                                      snapshot.data!['profile_path']),
+                                  image: NetworkImage(snapshot
+                                              .data!["profile_path"] !=
+                                          null
+                                      ? IMG_LINK +
+                                          snapshot.data!['profile_path']
+                                      : 'https://cdn-icons-png.flaticon.com/512/3088/3088765.png'),
                                   fit: BoxFit.fitWidth,
                                 ),
                               ),
