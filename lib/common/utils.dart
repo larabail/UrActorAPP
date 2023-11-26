@@ -614,4 +614,37 @@ class ApiUtils {
     }
     return upcomingMovies;
   }
+
+  static Future<List> searchData(searchTermActor) async {
+    String searchLink = "";
+    if (searchTermActor != "") {
+      searchLink =
+          '$SEARCH_BY_NAME_MULTI_LINK${searchTermActor.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}';
+      final response = await http.get(Uri.parse(searchLink));
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return json['results'];
+      }
+    }
+    return [];
+  }
+
+  static Future<List> searchMovies(String searchTerm) async {
+    if (searchTerm != "") {
+      String name = searchTerm
+          .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
+          .replaceAll(" ", "+");
+      String searchLink = "";
+      searchLink = '$SEARCH_BY_NAME_MOVIE_LINK$name';
+      final response = await http.get(Uri.parse(searchLink));
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return json['results'];
+      } else {
+        throw Exception('Failed to load movie details');
+      }
+    } else {
+      return [];
+    }
+  }
 }
