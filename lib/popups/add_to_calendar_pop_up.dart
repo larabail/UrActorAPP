@@ -492,7 +492,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                   ),
                 ),
               Padding(
-                padding: const EdgeInsets.all(10.0),
+                padding: const EdgeInsets.all(2.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -518,6 +518,9 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                             Text("Cancel")
                           ],
                         )),
+                    const SizedBox(
+                      width: 5,
+                    ),
                     ElevatedButton(
                         onPressed: () {
                           Navigator.pop(context);
