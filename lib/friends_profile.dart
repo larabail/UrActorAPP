@@ -45,7 +45,7 @@ class _FriendProfileState extends State<FriendProfile> {
 
     moviesTemp.sort((a, b) => b[0].compareTo(a[0]));
 
-    while (i < 18 && i < moviesTemp.length) {
+    while (i < 9 && i < moviesTemp.length) {
       String completeLinkMovie =
           MOVIE_LINK + moviesTemp[i][1].toString() + API_KEY;
 
@@ -607,7 +607,6 @@ class _FriendProfileState extends State<FriendProfile> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 10),
               Container(
                 decoration: BoxDecoration(
