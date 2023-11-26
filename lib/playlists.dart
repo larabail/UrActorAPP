@@ -205,16 +205,28 @@ class _PlaylistsState extends State<Playlists> {
                                 padding: const EdgeInsets.all(16.0),
                                 child: Align(
                                   alignment: Alignment.bottomRight,
-                                  child: Text(
-                                    value,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 30,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1.5,
-                                      wordSpacing: 2,
-                                      height: 1.5,
-                                    ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        value,
+                                        style: const TextStyle(
+                                          fontSize: 30,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.5,
+                                          wordSpacing: 2,
+                                          height: 1.5,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Movies: ${movies.length}, TV Shows: ${tvshows.length}',
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
