@@ -34,6 +34,7 @@ class TVShowResult extends StatefulWidget {
 }
 
 class _TVShowResultState extends State<TVShowResult> {
+  bool isExpanded = false;
   Future<Map> getMovieData() async {
     List movieData = [widget.tvshow.id, "TVShows"];
     String name = movieData[1]
@@ -519,25 +520,47 @@ class _TVShowResultState extends State<TVShowResult> {
                       snapshot.data!['overview'] != "")
                     Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Align(
-                        alignment: Alignment.bottomRight,
-                        child: Container(
-                          height: 85, // fixed height
-                          padding: const EdgeInsets.all(8), // optional padding
-                          child: ListView(
-                            children: [
-                              Text(
-                                snapshot.data!['overview'],
-                                textAlign: TextAlign.justify,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  wordSpacing: 2,
-                                  height: 1.5,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding:
+                                const EdgeInsets.all(8), // Optional padding
+                            constraints: BoxConstraints(
+                              maxHeight: isExpanded
+                                  ? double.infinity
+                                  : 85, // Max height constraint
+                            ),
+                            child: Text(
+                              snapshot.data!['overview'],
+                              textAlign: TextAlign.justify,
+                              overflow: TextOverflow.fade,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                wordSpacing: 2,
+                                height: 1.5,
+                              ),
+                            ),
+                          ),
+                          if (!isExpanded &&
+                              snapshot.data!['overview'].length > 100)
+                            InkWell(
+                              onTap: () {
+                                setState(() {
+                                  isExpanded = true;
+                                });
+                              },
+                              child: Container(
+                                width: double
+                                    .infinity, // Ensures the container takes full width
+                                child: const Text(
+                                  "Read All",
+                                  textAlign: TextAlign
+                                      .right, // Aligns text to the right
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
+                            ),
+                        ],
                       ),
                     ),
                   Container(
