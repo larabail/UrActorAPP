@@ -179,7 +179,7 @@ class _CalendarState extends State<Calendar> {
         dateForMap = selectedDate.toIso8601String().split("T")[0];
         showDialog(
           context: context,
-          builder: (BuildContext context) {
+          builder: (BuildContext ontext) {
             return CalendarAddDialogue(
               dateForMap: dateForMap,
             );

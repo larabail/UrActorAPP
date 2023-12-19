@@ -230,7 +230,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 shrinkWrap: true,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  childAspectRatio: 3,
+                  childAspectRatio: 2.75,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
                 ),
@@ -321,10 +321,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                         padding: const EdgeInsets.all(10),
                         child: IntrinsicHeight(
-                          // This widget will give its child the full height of its own constraints
                           child: Row(
-                            crossAxisAlignment: CrossAxisAlignment
-                                .stretch, // Align children to stretch to fill the row height
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               AspectRatio(
                                 aspectRatio: 1, // Equal width and height
@@ -406,7 +404,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                                   ),
                                                 );
                                               } else {
-                                                // Text fits, use Text
                                                 return Text(
                                                   value,
                                                   style: const TextStyle(
