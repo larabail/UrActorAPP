@@ -25,7 +25,6 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
   String _searchTermMovie = '';
   Map _movie = {};
   Future<List> searchData(String searchTerm) async {
-    // print(searchTerm);
     if (searchTerm != "") {
       String name = searchTerm
           .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
@@ -35,41 +34,74 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
       final response = await http.get(Uri.parse(searchLink));
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
-        List<Map<String, dynamic>> results = [];
-        for (final result in json['results']) {
-          String resultSearchLink = '';
-          resultSearchLink =
-              '$MOVIE_LINK${result["id"]}-${result["title"].replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}$API_KEY';
-          final response2 = await http.get(Uri.parse(resultSearchLink));
-          if (response2.statusCode == 200) {
-            final json2 = jsonDecode(response2.body);
-            final omdbLink =
-                'http://www.omdbapi.com/?i=${json2["imdb_id"]}&apikey=768d2cf9';
-            final omdbData = await http.get(Uri.parse(omdbLink));
-            if (response2.statusCode == 200) {
-              final json3 = jsonDecode(omdbData.body);
-              if (json3["imdbRating"] != null && json3["imdbRating"] != "N/A") {
-                json2["imdbRating"] = json3["imdbRating"];
-              } else {
-                json2["imdbRating"] = "0.0";
-              }
-              if (json2["poster_path"] != "" && json2["poster_path"] != null) {
-                results.add(json2);
-              }
-            } else {
-              throw Exception('Failed to load movie details');
-            }
-          } else {
-            throw Exception('Failed to load movie details');
-          }
-        }
-        return results;
+        return json["results"];
       } else {
         throw Exception('Failed to load movie details');
       }
     } else {
       return [];
     }
+  }
+
+  String getDefaultImagePath(String? imagePath) {
+    const defaultPath =
+        'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
+    return imagePath == null ||
+            imagePath ==
+                "https://cdn-icons-png.flaticon.com/512/3088/3088765.png"
+        ? defaultPath
+        : IMG_LINK + imagePath;
+  }
+
+  Widget buildItem(BuildContext context, Map item, int index, bool isSelected) {
+    if (item.containsKey("poster_path") && item.containsKey("title")) {
+      // movieResult = [item['id'], item['title'], "Movies"];
+      item['profile_path'] = getDefaultImagePath(item['poster_path']);
+    } else if (item.containsKey("poster_path") && item.containsKey("name")) {
+      item['profile_path'] = getDefaultImagePath(item['poster_path']);
+    } else {
+      item['profile_path'] = getDefaultImagePath(item['profile_path']);
+    }
+    return GestureDetector(
+      onTap: () => {
+        setState(() {
+          _selectedIndex = index;
+          _movie = item;
+        })
+      },
+      child: Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
+            width: MediaQuery.of(context).size.width * 0.28,
+            height: MediaQuery.of(context).size.height * 0.18,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(27),
+              image: DecorationImage(
+                image: NetworkImage(item['profile_path']),
+                fit: BoxFit.fitWidth,
+              ),
+              border:
+                  isSelected ? Border.all(color: Colors.blue, width: 3) : null,
+            ),
+          ),
+          SizedBox(
+            width: MediaQuery.of(context).size.width * 0.28,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Text(
+                item['title'] ??
+                    (item["name"] ??
+                        'Unkown'), // Replace 'title' with the appropriate key
+                style: const TextStyle(
+                  fontSize: 14, // Adjust the font size as needed
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void addMovieSubmit(String id, String title, int runtime, double rating,
@@ -323,7 +355,6 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                   onChanged: (value) {
                     setState(() {
                       _searchTermMovie = value;
-                      searchData(_searchTermMovie);
                     });
                   },
                 ),
@@ -366,35 +397,8 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                               width: 100,
                               margin: const EdgeInsets.symmetric(horizontal: 5),
                               child: GridTile(
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedIndex = index;
-                                      _movie = item;
-                                    });
-                                  },
-                                  // _movie = item["id"].toString();
-                                  // addMovieSubmit(
-                                  //     item["id"].toString(),
-                                  //     item["title"].toString(),
-                                  //     item["runtime"],
-                                  //     double.parse(item["imdbRating"]),
-                                  //     selectedFriends);
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      image: DecorationImage(
-                                        image: NetworkImage(
-                                            IMG_LINK + item['poster_path']),
-                                        fit: BoxFit.cover,
-                                      ),
-                                      border: isSelected
-                                          ? Border.all(
-                                              color: Colors.blue, width: 3)
-                                          : null,
-                                    ),
-                                  ),
-                                ),
+                                child: buildItem(context, snapshot.data![index],
+                                    index, isSelected),
                               ),
                             );
                           },
