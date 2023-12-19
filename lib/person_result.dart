@@ -317,6 +317,20 @@ class _PersonResultState extends State<PersonResult> {
     List<Tab> tabs = [];
     List<Widget> tabViews = [];
     if (data['movie_credits_cast'].length > 0) {
+      data['movie_credits_cast'].sort((a, b) {
+        DateTime dateA = DateTime.parse(a['release_date'] != null
+            ? a["release_date"] == ""
+                ? "5000-01-01"
+                : a['release_date']
+            : "5000-01-01");
+        DateTime dateB = DateTime.parse(b['release_date'] != null
+            ? b["release_date"] == ""
+                ? "5000-01-01"
+                : b['release_date']
+            : "5000-01-01");
+        return dateB.compareTo(dateA);
+      });
+
       tabs.add(const Tab(text: 'Movies'));
       tabViews.add(ListView.builder(
         scrollDirection: Axis.vertical,
@@ -326,6 +340,20 @@ class _PersonResultState extends State<PersonResult> {
       ));
     }
     if (data['tv_credits_cast'].length > 0) {
+      print(data["tv_credits_cast"]);
+      data['tv_credits_cast'].sort((a, b) {
+        DateTime dateA = DateTime.parse(a['first_air_date'] != null
+            ? a["first_air_date"] == ""
+                ? "5000-01-01"
+                : a['first_air_date']
+            : "5000-01-01");
+        DateTime dateB = DateTime.parse(b['first_air_date'] != null
+            ? b["first_air_date"] == ""
+                ? "5000-01-01"
+                : b['first_air_date']
+            : "5000-01-01");
+        return dateB.compareTo(dateA);
+      });
       tabs.add(const Tab(text: 'TV Shows'));
       tabViews.add(ListView.builder(
         scrollDirection: Axis.vertical,
@@ -365,6 +393,13 @@ class _PersonResultState extends State<PersonResult> {
     List<Tab> tabs = [];
     List<Widget> tabViews = [];
     if (data['movie_credits_crew'].length > 0) {
+      data['movie_credits_crew'].sort((a, b) {
+        DateTime dateA = DateTime.parse(
+            a['release_date'] == "" ? "5000-01-01" : a['release_date']);
+        DateTime dateB = DateTime.parse(
+            b['release_date'] == "" ? "5000-01-01" : b['release_date']);
+        return dateB.compareTo(dateA);
+      });
       tabs.add(const Tab(text: 'Movies'));
       tabViews.add(ListView.builder(
         scrollDirection: Axis.vertical,
@@ -374,6 +409,19 @@ class _PersonResultState extends State<PersonResult> {
       ));
     }
     if (data['tv_credits_crew'].length > 0) {
+      data['tv_credits_crew'].sort((a, b) {
+        DateTime dateA = DateTime.parse(a['first_air_date'] != null
+            ? a['first_air_date'] == ""
+                ? "5000-01-01"
+                : a['first_air_date']
+            : "5000-01-01");
+        DateTime dateB = DateTime.parse(b['first_air_date'] != null
+            ? b['first_air_date'] == ""
+                ? "5000-01-01"
+                : b['first_air_date']
+            : "5000-01-01");
+        return dateB.compareTo(dateA);
+      });
       tabs.add(const Tab(text: 'TV Shows'));
       tabViews.add(ListView.builder(
         scrollDirection: Axis.vertical,
