@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
 import 'package:uractor/objects/TVShow.dart';
+import 'package:uractor/popups/grant_access_dialogue.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'objects/Media.dart';
@@ -36,6 +37,8 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
     return data;
   }
 
+  Map<String, bool> selectedFriends = {};
+
   @override
   Widget build(BuildContext context) {
     Map userCurrent = widget.list_result.users.firstWhere(
@@ -56,7 +59,7 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              "AccessCode: ${widget.list_result.accesscode}",
+              "AccessCode: '${widget.list_result.accesscode}'",
               style: const TextStyle(
                 fontSize: 18,
                 color: Colors.white,
@@ -156,6 +159,31 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                 }
               },
             ),
+            if (role == "Owner")
+              ElevatedButton(
+                onPressed: () async {
+                  final result = await showDialog<Playlist>(
+                    context: context,
+                    builder: (context) =>
+                        GrantAccessDialog(list_result: widget.list_result),
+                  );
+                  if (result != null) {
+                    setState(() {
+                      widget.list_result.users = result.users;
+                    });
+                  }
+                },
+                child: const Row(
+                  children: [
+                    Icon(Icons.add, color: Colors.white),
+                    SizedBox(width: 10),
+                    Text(
+                      "Grant Access To Users",
+                      style: TextStyle(color: Colors.white),
+                    )
+                  ],
+                ),
+              ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
