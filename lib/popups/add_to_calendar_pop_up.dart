@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:uractor/objects/Movie.dart';
 import 'dart:convert';
 
 import '../common/constants.dart';
@@ -526,13 +527,18 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                       width: 5,
                     ),
                     ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           Navigator.pop(context);
+                          Movie tempMovie = Movie(
+                              id: _movie["id"].toString(),
+                              title: _movie["title"].toString(),
+                              coverPhoto: _movie["poster_path"].toString());
+                          Map movieData = await tempMovie.getExtendedMovieData();
                           addMovieSubmit(
-                              _movie["id"].toString(),
-                              _movie["title"].toString(),
-                              _movie["runtime"],
-                              double.parse(_movie["imdbRating"]),
+                              tempMovie.id,
+                              tempMovie.title,
+                              movieData["runtime"],
+                              double.parse(movieData["imdb_rating"]),
                               selectedFriends);
                         },
                         style: ElevatedButton.styleFrom(
