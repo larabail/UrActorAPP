@@ -18,6 +18,14 @@ class _GrantAccessDialogState extends State<GrantAccessDialog> {
 
   @override
   Widget build(BuildContext context) {
+    Set uidsInListResult =
+        widget.list_result.users.expand((map) => map.keys).toSet();
+
+    // Filter currentUser.friends to get UIDs not in uidsInListResult
+    List uniqueFriendIds = currentUser.friends
+        .where((friendId) => !uidsInListResult.contains(friendId))
+        .toList();
+
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15), // Add rounded corners
@@ -36,18 +44,18 @@ class _GrantAccessDialogState extends State<GrantAccessDialog> {
               "Grant Users Access",
               style: TextStyle(fontSize: 20),
             ),
-            if (currentUser.friends.isNotEmpty)
+            if (uniqueFriendIds.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.all(10.0),
                 child: SizedBox(
                   height: 125, // Set your desired height here
                   child: ListView.builder(
                     shrinkWrap: true,
-                    itemCount: currentUser.friends.length,
+                    itemCount: uniqueFriendIds.length,
                     itemBuilder: (context, friendIndex) {
                       return FutureBuilder<DocumentSnapshot>(
                         future: FirebaseFirestore.instance
-                            .collection(currentUser.friends[friendIndex])
+                            .collection(uniqueFriendIds[friendIndex])
                             .doc('Settings')
                             .get(),
                         builder: (context, snapshot) {
@@ -92,15 +100,16 @@ class _GrantAccessDialogState extends State<GrantAccessDialog> {
                                   ),
                                 ],
                               ),
-                              value: selectedFriends.keys.toList().contains(
-                                      currentUser.friends[friendIndex])
+                              value: selectedFriends.keys
+                                      .toList()
+                                      .contains(uniqueFriendIds[friendIndex])
                                   ? selectedFriends[
-                                      currentUser.friends[friendIndex]]
+                                      uniqueFriendIds[friendIndex]]
                                   : false,
                               onChanged: (bool? value) {
                                 setState(() {
-                                  selectedFriends[currentUser
-                                      .friends[friendIndex]] = value!;
+                                  selectedFriends[
+                                      uniqueFriendIds[friendIndex]] = value!;
                                 });
                               },
                             );
@@ -111,6 +120,8 @@ class _GrantAccessDialogState extends State<GrantAccessDialog> {
                   ),
                 ),
               ),
+            if (uniqueFriendIds.isEmpty)
+              const Text("All your friends already have access to this list"),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
