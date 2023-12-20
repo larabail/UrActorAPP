@@ -573,3 +573,384 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
     );
   }
 }
+
+class AddToCalendar extends StatefulWidget {
+  final String dateForMap;
+  final Movie movie;
+  const AddToCalendar({Key? key, required this.movie, required this.dateForMap})
+      : super(key: key);
+
+  @override
+  _AddToCalendarState createState() => _AddToCalendarState();
+}
+
+class _AddToCalendarState extends State<AddToCalendar> {
+  FirebaseFirestore db = FirebaseFirestore.instance;
+  Map<String, bool> selectedFriends = {};
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15), // Add rounded corners
+      ),
+      elevation: 0,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "Did you watch it with anyone?",
+              style: TextStyle(fontSize: 20),
+            ),
+            if (currentUser.friends.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: SizedBox(
+                  height: 125, // Set your desired height here
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: currentUser.friends.length,
+                    itemBuilder: (context, friendIndex) {
+                      return FutureBuilder<DocumentSnapshot>(
+                        future: FirebaseFirestore.instance
+                            .collection(currentUser.friends[friendIndex])
+                            .doc('Settings')
+                            .get(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          } else if (snapshot.hasError) {
+                            return Text('Error: ${snapshot.error}');
+                          } else if (!snapshot.hasData ||
+                              !snapshot.data!.exists) {
+                            return const Text('No data found');
+                          } else {
+                            var data =
+                                snapshot.data!.data() as Map<String, dynamic>;
+                            String userName = data['username'] ?? '';
+                            String profilePath = data['profile_photo'] ?? '';
+                            return CheckboxListTile(
+                              title: Row(
+                                children: [
+                                  ClipOval(
+                                    child: profilePath != ""
+                                        ? Image.network(
+                                            profilePath,
+                                            height: 25,
+                                            width: 25,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : Image.asset(
+                                            'assets/main_profile.png',
+                                            height: 25,
+                                            width: 25,
+                                            fit: BoxFit.cover,
+                                          ),
+                                  ),
+                                  const SizedBox(width: 16.0),
+                                  Expanded(
+                                    child: Text(
+                                      userName,
+                                      style: const TextStyle(fontSize: 16.0),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              value: selectedFriends.keys.toList().contains(
+                                      currentUser.friends[friendIndex])
+                                  ? selectedFriends[
+                                      currentUser.friends[friendIndex]]
+                                  : false,
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  selectedFriends[currentUser
+                                      .friends[friendIndex]] = value!;
+                                });
+                              },
+                            );
+                          }
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[900],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.cancel,
+                          color: Colors.red,
+                        ),
+                        SizedBox(
+                          width: 5,
+                        ),
+                        Text(
+                          "Cancel",
+                          style: TextStyle(fontSize: 13, color: Colors.white),
+                        )
+                      ],
+                    )),
+                const SizedBox(
+                  width: 5,
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    Map data = await widget.movie.getExtendedMovieData();
+                    addMovieSubmit(
+                        widget.movie.id,
+                        widget.movie.title,
+                        data["runtime"],
+                        double.parse(data["imdb_rating"]),
+                        selectedFriends);
+                    Navigator.pop(context, true);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[900],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.check,
+                        color: Colors.green,
+                      ),
+                      SizedBox(
+                        width: 5,
+                      ),
+                      Text(
+                        "Accept",
+                        style: TextStyle(fontSize: 13, color: Colors.white),
+                      )
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<bool> addMovieSubmit(String id, String title, int runtime,
+      double rating, Map friendsWatchedWith) async {
+    Map myObject = {
+      'id': id,
+      'title': title,
+      'runtime': runtime,
+      'rating': rating,
+      'friends': friendsWatchedWith.keys
+          .where((key) => friendsWatchedWith[key] == true)
+          .toList(),
+    };
+
+    print("MY OBJECT: ${myObject}");
+    if (currentUser.calendar.keys.toList().contains(widget.dateForMap)) {
+      currentUser.calendar[widget.dateForMap].add(myObject);
+    } else {
+      currentUser.calendar[widget.dateForMap] = [
+        myObject,
+      ];
+    }
+
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    for (var friend in friendsWatchedWith.keys) {
+      myObject["friends"] = [
+        currentUser.uid,
+      ];
+      for (var friend2 in friendsWatchedWith.keys) {
+        if (friendsWatchedWith[friend] == true) {
+          if (!myObject["friends"].contains(friend2) && friend != friend2) {
+            myObject["friends"].add(friend2);
+          }
+        }
+      }
+      if (friendsWatchedWith[friend] == true) {
+        if (currentUser.seenWith.containsKey(friend) &&
+            !currentUser.seenWith[friend]["Movies"].contains(id.toString())) {
+          currentUser.seenWith[friend]["Movies"].add(id.toString());
+        } else if (!currentUser.seenWith.containsKey(friend)) {
+          currentUser.seenWith[friend] = {"Movies": [], "TVShows": []};
+          currentUser.seenWith[friend]["Movies"].add(id.toString());
+        }
+        var userDoc =
+            FirebaseFirestore.instance.collection(friend).doc("Calendar");
+        await userDoc.update({
+          widget.dateForMap: FieldValue.arrayUnion([myObject])
+        });
+
+        userDoc = FirebaseFirestore.instance.collection(friend).doc("Movies");
+        await userDoc.update({
+          'Seen': FieldValue.arrayUnion([id])
+        });
+
+        DocumentReference userDoc2 =
+            firestore.collection(friend).doc("SeenWith");
+        Map<String, dynamic> item = {};
+        List<dynamic> watchedWithList = friendsWatchedWith.keys
+            .where((key) => friendsWatchedWith[key] == true)
+            .toList();
+        item[id] = watchedWithList;
+
+        await firestore.runTransaction((transaction) async {
+          DocumentSnapshot snapshot = await transaction.get(userDoc2);
+
+          if (!snapshot.exists) {
+            throw Exception("Document does not exist!");
+          }
+
+          Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+
+          if (data.containsKey('Movies') &&
+              data['Movies'] is Map<String, dynamic>) {
+            Map<String, dynamic> moviesMap = data['Movies'];
+
+            if (moviesMap.containsKey(id)) {
+              List existingList = moviesMap[id]["friends"];
+              for (String person in watchedWithList) {
+                if (!existingList.contains(person) && person != friend) {
+                  existingList.add(person);
+                }
+              }
+              if (!existingList.contains(currentUser.uid)) {
+                existingList.add(currentUser.uid);
+              }
+              moviesMap[id] = {"friends": existingList};
+              transaction.update(userDoc2, {"Movies": moviesMap});
+            } else {
+              watchedWithList.remove(friend);
+              watchedWithList.add(currentUser.uid);
+              moviesMap[id] = {"friends": watchedWithList};
+              transaction.update(userDoc2, {"Movies": moviesMap});
+            }
+          } else {
+            transaction.set(
+                userDoc2,
+                {
+                  'Movies': {
+                    id: {"friends": watchedWithList}
+                  }
+                },
+                SetOptions(merge: true));
+          }
+        }).catchError((error) {
+          print("Failed to update document: $error");
+        });
+
+        userDoc =
+            FirebaseFirestore.instance.collection(friend).doc("Rewatched");
+        DocumentSnapshot doc = await userDoc.get();
+        if (doc.exists) {
+          Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+          if (data.containsKey(id)) {
+            await userDoc.update({id: FieldValue.increment(1)});
+          } else {
+            await userDoc.update({id: 1});
+          }
+        }
+      }
+    }
+
+    DocumentReference userDoc2 =
+        firestore.collection(currentUser.uid).doc("SeenWith");
+    Map<String, dynamic> item = {};
+    List<dynamic> watchedWithList = friendsWatchedWith.keys
+        .where((key) => friendsWatchedWith[key] == true)
+        .toList();
+    item[id] = watchedWithList;
+    myObject["friends"] = watchedWithList;
+
+    firestore.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(userDoc2);
+
+      if (!snapshot.exists) {
+        throw Exception("Document does not exist!");
+      }
+      Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+
+      if (data.containsKey('Movies') &&
+          data['Movies'] is Map<String, dynamic>) {
+        Map<String, dynamic> moviesMap = data['Movies'];
+
+        if (moviesMap.containsKey(id)) {
+          List existingList = moviesMap[id]["friends"];
+          for (String person in watchedWithList) {
+            if (!existingList.contains(person)) {
+              existingList.add(person);
+            }
+          }
+          moviesMap[id] = {"friends": existingList};
+        } else {
+          moviesMap[id] = {"friends": watchedWithList};
+        }
+        transaction.update(userDoc2, {'Movies': moviesMap});
+      } else {
+        transaction.set(
+            userDoc2,
+            {
+              'Movies': {
+                id: {"friends": watchedWithList}
+              }
+            },
+            SetOptions(merge: true));
+      }
+    }).catchError((error) {
+      print("Failed to update document: $error");
+    });
+    var userDoc = db.collection(currentUser.uid).doc("Calendar");
+    Map<Object, Object> updatedCalendar = {};
+    for (String key in currentUser.calendar.keys) {
+      updatedCalendar[key] = currentUser.calendar[key];
+    }
+    await userDoc.update(updatedCalendar);
+
+    if (currentUser.rewatchedMovies.keys.toList().contains(id)) {
+      currentUser.rewatchedMovies[id] += 1;
+    } else {
+      currentUser.rewatchedMovies[id] = 1;
+    }
+
+    userDoc = db.collection(currentUser.uid).doc("Rewatched");
+    Map<Object, Object> updatedRewatched = {};
+    for (String key in currentUser.rewatchedMovies.keys) {
+      updatedRewatched[key] = currentUser.rewatchedMovies[key];
+    }
+    await userDoc.update(updatedRewatched);
+
+    if (!Utils.containsList(currentUser.seenMovies, ["Movies", id])) {
+      final userDoc =
+          FirebaseFirestore.instance.collection(currentUser.uid).doc('Movies');
+      id = id.toString();
+      await userDoc.update({
+        'Seen': FieldValue.arrayUnion([id])
+      });
+      currentUser.seenMovies += [
+        ["Movies", id]
+      ];
+    }
+    return true;
+  }
+}
