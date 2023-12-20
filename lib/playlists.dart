@@ -10,7 +10,6 @@ import 'objects/Playlist.dart';
 import 'popups/list_add_popup.dart';
 import 'popups/list_join_popup.dart';
 
-// Map list_result = {};
 
 class Playlists extends StatefulWidget {
   const Playlists({super.key});
