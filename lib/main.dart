@@ -49,6 +49,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'UrActor',
       theme: ThemeData.dark().copyWith(
+        primaryColor: const Color.fromARGB(250, 224, 190, 78),
         scaffoldBackgroundColor: const Color(0xFF121212),
         appBarTheme: const AppBarTheme(
           color: Color(0xFF121212),
@@ -66,9 +67,18 @@ class MyApp extends StatelessWidget {
               Colors.grey, // Set your desired color for unselected tabs
           indicatorColor: Color.fromARGB(250, 224, 190, 78),
         ),
+        progressIndicatorTheme: const ProgressIndicatorThemeData(
+          color: Color.fromARGB(250, 224, 190, 78), // Your desired color
+        ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           selectedItemColor: Color.fromARGB(250, 224, 190, 78),
           backgroundColor: Color(0xFF121212),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.grey[900],
+            textStyle: const TextStyle(color: Colors.white),
+          ),
         ),
       ),
       home: const MyHomePage(),

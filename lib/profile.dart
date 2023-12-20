@@ -431,7 +431,11 @@ class _ProfileState extends State<Profile> {
                                                   1; // Go to the previous week
                                             });
                                           },
-                                          child: const Text('<<'),
+                                          child: const Text(
+                                            '<<',
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
                                         ),
                                         ElevatedButton(
                                           style: ButtonStyle(
@@ -447,7 +451,11 @@ class _ProfileState extends State<Profile> {
                                                   0; // Go to the previous week
                                             });
                                           },
-                                          child: const Text('This Week'),
+                                          child: const Text(
+                                            'This Week',
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
                                         ),
                                         ElevatedButton(
                                           style: ButtonStyle(
@@ -463,7 +471,11 @@ class _ProfileState extends State<Profile> {
                                                   1; // Go to the next week
                                             });
                                           },
-                                          child: const Text('>>'),
+                                          child: const Text(
+                                            '>>',
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
                                         ),
                                       ],
                                     ),
