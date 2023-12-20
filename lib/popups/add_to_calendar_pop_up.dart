@@ -496,71 +496,75 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                     ),
                   ),
                 ),
-              Padding(
-                padding: const EdgeInsets.all(2.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[900],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey[900],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Row(
-                          children: [
-                            Icon(
-                              Icons.cancel,
-                              color: Colors.red,
-                            ),
-                            SizedBox(
-                              width: 10,
-                            ),
-                            Text("Cancel")
-                          ],
-                        )),
-                    const SizedBox(
-                      width: 5,
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(
+                            Icons.cancel,
+                            color: Colors.red,
+                          ),
+                          SizedBox(
+                            width: 5,
+                          ),
+                          Text(
+                            "Cancel",
+                            style: TextStyle(fontSize: 13, color: Colors.white),
+                          )
+                        ],
+                      )),
+                  const SizedBox(
+                    width: 5,
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      Movie tempMovie = Movie(
+                          id: _movie["id"].toString(),
+                          title: _movie["title"].toString(),
+                          coverPhoto: _movie["poster_path"].toString());
+                      Map movieData = await tempMovie.getExtendedMovieData();
+                      addMovieSubmit(
+                          tempMovie.id,
+                          tempMovie.title,
+                          movieData["runtime"],
+                          double.parse(movieData["imdb_rating"]),
+                          selectedFriends);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[900],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
-                    ElevatedButton(
-                        onPressed: () async {
-                          Navigator.pop(context);
-                          Movie tempMovie = Movie(
-                              id: _movie["id"].toString(),
-                              title: _movie["title"].toString(),
-                              coverPhoto: _movie["poster_path"].toString());
-                          Map movieData = await tempMovie.getExtendedMovieData();
-                          addMovieSubmit(
-                              tempMovie.id,
-                              tempMovie.title,
-                              movieData["runtime"],
-                              double.parse(movieData["imdb_rating"]),
-                              selectedFriends);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[900],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.check,
+                          color: Colors.green,
                         ),
-                        child: const Row(
-                          children: [
-                            Icon(
-                              Icons.check,
-                              color: Colors.green,
-                            ),
-                            SizedBox(
-                              width: 10,
-                            ),
-                            Text("Accept")
-                          ],
-                        )),
-                  ],
-                ),
+                        SizedBox(
+                          width: 5,
+                        ),
+                        Text(
+                          "Accept",
+                          style: TextStyle(fontSize: 13, color: Colors.white),
+                        )
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
