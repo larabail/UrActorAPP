@@ -10,7 +10,6 @@ import 'objects/Playlist.dart';
 import 'popups/list_add_popup.dart';
 import 'popups/list_join_popup.dart';
 
-
 class Playlists extends StatefulWidget {
   const Playlists({super.key});
 
@@ -73,6 +72,9 @@ class _PlaylistsState extends State<Playlists> {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            const SizedBox(
+              height: 10,
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -131,6 +133,9 @@ class _PlaylistsState extends State<Playlists> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(
+              height: 10,
             ),
             RefreshIndicator(
               onRefresh: _refreshPlaylists,
