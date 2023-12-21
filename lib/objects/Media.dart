@@ -10,4 +10,6 @@ abstract class MediaItem {
   });
 
   Future<Map> getData();
+
+  Future<Map> getExtendedData();
 }

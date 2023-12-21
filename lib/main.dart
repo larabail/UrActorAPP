@@ -49,6 +49,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'UrActor',
       theme: ThemeData.dark().copyWith(
+        primaryColor: const Color.fromARGB(250, 224, 190, 78),
         scaffoldBackgroundColor: const Color(0xFF121212),
         appBarTheme: const AppBarTheme(
           color: Color(0xFF121212),
@@ -66,9 +67,31 @@ class MyApp extends StatelessWidget {
               Colors.grey, // Set your desired color for unselected tabs
           indicatorColor: Color.fromARGB(250, 224, 190, 78),
         ),
+        progressIndicatorTheme: const ProgressIndicatorThemeData(
+          color: Color.fromARGB(250, 224, 190, 78), // Your desired color
+        ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           selectedItemColor: Color.fromARGB(250, 224, 190, 78),
           backgroundColor: Color(0xFF121212),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.grey[900],
+            textStyle: const TextStyle(color: Colors.white),
+          ),
+        ),
+        checkboxTheme: CheckboxThemeData(
+          fillColor: MaterialStateProperty.resolveWith<Color>((states) {
+            if (states.contains(MaterialState.selected)) {
+              return const Color.fromARGB(
+                  250, 224, 190, 78); // Color when checkbox is checked
+            }
+            return const Color.fromARGB(
+                0, 158, 158, 158); // Color when checkbox is unchecked
+          }),
+          checkColor: MaterialStateProperty.all<Color>(
+              Colors.white), // Color of the check icon
+          // You can add more customization here
         ),
       ),
       home: const MyHomePage(),

@@ -1,5 +1,7 @@
 // ignore_for_file: unnecessary_brace_in_string_interps, no_leading_underscores_for_local_identifiers, avoid_function_literals_in_foreach_calls, use_build_context_synchronously, library_private_types_in_public_api
 import 'package:flutter/material.dart';
+import 'package:uractor/objects/TVShow.dart';
+import 'package:uractor/tvshow_result.dart';
 import 'common/constants.dart';
 import 'popups/add_to_calendar_pop_up.dart';
 import 'common/appbar.dart';
@@ -38,6 +40,7 @@ class _CalendarState extends State<Calendar> {
   DateTime _focusedDay = DateTime.now();
   String _selectedDay = DateTime.now().toIso8601String().split('T')[0];
   List _monthlyStats = [0, 0, 0];
+  bool areFABsVisible = false;
   final Map events = currentUser.calendar;
   void deleteMovieSubmit(String id, String title) async {
     var userDoc = db.collection(currentUser.uid).doc("Calendar");
@@ -147,6 +150,12 @@ class _CalendarState extends State<Calendar> {
     return [movieCount, averageRating, totalRuntime];
   }
 
+  void toggleFABs() {
+    setState(() {
+      areFABsVisible = !areFABsVisible;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -157,6 +166,147 @@ class _CalendarState extends State<Calendar> {
   Widget build(BuildContext context) {
     List moviesOnDay = [];
     List movies = [];
+
+    Future<void> showDateSelectionDialog() async {
+      return showDialog<void>(
+        context: context,
+        builder: (BuildContext context) {
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15.0),
+            ),
+            child: Container(
+              padding: const EdgeInsets.only(
+                  left: 20, top: 10, right: 20, bottom: 10),
+              decoration: BoxDecoration(
+                color: Colors.grey[900],
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              child: SingleChildScrollView(
+                child: ListBody(
+                  children: <Widget>[
+                    const Text(
+                      "Add a TV Shows to Your Calendar",
+                      style: TextStyle(fontSize: 20),
+                    ),
+                    const SizedBox(height: 20),
+                    GestureDetector(
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.today),
+                          SizedBox(
+                            width: 10,
+                          ),
+                          Text('Select a Specific Date')
+                        ],
+                      ),
+                      onTap: () async {
+                        DateTime? selectedDate = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2025),
+                        );
+                        if (selectedDate != null) {
+                          bool done = await showDialog(
+                            context: context,
+                            builder: (BuildContext ontext) {
+                              return CalendarAddDialogue(
+                                dateForMap: selectedDate
+                                    .toIso8601String()
+                                    .split("T")[0],
+                                dateRange: "",
+                                type: "series",
+                              );
+                            },
+                          );
+                          if (done) {
+                            Navigator.pop(context);
+                            setState(() {});
+                          }
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    GestureDetector(
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.date_range),
+                          SizedBox(
+                            width: 10,
+                          ),
+                          Text('Select a Date Range')
+                        ],
+                      ),
+                      onTap: () async {
+                        DateTimeRange? selectedRange =
+                            await showDateRangePicker(
+                          context: context,
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2025),
+                          initialDateRange: DateTimeRange(
+                            start: DateTime.now(),
+                            end: DateTime.now().add(const Duration(days: 7)),
+                          ),
+                        );
+                        if (selectedRange != null) {
+                          bool done = await showDialog(
+                            context: context,
+                            builder: (BuildContext ontext) {
+                              return CalendarAddDialogue(
+                                dateForMap: "",
+                                dateRange:
+                                    "${selectedRange.start.toIso8601String().split(' ')[0]}T${selectedRange.end.toIso8601String().split(' ')[0]}",
+                                type: "series",
+                              );
+                            },
+                          );
+                          if (done) {
+                            Navigator.pop(context);
+                            setState(() {});
+                          }
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[900],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.cancel_outlined, color: Colors.red),
+                            SizedBox(width: 10),
+                            Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    }
 
     Future<void> _openDatePickerDialog() async {
       final DateTime? pickedDate = await showDatePicker(
@@ -182,6 +332,8 @@ class _CalendarState extends State<Calendar> {
           builder: (BuildContext ontext) {
             return CalendarAddDialogue(
               dateForMap: dateForMap,
+              dateRange: "",
+              type: "movie",
             );
           },
         );
@@ -210,8 +362,8 @@ class _CalendarState extends State<Calendar> {
         String name = element['title']
             .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
             .replaceAll(" ", "-");
-        final response =
-            await http.get(Uri.parse('${MOVIE_LINK}${id}-${name}${API_KEY}'));
+        final response = await http.get(Uri.parse(
+            '${element.containsKey("type") ? element["type"] == "movie" ? MOVIE_LINK : TV_SHOW_LINK : MOVIE_LINK}${id}-${name}${API_KEY}'));
         if (response.statusCode == 200) {
           dynamic json = jsonDecode(response.body);
           movies.add(json);
@@ -230,7 +382,7 @@ class _CalendarState extends State<Calendar> {
                     child: Column(
                       children: [
                         Text(
-                          "Movies seen on ${_selectedDay}",
+                          "Seen on ${_selectedDay}",
                           style: const TextStyle(
                               fontSize: 20, fontWeight: FontWeight.bold),
                         ),
@@ -250,18 +402,33 @@ class _CalendarState extends State<Calendar> {
                                         children: [
                                           GestureDetector(
                                             onTap: () {
-                                              Movie tempMovie = Movie(
-                                                  id: event["id"].toString(),
-                                                  title: event['title'],
-                                                  coverPhoto:
-                                                      event["poster_path"] ??
+                                              var tempMedia = event.containsKey(
+                                                      "title")
+                                                  ? Movie(
+                                                      id: event["id"]
+                                                          .toString(),
+                                                      title: event['title'],
+                                                      coverPhoto: event[
+                                                              "poster_path"] ??
+                                                          "")
+                                                  : TVShow(
+                                                      id: event["id"]
+                                                          .toString(),
+                                                      title: event['name'],
+                                                      coverPhoto: event[
+                                                              "poster_path"] ??
                                                           "");
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
                                                   builder: (context) =>
-                                                      MovieResult(
-                                                          movie: tempMovie),
+                                                      event.containsKey("title")
+                                                          ? MovieResult(
+                                                              movie: tempMedia
+                                                                  as Movie)
+                                                          : TVShowResult(
+                                                              tvshow: tempMedia
+                                                                  as TVShow),
                                                 ),
                                               );
                                             },
@@ -294,9 +461,17 @@ class _CalendarState extends State<Calendar> {
                                                 backgroundColor:
                                                     Colors.transparent),
                                             onPressed: () {
+                                              String type =
+                                                  event.containsKey("title")
+                                                      ? "movie"
+                                                      : "series";
                                               deleteMovieSubmit(
                                                   event['id'].toString(),
-                                                  event['title'].toString());
+                                                  type == "movie"
+                                                      ? event['title']
+                                                          .toString()
+                                                      : event['name']
+                                                          .toString());
                                             },
                                             icon: const Icon(Icons.delete),
                                             color: Colors.red,
@@ -401,14 +576,45 @@ class _CalendarState extends State<Calendar> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openDatePickerDialog,
-        backgroundColor: Colors.grey[900],
-        child: const Icon(
-          Icons.add,
-          color: Colors.green,
-          size: 30,
-        ),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Visibility(
+            visible: areFABsVisible,
+            child: FloatingActionButton(
+              onPressed: _openDatePickerDialog,
+              backgroundColor: Colors.grey[900],
+              child: const Icon(
+                Icons.movie,
+                size: 30,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Visibility(
+            visible: areFABsVisible,
+            child: FloatingActionButton(
+              onPressed: showDateSelectionDialog,
+              backgroundColor: Colors.grey[900],
+              child: const Icon(
+                Icons.tv,
+                size: 30,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          FloatingActionButton(
+            onPressed: toggleFABs,
+            backgroundColor: Colors.grey[900],
+            child: Icon(
+              areFABsVisible ? Icons.close : Icons.add,
+              size: 30,
+              color: Colors.white,
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: CommonBottomAppBar(-1),
     );
