@@ -80,6 +80,19 @@ class MyApp extends StatelessWidget {
             textStyle: const TextStyle(color: Colors.white),
           ),
         ),
+        checkboxTheme: CheckboxThemeData(
+          fillColor: MaterialStateProperty.resolveWith<Color>((states) {
+            if (states.contains(MaterialState.selected)) {
+              return const Color.fromARGB(
+                  250, 224, 190, 78); // Color when checkbox is checked
+            }
+            return const Color.fromARGB(
+                0, 158, 158, 158); // Color when checkbox is unchecked
+          }),
+          checkColor: MaterialStateProperty.all<Color>(
+              Colors.white), // Color of the check icon
+          // You can add more customization here
+        ),
       ),
       home: const MyHomePage(),
     );

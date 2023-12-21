@@ -24,12 +24,13 @@ class Movie extends MediaItem {
     return {};
   }
 
-  Future<Map> getExtendedMovieData() async {
+  @override
+  Future<Map> getExtendedData() async {
     final String movieId = id.toString();
     final String name =
-        'Movies'.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "-");
+        title.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "-");
 
-    Map json = await ApiUtils.fetchMovieDetails(movieId, name);
+    Map json = await ApiUtils.fetchMovieDetails(movieId, name, "movie");
 
     // Handle seen times and review
     json["times_seen"] = currentUser.rewatchedMovies.containsKey(movieId)
@@ -39,7 +40,7 @@ class Movie extends MediaItem {
 
     // Process seen dates
     json["seen_dates"] =
-        ApiUtils.processSeenDates(currentUser.calendar, movieId);
+        ApiUtils.processSeenDates(currentUser.calendar, movieId, "movie");
 
     // Default values for missing data
     json["backdrop_path"] = json["backdrop_path"] ?? "";
@@ -48,7 +49,7 @@ class Movie extends MediaItem {
 
     // Fetch and add additional movie data
     Map additionalData =
-        await ApiUtils.fetchAdditionalMovieData(json, movieId, name);
+        await ApiUtils.fetchAdditionalMovieData(json, movieId, name, "movie");
     json.addAll(additionalData);
 
     return json;
