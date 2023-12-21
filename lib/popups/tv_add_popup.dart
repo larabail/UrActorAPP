@@ -91,7 +91,7 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
                   labelText: 'Name of The TV Show You\'d Like to Add',
                   labelStyle: TextStyle(color: Colors.white),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue),
+                    borderSide: BorderSide(color: Color.fromARGB(250, 224, 190, 78)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Colors.grey),
