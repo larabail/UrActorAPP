@@ -199,7 +199,7 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
                                           ),
                                           border: isSelected
                                               ? Border.all(
-                                                  color: Colors.blue, width: 3)
+                                                  color: const Color.fromARGB(250, 224, 190, 78), width: 3)
                                               : null,
                                         ),
                                       ),

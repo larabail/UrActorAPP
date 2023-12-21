@@ -121,25 +121,33 @@ class _SearchResultState extends State<Search> {
       appBar: const CustomAppBar(),
       body: Column(
         children: [
-          TextField(
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.search),
-              hintText: 'Enter name of person/movie/show...',
-              hintStyle: TextStyle(color: Colors.grey),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.grey),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(30, 0, 30, 0),
+            child: TextField(
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.search),
+                hintText: 'Enter name of person/movie/show...',
+                hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(
+                      color: Color.fromARGB(250, 224, 190,
+                          78)), // Color when the TextField is focused
+                ),
               ),
+              onChanged: (value) {
+                setState(() {
+                  _searchTermActor = value;
+                });
+              },
+              onSubmitted: (value) {
+                setState(() {
+                  _searchTermActor = value;
+                });
+              },
             ),
-            onChanged: (value) {
-              setState(() {
-                _searchTermActor = value;
-              });
-            },
-            onSubmitted: (value) {
-              setState(() {
-                _searchTermActor = value;
-              });
-            },
           ),
           Expanded(
             child: FutureBuilder<List>(
