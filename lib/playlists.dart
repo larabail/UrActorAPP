@@ -140,7 +140,7 @@ class _PlaylistsState extends State<Playlists> {
             RefreshIndicator(
               onRefresh: _refreshPlaylists,
               child: SizedBox(
-                height: MediaQuery.of(context).size.height * 0.75,
+                height: MediaQuery.of(context).size.height * 0.74,
                 child: Center(
                   child: ListView.builder(
                     itemCount: currentUser.playlists.length,

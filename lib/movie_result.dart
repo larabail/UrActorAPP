@@ -359,7 +359,7 @@ class _MovieResultState extends State<MovieResult> {
     return Scaffold(
       appBar: const CustomAppBar(),
       body: FutureBuilder<Map>(
-        future: widget.movie.getExtendedMovieData(),
+        future: widget.movie.getExtendedData(),
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
           if (snapshot.hasData) {
             return SingleChildScrollView(

@@ -493,9 +493,9 @@ class ApiUtils {
   }
 
   static Future<List<dynamic>> fetchProviders(
-      String movieId, String name, String country) async {
-    final response = await http
-        .get(Uri.parse('$MOVIE_LINK$movieId-$name$WATCH_PROVIDERS_LINK'));
+      String movieId, String name, String country, String type) async {
+    final response = await http.get(Uri.parse(
+        '${type == "movie" ? MOVIE_LINK : TV_SHOW_LINK}$movieId-$name$WATCH_PROVIDERS_LINK'));
     if (response.statusCode != 200) {
       throw Exception('Failed to load provider data');
     }
@@ -512,11 +512,11 @@ class ApiUtils {
   }
 
   static Future<Map<String, dynamic>> fetchCreditsAndTrailer(
-      String movieId, String name) async {
-    final creditsResponse =
-        await http.get(Uri.parse('$MOVIE_LINK$movieId-$name$CREDITS_LINK'));
-    final trailerResponse =
-        await http.get(Uri.parse('$MOVIE_LINK$movieId-$name$VIDEOS_LINK'));
+      String movieId, String name, String type) async {
+    final creditsResponse = await http.get(Uri.parse(
+        '${type == "movie" ? MOVIE_LINK : TV_SHOW_LINK}$movieId-$name$CREDITS_LINK'));
+    final trailerResponse = await http.get(Uri.parse(
+        '${type == "movie" ? MOVIE_LINK : TV_SHOW_LINK}$movieId-$name$VIDEOS_LINK'));
 
     if (creditsResponse.statusCode != 200 ||
         trailerResponse.statusCode != 200) {
@@ -542,9 +542,9 @@ class ApiUtils {
   }
 
   static Future<Map<String, dynamic>> fetchMovieDetails(
-      String movieId, String name) async {
-    final movieResponse =
-        await http.get(Uri.parse('$MOVIE_LINK$movieId-$name$API_KEY'));
+      String movieId, String name, String type) async {
+    final movieResponse = await http.get(Uri.parse(
+        '${type == "movie" ? MOVIE_LINK : TV_SHOW_LINK}$movieId-$name$API_KEY'));
     if (movieResponse.statusCode != 200) {
       throw Exception('Failed to load movie details');
     }
@@ -552,10 +552,17 @@ class ApiUtils {
   }
 
   static Future<Map<String, dynamic>> fetchAdditionalMovieData(
-      Map json, String movieId, String name) async {
+      Map json, String movieId, String name, String type) async {
     Map<String, dynamic> additionalData = {};
 
     var imdbId = json['imdb_id'];
+    if (type != "movie") {
+      final response2 = await http
+          .get(Uri.parse('$TV_SHOW_LINK$movieId-$name$EXTERNAL_IDS_LINK'));
+      if (response2.statusCode == 200) {
+        imdbId = jsonDecode(response2.body)['imdb_id'];
+      }
+    }
     if (imdbId != null) {
       var omdbData = await fetchOmdbData(imdbId);
       additionalData['imdb_rating'] =
@@ -567,16 +574,24 @@ class ApiUtils {
     }
 
     additionalData['providers'] =
-        await fetchProviders(movieId, name, currentUser.country);
-    additionalData.addAll(await fetchCreditsAndTrailer(movieId, name));
+        await fetchProviders(movieId, name, currentUser.country, type);
+    additionalData.addAll(await fetchCreditsAndTrailer(movieId, name, type));
 
     return additionalData;
   }
 
-  static List<dynamic> processSeenDates(Map calendar, String movieId) {
+  static List<dynamic> processSeenDates(
+      Map calendar, String movieId, String type) {
     List<dynamic> seenDates = [];
     calendar.forEach((key, movies) {
-      movies.where((movie) => movie['id'] == movieId).forEach((movie) {
+      movies
+          .where((movie) => ((movie['id'] == movieId) &&
+              (movie.containsKey("type")
+                  ? movie["type"] == type
+                  : type == "movie"
+                      ? true
+                      : false)))
+          .forEach((movie) {
         seenDates.add([key, movie["friends"]]);
       });
     });

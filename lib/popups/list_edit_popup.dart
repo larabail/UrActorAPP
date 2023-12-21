@@ -182,7 +182,7 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
                                           ),
                                           border: isSelected
                                               ? Border.all(
-                                                  color: Colors.blue, width: 3)
+                                                  color: const Color.fromARGB(250, 224, 190, 78), width: 3)
                                               : null,
                                         ),
                                       ),
