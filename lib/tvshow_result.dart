@@ -8,6 +8,7 @@ import 'common/constants.dart';
 import 'common/utils.dart';
 import 'friends.dart';
 import 'friends_profile.dart';
+import 'package:intl/intl.dart' as intl;
 import 'main.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -89,6 +90,8 @@ class _TVShowResultState extends State<TVShowResult> {
                         got = true;
                       }
                     });
+                    json["seen_dates"] = ApiUtils.processSeenDates(
+                        currentUser.calendar, widget.tvshow.id, "series");
                     return json;
                   }
                   throw Exception('Failed to load movie details');
@@ -113,6 +116,8 @@ class _TVShowResultState extends State<TVShowResult> {
                         got = true;
                       }
                     });
+                    json["seen_dates"] = ApiUtils.processSeenDates(
+                        currentUser.calendar, widget.tvshow.id, "series");
                     return json;
                   }
                   throw Exception('Failed to load movie details');
@@ -138,6 +143,8 @@ class _TVShowResultState extends State<TVShowResult> {
                       got = true;
                     }
                   });
+                  json["seen_dates"] = ApiUtils.processSeenDates(
+                      currentUser.calendar, widget.tvshow.id, "series");
                   return json;
                 }
                 throw Exception('Failed to load movie details');
@@ -804,7 +811,7 @@ class _TVShowResultState extends State<TVShowResult> {
                           Icon(Icons.history),
                           SizedBox(width: 8),
                           Text(
-                            "Watching History",
+                            "Viewing History",
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 15,
@@ -815,6 +822,130 @@ class _TVShowResultState extends State<TVShowResult> {
                         ],
                       ),
                       children: [
+                        if ((snapshot.data!['seen_dates'] as List).isNotEmpty)
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: (snapshot.data!['seen_dates'] as List)
+                                  .map<Widget>((date) {
+                                List friendsWhoWatched = date[1] ?? [];
+                                return Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 2.0),
+                                  child: Row(
+                                    children: [
+                                      const SizedBox(
+                                          width:
+                                              16), // Added margin to the left
+                                      const Icon(Icons.calendar_today,
+                                          size: 16, color: Colors.grey),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        intl.DateFormat('dd MMMM, yyyy')
+                                            .format(DateTime.parse(date[0])),
+                                        style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey[700]),
+                                      ),
+                                      const SizedBox(
+                                        width: 5,
+                                      ),
+                                      Expanded(
+                                        child: FutureBuilder<List<String>>(
+                                          // Assuming getProfilePhotos returns a Future of List<String> where each String is a URL
+                                          future:
+                                              FirebaseUtils.getProfilePhotos(
+                                                  friendsWhoWatched),
+                                          builder: (context, snapshot) {
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.waiting) {
+                                              return const SizedBox(
+                                                height:
+                                                    32.0, // Adjust the size as needed
+                                                child: Center(
+                                                    child:
+                                                        CircularProgressIndicator()),
+                                              );
+                                            } else if (snapshot.hasError) {
+                                              return const SizedBox(
+                                                height:
+                                                    32.0, // Adjust the size as needed
+                                                child: Center(
+                                                    child: Text(
+                                                        'Error loading images')),
+                                              );
+                                            } else if (snapshot.hasData) {
+                                              var images = snapshot.data!;
+                                              return SizedBox(
+                                                height:
+                                                    32.0, // Adjust the size as needed
+                                                child: Stack(
+                                                  children: List.generate(
+                                                      images.length, (index) {
+                                                    // Calculate the left offset for each photo
+                                                    double offset = index *
+                                                        10.0; // Adjust the multiplier as needed for the desired overlap
+                                                    return Positioned(
+                                                      left: offset,
+                                                      child: ClipOval(
+                                                        child: images[index] !=
+                                                                ""
+                                                            ? Image.network(
+                                                                images[index],
+                                                                height: 25,
+                                                                width: 25,
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                              )
+                                                            : Image.asset(
+                                                                'assets/main_profile.png',
+                                                                height: 25,
+                                                                width: 25,
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                              ),
+                                                      ),
+                                                    );
+                                                  }),
+                                                ),
+                                              );
+                                            } else {
+                                              return const SizedBox.shrink();
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        if ((snapshot.data!['seen_dates'] as List).isNotEmpty)
+                          const SizedBox(height: 15),
+                        if ((snapshot.data!['seen_dates'] as List).isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(12.0),
+                            child: Text(
+                              "No viewing history available.",
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontStyle: FontStyle.italic,
+                                  color: Colors.red),
+                            ),
+                          ),
+                        if (currentUser.seenWith.entries
+                            .where((entry) =>
+                                entry.value["Movies"]
+                                    ?.contains(widget.tvshow.id) ??
+                                false)
+                            .isNotEmpty)
+                          const Text("People watched with",
+                              style: TextStyle(
+                                fontSize: 16,
+                              )),
                         FutureBuilder(
                           future: Future.wait(
                             currentUser.seenWith.entries

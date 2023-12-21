@@ -21,6 +21,35 @@ class TVShow extends MediaItem {
     return {};
   }
 
+  @override
+  Future<Map> getExtendedData() async {
+    final String showId = id.toString();
+    final String name =
+        title.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "-");
+
+    Map json = await ApiUtils.fetchMovieDetails(showId, name, "show");
+
+    // Handle seen times and review
+    // json["times_seen"] = currentUser.rewatchedMovies.containsKey(movieId)
+    //     ? currentUser.rewatchedMovies[movieId]
+    //     : (isSeen() ? 1 : 0);
+    // json["review"] = reviewed ? (currentUser.reviews[movieId] as Map?) : null;
+
+    // Process seen dates
+    json["seen_dates"] =
+        ApiUtils.processSeenDates(currentUser.calendar, showId, "series");
+
+    json["backdrop_path"] = json["backdrop_path"] ?? "";
+    json["imdb_rating"] = "0.0";
+    json["year"] = "None";
+
+    Map additionalData =
+        await ApiUtils.fetchAdditionalMovieData(json, showId, name, "show");
+    json.addAll(additionalData);
+
+    return json;
+  }
+
   bool isSeen() {
     return Utils.contains(currentUser.seenTVShows, ['TVShows', id], "TVShows");
   }
