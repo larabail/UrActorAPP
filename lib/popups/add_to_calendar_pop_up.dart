@@ -130,6 +130,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
           .toList(),
       'type': widget.type,
     };
+    print(myObject['friends']);
     if (widget.dateRange != "") {
       DateTime startDate = DateTime.parse(widget.dateRange.split("T")[0]);
       DateTime endDate = DateTime.parse(widget.dateRange.split("T")[2]);
