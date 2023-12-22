@@ -179,7 +179,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
             FirebaseFirestore.instance.collection(friend).doc("Calendar");
         if (widget.dateRange != "") {
           DateTime startDate = DateTime.parse(widget.dateRange.split("T")[0]);
-          DateTime endDate = DateTime.parse(widget.dateRange.split("T")[1]);
+          DateTime endDate = DateTime.parse(widget.dateRange.split("T")[2]);
 
           for (DateTime date = startDate;
               date.isBefore(endDate.add(const Duration(days: 1)));
