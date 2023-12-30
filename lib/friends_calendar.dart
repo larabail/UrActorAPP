@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
+import 'common/constants.dart';
 import 'common/utils.dart';
 import 'friends.dart';
 import 'objects/Movie.dart';
@@ -60,6 +61,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
     int movieCount = 0; // Total number of movies in the month
 
     for (String key in friendCalendar.keys) {
+      key = key.split("T")[0];
       DateTime date = DateTime.parse(key);
       if (date.month == focusedDay.month && date.year == focusedDay.year) {
         for (var movie in friendCalendar[key]) {
@@ -120,15 +122,13 @@ class _FriendCalendarState extends State<FriendCalendar> {
       } else {
         moviesOnDay = [];
       }
-      String link = 'https://api.themoviedb.org/3/movie/';
-      String apiKeyActor = '?api_key=700cd4fab994df56eb41b34d38c4762a';
       int i = 0;
       movies = [];
       moviesOnDay.forEach((element) async {
         String id = element['id'];
         String name = element['title'];
-        final response =
-            await http.get(Uri.parse('$link$id-$name$apiKeyActor'));
+        final response = await http.get(Uri.parse(
+            '${element.containsKey("type") ? element["type"] == "movie" ? MOVIE_LINK : TV_SHOW_LINK : MOVIE_LINK}$id-$name$API_KEY'));
         if (response.statusCode == 200) {
           dynamic json = jsonDecode(response.body);
           if (!Utils.containsMap(movies, json)) {
