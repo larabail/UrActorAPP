@@ -27,9 +27,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Need access to the camera</string>
+	<string>Need access to the camera to update Profile photo</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Need access to the photo library</string>
+	<string>Need access to the photo library to update Profile photo</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
