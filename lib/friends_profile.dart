@@ -44,7 +44,6 @@ class _FriendProfileState extends State<FriendProfile> {
     });
 
     moviesTemp.sort((a, b) => b[0].compareTo(a[0]));
-
     while (i < 9 && i < moviesTemp.length) {
       String completeLinkMovie =
           MOVIE_LINK + moviesTemp[i][1].toString() + API_KEY;
@@ -54,7 +53,7 @@ class _FriendProfileState extends State<FriendProfile> {
         final json = jsonDecode(response.body);
         movies.add(json);
       } else {
-        throw Exception('Failed to load actor details');
+        print(completeLinkMovie);
       }
       i++;
     }
