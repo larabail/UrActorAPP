@@ -47,6 +47,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'UrActor',
       theme: ThemeData.dark().copyWith(
         primaryColor: const Color.fromARGB(250, 224, 190, 78),
