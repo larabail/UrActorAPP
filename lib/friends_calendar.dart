@@ -7,6 +7,7 @@ import 'common/constants.dart';
 import 'common/utils.dart';
 import 'friends.dart';
 import 'objects/Movie.dart';
+import 'objects/TVShow.dart';
 import 'playlists.dart';
 import 'main.dart';
 import 'profile.dart';
@@ -16,6 +17,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+import 'tvshow_result.dart';
 
 const String imgLink = 'https://image.tmdb.org/t/p/w500/';
 DateTime selectedDate = DateTime.now();
@@ -164,7 +167,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
                     child: Column(
                       children: [
                         Text(
-                          "Movies seen on $_selectedDay",
+                          "Seen on $_selectedDay",
                           style: const TextStyle(
                               fontSize: 20, fontWeight: FontWeight.bold),
                         ),
@@ -178,18 +181,33 @@ class _FriendCalendarState extends State<FriendCalendar> {
                                         children: [
                                           GestureDetector(
                                             onTap: () {
-                                              Movie tempMovie = Movie(
-                                                  id: event["id"].toString(),
-                                                  title: event['title'],
-                                                  coverPhoto:
-                                                      event["poster_path"] ??
+                                              var tempMedia = event.containsKey(
+                                                      "title")
+                                                  ? Movie(
+                                                      id: event["id"]
+                                                          .toString(),
+                                                      title: event['title'],
+                                                      coverPhoto: event[
+                                                              "poster_path"] ??
+                                                          "")
+                                                  : TVShow(
+                                                      id: event["id"]
+                                                          .toString(),
+                                                      title: event['name'],
+                                                      coverPhoto: event[
+                                                              "poster_path"] ??
                                                           "");
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
                                                   builder: (context) =>
-                                                      MovieResult(
-                                                          movie: tempMovie),
+                                                      event.containsKey("title")
+                                                          ? MovieResult(
+                                                              movie: tempMedia
+                                                                  as Movie)
+                                                          : TVShowResult(
+                                                              tvshow: tempMedia
+                                                                  as TVShow),
                                                 ),
                                               );
                                             },
@@ -249,7 +267,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
             children: [
               SizedBox(
                 height: MediaQuery.of(context).size.height *
-                    0.5, // Adjust as needed
+                    0.57, // Adjust as needed
 
                 child: TableCalendar(
                     firstDay: DateTime.utc(1990, 10, 16),
