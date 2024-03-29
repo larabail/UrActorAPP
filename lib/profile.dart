@@ -597,51 +597,58 @@ class _ProfileState extends State<Profile> {
                               builder: (context, snapshot) {
                                 if (snapshot.hasData) {
                                   final movies = snapshot.data!;
-                                  return ListView.builder(
-                                    scrollDirection: Axis.horizontal,
-                                    itemCount: movies.length,
-                                    itemBuilder: (context, index) {
-                                      final movie = movies[index];
-                                      return GestureDetector(
-                                        onTap: () {
-                                          Movie tempMovie = Movie(
-                                              id: movie['id'].toString(),
-                                              title: movie['title'],
-                                              coverPhoto:
-                                                  movie["poster_path"] ?? "");
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    MovieResult(
-                                                        movie: tempMovie)),
-                                          );
-                                        },
-                                        child: Container(
-                                          margin: const EdgeInsets.fromLTRB(
-                                              5.0, 10.0, 10.0, 0),
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.31,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.18,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(27),
-                                            image: DecorationImage(
-                                              image: NetworkImage(
-                                                IMG_LINK + movie['poster_path'],
+                                  if (movies.isNotEmpty) {
+                                    return ListView.builder(
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount: movies.length,
+                                      itemBuilder: (context, index) {
+                                        final movie = movies[index];
+                                        return GestureDetector(
+                                          onTap: () {
+                                            Movie tempMovie = Movie(
+                                                id: movie['id'].toString(),
+                                                title: movie['title'],
+                                                coverPhoto:
+                                                    movie["poster_path"] ?? "");
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      MovieResult(
+                                                          movie: tempMovie)),
+                                            );
+                                          },
+                                          child: Container(
+                                            margin: const EdgeInsets.fromLTRB(
+                                                5.0, 10.0, 10.0, 0),
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                0.31,
+                                            height: MediaQuery.of(context)
+                                                    .size
+                                                    .height *
+                                                0.18,
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(27),
+                                              image: DecorationImage(
+                                                image: NetworkImage(
+                                                  IMG_LINK +
+                                                      movie['poster_path'],
+                                                ),
+                                                fit: BoxFit.fitWidth,
                                               ),
-                                              fit: BoxFit.fitWidth,
                                             ),
                                           ),
-                                        ),
-                                      );
-                                    },
-                                  );
+                                        );
+                                      },
+                                    );
+                                  } else {
+                                    return const Center(
+                                        child: Text(
+                                            "You haven't seen any movies more than once yet!"));
+                                  }
                                 } else if (snapshot.hasError) {
                                   return const Center(
                                     child: Text("Failed to load movie details"),
@@ -686,54 +693,60 @@ class _ProfileState extends State<Profile> {
                               builder: (context, snapshot) {
                                 if (snapshot.hasData) {
                                   final persons = snapshot.data!;
-                                  return ListView.builder(
-                                    scrollDirection: Axis.horizontal,
-                                    itemCount: persons.length,
-                                    itemBuilder: (context, index) {
-                                      final person = persons[index];
-                                      return GestureDetector(
-                                        onTap: () {
-                                          Person personResult = Person(
-                                              id: person["id"].toString(),
-                                              name: person["name"].toString(),
-                                              data: person);
+                                  if (persons.isNotEmpty) {
+                                    return ListView.builder(
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount: persons.length,
+                                      itemBuilder: (context, index) {
+                                        final person = persons[index];
+                                        return GestureDetector(
+                                          onTap: () {
+                                            Person personResult = Person(
+                                                id: person["id"].toString(),
+                                                name: person["name"].toString(),
+                                                data: person);
 
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    PersonResult(
-                                                      personResult:
-                                                          personResult,
-                                                    )),
-                                          );
-                                        },
-                                        child: Container(
-                                          margin: const EdgeInsets.fromLTRB(
-                                              5.0, 10.0, 10.0, 0),
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.31,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.15,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(27),
-                                            image: DecorationImage(
-                                              image: NetworkImage(
-                                                IMG_LINK +
-                                                    person['profile_path'],
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      PersonResult(
+                                                        personResult:
+                                                            personResult,
+                                                      )),
+                                            );
+                                          },
+                                          child: Container(
+                                            margin: const EdgeInsets.fromLTRB(
+                                                5.0, 10.0, 10.0, 0),
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                0.31,
+                                            height: MediaQuery.of(context)
+                                                    .size
+                                                    .height *
+                                                0.15,
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(27),
+                                              image: DecorationImage(
+                                                image: NetworkImage(
+                                                  IMG_LINK +
+                                                      person['profile_path'],
+                                                ),
+                                                fit: BoxFit.fitWidth,
                                               ),
-                                              fit: BoxFit.fitWidth,
                                             ),
                                           ),
-                                        ),
-                                      );
-                                    },
-                                  );
+                                        );
+                                      },
+                                    );
+                                  } else {
+                                    return const Center(
+                                        child: Text(
+                                            "You haven't looked up any actors yet!"));
+                                  }
                                 } else if (snapshot.hasError) {
                                   return const Center(
                                     child: Text("Failed to load movie details"),
@@ -778,54 +791,60 @@ class _ProfileState extends State<Profile> {
                               builder: (context, snapshot) {
                                 if (snapshot.hasData) {
                                   final persons = snapshot.data!;
-                                  return ListView.builder(
-                                    scrollDirection: Axis.horizontal,
-                                    itemCount: persons.length,
-                                    itemBuilder: (context, index) {
-                                      final person = persons[index];
-                                      return GestureDetector(
-                                        onTap: () {
-                                          Person personResult = Person(
-                                              id: person["id"].toString(),
-                                              name: person["name"].toString(),
-                                              data: person);
+                                  if (persons.isNotEmpty) {
+                                    return ListView.builder(
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount: persons.length,
+                                      itemBuilder: (context, index) {
+                                        final person = persons[index];
+                                        return GestureDetector(
+                                          onTap: () {
+                                            Person personResult = Person(
+                                                id: person["id"].toString(),
+                                                name: person["name"].toString(),
+                                                data: person);
 
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    PersonResult(
-                                                      personResult:
-                                                          personResult,
-                                                    )),
-                                          );
-                                        },
-                                        child: Container(
-                                          margin: const EdgeInsets.fromLTRB(
-                                              5.0, 10.0, 10.0, 0),
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.31,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.18,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(27),
-                                            image: DecorationImage(
-                                              image: NetworkImage(
-                                                IMG_LINK +
-                                                    person['profile_path'],
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      PersonResult(
+                                                        personResult:
+                                                            personResult,
+                                                      )),
+                                            );
+                                          },
+                                          child: Container(
+                                            margin: const EdgeInsets.fromLTRB(
+                                                5.0, 10.0, 10.0, 0),
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                0.31,
+                                            height: MediaQuery.of(context)
+                                                    .size
+                                                    .height *
+                                                0.18,
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(27),
+                                              image: DecorationImage(
+                                                image: NetworkImage(
+                                                  IMG_LINK +
+                                                      person['profile_path'],
+                                                ),
+                                                fit: BoxFit.fitWidth,
                                               ),
-                                              fit: BoxFit.fitWidth,
                                             ),
                                           ),
-                                        ),
-                                      );
-                                    },
-                                  );
+                                        );
+                                      },
+                                    );
+                                  } else {
+                                    return const Center(
+                                        child: Text(
+                                            "You haven't looked up any directors yet!"));
+                                  }
                                 } else if (snapshot.hasError) {
                                   return const Center(
                                     child: Text("Failed to load movie details"),
