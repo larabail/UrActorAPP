@@ -519,7 +519,7 @@ class _CalendarState extends State<Calendar> {
           children: [
             SizedBox(
               height:
-                  MediaQuery.of(context).size.height * 0.5, // Adjust as needed
+                  MediaQuery.of(context).size.height * 0.57, // Adjust as needed
               child: TableCalendar(
                   firstDay: DateTime.utc(1990, 10, 16),
                   lastDay: DateTime.utc(2030, 3, 14),
