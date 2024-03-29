@@ -59,15 +59,30 @@ class _FriendCalendarState extends State<FriendCalendar> {
     num totalRuntime = 0; // Total runtime of all movies in the month
     double totalRating = 0; // Total rating of all movies in the month
     int movieCount = 0; // Total number of movies in the month
+    List counted = [];
 
     for (String key in friendCalendar.keys) {
       key = key.split("T")[0];
       DateTime date = DateTime.parse(key);
       if (date.month == focusedDay.month && date.year == focusedDay.year) {
         for (var movie in friendCalendar[key]) {
-          totalRuntime += movie['runtime'] ?? 0;
-          totalRating += movie['rating'] ?? 0;
-          movieCount++;
+          if (movie.keys.toList().contains("type")) {
+            if (!counted.contains(movie["title"]) &&
+                movie["type"] == "series") {
+              counted.add(movie["title"]);
+              totalRuntime += movie['runtime'] ?? 0;
+              totalRating += (movie["rating"] != "N/A") ? movie['rating'] : 0;
+              movieCount++;
+            } else if (movie["type"] == "movie") {
+              totalRuntime += movie['runtime'] ?? 0;
+              totalRating += (movie["rating"] != "N/A") ? movie['rating'] : 0;
+              movieCount++;
+            }
+          } else {
+            totalRuntime += movie['runtime'] ?? 0;
+            totalRating += (movie["rating"] != "N/A") ? movie['rating'] : 0;
+            movieCount++;
+          }
         }
       }
     }
@@ -195,10 +210,12 @@ class _FriendCalendarState extends State<FriendCalendar> {
                                                     0.2,
                                                 decoration: BoxDecoration(
                                                   image: DecorationImage(
-                                                    image: NetworkImage(
-                                                        imgLink +
-                                                            event[
-                                                                'poster_path']),
+                                                    image: NetworkImage(event[
+                                                                'poster_path'] !=
+                                                            null
+                                                        ? imgLink +
+                                                            event['poster_path']
+                                                        : "https://cringemdb.com/img/movie-poster-placeholder.png"),
                                                     fit: BoxFit.cover,
                                                   ),
                                                 ),
@@ -279,7 +296,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
                         Text('${_monthlyStats[0]}',
                             style: const TextStyle(
                                 fontSize: 20, fontWeight: FontWeight.bold)),
-                        const Text('# Movies', style: TextStyle(fontSize: 15)),
+                        const Text('# Seen', style: TextStyle(fontSize: 15)),
                       ],
                     ),
                     Column(

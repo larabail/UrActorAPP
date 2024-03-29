@@ -64,12 +64,11 @@ class MyApp extends StatelessWidget {
         indicatorColor: const Color.fromARGB(250, 224, 190, 78),
         tabBarTheme: const TabBarTheme(
           labelColor: Color.fromARGB(250, 224, 190, 78),
-          unselectedLabelColor:
-              Colors.grey, // Set your desired color for unselected tabs
+          unselectedLabelColor: Colors.grey,
           indicatorColor: Color.fromARGB(250, 224, 190, 78),
         ),
         progressIndicatorTheme: const ProgressIndicatorThemeData(
-          color: Color.fromARGB(250, 224, 190, 78), // Your desired color
+          color: Color.fromARGB(250, 224, 190, 78),
         ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           selectedItemColor: Color.fromARGB(250, 224, 190, 78),
@@ -84,15 +83,11 @@ class MyApp extends StatelessWidget {
         checkboxTheme: CheckboxThemeData(
           fillColor: MaterialStateProperty.resolveWith<Color>((states) {
             if (states.contains(MaterialState.selected)) {
-              return const Color.fromARGB(
-                  250, 224, 190, 78); // Color when checkbox is checked
+              return const Color.fromARGB(250, 224, 190, 78);
             }
-            return const Color.fromARGB(
-                0, 158, 158, 158); // Color when checkbox is unchecked
+            return const Color.fromARGB(0, 158, 158, 158);
           }),
-          checkColor: MaterialStateProperty.all<Color>(
-              Colors.white), // Color of the check icon
-          // You can add more customization here
+          checkColor: MaterialStateProperty.all<Color>(Colors.white),
         ),
       ),
       home: const MyHomePage(),
@@ -502,64 +497,71 @@ class _MyHomePageState extends State<MyHomePage> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.18,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: currentUser.watchlist.length > 6
-                            ? 6
-                            : currentUser.watchlist.length,
-                        itemBuilder: (context, index) {
-                          return FutureBuilder<MediaItem>(
-                            future: getData(
-                                currentUser.watchlist.reversed.toList()[index]
-                                    [1],
-                                'Movies'),
-                            builder: (BuildContext context,
-                                AsyncSnapshot<MediaItem> snapshot) {
-                              if (snapshot.hasData) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    // movieResult = [
-                                    //   snapshot.data!.id,
-                                    //   snapshot.data!.title,
-                                    //   snapshot.data!.runtimeType,
-                                    // ];
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => MovieResult(
-                                              movie: snapshot.data! as Movie)),
-                                    );
-                                  },
-                                  child: Container(
-                                    margin: const EdgeInsets.fromLTRB(
-                                        5.0, 10.0, 10.0, 0),
-                                    width: MediaQuery.of(context).size.width *
-                                        0.28,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(27),
-                                      image: DecorationImage(
-                                        image: NetworkImage(
-                                            snapshot.data!.coverPhoto),
-                                        fit: BoxFit.fitWidth,
+                    if (currentUser.watchlist.length +
+                            currentUser.watchlistTVShows.length ==
+                        0)
+                      const Text("Haven't seen any movies yet"),
+                    if (currentUser.watchlist.length +
+                            currentUser.watchlistTVShows.length ==
+                        0)
+                      const SizedBox(height: 10),
+                    if (currentUser.watchlist.length +
+                            currentUser.watchlistTVShows.length !=
+                        0)
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.18,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: currentUser.watchlist.length > 6
+                              ? 6
+                              : currentUser.watchlist.length,
+                          itemBuilder: (context, index) {
+                            return FutureBuilder<MediaItem>(
+                              future: getData(
+                                  currentUser.watchlist.reversed.toList()[index]
+                                      [1],
+                                  'Movies'),
+                              builder: (BuildContext context,
+                                  AsyncSnapshot<MediaItem> snapshot) {
+                                if (snapshot.hasData) {
+                                  return GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) => MovieResult(
+                                                movie:
+                                                    snapshot.data! as Movie)),
+                                      );
+                                    },
+                                    child: Container(
+                                      margin: const EdgeInsets.fromLTRB(
+                                          5.0, 10.0, 10.0, 0),
+                                      width: MediaQuery.of(context).size.width *
+                                          0.28,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(27),
+                                        image: DecorationImage(
+                                          image: NetworkImage(
+                                              snapshot.data!.coverPhoto),
+                                          fit: BoxFit.fitWidth,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              } else if (snapshot.hasError) {
-                                return const Center(
-                                    child:
-                                        Text("Failed to load movie details"));
-                              } else {
-                                return const Center(
-                                    child: CircularProgressIndicator());
-                              }
-                            },
-                          );
-                        },
+                                  );
+                                } else if (snapshot.hasError) {
+                                  return const Center(
+                                      child:
+                                          Text("Failed to load movie details"));
+                                } else {
+                                  return const Center(
+                                      child: CircularProgressIndicator());
+                                }
+                              },
+                            );
+                          },
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -607,64 +609,71 @@ class _MyHomePageState extends State<MyHomePage> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.18,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: currentUser.favMovies.length > 6
-                            ? 6
-                            : currentUser.favMovies.length,
-                        itemBuilder: (context, index) {
-                          return FutureBuilder<MediaItem>(
-                            future: getData(
-                                currentUser.favMovies.reversed.toList()[index]
-                                    [1],
-                                'Movies'),
-                            builder: (BuildContext context,
-                                AsyncSnapshot<MediaItem> snapshot) {
-                              if (snapshot.hasData) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    // movieResult = [
-                                    //   snapshot.data!.id,
-                                    //   snapshot.data!.title,
-                                    //   snapshot.data!.runtimeType,
-                                    // ];
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => MovieResult(
-                                              movie: snapshot.data! as Movie)),
-                                    );
-                                  },
-                                  child: Container(
-                                    margin: const EdgeInsets.fromLTRB(
-                                        5.0, 10.0, 10.0, 0),
-                                    width: MediaQuery.of(context).size.width *
-                                        0.28,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(27),
-                                      image: DecorationImage(
-                                        image: NetworkImage(
-                                            snapshot.data!.coverPhoto),
-                                        fit: BoxFit.fitWidth,
+                    if (currentUser.favMovies.length +
+                            currentUser.favTVShows.length ==
+                        0)
+                      const Text("Haven't seen any movies yet"),
+                    if (currentUser.favMovies.length +
+                            currentUser.favTVShows.length ==
+                        0)
+                      const SizedBox(height: 10),
+                    if (currentUser.favMovies.length +
+                            currentUser.favTVShows.length !=
+                        0)
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.18,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: currentUser.favMovies.length > 6
+                              ? 6
+                              : currentUser.favMovies.length,
+                          itemBuilder: (context, index) {
+                            return FutureBuilder<MediaItem>(
+                              future: getData(
+                                  currentUser.favMovies.reversed.toList()[index]
+                                      [1],
+                                  'Movies'),
+                              builder: (BuildContext context,
+                                  AsyncSnapshot<MediaItem> snapshot) {
+                                if (snapshot.hasData) {
+                                  return GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) => MovieResult(
+                                                movie:
+                                                    snapshot.data! as Movie)),
+                                      );
+                                    },
+                                    child: Container(
+                                      margin: const EdgeInsets.fromLTRB(
+                                          5.0, 10.0, 10.0, 0),
+                                      width: MediaQuery.of(context).size.width *
+                                          0.28,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(27),
+                                        image: DecorationImage(
+                                          image: NetworkImage(
+                                              snapshot.data!.coverPhoto),
+                                          fit: BoxFit.fitWidth,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              } else if (snapshot.hasError) {
-                                return const Center(
-                                    child:
-                                        Text("Failed to load movie details"));
-                              } else {
-                                return const Center(
-                                    child: CircularProgressIndicator());
-                              }
-                            },
-                          );
-                        },
+                                  );
+                                } else if (snapshot.hasError) {
+                                  return const Center(
+                                      child:
+                                          Text("Failed to load movie details"));
+                                } else {
+                                  return const Center(
+                                      child: CircularProgressIndicator());
+                                }
+                              },
+                            );
+                          },
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -711,64 +720,72 @@ class _MyHomePageState extends State<MyHomePage> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.18,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: currentUser.seenMovies.length > 6
-                            ? 6
-                            : currentUser.seenMovies.length,
-                        itemBuilder: (context, index) {
-                          return FutureBuilder<MediaItem>(
-                            future: getData(
-                                currentUser.seenMovies.reversed.toList()[index]
-                                    [1],
-                                'Movies'),
-                            builder: (BuildContext context,
-                                AsyncSnapshot<MediaItem> snapshot) {
-                              if (snapshot.hasData) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    // movieResult = [
-                                    //   snapshot.data!.id,
-                                    //   snapshot.data!.title,
-                                    //   snapshot.data!.runtimeType,
-                                    // ];
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => MovieResult(
-                                              movie: snapshot.data! as Movie)),
-                                    );
-                                  },
-                                  child: Container(
-                                    margin: const EdgeInsets.fromLTRB(
-                                        5.0, 10.0, 10.0, 0),
-                                    width: MediaQuery.of(context).size.width *
-                                        0.28,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(27),
-                                      image: DecorationImage(
-                                        image: NetworkImage(
-                                            snapshot.data!.coverPhoto),
-                                        fit: BoxFit.fitWidth,
+                    const SizedBox(height: 10),
+                    if (currentUser.seenMovies.length +
+                            currentUser.seenTVShows.length ==
+                        0)
+                      const Text("Haven't seen any movies yet"),
+                    if (currentUser.seenMovies.length +
+                            currentUser.seenTVShows.length ==
+                        0)
+                      const SizedBox(height: 10),
+                    if (currentUser.seenMovies.length +
+                            currentUser.seenTVShows.length !=
+                        0)
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.18,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: currentUser.seenMovies.length > 6
+                              ? 6
+                              : currentUser.seenMovies.length,
+                          itemBuilder: (context, index) {
+                            return FutureBuilder<MediaItem>(
+                              future: getData(
+                                  currentUser.seenMovies.reversed
+                                      .toList()[index][1],
+                                  'Movies'),
+                              builder: (BuildContext context,
+                                  AsyncSnapshot<MediaItem> snapshot) {
+                                if (snapshot.hasData) {
+                                  return GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) => MovieResult(
+                                                movie:
+                                                    snapshot.data! as Movie)),
+                                      );
+                                    },
+                                    child: Container(
+                                      margin: const EdgeInsets.fromLTRB(
+                                          5.0, 10.0, 10.0, 0),
+                                      width: MediaQuery.of(context).size.width *
+                                          0.28,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(27),
+                                        image: DecorationImage(
+                                          image: NetworkImage(
+                                              snapshot.data!.coverPhoto),
+                                          fit: BoxFit.fitWidth,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              } else if (snapshot.hasError) {
-                                return const Center(
-                                    child:
-                                        Text("Failed to load movie details"));
-                              } else {
-                                return const Center(
-                                    child: CircularProgressIndicator());
-                              }
-                            },
-                          );
-                        },
+                                  );
+                                } else if (snapshot.hasError) {
+                                  return const Center(
+                                      child:
+                                          Text("Failed to load movie details"));
+                                } else {
+                                  return const Center(
+                                      child: CircularProgressIndicator());
+                                }
+                              },
+                            );
+                          },
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -816,85 +833,88 @@ class _MyHomePageState extends State<MyHomePage> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.18,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: currentUser.reviews.length > 6
-                            ? 6
-                            : currentUser.reviews.length,
-                        itemBuilder: (context, index) {
-                          final review = currentUser.reviews[currentUser
-                              .reviews.keys
-                              .toList()
-                              .reversed
-                              .toList()[index]];
-                          return FutureBuilder<MediaItem>(
-                            future: getData(
-                                currentUser.reviews.keys
-                                    .toList()
-                                    .reversed
-                                    .toList()[index],
-                                "Movies"),
-                            builder: (BuildContext context,
-                                AsyncSnapshot<MediaItem> snapshot) {
-                              if (snapshot.hasData) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    // movieResult = [
-                                    //   snapshot.data!.id,
-                                    //   snapshot.data!.title,
-                                    //   snapshot.data!.runtimeType,
-                                    // ];
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => MovieResult(
-                                              movie: snapshot.data! as Movie)),
-                                    );
-                                  },
-                                  child: Column(children: [
-                                    Container(
-                                      margin: const EdgeInsets.fromLTRB(
-                                          5.0, 10.0, 10.0, 0),
-                                      width: MediaQuery.of(context).size.width *
-                                          0.28,
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              0.125,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(27),
-                                        image: DecorationImage(
-                                          image: NetworkImage(
-                                              snapshot.data!.coverPhoto),
-                                          fit: BoxFit.fitWidth,
+                    if (currentUser.reviews.length == 0)
+                      const Text("Haven't reviewed any movies yet"),
+                    if (currentUser.reviews.length == 0)
+                      const SizedBox(height: 10),
+                    if (currentUser.reviews.length != 0)
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.18,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: currentUser.reviews.length > 6
+                              ? 6
+                              : currentUser.reviews.length,
+                          itemBuilder: (context, index) {
+                            final review = currentUser.reviews[currentUser
+                                .reviews.keys
+                                .toList()
+                                .reversed
+                                .toList()[index]];
+                            return FutureBuilder<MediaItem>(
+                              future: getData(
+                                  currentUser.reviews.keys
+                                      .toList()
+                                      .reversed
+                                      .toList()[index],
+                                  "Movies"),
+                              builder: (BuildContext context,
+                                  AsyncSnapshot<MediaItem> snapshot) {
+                                if (snapshot.hasData) {
+                                  return GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) => MovieResult(
+                                                movie:
+                                                    snapshot.data! as Movie)),
+                                      );
+                                    },
+                                    child: Column(children: [
+                                      Container(
+                                        margin: const EdgeInsets.fromLTRB(
+                                            5.0, 10.0, 10.0, 0),
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.28,
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.125,
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(27),
+                                          image: DecorationImage(
+                                            image: NetworkImage(
+                                                snapshot.data!.coverPhoto),
+                                            fit: BoxFit.fitWidth,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    Text(
-                                      'Your Rating: ${review["Rating"]}',
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        wordSpacing: 2,
-                                        height: 1.5,
+                                      Text(
+                                        'Your Rating: ${review["Rating"]}',
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          wordSpacing: 2,
+                                          height: 1.5,
+                                        ),
                                       ),
-                                    ),
-                                  ]),
-                                );
-                              } else if (snapshot.hasError) {
-                                return const Center(
-                                    child:
-                                        Text("Failed to load movie details"));
-                              } else {
-                                return const Center(
-                                    child: CircularProgressIndicator());
-                              }
-                            },
-                          );
-                        },
+                                    ]),
+                                  );
+                                } else if (snapshot.hasError) {
+                                  return const Center(
+                                      child:
+                                          Text("Failed to load movie details"));
+                                } else {
+                                  return const Center(
+                                      child: CircularProgressIndicator());
+                                }
+                              },
+                            );
+                          },
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
