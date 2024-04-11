@@ -720,7 +720,6 @@ class _MyHomePageState extends State<MyHomePage> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    const SizedBox(height: 10),
                     if (currentUser.seenMovies.length +
                             currentUser.seenTVShows.length ==
                         0)
