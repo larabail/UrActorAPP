@@ -618,9 +618,9 @@ class _TVShowResultState extends State<TVShowResult> {
                                     .white), // Replace with your desired icon
                             const SizedBox(width: 5),
                             Text(
-                              snapshot.data!['seasons'].length > 1
-                                  ? '${snapshot.data!['seasons'].length} seasons'
-                                  : '${snapshot.data!['seasons'].length} season',
+                              snapshot.data!['seasons'].length - 1 > 1
+                                  ? '${snapshot.data!['seasons'].length - 1} seasons'
+                                  : '${snapshot.data!['seasons'].length - 1} season',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
