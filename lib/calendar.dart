@@ -145,16 +145,19 @@ class _CalendarState extends State<Calendar> {
               counted.add(movie["title"]);
               totalRuntime += movie['runtime'] ?? 0;
               totalRating += (movie["rating"] != "N/A") ? movie['rating'] : 0;
-              movieCount++;
+              movieCount +=
+                  (movie["rating"] != "N/A" && movie['rating'] != 0) ? 1 : 0;
             } else if (movie["type"] == "movie") {
               totalRuntime += movie['runtime'] ?? 0;
               totalRating += (movie["rating"] != "N/A") ? movie['rating'] : 0;
-              movieCount++;
+              movieCount +=
+                  (movie["rating"] != "N/A" && movie['rating'] != 0) ? 1 : 0;
             }
           } else {
             totalRuntime += movie['runtime'] ?? 0;
             totalRating += (movie["rating"] != "N/A") ? movie['rating'] : 0;
-            movieCount++;
+            movieCount +=
+                (movie["rating"] != "N/A" && movie['rating'] != 0) ? 1 : 0;
           }
         }
       }
