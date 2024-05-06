@@ -1538,9 +1538,7 @@ class _TVShowResultState extends State<TVShowResult> {
                   Builder(
                     builder: (BuildContext context) {
                       try {
-                        // Widget tree that may throw an exception
                         return Container(
-                          // fixed height
                           margin:
                               const EdgeInsets.fromLTRB(20.0, 5.0, 20.0, 20.0),
                           child: YoutubePlayer(
@@ -1557,8 +1555,8 @@ class _TVShowResultState extends State<TVShowResult> {
                         );
                       } catch (e) {
                         // Handle the exception
-                        return Center(
-                          child: Text('An error occurred: $e'),
+                        return const Center(
+                          child: const Text(''),
                         );
                       }
                     },

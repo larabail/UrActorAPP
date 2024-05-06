@@ -1820,9 +1820,7 @@ class _MovieResultState extends State<MovieResult> {
                   Builder(
                     builder: (BuildContext context) {
                       try {
-                        // Widget tree that may throw an exception
                         return Container(
-                          // fixed height
                           margin:
                               const EdgeInsets.fromLTRB(20.0, 5.0, 20.0, 20.0),
                           child: YoutubePlayer(
