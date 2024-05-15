@@ -33,7 +33,8 @@ class TVShow extends MediaItem {
     // json["times_seen"] = currentUser.rewatchedMovies.containsKey(movieId)
     //     ? currentUser.rewatchedMovies[movieId]
     //     : (isSeen() ? 1 : 0);
-    // json["review"] = reviewed ? (currentUser.reviews[movieId] as Map?) : null;
+    json["review"] =
+        reviewed ? (currentUser.tvShowReviews[showId] as Map?) : null;
 
     // Process seen dates
     json["seen_dates"] =
