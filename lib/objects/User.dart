@@ -115,11 +115,12 @@ class AppUser {
         } else if (doc.id == "Reviews" && reviews.keys.isEmpty) {
           Map reviewsMap = doc.data() as Map;
           List reviewsList = reviewsMap["Movies"];
+          List allMovieReviews = [];
           for (var element in reviewsList) {
             element = element as Map;
             reviews[element.keys.toList()[0]] =
                 element[element.keys.toList()[0]];
-            allReviews += [
+            allMovieReviews += [
               [
                 "Movies",
                 element.keys.toList()[0],
@@ -128,11 +129,12 @@ class AppUser {
             ];
           }
           List tvShowReviewsList = reviewsMap["TVShows"];
+          List allTvShowRevies = [];
           for (var element in tvShowReviewsList) {
             element = element as Map;
             tvShowReviews[element.keys.toList()[0]] =
                 element[element.keys.toList()[0]];
-            allReviews += [
+            allTvShowRevies += [
               [
                 "TVShows",
                 element.keys.toList()[0],
@@ -140,6 +142,9 @@ class AppUser {
               ]
             ];
           }
+          allReviews += allTvShowRevies;
+          allReviews += allMovieReviews;
+          allReviews = allReviews.reversed.toList();
         } else if (doc.id == "Rewatched") {
           rewatchedMovies = doc.data() as Map;
         } else if (doc.id == "TVShows") {
