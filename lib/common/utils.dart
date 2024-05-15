@@ -133,11 +133,6 @@ class FirebaseUtils {
   }
 
   static Future<bool> deleteReview(id, type, context) async {
-    if (type == "Movies") {
-      currentUser.reviews.remove(id.toString());
-    } else {
-      currentUser.tvShowReviews.remove(id.toString());
-    }
     reviewInfo = {};
     reviewed = false;
     await FirebaseFirestore.instance
@@ -146,8 +141,8 @@ class FirebaseUtils {
         .then((QuerySnapshot querySnapshot) async {
       for (var doc in querySnapshot.docs) {
         if (doc.id == "Reviews") {
-          Map allreviews = doc.data() as Map;
-          List reviewsInList = allreviews[type] as List;
+          Map reviewsMap = doc.data() as Map;
+          List reviewsInList = reviewsMap[type] as List;
           List tempReviewsInList = [];
           for (var element in reviewsInList) {
             element = element as Map;
@@ -164,6 +159,8 @@ class FirebaseUtils {
           } else {
             currentUser.tvShowReviews = {};
           }
+
+          currentUser.allReviews.removeWhere((element) => element[0] == type);
           for (var element in tempReviewsInList) {
             element = element as Map;
             if (type == "Movies") {
@@ -173,6 +170,13 @@ class FirebaseUtils {
               currentUser.tvShowReviews[element.keys.toList()[0]] =
                   element[element.keys.toList()[0]];
             }
+            currentUser.allReviews += [
+              [
+                type,
+                element.keys.toList()[0],
+                element[element.keys.toList()[0]]
+              ]
+            ];
           }
         }
       }
