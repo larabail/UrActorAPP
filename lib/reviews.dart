@@ -1,12 +1,12 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers, use_key_in_widget_constructors, must_be_immutable, non_constant_identifier_names
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '/common/constants.dart';
 import '/objects/Media.dart';
 import '/objects/Movie.dart';
 import '/objects/TVShow.dart';
-import 'popups/rating_popup.dart';
+// import 'popups/rating_popup.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'common/utils.dart';
@@ -25,53 +25,49 @@ class Reviews extends StatefulWidget {
 
 class _ReviewsState extends State<Reviews> {
   List<Map<String, dynamic>> movies = [];
-  void editReview(id, context) {
-    reviewId = id.toString();
-    reviewInfo = currentUser.reviews[id.toString()];
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return const RatingDialog();
-      },
-    );
-  }
+  // void editReview(id, context) {
+  //   reviewId = id.toString();
+  //   reviewInfo = currentUser.reviews[id.toString()];
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return const RatingDialog();
+  //     },
+  //   );
+  // }
 
-  Future<void> deleteReview(id, context) async {
-    currentUser.reviews.remove(id.toString());
-    reviewInfo = {};
-    reviewed = false;
-    await FirebaseFirestore.instance
-        .collection(currentUser.uid)
-        .get()
-        .then((QuerySnapshot querySnapshot) async {
-      for (var doc in querySnapshot.docs) {
-        if (doc.id == "Reviews") {
-          Map allreviews = doc.data() as Map;
-          List reviewsInList = allreviews["Seen"] as List;
-          List tempReviewsInList = [];
-          for (var element in reviewsInList) {
-            element = element as Map;
-            if (element.keys.toList()[0].toString() != id.toString()) {
-              tempReviewsInList.add(element);
-            }
-          }
-          final userDoc = FirebaseFirestore.instance
-              .collection(currentUser.uid)
-              .doc("Reviews");
-          await userDoc.update({'Seen': tempReviewsInList});
-          currentUser.reviews = {};
-          for (var element in tempReviewsInList) {
-            element = element as Map;
-            currentUser.reviews[element.keys.toList()[0]] =
-                element[element.keys.toList()[0]];
-          }
-          setState(() {
-            currentUser.reviews = currentUser.reviews;
-          });
-        }
-      }
-    });
-  }
+  // Future<void> deleteReview(id, context) async {
+  //   currentUser.reviews.remove(id.toString());
+  //   reviewInfo = {};
+  //   await FirebaseFirestore.instance
+  //       .collection(currentUser.uid)
+  //       .get()
+  //       .then((QuerySnapshot querySnapshot) async {
+  //     for (var doc in querySnapshot.docs) {
+  //       if (doc.id == "Reviews") {
+  //         Map allreviews = doc.data() as Map;
+  //         List reviewsInList = allreviews["Seen"] as List;
+  //         List tempReviewsInList = [];
+  //         for (var element in reviewsInList) {
+  //           element = element as Map;
+  //           if (element.keys.toList()[0].toString() != id.toString()) {
+  //             tempReviewsInList.add(element);
+  //           }
+  //         }
+  //         final userDoc = FirebaseFirestore.instance
+  //             .collection(currentUser.uid)
+  //             .doc("Reviews");
+  //         await userDoc.update({'Seen': tempReviewsInList});
+  //         currentUser.reviews = {};
+  //         for (var element in tempReviewsInList) {
+  //           element = element as Map;
+  //           currentUser.reviews[element.keys.toList()[0]] =
+  //               element[element.keys.toList()[0]];
+  //         }
+  //       }
+  //     }
+  //   });
+  // }
 
   Future<Map<String, dynamic>> getData(id, type) async {
     Map<String, dynamic> data = {};
@@ -127,9 +123,9 @@ class _ReviewsState extends State<Reviews> {
     return data;
   }
 
-  Widget buildReviewTile(context, Map review, String id) {
+  Widget buildReviewTile(context, Map review, String type, String id) {
     return FutureBuilder<Map<String, dynamic>>(
-        future: getData(id, "Movies"),
+        future: getData(id, type),
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
           if (snapshot.hasData) {
             return ExpansionTile(
@@ -224,12 +220,22 @@ class _ReviewsState extends State<Reviews> {
                           children: [
                             IconButton(
                                 onPressed: () {
-                                  editReview(snapshot.data!["id"], context);
+                                  FirebaseUtils.editReview(snapshot.data!["id"],
+                                      snapshot.data!["type"], context);
                                 },
                                 icon: const Icon(Icons.edit)),
                             IconButton(
                                 onPressed: () {
-                                  deleteReview(snapshot.data!["id"], context);
+                                  FirebaseUtils.deleteReview(
+                                      snapshot.data!["id"],
+                                      snapshot.data!["type"],
+                                      context);
+
+                                  setState(() {
+                                    currentUser.reviews = currentUser.reviews;
+                                    currentUser.tvShowReviews =
+                                        currentUser.tvShowReviews;
+                                  });
                                 },
                                 icon: const Icon(Icons.delete)),
                           ],
@@ -262,39 +268,23 @@ class _ReviewsState extends State<Reviews> {
     return Scaffold(
       appBar: const CustomAppBar(),
       body: ListView.builder(
-        itemCount: (currentUser.reviews.keys.toList().length / 2).ceil(),
+        itemCount: (currentUser.allReviews.length / 2).ceil(),
         itemBuilder: (BuildContext context, int index) {
           final leftReviewIndex = index * 2;
           final rightReviewIndex = index * 2 + 1;
-          final leftReviewId =
-              (leftReviewIndex < currentUser.reviews.keys.toList().length)
-                  ? currentUser.reviews.keys
-                      .toList()
-                      .reversed
-                      .toList()[leftReviewIndex]
-                  : null;
-          final rightReviewId =
-              (rightReviewIndex < currentUser.reviews.keys.toList().length)
-                  ? currentUser.reviews.keys
-                      .toList()
-                      .reversed
-                      .toList()[rightReviewIndex]
-                  : null;
-          final leftReview = (leftReviewId != null)
-              ? (currentUser.reviews[leftReviewId])
-              : null;
-          final rightReview = (rightReviewId != null)
-              ? (currentUser.reviews[rightReviewId])
-              : null;
+          final leftReview = currentUser.allReviews[leftReviewIndex];
+          final rightReview = currentUser.allReviews[rightReviewIndex];
           return Row(
             children: [
               if (leftReview != null)
                 Expanded(
-                  child: buildReviewTile(context, leftReview, leftReviewId),
+                  child: buildReviewTile(
+                      context, leftReview[2], leftReview[0], leftReview[1]),
                 ),
               if (rightReview != null)
                 Expanded(
-                  child: buildReviewTile(context, rightReview, rightReviewId),
+                  child: buildReviewTile(
+                      context, rightReview[2], rightReview[0], rightReview[1]),
                 ),
             ],
           );

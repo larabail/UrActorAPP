@@ -59,10 +59,14 @@ class _TVShowResultState extends State<TVShowResult> {
       _isTappedFav = false;
       _imageProviderFav = 'assets/fav_before.png';
     }
+    if (currentUser.tvShowReviews.keys.toList().contains(widget.tvshow.id)) {
+      reviewed = true;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    reviewed = false;
     check();
 
     Future<void> _onTap(String type, String id, String title, int runtime,
@@ -589,6 +593,173 @@ class _TVShowResultState extends State<TVShowResult> {
                       ),
                     ],
                   ),
+                  if (reviewed &&
+                      snapshot.data!.keys.contains("review") &&
+                      snapshot.data!["review"] != null)
+                    ExpansionTile(
+                        title: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.reviews),
+                            SizedBox(width: 8),
+                            Text(
+                              "Your Review",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 15,
+                                wordSpacing: 2,
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                        children: <Widget>[
+                          Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Align(
+                              child: Container(
+                                width: MediaQuery.of(context).size.width * 0.8,
+                                decoration: BoxDecoration(
+                                  color: const Color.fromARGB(
+                                      255, 26, 25, 25), // dark grey background
+                                  borderRadius: BorderRadius.circular(
+                                      27), // border radius
+                                ),
+                                padding: const EdgeInsets.all(
+                                    15), // optional padding
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'Opinion: ${snapshot.data!["review"]["Opinion"]}',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        wordSpacing: 2,
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Rating: ${snapshot.data!["review"]["Rating"]}',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        wordSpacing: 2,
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () async {
+                                            bool success =
+                                                await FirebaseUtils.editReview(
+                                                    snapshot.data!["id"],
+                                                    "TVShows",
+                                                    context);
+                                            if (success) {
+                                              setState(() {});
+                                            }
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 20, vertical: 10),
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: const Row(
+                                              children: [
+                                                Icon(Icons.edit,
+                                                    color: Colors.blue),
+                                                SizedBox(width: 10),
+                                                Text(
+                                                  'Edit',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 20),
+                                        GestureDetector(
+                                          onTap: () async {
+                                            bool success = await FirebaseUtils
+                                                .deleteReview(
+                                                    snapshot.data!["id"],
+                                                    "TVShows",
+                                                    context);
+                                            if (success) {
+                                              setState(() {});
+                                            }
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 20, vertical: 10),
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: const Row(
+                                              children: [
+                                                Icon(Icons.delete,
+                                                    color: Colors.red),
+                                                SizedBox(width: 10),
+                                                Text(
+                                                  'Delete',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ]),
+                  if (!reviewed && widget.tvshow.isSeen())
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () async {
+                            bool success = await FirebaseUtils.writeReview(
+                                snapshot.data!["id"], "TVShows", context);
+                            if (success) {
+                              setState(() {});
+                            }
+                          },
+                          child: const Row(
+                            children: [
+                              Icon(
+                                Icons.reviews,
+                                color: Colors.white,
+                              ),
+                              SizedBox(
+                                width: 10,
+                              ),
+                              Text(
+                                'Write A Review',
+                                style: TextStyle(color: Colors.white),
+                              )
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   Container(
                     margin: const EdgeInsets.all(20.0),
                     padding: const EdgeInsets.symmetric(

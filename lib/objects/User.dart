@@ -20,10 +20,12 @@ class AppUser {
   List watchlist = [];
   List watchlistTVShows = [];
   Map reviews = {};
+  Map tvShowReviews = {};
   Map rewatchedMovies = {};
   Map playlists = {};
   Map seenWith = {};
   List seen = [];
+  List allReviews = [];
 
   AppUser({
     required this.uid,
@@ -112,11 +114,31 @@ class AppUser {
           dontAskCalendar = settings["dontAskCalendar"];
         } else if (doc.id == "Reviews" && reviews.keys.isEmpty) {
           Map reviewsMap = doc.data() as Map;
-          List reviewsList = reviewsMap["Seen"];
+          List reviewsList = reviewsMap["Movies"];
           for (var element in reviewsList) {
             element = element as Map;
             reviews[element.keys.toList()[0]] =
                 element[element.keys.toList()[0]];
+            allReviews += [
+              [
+                "Movies",
+                element.keys.toList()[0],
+                element[element.keys.toList()[0]]
+              ]
+            ];
+          }
+          List tvShowReviewsList = reviewsMap["TVShows"];
+          for (var element in tvShowReviewsList) {
+            element = element as Map;
+            tvShowReviews[element.keys.toList()[0]] =
+                element[element.keys.toList()[0]];
+            allReviews += [
+              [
+                "TVShows",
+                element.keys.toList()[0],
+                element[element.keys.toList()[0]]
+              ]
+            ];
           }
         } else if (doc.id == "Rewatched") {
           rewatchedMovies = doc.data() as Map;

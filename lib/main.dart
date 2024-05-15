@@ -34,6 +34,11 @@ bool gotData = false;
 Map oscars = {};
 late AppUser currentUser;
 
+String reviewId = "";
+String reviewType = "";
+Map reviewInfo = {};
+
+bool reviewed = false;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -844,7 +849,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             child: Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: Text(
-                                'See All (${currentUser.reviews.length} items)',
+                                'See All (${currentUser.allReviews.length} items)',
                                 style: const TextStyle(
                                   color: Colors.grey,
                                   fontSize: 12,
@@ -856,31 +861,24 @@ class _MyHomePageState extends State<MyHomePage> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    if (currentUser.reviews.length == 0)
+                    if (currentUser.allReviews.length == 0)
                       const Text("Haven't reviewed any movies yet"),
-                    if (currentUser.reviews.length == 0)
+                    if (currentUser.allReviews.length == 0)
                       const SizedBox(height: 10),
-                    if (currentUser.reviews.length != 0)
+                    if (currentUser.allReviews.length != 0)
                       SizedBox(
                         height: MediaQuery.of(context).size.height * 0.18,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
-                          itemCount: currentUser.reviews.length > 6
+                          itemCount: currentUser.allReviews.length > 6
                               ? 6
-                              : currentUser.reviews.length,
+                              : currentUser.allReviews.length,
                           itemBuilder: (context, index) {
-                            final review = currentUser.reviews[currentUser
-                                .reviews.keys
-                                .toList()
-                                .reversed
-                                .toList()[index]];
+                            final review = currentUser.allReviews[index][2];
+                            final type = currentUser.allReviews[index][0];
                             return FutureBuilder<MediaItem>(
-                              future: getData(
-                                  currentUser.reviews.keys
-                                      .toList()
-                                      .reversed
-                                      .toList()[index],
-                                  "Movies"),
+                              future: getData(currentUser.allReviews[index][1],
+                                  currentUser.allReviews[index][0]),
                               builder: (BuildContext context,
                                   AsyncSnapshot<MediaItem> snapshot) {
                                 if (snapshot.hasData) {
@@ -889,9 +887,14 @@ class _MyHomePageState extends State<MyHomePage> {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                            builder: (context) => MovieResult(
-                                                movie:
-                                                    snapshot.data! as Movie)),
+                                            builder: (context) => type ==
+                                                    "Movies"
+                                                ? MovieResult(
+                                                    movie:
+                                                        snapshot.data! as Movie)
+                                                : TVShowResult(
+                                                    tvshow: snapshot.data!
+                                                        as TVShow)),
                                       );
                                     },
                                     child: Column(children: [

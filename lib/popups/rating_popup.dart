@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../movie_result.dart';
+import '../common/utils.dart';
 import '../main.dart';
 
 final myController = TextEditingController(text: "");
@@ -21,7 +21,7 @@ class _RatingDialogState extends State<RatingDialog> {
   Future<void> submit() async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     if (reviewInfo.keys.toList().isNotEmpty) {
-      await deleteReview(reviewId, context);
+      await FirebaseUtils.deleteReview(reviewId, reviewType, context);
     }
     Map<String, dynamic> information = {
       reviewId: {
@@ -32,21 +32,32 @@ class _RatingDialogState extends State<RatingDialog> {
     reviewInfo = information;
     var userDoc = firestore.collection(currentUser.uid).doc('Reviews');
     await userDoc.update({
-      'Seen': FieldValue.arrayUnion([information])
+      reviewType: FieldValue.arrayUnion([information])
     });
-    currentUser.reviews = {};
+    if (reviewType == "Movies") {
+      currentUser.reviews = {};
+    } else {
+      currentUser.tvShowReviews = {};
+    }
     await FirebaseFirestore.instance
         .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) {
       for (var doc in querySnapshot.docs) {
-        if (doc.id == "Reviews" && currentUser.reviews.keys.isEmpty) {
+        if (doc.id == "Reviews" &&
+            (currentUser.reviews.keys.isEmpty ||
+                currentUser.tvShowReviews.keys.isEmpty)) {
           Map reviewsMap = doc.data() as Map;
-          List reviewsList = reviewsMap["Seen"];
+          List reviewsList = reviewsMap[reviewType];
           for (var element in reviewsList) {
             element = element as Map;
-            currentUser.reviews[element.keys.toList()[0]] =
-                element[element.keys.toList()[0]];
+            if (reviewType == "Movies") {
+              currentUser.reviews[element.keys.toList()[0]] =
+                  element[element.keys.toList()[0]];
+            } else {
+              currentUser.tvShowReviews[element.keys.toList()[0]] =
+                  element[element.keys.toList()[0]];
+            }
           }
         }
       }
@@ -55,32 +66,36 @@ class _RatingDialogState extends State<RatingDialog> {
     Navigator.pop(context);
   }
 
-  Future<void> deleteReview(id, context) async {
-    currentUser.reviews.remove(id.toString());
-    reviewed = false;
-    await FirebaseFirestore.instance
-        .collection(currentUser.uid)
-        .get()
-        .then((QuerySnapshot querySnapshot) async {
-      for (var doc in querySnapshot.docs) {
-        if (doc.id == "Reviews") {
-          Map allreviews = doc.data() as Map;
-          List reviewsInList = allreviews["Seen"] as List;
-          List tempReviewsInList = [];
-          for (var element in reviewsInList) {
-            element = element as Map;
-            if (element.keys.toList()[0].toString() != id.toString()) {
-              tempReviewsInList.add(element);
-            }
-          }
-          final userDoc = FirebaseFirestore.instance
-              .collection(currentUser.uid)
-              .doc("Reviews");
-          await userDoc.update({'Seen': tempReviewsInList});
-        }
-      }
-    });
-  }
+  // Future<void> deleteReview(id, type, context) async {
+  //   if (type == "Movies") {
+  //     currentUser.reviews.remove(id.toString());
+  //   } else {
+  //     currentUser.tvShowReviews.remove(id.toString());
+  //   }
+  //   reviewed = false;
+  //   await FirebaseFirestore.instance
+  //       .collection(currentUser.uid)
+  //       .get()
+  //       .then((QuerySnapshot querySnapshot) async {
+  //     for (var doc in querySnapshot.docs) {
+  //       if (doc.id == "Reviews") {
+  //         Map allreviews = doc.data() as Map;
+  //         List reviewsInList = allreviews[type] as List;
+  //         List tempReviewsInList = [];
+  //         for (var element in reviewsInList) {
+  //           element = element as Map;
+  //           if (element.keys.toList()[0].toString() != id.toString()) {
+  //             tempReviewsInList.add(element);
+  //           }
+  //         }
+  //         final userDoc = FirebaseFirestore.instance
+  //             .collection(currentUser.uid)
+  //             .doc("Reviews");
+  //         await userDoc.update({type: tempReviewsInList});
+  //       }
+  //     }
+  //   });
+  // }
 
   void ratingStarFunction(int rating) {
     setState(() {

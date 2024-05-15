@@ -8,7 +8,6 @@ import 'package:intl/intl.dart';
 import 'package:uractor/objects/Movie.dart';
 
 import '../main.dart';
-import '../movie_result.dart';
 import '../popups/rating_popup.dart';
 import 'constants.dart';
 
@@ -87,8 +86,9 @@ class FirebaseUtils {
     return true;
   }
 
-  static Future<bool> writeReview(id, context) {
+  static Future<bool> writeReview(id, type, context) {
     reviewId = id.toString();
+    reviewType = type;
     // Show the dialog like this
     Completer<bool> completer = Completer();
     showDialog(
@@ -100,11 +100,17 @@ class FirebaseUtils {
     return completer.future;
   }
 
-  static Future<bool> editReview(id, context) {
+  static Future<bool> editReview(id, type, context) {
     reviewId = id.toString();
+    reviewType = type;
 
     Completer<bool> completer = Completer();
-    reviewInfo = currentUser.reviews[id.toString()];
+    if (type == "Movies") {
+      reviewInfo = currentUser.reviews[id.toString()];
+    } else {
+      reviewInfo = currentUser.tvShowReviews[id.toString()];
+    }
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -126,8 +132,12 @@ class FirebaseUtils {
     }
   }
 
-  static Future<bool> deleteReview(id, context) async {
-    currentUser.reviews.remove(id.toString());
+  static Future<bool> deleteReview(id, type, context) async {
+    if (type == "Movies") {
+      currentUser.reviews.remove(id.toString());
+    } else {
+      currentUser.tvShowReviews.remove(id.toString());
+    }
     reviewInfo = {};
     reviewed = false;
     await FirebaseFirestore.instance
@@ -137,7 +147,7 @@ class FirebaseUtils {
       for (var doc in querySnapshot.docs) {
         if (doc.id == "Reviews") {
           Map allreviews = doc.data() as Map;
-          List reviewsInList = allreviews["Seen"] as List;
+          List reviewsInList = allreviews[type] as List;
           List tempReviewsInList = [];
           for (var element in reviewsInList) {
             element = element as Map;
@@ -148,12 +158,21 @@ class FirebaseUtils {
           final userDoc = FirebaseFirestore.instance
               .collection(currentUser.uid)
               .doc("Reviews");
-          await userDoc.update({'Seen': tempReviewsInList});
-          currentUser.reviews = {};
+          await userDoc.update({type: tempReviewsInList});
+          if (type == "Movies") {
+            currentUser.reviews = {};
+          } else {
+            currentUser.tvShowReviews = {};
+          }
           for (var element in tempReviewsInList) {
             element = element as Map;
-            currentUser.reviews[element.keys.toList()[0]] =
-                element[element.keys.toList()[0]];
+            if (type == "Movies") {
+              currentUser.reviews[element.keys.toList()[0]] =
+                  element[element.keys.toList()[0]];
+            } else {
+              currentUser.tvShowReviews[element.keys.toList()[0]] =
+                  element[element.keys.toList()[0]];
+            }
           }
         }
       }
