@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:uractor/objects/Playlist.dart';
 import 'package:uractor/objects/User.dart';
+import 'package:uractor/tvshow_result.dart';
 import 'package:uractor/upcoming.dart';
 
 import 'common/constants.dart';
@@ -724,7 +725,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             child: Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: Text(
-                                'See All (${currentUser.seenMovies.length + currentUser.seenTVShows.length} items)',
+                                'See All (${currentUser.seen.length} items)',
                                 style: const TextStyle(
                                   color: Colors.grey,
                                   fontSize: 12,
@@ -736,30 +737,22 @@ class _MyHomePageState extends State<MyHomePage> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    if (currentUser.seenMovies.length +
-                            currentUser.seenTVShows.length ==
-                        0)
-                      const Text("Haven't seen any movies yet"),
-                    if (currentUser.seenMovies.length +
-                            currentUser.seenTVShows.length ==
-                        0)
-                      const SizedBox(height: 10),
-                    if (currentUser.seenMovies.length +
-                            currentUser.seenTVShows.length !=
-                        0)
+                    if (currentUser.seen.isEmpty)
+                      const Text("Haven't seen anything yet"),
+                    if (currentUser.seen.isEmpty) const SizedBox(height: 10),
+                    if (currentUser.seen.isNotEmpty)
                       SizedBox(
                         height: MediaQuery.of(context).size.height * 0.18,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
-                          itemCount: currentUser.seenMovies.length > 10
+                          itemCount: currentUser.seen.length > 10
                               ? 10
-                              : currentUser.seenMovies.length,
+                              : currentUser.seen.length,
                           itemBuilder: (context, index) {
                             return FutureBuilder<MediaItem>(
                               future: getData(
-                                  currentUser.seenMovies.reversed
-                                      .toList()[index][1],
-                                  'Movies'),
+                                  currentUser.seen.reversed.toList()[index][1],
+                                  currentUser.seen.reversed.toList()[index][0]),
                               builder: (BuildContext context,
                                   AsyncSnapshot<MediaItem> snapshot) {
                                 if (snapshot.hasData) {
@@ -768,9 +761,16 @@ class _MyHomePageState extends State<MyHomePage> {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                            builder: (context) => MovieResult(
-                                                movie:
-                                                    snapshot.data! as Movie)),
+                                            builder: (context) => currentUser
+                                                        .seen.reversed
+                                                        .toList()[index][0] ==
+                                                    "Movies"
+                                                ? MovieResult(
+                                                    movie:
+                                                        snapshot.data! as Movie)
+                                                : TVShowResult(
+                                                    tvshow: snapshot.data!
+                                                        as TVShow)),
                                       );
                                     },
                                     child: Container(

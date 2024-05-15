@@ -59,8 +59,18 @@ class FirebaseUtils {
       String id, BuildContext context, String type) async {
     var userDoc =
         FirebaseFirestore.instance.collection(currentUser.uid).doc(type);
+    var seenUserDoc =
+        FirebaseFirestore.instance.collection(currentUser.uid).doc("Seen");
     DocumentSnapshot docSnapshot = await userDoc.get();
-
+    DocumentSnapshot seenDocSnapshot = await seenUserDoc.get();
+    if (seenDocSnapshot.exists) {
+      Map<String, dynamic> data =
+          seenDocSnapshot.data() as Map<String, dynamic>;
+      List<dynamic> items = data[type] ?? [];
+      items.remove(id);
+      await seenUserDoc.update({type: items});
+      currentUser.seen.removeWhere((pair) => pair[1] == id && pair[0] == type);
+    }
     if (docSnapshot.exists) {
       Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
       List<dynamic> items = data['Seen'] ?? [];
@@ -155,9 +165,14 @@ class FirebaseUtils {
       double rating, BuildContext context, String type) async {
     final userDoc =
         FirebaseFirestore.instance.collection(currentUser.uid).doc(type);
+    final seenUserDoc =
+        FirebaseFirestore.instance.collection(currentUser.uid).doc("Seen");
     id = id.toString();
     await userDoc.update({
       'Seen': FieldValue.arrayUnion([id])
+    });
+    await seenUserDoc.update({
+      type: FieldValue.arrayUnion([id])
     });
     List w;
     await FirebaseFirestore.instance
@@ -173,13 +188,20 @@ class FirebaseUtils {
           } else {
             currentUser.seenTVShows = [];
           }
+          currentUser.seen = [];
           for (var element in w) {
             if (type == "Movies") {
               currentUser.seenMovies += [
                 [type, element]
               ];
+              currentUser.seen += [
+                [type, element]
+              ];
             } else {
               currentUser.seenTVShows += [
+                [type, element]
+              ];
+              currentUser.seen += [
                 [type, element]
               ];
             }

@@ -23,6 +23,7 @@ class AppUser {
   Map rewatchedMovies = {};
   Map playlists = {};
   Map seenWith = {};
+  List seen = [];
 
   AppUser({
     required this.uid,
@@ -146,6 +147,15 @@ class AppUser {
         } else if (doc.id == "Friends") {
           Map f = doc.data() as Map;
           friends = f["friends"];
+        } else if (doc.id == "Seen") {
+          Map w = doc.data() as Map;
+          w.forEach((key, el) {
+            w[key].forEach((element) {
+              seen += [
+                [key, element]
+              ];
+            });
+          });
         }
       }
     });
