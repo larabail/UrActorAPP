@@ -421,18 +421,17 @@ class _FriendProfileState extends State<FriendProfile> {
                       ],
                     ),
                     const SizedBox(height: 10),
-
                     if (currentUser.seenWith.containsKey(friendUid))
                       SizedBox(
-                        height: 150, // Adjust the height as needed
+                        height: 150,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           itemCount:
                               currentUser.seenWith[friendUid]["Movies"].length >
                                       10
                                   ? 10
-                                  : currentUser.seenWith[friendUid]["Movies"]
-                                      .length, // Limit to first 10 movies
+                                  : currentUser
+                                      .seenWith[friendUid]["Movies"].length,
                           itemBuilder: (context, index) {
                             return FutureBuilder<Map<String, dynamic>>(
                               future: getData(
@@ -476,133 +475,24 @@ class _FriendProfileState extends State<FriendProfile> {
                                       child:
                                           Text("Failed to load movie details"));
                                 } else {
-                                  return const Center(
-                                      child: CircularProgressIndicator());
+                                  return Container(
+                                      margin: const EdgeInsets.fromLTRB(
+                                          5.0, 10.0, 10.0, 0),
+                                      width: MediaQuery.of(context).size.width *
+                                          0.28,
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              0.18,
+                                      child: const Center(
+                                          child: CircularProgressIndicator()));
                                 }
                               },
                             );
                           },
                         ),
                       ),
-
                     if (!currentUser.seenWith.containsKey(friendUid))
                       const Text("Haven't watched any movies together yet"),
-                    //   FutureBuilder<DocumentSnapshot>(
-                    //     future: FirebaseFirestore.instance
-                    //         .collection(uid)
-                    //         .doc('SeenWith')
-                    //         .get(),
-                    //     builder: (context, snapshot) {
-                    //       if (snapshot.connectionState ==
-                    //           ConnectionState.waiting) {
-                    //         return const Center(
-                    //             child: CircularProgressIndicator());
-                    //       } else if (snapshot.hasError) {
-                    //         return Text('Error: ${snapshot.error}');
-                    //       } else if (!snapshot.hasData ||
-                    //           !snapshot.data!.exists) {
-                    //         return const Text('No data found');
-                    //       } else {
-                    //         var seentogether = snapshot.data!.data() as Map;
-                    //         List moviesSeenTogether = [];
-                    //         for (var movie in seentogether["Movies"].keys) {
-                    //           if (seentogether["Movies"][movie]["friends"]
-                    //               .contains(friendUid)) {
-                    //             moviesSeenTogether.add(movie);
-                    //           }
-                    //         }
-                    //         if (moviesSeenTogether.isNotEmpty) {
-                    //           return Column(
-                    //             crossAxisAlignment: CrossAxisAlignment.start,
-                    //             children: [
-                    //               Text(
-                    //                 moviesSeenTogether.length > 1
-                    //                     ? "You have seen ${moviesSeenTogether.length} movies together"
-                    //                     : "You have seen ${moviesSeenTogether.length} movie together",
-                    //                 style: const TextStyle(
-                    //                   color: Colors.white,
-                    //                   fontSize: 16,
-                    //                 ),
-                    //               ),
-                    //               const SizedBox(height: 10),
-                    //               SizedBox(
-                    //                 height: 125, // Adjust the height as needed
-                    //                 child: ListView.builder(
-                    //                   scrollDirection: Axis.horizontal,
-                    //                   itemCount: moviesSeenTogether.length > 10
-                    //                       ? 10
-                    //                       : moviesSeenTogether
-                    //                           .length, // Limit to first 10 movies
-                    //                   itemBuilder: (context, index) {
-                    //                     return FutureBuilder<
-                    //                         Map<String, dynamic>>(
-                    //                       future: getData(
-                    //                           moviesSeenTogether[index],
-                    //                           'Movies'),
-                    //                       builder: (BuildContext context,
-                    //                           AsyncSnapshot<Map> snapshot) {
-                    //                         if (snapshot.hasData) {
-                    //                           return GestureDetector(
-                    //                             onTap: () {
-                    //                               movieResult = [
-                    //                                 snapshot.data!['id'],
-                    //                                 snapshot.data!['title'],
-                    //                                 snapshot.data!['type'],
-                    //                               ];
-                    //                               Navigator.push(
-                    //                                 context,
-                    //                                 MaterialPageRoute(
-                    //                                     builder: (context) =>
-                    //                                         MovieResult()),
-                    //                               );
-                    //                             },
-                    //                             child: Container(
-                    //                               margin:
-                    //                                   const EdgeInsets.fromLTRB(
-                    //                                       5.0, 10.0, 10.0, 0),
-                    //                               width: MediaQuery.of(context)
-                    //                                       .size
-                    //                                       .width *
-                    //                                   0.28,
-                    //                               decoration: BoxDecoration(
-                    //                                 borderRadius:
-                    //                                     BorderRadius.circular(27),
-                    //                                 image: DecorationImage(
-                    //                                   image: NetworkImage(snapshot
-                    //                                       .data!['poster']),
-                    //                                   fit: BoxFit.fitWidth,
-                    //                                 ),
-                    //                               ),
-                    //                             ),
-                    //                           );
-                    //                         } else if (snapshot.hasError) {
-                    //                           return const Center(
-                    //                               child: Text(
-                    //                                   "Failed to load movie details"));
-                    //                         } else {
-                    //                           return const Center(
-                    //                               child:
-                    //                                   CircularProgressIndicator());
-                    //                         }
-                    //                       },
-                    //                     );
-                    //                   },
-                    //                 ),
-                    //               ),
-                    //             ],
-                    //           );
-                    //         } else {
-                    //           return const Text(
-                    //             "You haven't watched any movies together yet",
-                    //             style: TextStyle(
-                    //               color: Colors.white,
-                    //               fontSize: 16,
-                    //             ),
-                    //           );
-                    //         }
-                    //       }
-                    //     },
-                    //   ),
                   ],
                 ),
               ),

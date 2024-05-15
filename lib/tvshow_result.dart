@@ -10,8 +10,8 @@ import 'friends.dart';
 import 'friends_profile.dart';
 import 'package:intl/intl.dart' as intl;
 import 'main.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+// import 'package:http/http.dart' as http;
+// import 'dart:convert';
 import 'objects/Person.dart';
 import 'objects/TVShow.dart';
 import 'person_result.dart';
@@ -36,134 +36,6 @@ class TVShowResult extends StatefulWidget {
 
 class _TVShowResultState extends State<TVShowResult> {
   bool isExpanded = false;
-  Future<Map> getMovieData() async {
-    List movieData = [widget.tvshow.id, "TVShows"];
-    String name = movieData[1]
-        .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
-        .replaceAll(" ", "-");
-    final response =
-        await http.get(Uri.parse('$TV_SHOW_LINK${movieData[0]}-$name$API_KEY'));
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      final response2 = await http.get(
-          Uri.parse('$TV_SHOW_LINK${movieData[0]}-$name$EXTERNAL_IDS_LINK'));
-      if (response2.statusCode == 200) {
-        String imdbId = jsonDecode(response2.body)['imdb_id'];
-        String link2 = 'https://www.omdbapi.com/?i=$imdbId&apikey=768d2cf9';
-        final r = await http.get(Uri.parse(link2));
-        if (r.statusCode == 200) {
-          json['imdb_rating'] = jsonDecode(r.body)['imdbRating'];
-          json['year'] = jsonDecode(r.body)['Year'];
-          final r2 = await http.get(Uri.parse(
-              '$TV_SHOW_LINK${movieData[0]}-$name$WATCH_PROVIDERS_LINK'));
-          if (r2.statusCode == 200) {
-            json['providers'] = [];
-            if (jsonDecode(r2.body)["results"]
-                .keys
-                .contains(currentUser.country)) {
-              if (jsonDecode(r2.body)["results"][currentUser.country]
-                      ['flatrate'] !=
-                  null) {
-                jsonDecode(r2.body)["results"][currentUser.country]['flatrate']
-                    .forEach(
-                  (provider) async {
-                    String name = provider['provider_name'];
-                    String photo = IMG_LINK + provider['logo_path'];
-                    json['providers'].add([name, photo]);
-                  },
-                );
-                final r3 = await http.get(Uri.parse(
-                    '$TV_SHOW_LINK${movieData[0]}-$name$CREDITS_LINK'));
-                if (r3.statusCode == 200) {
-                  json['cast'] = jsonDecode(r3.body)["cast"];
-                  json['crew'] = jsonDecode(r3.body)["crew"];
-                  final r4 = await http.get(Uri.parse(
-                      '$TV_SHOW_LINK${movieData[0]}-$name$VIDEOS_LINK'));
-                  if (r4.statusCode == 200) {
-                    bool got = false;
-                    jsonDecode(r4.body)['results'].forEach((element) {
-                      if (element['site'] == "YouTube" &&
-                          element['type'] == "Trailer" &&
-                          !got) {
-                        json['trailer'] = element;
-                        got = true;
-                      }
-                    });
-                    json["seen_dates"] = ApiUtils.processSeenDates(
-                        currentUser.calendar, widget.tvshow.id, "series");
-                    return json;
-                  }
-                  throw Exception('Failed to load movie details');
-                }
-                throw Exception('Failed to load movie details');
-              } else {
-                json['providers'] = [];
-                final r3 = await http.get(Uri.parse(
-                    '$TV_SHOW_LINK${movieData[0]}-$name$CREDITS_LINK'));
-                if (r3.statusCode == 200) {
-                  json['cast'] = jsonDecode(r3.body)["cast"];
-                  json['crew'] = jsonDecode(r3.body)["crew"];
-                  final r4 = await http.get(Uri.parse(
-                      '$TV_SHOW_LINK${movieData[0]}-$name$VIDEOS_LINK'));
-                  if (r4.statusCode == 200) {
-                    bool got = false;
-                    jsonDecode(r4.body)['results'].forEach((element) {
-                      if (element['site'] == "YouTube" &&
-                          element['type'] == "Trailer" &&
-                          !got) {
-                        json['trailer'] = element;
-                        got = true;
-                      }
-                    });
-                    json["seen_dates"] = ApiUtils.processSeenDates(
-                        currentUser.calendar, widget.tvshow.id, "series");
-                    return json;
-                  }
-                  throw Exception('Failed to load movie details');
-                }
-                throw Exception('Failed to load movie details');
-              }
-            } else {
-              json['providers'] = [];
-              final r3 = await http.get(
-                  Uri.parse('$TV_SHOW_LINK${movieData[0]}-$name$CREDITS_LINK'));
-              if (r3.statusCode == 200) {
-                json['cast'] = jsonDecode(r3.body)["cast"];
-                json['crew'] = jsonDecode(r3.body)["crew"];
-                final r4 = await http.get(Uri.parse(
-                    '$TV_SHOW_LINK${movieData[0]}-$name$VIDEOS_LINK'));
-                if (r4.statusCode == 200) {
-                  bool got = false;
-                  jsonDecode(r4.body)['results'].forEach((element) {
-                    if (element['site'] == "YouTube" &&
-                        element['type'] == "Trailer" &&
-                        !got) {
-                      json['trailer'] = element;
-                      got = true;
-                    }
-                  });
-                  json["seen_dates"] = ApiUtils.processSeenDates(
-                      currentUser.calendar, widget.tvshow.id, "series");
-                  return json;
-                }
-                throw Exception('Failed to load movie details');
-              }
-              throw Exception('Failed to load movie details');
-            }
-          } else {
-            throw Exception('Failed to load movie details');
-          }
-        } else {
-          throw Exception('Failed to load movie details');
-        }
-      } else {
-        throw Exception('Failed to load movie details');
-      }
-    } else {
-      throw Exception('Failed to load movie details');
-    }
-  }
 
   void check() {
     if (widget.tvshow.isSeen()) {
@@ -453,7 +325,7 @@ class _TVShowResultState extends State<TVShowResult> {
     return Scaffold(
       appBar: const CustomAppBar(),
       body: FutureBuilder<Map>(
-        future: getMovieData(),
+        future: widget.tvshow.getExtendedData(),
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
           if (snapshot.hasData) {
             return SingleChildScrollView(
@@ -531,12 +403,9 @@ class _TVShowResultState extends State<TVShowResult> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            padding:
-                                const EdgeInsets.all(8), // Optional padding
+                            padding: const EdgeInsets.all(8),
                             constraints: BoxConstraints(
-                              maxHeight: isExpanded
-                                  ? double.infinity
-                                  : 85, // Max height constraint
+                              maxHeight: isExpanded ? double.infinity : 85,
                             ),
                             child: Text(
                               snapshot.data!['overview'],
@@ -558,12 +427,10 @@ class _TVShowResultState extends State<TVShowResult> {
                                 });
                               },
                               child: Container(
-                                width: double
-                                    .infinity, // Ensures the container takes full width
+                                width: double.infinity,
                                 child: const Text(
                                   "Read All",
-                                  textAlign: TextAlign
-                                      .right, // Aligns text to the right
+                                  textAlign: TextAlign.right,
                                 ),
                               ),
                             ),
@@ -571,7 +438,7 @@ class _TVShowResultState extends State<TVShowResult> {
                       ),
                     ),
                   Container(
-                    height: 30, // fixed height
+                    height: 30,
                     margin: const EdgeInsets.fromLTRB(20.0, 5.0, 0, 5.0),
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
@@ -606,16 +473,12 @@ class _TVShowResultState extends State<TVShowResult> {
                             vertical: 5, horizontal: 10),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
-                          color: Colors.grey[
-                              900], // Adjust the background color opacity as needed
+                          color: Colors.grey[900],
                         ),
                         child: Row(
-                          mainAxisSize:
-                              MainAxisSize.min, // Use min to wrap content
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.access_time,
-                                color: Colors
-                                    .white), // Replace with your desired icon
+                            const Icon(Icons.access_time, color: Colors.white),
                             const SizedBox(width: 5),
                             Text(
                               snapshot.data!['seasons'].length - 1 > 1
@@ -637,16 +500,12 @@ class _TVShowResultState extends State<TVShowResult> {
                             vertical: 5, horizontal: 10),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
-                          color: Colors.grey[
-                              900], // Adjust the background color opacity as needed
+                          color: Colors.grey[900],
                         ),
                         child: Row(
-                          mainAxisSize:
-                              MainAxisSize.min, // Use min to wrap content
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.star,
-                                color: Colors
-                                    .white), // Replace with your desired icon
+                            const Icon(Icons.star, color: Colors.white),
                             const SizedBox(width: 5),
                             Text(
                               'IMDB: ${snapshot.data!["imdb_rating"]}',
@@ -854,7 +713,6 @@ class _TVShowResultState extends State<TVShowResult> {
                                       ),
                                       Expanded(
                                         child: FutureBuilder<List<String>>(
-                                          // Assuming getProfilePhotos returns a Future of List<String> where each String is a URL
                                           future:
                                               FirebaseUtils.getProfilePhotos(
                                                   friendsWhoWatched),
@@ -862,16 +720,14 @@ class _TVShowResultState extends State<TVShowResult> {
                                             if (snapshot.connectionState ==
                                                 ConnectionState.waiting) {
                                               return const SizedBox(
-                                                height:
-                                                    32.0, // Adjust the size as needed
+                                                height: 32.0,
                                                 child: Center(
                                                     child:
                                                         CircularProgressIndicator()),
                                               );
                                             } else if (snapshot.hasError) {
                                               return const SizedBox(
-                                                height:
-                                                    32.0, // Adjust the size as needed
+                                                height: 32.0,
                                                 child: Center(
                                                     child: Text(
                                                         'Error loading images')),
@@ -879,14 +735,12 @@ class _TVShowResultState extends State<TVShowResult> {
                                             } else if (snapshot.hasData) {
                                               var images = snapshot.data!;
                                               return SizedBox(
-                                                height:
-                                                    32.0, // Adjust the size as needed
+                                                height: 32.0,
                                                 child: Stack(
                                                   children: List.generate(
                                                       images.length, (index) {
-                                                    // Calculate the left offset for each photo
-                                                    double offset = index *
-                                                        10.0; // Adjust the multiplier as needed for the desired overlap
+                                                    double offset =
+                                                        index * 10.0;
                                                     return Positioned(
                                                       left: offset,
                                                       child: ClipOval(
@@ -977,11 +831,9 @@ class _TVShowResultState extends State<TVShowResult> {
                                 ),
                               );
                             } else if (snapshot.hasData) {
-                              // Now you have a list of DocumentSnapshots for each friend who watched the movie
                               return GridView.builder(
                                 shrinkWrap: true,
-                                physics:
-                                    const NeverScrollableScrollPhysics(), // to disable GridView's scrolling
+                                physics: const NeverScrollableScrollPhysics(),
                                 gridDelegate:
                                     const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
@@ -998,7 +850,6 @@ class _TVShowResultState extends State<TVShowResult> {
 
                                   return GestureDetector(
                                       onTap: () async {
-                                        // Navigate to Profile Page
                                         var querySnapshot =
                                             await FirebaseFirestore.instance
                                                 .collection('usernames')
@@ -1064,7 +915,6 @@ class _TVShowResultState extends State<TVShowResult> {
                                                       overflow:
                                                           TextOverflow.ellipsis,
                                                     ),
-                                                    // ... other text elements if needed ...
                                                   ],
                                                 ),
                                               ),
@@ -1091,16 +941,14 @@ class _TVShowResultState extends State<TVShowResult> {
                             showDialog(
                               context: context,
                               builder: (context) {
-                                Map<String, bool> selectedFriends =
-                                    {}; // Maps friend UID to selection status
+                                Map<String, bool> selectedFriends = {};
                                 return StatefulBuilder(
                                   builder: (context, setState) {
                                     return AlertDialog(
                                       title:
                                           const Text('Add Friends Who Watched'),
                                       content: SizedBox(
-                                        height:
-                                            250, // Set your desired height here
+                                        height: 250,
                                         child: SingleChildScrollView(
                                           child: Column(
                                             children: List.generate(
@@ -1263,7 +1111,6 @@ class _TVShowResultState extends State<TVShowResult> {
                                               item[id] = watchedWithList;
                                               await firestore.runTransaction(
                                                   (transaction) async {
-                                                // Get the document snapshot
                                                 DocumentSnapshot snapshot =
                                                     await transaction
                                                         .get(userDoc2);
@@ -1343,7 +1190,6 @@ class _TVShowResultState extends State<TVShowResult> {
                                             item[id] = watchedWithList;
                                             firestore.runTransaction(
                                                 (transaction) async {
-                                              // Get the document snapshot
                                               DocumentSnapshot snapshot =
                                                   await transaction
                                                       .get(userDoc2);
@@ -1353,21 +1199,17 @@ class _TVShowResultState extends State<TVShowResult> {
                                                     "Document does not exist!");
                                               }
 
-                                              // Get the current data
                                               Map<String, dynamic> data =
                                                   snapshot.data()
                                                       as Map<String, dynamic>;
 
-                                              // Check if 'Movies' map exists and if the 'id' is already a key in the 'Movies' map
                                               if (data.containsKey('TVShows') &&
                                                   data['TVShows']
                                                       is Map<String, dynamic>) {
                                                 Map<String, dynamic> moviesMap =
                                                     data['TVShows'];
 
-                                                // Check if the 'id' already exists in the 'Movies' map
                                                 if (moviesMap.containsKey(id)) {
-                                                  // If it exists, append the new list to the existing one
                                                   List existingList =
                                                       moviesMap[id]["friends"];
                                                   for (String person
@@ -1381,16 +1223,13 @@ class _TVShowResultState extends State<TVShowResult> {
                                                     "friends": existingList
                                                   };
                                                 } else {
-                                                  // If the 'id' doesn't exist, add the new key-value pair
                                                   moviesMap[id] = {
                                                     "friends": watchedWithList
                                                   };
                                                 }
-                                                // Update the 'Movies' map
                                                 transaction.update(userDoc2,
                                                     {'TVShows': moviesMap});
                                               } else {
-                                                // If 'Movies' map doesn't exist, create it and add the 'id' and list
                                                 transaction.set(
                                                     userDoc2,
                                                     {
@@ -1515,21 +1354,61 @@ class _TVShowResultState extends State<TVShowResult> {
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(
-                                        height:
-                                            10), // optional: to give some space between image and text
+                                    const SizedBox(height: 10),
                                     Text(
                                       '${person["name"]}',
                                       style: const TextStyle(fontSize: 12),
                                     ),
                                     Text(
-                                      '(${person["character"]})',
+                                      'as ${person["character"]}',
                                       style: const TextStyle(fontSize: 10),
                                     ),
                                   ],
                                 ),
                               ),
                             );
+                          },
+                        ),
+                      ),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 1,
+                        height: snapshot.data!['created_by'].length * 25.0,
+                        margin: const EdgeInsets.fromLTRB(30.0, 5.0, 0, 5.0),
+                        child: ListView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: snapshot.data!['created_by'].length < 5
+                              ? snapshot.data!['created_by'].length
+                              : 5,
+                          itemBuilder: (BuildContext context, int index) {
+                            var creator =
+                                snapshot.data!['created_by'][index]["name"];
+                            if (creator != null) {
+                              return GestureDetector(
+                                  onTap: () {
+                                    Person personResult = Person(
+                                        id: snapshot.data!['created_by'][index]
+                                                ["id"]
+                                            .toString(),
+                                        name: snapshot.data!['created_by']
+                                                [index]["name"]
+                                            .toString(),
+                                        data: snapshot.data!['created_by']
+                                            [index]);
+
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => PersonResult(
+                                                personResult: personResult,
+                                              )),
+                                    );
+                                  },
+                                  child: Text(
+                                    "Created by ${snapshot.data!['created_by'][index]['name']}",
+                                    style: const TextStyle(fontSize: 15),
+                                  ));
+                            }
+                            return Container();
                           },
                         ),
                       ),
@@ -1554,9 +1433,8 @@ class _TVShowResultState extends State<TVShowResult> {
                           ),
                         );
                       } catch (e) {
-                        // Handle the exception
                         return const Center(
-                          child: const Text(''),
+                          child: Text(''),
                         );
                       }
                     },

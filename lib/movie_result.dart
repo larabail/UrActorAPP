@@ -1710,15 +1710,13 @@ class _MovieResultState extends State<MovieResult> {
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(
-                                        height:
-                                            10), // optional: to give some space between image and text
+                                    const SizedBox(height: 10),
                                     Text(
                                       '${person["name"]}',
                                       style: const TextStyle(fontSize: 12),
                                     ),
                                     Text(
-                                      '(${person["character"]})',
+                                      'as ${person["character"]}',
                                       style: const TextStyle(fontSize: 10),
                                     ),
                                   ],
@@ -1728,17 +1726,17 @@ class _MovieResultState extends State<MovieResult> {
                           },
                         ),
                       ),
-                      Container(
-                        width: MediaQuery.of(context).size.width,
-                        margin: const EdgeInsets.fromLTRB(30.0, 20.0, 0, 5.0),
-                        child: const Text(
-                          "Main Crew:",
-                          style: TextStyle(fontSize: 18),
-                        ),
-                      ),
+                      // Container(
+                      //   width: MediaQuery.of(context).size.width,
+                      //   margin: const EdgeInsets.fromLTRB(30.0, 20.0, 0, 5.0),
+                      //   child: const Text(
+                      //     "Main Crew:",
+                      //     style: TextStyle(fontSize: 18),
+                      //   ),
+                      // ),
                       Container(
                         width: MediaQuery.of(context).size.width * 1,
-                        height: 100,
+                        height: 50,
                         margin: const EdgeInsets.fromLTRB(30.0, 5.0, 0, 5.0),
                         child: ListView.builder(
                           physics: const NeverScrollableScrollPhysics(),
@@ -1746,13 +1744,17 @@ class _MovieResultState extends State<MovieResult> {
                               ? snapshot.data!['crew'].length
                               : 5,
                           itemBuilder: (BuildContext context, int index) {
-                            // Find the director in the crew list
                             var director = snapshot.data!['crew'].firstWhere(
                               (person) => person['job'] == 'Director',
                               orElse: () => null,
                             );
+                            var writer = snapshot.data!['crew'].firstWhere(
+                              (person) =>
+                                  person['job'] == 'Writer' ||
+                                  person['job'] == 'Screenplay',
+                              orElse: () => null,
+                            );
 
-                            // If we're at the first index and a director exists, return the director
                             if (index == 0 && director != null) {
                               return GestureDetector(
                                   onTap: () {
@@ -1770,32 +1772,18 @@ class _MovieResultState extends State<MovieResult> {
                                     );
                                   },
                                   child: Text(
-                                    "Director: ${director['name']}",
+                                    "Directed by ${director['name']}",
                                     style: const TextStyle(fontSize: 15),
                                   ));
                             }
 
-                            // Adjust the index if the director is present
-                            int adjustedIndex =
-                                director != null ? index - 1 : index;
-
-                            // Skip the director since it's already shown
-                            if (director != null &&
-                                snapshot.data!['crew'][adjustedIndex] ==
-                                    director) {
-                              adjustedIndex++;
-                            }
-
-                            // Make sure we don't go out of bounds after adjustments
-                            if (adjustedIndex < snapshot.data!['crew'].length) {
-                              Map person =
-                                  snapshot.data!['crew'][adjustedIndex];
+                            if (index == 1 && writer != null) {
                               return GestureDetector(
                                   onTap: () {
                                     Person personResult = Person(
-                                        id: person["id"].toString(),
-                                        name: person["name"].toString(),
-                                        data: person);
+                                        id: writer["id"].toString(),
+                                        name: writer["name"].toString(),
+                                        data: writer);
 
                                     Navigator.push(
                                       context,
@@ -1806,12 +1794,55 @@ class _MovieResultState extends State<MovieResult> {
                                     );
                                   },
                                   child: Text(
-                                    "${person['job']}: ${person['name']}",
+                                    "${writer['job'] == "Writer" ? "Written" : writer["job"]} by ${writer['name']}",
                                     style: const TextStyle(fontSize: 15),
                                   ));
-                            } else {
-                              return Container(); // Return an empty container to avoid errors
                             }
+                            return Container();
+
+                            // int adjustedIndex =
+                            //     director != null ? index - 1 : index;
+                            // adjustedIndex = writer != null
+                            //     ? adjustedIndex - 1
+                            //     : adjustedIndex;
+
+                            // if (director != null &&
+                            //     snapshot.data!['crew'][adjustedIndex] ==
+                            //         director) {
+                            //   adjustedIndex++;
+                            // }
+
+                            // if (writer != null &&
+                            //     snapshot.data!['crew'][adjustedIndex] ==
+                            //         writer) {
+                            //   adjustedIndex++;
+                            // }
+
+                            // if (adjustedIndex < snapshot.data!['crew'].length) {
+                            //   Map person =
+                            //       snapshot.data!['crew'][adjustedIndex];
+                            //   return GestureDetector(
+                            //       onTap: () {
+                            //         Person personResult = Person(
+                            //             id: person["id"].toString(),
+                            //             name: person["name"].toString(),
+                            //             data: person);
+
+                            //         Navigator.push(
+                            //           context,
+                            //           MaterialPageRoute(
+                            //               builder: (context) => PersonResult(
+                            //                     personResult: personResult,
+                            //                   )),
+                            //         );
+                            //       },
+                            //       child: Text(
+                            //         "${person['job']}: ${person['name']}",
+                            //         style: const TextStyle(fontSize: 15),
+                            //       ));
+                            // } else {
+                            //   return Container();
+                            // }
                           },
                         ),
                       ),
