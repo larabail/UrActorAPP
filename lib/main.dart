@@ -512,8 +512,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         height: MediaQuery.of(context).size.height * 0.18,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
-                          itemCount: currentUser.watchlist.length > 6
-                              ? 6
+                          itemCount: currentUser.watchlist.length > 10
+                              ? 10
                               : currentUser.watchlist.length,
                           itemBuilder: (context, index) {
                             return FutureBuilder<MediaItem>(
@@ -554,8 +554,16 @@ class _MyHomePageState extends State<MyHomePage> {
                                       child:
                                           Text("Failed to load movie details"));
                                 } else {
-                                  return const Center(
-                                      child: CircularProgressIndicator());
+                                  return Container(
+                                      margin: const EdgeInsets.fromLTRB(
+                                          5.0, 10.0, 10.0, 0),
+                                      width: MediaQuery.of(context).size.width *
+                                          0.28,
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              0.18,
+                                      child: const Center(
+                                          child: CircularProgressIndicator()));
                                 }
                               },
                             );
@@ -624,8 +632,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         height: MediaQuery.of(context).size.height * 0.18,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
-                          itemCount: currentUser.favMovies.length > 6
-                              ? 6
+                          itemCount: currentUser.favMovies.length > 10
+                              ? 10
                               : currentUser.favMovies.length,
                           itemBuilder: (context, index) {
                             return FutureBuilder<MediaItem>(
@@ -666,8 +674,16 @@ class _MyHomePageState extends State<MyHomePage> {
                                       child:
                                           Text("Failed to load movie details"));
                                 } else {
-                                  return const Center(
-                                      child: CircularProgressIndicator());
+                                  return Container(
+                                      margin: const EdgeInsets.fromLTRB(
+                                          5.0, 10.0, 10.0, 0),
+                                      width: MediaQuery.of(context).size.width *
+                                          0.28,
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              0.18,
+                                      child: const Center(
+                                          child: CircularProgressIndicator()));
                                 }
                               },
                             );
@@ -735,8 +751,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         height: MediaQuery.of(context).size.height * 0.18,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
-                          itemCount: currentUser.seenMovies.length > 6
-                              ? 6
+                          itemCount: currentUser.seenMovies.length > 10
+                              ? 10
                               : currentUser.seenMovies.length,
                           itemBuilder: (context, index) {
                             return FutureBuilder<MediaItem>(
@@ -777,8 +793,16 @@ class _MyHomePageState extends State<MyHomePage> {
                                       child:
                                           Text("Failed to load movie details"));
                                 } else {
-                                  return const Center(
-                                      child: CircularProgressIndicator());
+                                  return Container(
+                                      margin: const EdgeInsets.fromLTRB(
+                                          5.0, 10.0, 10.0, 0),
+                                      width: MediaQuery.of(context).size.width *
+                                          0.28,
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              0.18,
+                                      child: const Center(
+                                          child: CircularProgressIndicator()));
                                 }
                               },
                             );
