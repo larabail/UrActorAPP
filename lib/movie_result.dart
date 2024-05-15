@@ -18,9 +18,6 @@ import 'person_result.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'dart:async';
 
-String reviewId = "";
-Map reviewInfo = {};
-bool reviewed = false;
 
 class MovieResult extends StatefulWidget {
   final Movie movie;
@@ -706,7 +703,7 @@ class _MovieResultState extends State<MovieResult> {
                                           onTap: () async {
                                             bool success =
                                                 await FirebaseUtils.editReview(
-                                                    snapshot.data!["id"],
+                                                    snapshot.data!["id"], "Movies",
                                                     context);
                                             if (success) {
                                               setState(() {});
@@ -742,6 +739,7 @@ class _MovieResultState extends State<MovieResult> {
                                             bool success = await FirebaseUtils
                                                 .deleteReview(
                                                     snapshot.data!["id"],
+                                                    "Movies",
                                                     context);
                                             if (success) {
                                               setState(() {});
@@ -786,7 +784,7 @@ class _MovieResultState extends State<MovieResult> {
                         ElevatedButton(
                           onPressed: () async {
                             bool success = await FirebaseUtils.writeReview(
-                                snapshot.data!["id"], context);
+                                snapshot.data!["id"], "Movies", context);
                             if (success) {
                               setState(() {
                                 currentUser.reviews = currentUser.reviews;

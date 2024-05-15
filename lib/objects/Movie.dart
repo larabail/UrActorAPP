@@ -1,7 +1,6 @@
 import '../common/constants.dart';
 import '../common/utils.dart';
 import '../main.dart';
-import '../movie_result.dart';
 import 'Media.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
