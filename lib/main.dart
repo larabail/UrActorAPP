@@ -861,11 +861,11 @@ class _MyHomePageState extends State<MyHomePage> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    if (currentUser.allReviews.length == 0)
+                    if (currentUser.allReviews.isEmpty)
                       const Text("Haven't reviewed any movies yet"),
-                    if (currentUser.allReviews.length == 0)
+                    if (currentUser.allReviews.isEmpty)
                       const SizedBox(height: 10),
-                    if (currentUser.allReviews.length != 0)
+                    if (currentUser.allReviews.isNotEmpty)
                       SizedBox(
                         height: MediaQuery.of(context).size.height * 0.18,
                         child: ListView.builder(
@@ -933,8 +933,16 @@ class _MyHomePageState extends State<MyHomePage> {
                                       child:
                                           Text("Failed to load movie details"));
                                 } else {
-                                  return const Center(
-                                      child: CircularProgressIndicator());
+                                  return Container(
+                                      margin: const EdgeInsets.fromLTRB(
+                                          5.0, 10.0, 10.0, 0),
+                                      width: MediaQuery.of(context).size.width *
+                                          0.28,
+                                      height:
+                                            MediaQuery.of(context).size.height *
+                                                0.125,
+                                      child: const Center(
+                                          child: CircularProgressIndicator()));
                                 }
                               },
                             );
