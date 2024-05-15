@@ -39,6 +39,7 @@ class _RatingDialogState extends State<RatingDialog> {
     } else {
       currentUser.tvShowReviews = {};
     }
+    currentUser.allReviews.removeWhere((element) => element[0] == reviewType);
     await FirebaseFirestore.instance
         .collection(currentUser.uid)
         .get()
@@ -58,6 +59,13 @@ class _RatingDialogState extends State<RatingDialog> {
               currentUser.tvShowReviews[element.keys.toList()[0]] =
                   element[element.keys.toList()[0]];
             }
+            currentUser.allReviews += [
+              [
+                reviewType,
+                element.keys.toList()[0],
+                element[element.keys.toList()[0]]
+              ]
+            ];
           }
         }
       }

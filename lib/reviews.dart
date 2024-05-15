@@ -219,22 +219,25 @@ class _ReviewsState extends State<Reviews> {
                           alignment: MainAxisAlignment.center,
                           children: [
                             IconButton(
-                                onPressed: () {
-                                  FirebaseUtils.editReview(snapshot.data!["id"],
-                                      snapshot.data!["type"], context);
+                                onPressed: () async {
+                                  await FirebaseUtils.editReview(
+                                      snapshot.data!["id"],
+                                      snapshot.data!["type"],
+                                      context);
+                                  setState(() {
+                                    currentUser.reviews = currentUser.reviews;
+                                  });
                                 },
                                 icon: const Icon(Icons.edit)),
                             IconButton(
-                                onPressed: () {
-                                  FirebaseUtils.deleteReview(
+                                onPressed: () async {
+                                  await FirebaseUtils.deleteReview(
                                       snapshot.data!["id"],
                                       snapshot.data!["type"],
                                       context);
 
                                   setState(() {
-                                    currentUser.reviews = currentUser.reviews;
-                                    currentUser.tvShowReviews =
-                                        currentUser.tvShowReviews;
+                                    currentUser.allReviews = currentUser.allReviews;
                                   });
                                 },
                                 icon: const Icon(Icons.delete)),
@@ -272,19 +275,36 @@ class _ReviewsState extends State<Reviews> {
         itemBuilder: (BuildContext context, int index) {
           final leftReviewIndex = index * 2;
           final rightReviewIndex = index * 2 + 1;
-          final leftReview = currentUser.allReviews[leftReviewIndex];
-          final rightReview = currentUser.allReviews[rightReviewIndex];
+          final leftReviewId = (leftReviewIndex < currentUser.allReviews.length)
+              ? currentUser.allReviews[leftReviewIndex][1]
+              : null;
+          final rightReviewId =
+              (rightReviewIndex < currentUser.allReviews.length)
+                  ? currentUser.allReviews[rightReviewIndex][1]
+                  : null;
+          final leftReview = (leftReviewId != null)
+              ? (currentUser.allReviews[leftReviewIndex][2])
+              : null;
+          final rightReview = (rightReviewId != null)
+              ? (currentUser.allReviews[rightReviewIndex][2])
+              : null;
+          final leftReviewType = (leftReviewId != null)
+              ? (currentUser.allReviews[leftReviewIndex][0])
+              : null;
+          final rightReviewType = (rightReviewId != null)
+              ? (currentUser.allReviews[rightReviewIndex][0])
+              : null;
           return Row(
             children: [
               if (leftReview != null)
                 Expanded(
                   child: buildReviewTile(
-                      context, leftReview[2], leftReview[0], leftReview[1]),
+                      context, leftReview, leftReviewType, leftReviewId),
                 ),
               if (rightReview != null)
                 Expanded(
                   child: buildReviewTile(
-                      context, rightReview[2], rightReview[0], rightReview[1]),
+                      context, rightReview, rightReviewType, rightReviewId),
                 ),
             ],
           );
