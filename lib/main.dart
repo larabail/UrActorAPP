@@ -870,8 +870,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         height: MediaQuery.of(context).size.height * 0.18,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
-                          itemCount: currentUser.allReviews.length > 6
-                              ? 6
+                          itemCount: currentUser.allReviews.length > 10
+                              ? 10
                               : currentUser.allReviews.length,
                           itemBuilder: (context, index) {
                             final review = currentUser.allReviews[index][2];
@@ -939,8 +939,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                       width: MediaQuery.of(context).size.width *
                                           0.28,
                                       height:
-                                            MediaQuery.of(context).size.height *
-                                                0.125,
+                                          MediaQuery.of(context).size.height *
+                                              0.125,
                                       child: const Center(
                                           child: CircularProgressIndicator()));
                                 }
