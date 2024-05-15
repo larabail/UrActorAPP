@@ -120,6 +120,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
   void addMovieSubmit(String id, String title, int runtime, double rating,
       Map friendsWatchedWith) async {
     String key = widget.type == "movie" ? "Movies" : "TVShows";
+    print("DEBUG: $key");
     Map myObject = {
       'id': id,
       'title': title,
@@ -283,9 +284,8 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
       }
       Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
 
-      if (data.containsKey('Movies') &&
-          data['Movies'] is Map<String, dynamic>) {
-        Map<String, dynamic> moviesMap = data['Movies'];
+      if (data.containsKey(key) && data[key] is Map<String, dynamic>) {
+        Map<String, dynamic> moviesMap = data[key];
 
         if (moviesMap.containsKey(id)) {
           List existingList = moviesMap[id]["friends"];
@@ -298,12 +298,12 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
         } else {
           moviesMap[id] = {"friends": watchedWithList};
         }
-        transaction.update(userDoc2, {'Movies': moviesMap});
+        transaction.update(userDoc2, {key: moviesMap});
       } else {
         transaction.set(
             userDoc2,
             {
-              'Movies': {
+              key: {
                 id: {"friends": watchedWithList}
               }
             },
