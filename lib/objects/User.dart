@@ -223,11 +223,14 @@ class AppUser {
     favDirectors = [];
     favMovies = [];
     favTVShows = [];
+    friends = [];
     seenMovies = [];
     seenTVShows = [];
     watchlist = [];
     watchlistTVShows = [];
     reviews = {};
+    tvShowReviews = {};
+    allReviews = [];
     rewatchedMovies = {};
     playlists = {};
     seenWith = {};
