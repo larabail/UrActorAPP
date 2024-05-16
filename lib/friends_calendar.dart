@@ -114,7 +114,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
       // Add more pages here
     ];
 
-    void _onItemTapped(int index) {
+    void onItemTapped(int index) {
       selectedIndex = index;
       Navigator.push(
         context,
@@ -125,7 +125,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
     List moviesOnDay = [];
     List movies = [];
 
-    void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
+    void onDaySelected(DateTime selectedDay, DateTime focusedDay) {
       String month = '${selectedDay.month}';
       String day = '${selectedDay.day}';
       if (selectedDay.month < 10) {
@@ -300,7 +300,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
                         _focusedDay = focusedDay; // update focusedDay here
                         _updateMonthlyStats(focusedDay);
                       });
-                      _onDaySelected(selectedDay, focusedDay);
+                      onDaySelected(selectedDay, focusedDay);
                     }),
               ),
               Padding(
