@@ -1,7 +1,5 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
-import 'dart:convert';
-
 import 'package:uractor/objects/Playlist.dart';
 import 'package:uractor/objects/User.dart';
 import 'package:uractor/tvshow_result.dart';
@@ -27,7 +25,7 @@ import 'watchlist.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:http/http.dart' as http;
+import 'package:cached_network_image/cached_network_image.dart';
 
 List idsExplorePage = [];
 bool gotData = false;
@@ -145,40 +143,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     int selectedIndex = 0;
-    Future<MediaItem> getData(id, type) async {
-      MediaItem item;
-      String link;
-      if (type == "TVShows") {
-        link = TV_SHOW_LINK;
-      } else {
-        link = MOVIE_LINK;
-      }
-      final response = await http.get(Uri.parse('$link$id$API_KEY'));
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        String coverPath = "";
-        if (json['poster_path'] == null) {
-          coverPath = 'assets/question_mark.png';
-        } else {
-          coverPath = IMG_LINK + json['poster_path'];
-        }
-        if (type == "TVShows") {
-          item = TVShow(
-              id: json['id'].toString(),
-              title: json['name'],
-              coverPhoto: coverPath);
-        } else {
-          item = Movie(
-              id: json['id'].toString(),
-              title: json['title'],
-              coverPhoto: coverPath);
-        }
-      } else {
-        throw Exception('Failed to load movie details');
-      }
-      return item;
-    }
-
     if (gotData) {
       return Scaffold(
         appBar: const CustomAppBar(),
@@ -522,22 +486,23 @@ class _MyHomePageState extends State<MyHomePage> {
                               ? 10
                               : currentUser.watchlist.length,
                           itemBuilder: (context, index) {
-                            return FutureBuilder<MediaItem>(
-                              future: getData(
-                                  currentUser.watchlist.reversed.toList()[index]
-                                      [1],
-                                  'Movies'),
+                            Movie tempMovie = Movie(
+                                id: currentUser.watchlist.reversed
+                                    .toList()[index][1],
+                                title: "title",
+                                coverPhoto: "coverPhoto");
+                            return FutureBuilder<Map>(
+                              future: tempMovie.getData(),
                               builder: (BuildContext context,
-                                  AsyncSnapshot<MediaItem> snapshot) {
+                                  AsyncSnapshot<Map> snapshot) {
                                 if (snapshot.hasData) {
                                   return GestureDetector(
                                     onTap: () {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                            builder: (context) => MovieResult(
-                                                movie:
-                                                    snapshot.data! as Movie)),
+                                            builder: (context) =>
+                                                MovieResult(movie: tempMovie)),
                                       );
                                     },
                                     child: Container(
@@ -548,8 +513,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(27),
                                         image: DecorationImage(
-                                          image: NetworkImage(
-                                              snapshot.data!.coverPhoto),
+                                          image: CachedNetworkImageProvider(
+                                            IMG_LINK +
+                                                snapshot.data!["poster_path"],
+                                          ),
                                           fit: BoxFit.fitWidth,
                                         ),
                                       ),
@@ -642,22 +609,23 @@ class _MyHomePageState extends State<MyHomePage> {
                               ? 10
                               : currentUser.favMovies.length,
                           itemBuilder: (context, index) {
-                            return FutureBuilder<MediaItem>(
-                              future: getData(
-                                  currentUser.favMovies.reversed.toList()[index]
-                                      [1],
-                                  'Movies'),
+                            Movie tempMovie = Movie(
+                                id: currentUser.favMovies.reversed
+                                    .toList()[index][1],
+                                title: "title",
+                                coverPhoto: "coverPhoto");
+                            return FutureBuilder<Map>(
+                              future: tempMovie.getData(),
                               builder: (BuildContext context,
-                                  AsyncSnapshot<MediaItem> snapshot) {
+                                  AsyncSnapshot<Map> snapshot) {
                                 if (snapshot.hasData) {
                                   return GestureDetector(
                                     onTap: () {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                            builder: (context) => MovieResult(
-                                                movie:
-                                                    snapshot.data! as Movie)),
+                                            builder: (context) =>
+                                                MovieResult(movie: tempMovie)),
                                       );
                                     },
                                     child: Container(
@@ -668,8 +636,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(27),
                                         image: DecorationImage(
-                                          image: NetworkImage(
-                                              snapshot.data!.coverPhoto),
+                                          image: CachedNetworkImageProvider(
+                                            IMG_LINK +
+                                                snapshot.data!["poster_path"],
+                                          ),
                                           fit: BoxFit.fitWidth,
                                         ),
                                       ),
@@ -754,12 +724,25 @@ class _MyHomePageState extends State<MyHomePage> {
                               ? 10
                               : currentUser.seen.length,
                           itemBuilder: (context, index) {
-                            return FutureBuilder<MediaItem>(
-                              future: getData(
-                                  currentUser.seen.reversed.toList()[index][1],
-                                  currentUser.seen.reversed.toList()[index][0]),
+                            MediaItem tempMedia;
+                            if (currentUser.seen.reversed.toList()[index][0] ==
+                                "Movies") {
+                              tempMedia = Movie(
+                                  id: currentUser.seen.reversed.toList()[index]
+                                      [1],
+                                  title: "title",
+                                  coverPhoto: "coverPhoto");
+                            } else {
+                              tempMedia = TVShow(
+                                  id: currentUser.seen.reversed.toList()[index]
+                                      [1],
+                                  title: "title",
+                                  coverPhoto: "coverPhoto");
+                            }
+                            return FutureBuilder<Map>(
+                              future: tempMedia.getData(),
                               builder: (BuildContext context,
-                                  AsyncSnapshot<MediaItem> snapshot) {
+                                  AsyncSnapshot<Map> snapshot) {
                                 if (snapshot.hasData) {
                                   return GestureDetector(
                                     onTap: () {
@@ -771,11 +754,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                                         .toList()[index][0] ==
                                                     "Movies"
                                                 ? MovieResult(
-                                                    movie:
-                                                        snapshot.data! as Movie)
+                                                    movie: tempMedia as Movie)
                                                 : TVShowResult(
-                                                    tvshow: snapshot.data!
-                                                        as TVShow)),
+                                                    tvshow:
+                                                        tempMedia as TVShow)),
                                       );
                                     },
                                     child: Container(
@@ -786,8 +768,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(27),
                                         image: DecorationImage(
-                                          image: NetworkImage(
-                                              snapshot.data!.coverPhoto),
+                                          image: CachedNetworkImageProvider(
+                                            IMG_LINK +
+                                                snapshot.data!["poster_path"],
+                                          ),
                                           fit: BoxFit.fitWidth,
                                         ),
                                       ),
@@ -876,11 +860,22 @@ class _MyHomePageState extends State<MyHomePage> {
                           itemBuilder: (context, index) {
                             final review = currentUser.allReviews[index][2];
                             final type = currentUser.allReviews[index][0];
-                            return FutureBuilder<MediaItem>(
-                              future: getData(currentUser.allReviews[index][1],
-                                  currentUser.allReviews[index][0]),
+                            MediaItem tempMedia;
+                            if (type == "Movies") {
+                              tempMedia = Movie(
+                                  id: currentUser.allReviews[index][1],
+                                  title: "title",
+                                  coverPhoto: "coverPhoto");
+                            } else {
+                              tempMedia = TVShow(
+                                  id: currentUser.allReviews[index][1],
+                                  title: "title",
+                                  coverPhoto: "coverPhoto");
+                            }
+                            return FutureBuilder<Map>(
+                              future: tempMedia.getData(),
                               builder: (BuildContext context,
-                                  AsyncSnapshot<MediaItem> snapshot) {
+                                  AsyncSnapshot<Map> snapshot) {
                                 if (snapshot.hasData) {
                                   return GestureDetector(
                                     onTap: () {
@@ -890,11 +885,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                             builder: (context) => type ==
                                                     "Movies"
                                                 ? MovieResult(
-                                                    movie:
-                                                        snapshot.data! as Movie)
+                                                    movie: tempMedia as Movie)
                                                 : TVShowResult(
-                                                    tvshow: snapshot.data!
-                                                        as TVShow)),
+                                                    tvshow:
+                                                        tempMedia as TVShow)),
                                       );
                                     },
                                     child: Column(children: [
@@ -912,7 +906,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                               BorderRadius.circular(27),
                                           image: DecorationImage(
                                             image: NetworkImage(
-                                                snapshot.data!.coverPhoto),
+                                              IMG_LINK +
+                                                  snapshot.data!["poster_path"],
+                                            ),
                                             fit: BoxFit.fitWidth,
                                           ),
                                         ),
