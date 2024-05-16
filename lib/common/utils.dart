@@ -114,7 +114,7 @@ class FirebaseUtils {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return RatingDialog();
+        return const RatingDialog();
       },
     ).then((value) => completer.complete(true));
     return completer.future;
@@ -204,8 +204,8 @@ class FirebaseUtils {
         .then((QuerySnapshot querySnapshot) {
       querySnapshot.docs.forEach((doc) async {
         if (doc.id == type) {
-          Map movies_result = doc.data() as Map;
-          w = movies_result["Seen"];
+          Map moviesResult = doc.data() as Map;
+          w = moviesResult["Seen"];
           if (type == "Movies") {
             currentUser.seenMovies = [];
           } else {

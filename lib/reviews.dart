@@ -258,17 +258,29 @@ class _ReviewsState extends State<Reviews> {
                           final rightReviewIndex = index * 2 + 1;
                           final leftReviewId =
                               (leftReviewIndex < currentUser.reviews.length)
-                                  ? currentUser.reviews.keys.toList().reversed.toList()[leftReviewIndex]
+                                  ? currentUser.reviews.keys
+                                      .toList()
+                                      .reversed
+                                      .toList()[leftReviewIndex]
                                   : null;
                           final rightReviewId =
                               (rightReviewIndex < currentUser.reviews.length)
-                                  ? currentUser.reviews.keys.toList().reversed.toList()[rightReviewIndex]
+                                  ? currentUser.reviews.keys
+                                      .toList()
+                                      .reversed
+                                      .toList()[rightReviewIndex]
                                   : null;
                           final leftReview = (leftReviewId != null)
-                              ? (currentUser.reviews.values.toList().reversed.toList()[leftReviewIndex])
+                              ? (currentUser.reviews.values
+                                  .toList()
+                                  .reversed
+                                  .toList()[leftReviewIndex])
                               : null;
                           final rightReview = (rightReviewId != null)
-                              ? (currentUser.reviews.values.toList().reversed.toList()[rightReviewIndex])
+                              ? (currentUser.reviews.values
+                                  .toList()
+                                  .reversed
+                                  .toList()[rightReviewIndex])
                               : null;
                           return Row(
                             children: [
@@ -287,23 +299,36 @@ class _ReviewsState extends State<Reviews> {
                         },
                       ),
                       ListView.builder(
-                        itemCount: (currentUser.tvShowReviews.length / 2).ceil(),
+                        itemCount:
+                            (currentUser.tvShowReviews.length / 2).ceil(),
                         itemBuilder: (BuildContext context, int index) {
                           final leftReviewIndex = index * 2;
                           final rightReviewIndex = index * 2 + 1;
-                          final leftReviewId =
-                              (leftReviewIndex < currentUser.tvShowReviews.length)
-                                  ? currentUser.tvShowReviews.keys.toList().reversed.toList()[leftReviewIndex]
-                                  : null;
-                          final rightReviewId =
-                              (rightReviewIndex < currentUser.tvShowReviews.length)
-                                  ? currentUser.tvShowReviews.keys.toList().reversed.toList()[rightReviewIndex]
-                                  : null;
+                          final leftReviewId = (leftReviewIndex <
+                                  currentUser.tvShowReviews.length)
+                              ? currentUser.tvShowReviews.keys
+                                  .toList()
+                                  .reversed
+                                  .toList()[leftReviewIndex]
+                              : null;
+                          final rightReviewId = (rightReviewIndex <
+                                  currentUser.tvShowReviews.length)
+                              ? currentUser.tvShowReviews.keys
+                                  .toList()
+                                  .reversed
+                                  .toList()[rightReviewIndex]
+                              : null;
                           final leftReview = (leftReviewId != null)
-                              ? (currentUser.tvShowReviews.values.toList().reversed.toList()[leftReviewIndex])
+                              ? (currentUser.tvShowReviews.values
+                                  .toList()
+                                  .reversed
+                                  .toList()[leftReviewIndex])
                               : null;
                           final rightReview = (rightReviewId != null)
-                              ? (currentUser.tvShowReviews.values.toList().reversed.toList()[rightReviewIndex])
+                              ? (currentUser.tvShowReviews.values
+                                  .toList()
+                                  .reversed
+                                  .toList()[rightReviewIndex])
                               : null;
                           return Row(
                             children: [

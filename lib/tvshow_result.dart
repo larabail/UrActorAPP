@@ -69,7 +69,7 @@ class _TVShowResultState extends State<TVShowResult> {
     reviewed = false;
     check();
 
-    Future<void> _onTap(String type, String id, String title, int runtime,
+    Future<void> onTap(String type, String id, String title, int runtime,
         double rating) async {
       bool success = false;
       switch (type) {
@@ -430,9 +430,9 @@ class _TVShowResultState extends State<TVShowResult> {
                                   isExpanded = true;
                                 });
                               },
-                              child: Container(
+                              child: const SizedBox(
                                 width: double.infinity,
-                                child: const Text(
+                                child: Text(
                                   "Read All",
                                   textAlign: TextAlign.right,
                                 ),
@@ -528,7 +528,7 @@ class _TVShowResultState extends State<TVShowResult> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       GestureDetector(
-                        onTap: () => _onTap(
+                        onTap: () => onTap(
                             'seen',
                             snapshot.data!["id"].toString(),
                             snapshot.data!["name"],
@@ -544,7 +544,7 @@ class _TVShowResultState extends State<TVShowResult> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => _onTap(
+                        onTap: () => onTap(
                             'watchlist',
                             snapshot.data!["id"].toString(),
                             snapshot.data!["name"],
@@ -560,7 +560,7 @@ class _TVShowResultState extends State<TVShowResult> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => _onTap(
+                        onTap: () => onTap(
                             'fav',
                             snapshot.data!["id"].toString(),
                             snapshot.data!["name"],
@@ -576,7 +576,7 @@ class _TVShowResultState extends State<TVShowResult> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => _onTap(
+                        onTap: () => onTap(
                             'list',
                             snapshot.data!["id"].toString(),
                             snapshot.data!["name"],
