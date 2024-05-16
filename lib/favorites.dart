@@ -35,7 +35,6 @@ class Favorites extends StatelessWidget {
                   ],
                 ),
                 Expanded(
-                  // This Expanded widget is for the TabBarView
                   child: TabBarView(
                     children: [
                       MyTabView(favItems: currentUser.favMovies),
