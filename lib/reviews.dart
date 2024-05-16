@@ -275,7 +275,7 @@ class _ReviewsState extends State<Reviews> {
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 10.0),
           child: Text(
-            "Your Favorites",
+            "Your Reviews",
             style: TextStyle(
               fontSize: 24.0,
               fontWeight: FontWeight.bold,
@@ -303,35 +303,29 @@ class _ReviewsState extends State<Reviews> {
                           final rightReviewIndex = index * 2 + 1;
                           final leftReviewId =
                               (leftReviewIndex < currentUser.reviews.length)
-                                  ? currentUser.reviews[leftReviewIndex][1]
+                                  ? currentUser.reviews.keys.toList().reversed.toList()[leftReviewIndex]
                                   : null;
                           final rightReviewId =
                               (rightReviewIndex < currentUser.reviews.length)
-                                  ? currentUser.reviews[rightReviewIndex][1]
+                                  ? currentUser.reviews.keys.toList().reversed.toList()[rightReviewIndex]
                                   : null;
                           final leftReview = (leftReviewId != null)
-                              ? (currentUser.reviews[leftReviewIndex][2])
+                              ? (currentUser.reviews.values.toList().reversed.toList()[leftReviewIndex])
                               : null;
                           final rightReview = (rightReviewId != null)
-                              ? (currentUser.reviews[rightReviewIndex][2])
-                              : null;
-                          final leftReviewType = (leftReviewId != null)
-                              ? (currentUser.reviews[leftReviewIndex][0])
-                              : null;
-                          final rightReviewType = (rightReviewId != null)
-                              ? (currentUser.reviews[rightReviewIndex][0])
+                              ? (currentUser.reviews.values.toList().reversed.toList()[rightReviewIndex])
                               : null;
                           return Row(
                             children: [
                               if (leftReview != null)
                                 Expanded(
                                   child: buildReviewTile(context, leftReview,
-                                      leftReviewType, leftReviewId),
+                                      'Movies', leftReviewId),
                                 ),
                               if (rightReview != null)
                                 Expanded(
                                   child: buildReviewTile(context, rightReview,
-                                      rightReviewType, rightReviewId),
+                                      'Movies', rightReviewId),
                                 ),
                             ],
                           );
@@ -344,35 +338,29 @@ class _ReviewsState extends State<Reviews> {
                           final rightReviewIndex = index * 2 + 1;
                           final leftReviewId =
                               (leftReviewIndex < currentUser.tvShowReviews.length)
-                                  ? currentUser.tvShowReviews[leftReviewIndex][1]
+                                  ? currentUser.tvShowReviews.keys.toList().reversed.toList()[leftReviewIndex]
                                   : null;
                           final rightReviewId =
                               (rightReviewIndex < currentUser.tvShowReviews.length)
-                                  ? currentUser.tvShowReviews[rightReviewIndex][1]
+                                  ? currentUser.tvShowReviews.keys.toList().reversed.toList()[rightReviewIndex]
                                   : null;
                           final leftReview = (leftReviewId != null)
-                              ? (currentUser.tvShowReviews[leftReviewIndex][2])
+                              ? (currentUser.tvShowReviews.values.toList().reversed.toList()[leftReviewIndex])
                               : null;
                           final rightReview = (rightReviewId != null)
-                              ? (currentUser.tvShowReviews[rightReviewIndex][2])
-                              : null;
-                          final leftReviewType = (leftReviewId != null)
-                              ? (currentUser.tvShowReviews[leftReviewIndex][0])
-                              : null;
-                          final rightReviewType = (rightReviewId != null)
-                              ? (currentUser.tvShowReviews[rightReviewIndex][0])
+                              ? (currentUser.tvShowReviews.values.toList().reversed.toList()[rightReviewIndex])
                               : null;
                           return Row(
                             children: [
                               if (leftReview != null)
                                 Expanded(
                                   child: buildReviewTile(context, leftReview,
-                                      leftReviewType, leftReviewId),
+                                      "TVShows", leftReviewId),
                                 ),
                               if (rightReview != null)
                                 Expanded(
                                   child: buildReviewTile(context, rightReview,
-                                      rightReviewType, rightReviewId),
+                                      "TVShows", rightReviewId),
                                 ),
                             ],
                           );
