@@ -1,12 +1,10 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers, use_key_in_widget_constructors, must_be_immutable, non_constant_identifier_names
 
-// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '/common/constants.dart';
 import '/objects/Media.dart';
 import '/objects/Movie.dart';
 import '/objects/TVShow.dart';
-// import 'popups/rating_popup.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'common/utils.dart';
@@ -25,49 +23,6 @@ class Reviews extends StatefulWidget {
 
 class _ReviewsState extends State<Reviews> {
   List<Map<String, dynamic>> movies = [];
-  // void editReview(id, context) {
-  //   reviewId = id.toString();
-  //   reviewInfo = currentUser.reviews[id.toString()];
-  //   showDialog(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return const RatingDialog();
-  //     },
-  //   );
-  // }
-
-  // Future<void> deleteReview(id, context) async {
-  //   currentUser.reviews.remove(id.toString());
-  //   reviewInfo = {};
-  //   await FirebaseFirestore.instance
-  //       .collection(currentUser.uid)
-  //       .get()
-  //       .then((QuerySnapshot querySnapshot) async {
-  //     for (var doc in querySnapshot.docs) {
-  //       if (doc.id == "Reviews") {
-  //         Map allreviews = doc.data() as Map;
-  //         List reviewsInList = allreviews["Seen"] as List;
-  //         List tempReviewsInList = [];
-  //         for (var element in reviewsInList) {
-  //           element = element as Map;
-  //           if (element.keys.toList()[0].toString() != id.toString()) {
-  //             tempReviewsInList.add(element);
-  //           }
-  //         }
-  //         final userDoc = FirebaseFirestore.instance
-  //             .collection(currentUser.uid)
-  //             .doc("Reviews");
-  //         await userDoc.update({'Seen': tempReviewsInList});
-  //         currentUser.reviews = {};
-  //         for (var element in tempReviewsInList) {
-  //           element = element as Map;
-  //           currentUser.reviews[element.keys.toList()[0]] =
-  //               element[element.keys.toList()[0]];
-  //         }
-  //       }
-  //     }
-  //   });
-  // }
 
   Future<Map<String, dynamic>> getData(id, type) async {
     Map<String, dynamic> data = {};
