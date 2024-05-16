@@ -237,7 +237,8 @@ class _ReviewsState extends State<Reviews> {
                                       context);
 
                                   setState(() {
-                                    currentUser.allReviews = currentUser.allReviews;
+                                    currentUser.allReviews =
+                                        currentUser.allReviews;
                                   });
                                 },
                                 icon: const Icon(Icons.delete)),
@@ -270,46 +271,121 @@ class _ReviewsState extends State<Reviews> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomAppBar(),
-      body: ListView.builder(
-        itemCount: (currentUser.allReviews.length / 2).ceil(),
-        itemBuilder: (BuildContext context, int index) {
-          final leftReviewIndex = index * 2;
-          final rightReviewIndex = index * 2 + 1;
-          final leftReviewId = (leftReviewIndex < currentUser.allReviews.length)
-              ? currentUser.allReviews[leftReviewIndex][1]
-              : null;
-          final rightReviewId =
-              (rightReviewIndex < currentUser.allReviews.length)
-                  ? currentUser.allReviews[rightReviewIndex][1]
-                  : null;
-          final leftReview = (leftReviewId != null)
-              ? (currentUser.allReviews[leftReviewIndex][2])
-              : null;
-          final rightReview = (rightReviewId != null)
-              ? (currentUser.allReviews[rightReviewIndex][2])
-              : null;
-          final leftReviewType = (leftReviewId != null)
-              ? (currentUser.allReviews[leftReviewIndex][0])
-              : null;
-          final rightReviewType = (rightReviewId != null)
-              ? (currentUser.allReviews[rightReviewIndex][0])
-              : null;
-          return Row(
-            children: [
-              if (leftReview != null)
-                Expanded(
-                  child: buildReviewTile(
-                      context, leftReview, leftReviewType, leftReviewId),
+      body: Column(children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 10.0),
+          child: Text(
+            "Your Favorites",
+            style: TextStyle(
+              fontSize: 24.0,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        DefaultTabController(
+          length: 2,
+          child: Expanded(
+            child: Column(
+              children: [
+                const TabBar(
+                  tabs: [
+                    Tab(text: 'Movies'),
+                    Tab(text: 'TV Shows'),
+                  ],
                 ),
-              if (rightReview != null)
                 Expanded(
-                  child: buildReviewTile(
-                      context, rightReview, rightReviewType, rightReviewId),
+                  child: TabBarView(
+                    children: [
+                      ListView.builder(
+                        itemCount: (currentUser.reviews.length / 2).ceil(),
+                        itemBuilder: (BuildContext context, int index) {
+                          final leftReviewIndex = index * 2;
+                          final rightReviewIndex = index * 2 + 1;
+                          final leftReviewId =
+                              (leftReviewIndex < currentUser.reviews.length)
+                                  ? currentUser.reviews[leftReviewIndex][1]
+                                  : null;
+                          final rightReviewId =
+                              (rightReviewIndex < currentUser.reviews.length)
+                                  ? currentUser.reviews[rightReviewIndex][1]
+                                  : null;
+                          final leftReview = (leftReviewId != null)
+                              ? (currentUser.reviews[leftReviewIndex][2])
+                              : null;
+                          final rightReview = (rightReviewId != null)
+                              ? (currentUser.reviews[rightReviewIndex][2])
+                              : null;
+                          final leftReviewType = (leftReviewId != null)
+                              ? (currentUser.reviews[leftReviewIndex][0])
+                              : null;
+                          final rightReviewType = (rightReviewId != null)
+                              ? (currentUser.reviews[rightReviewIndex][0])
+                              : null;
+                          return Row(
+                            children: [
+                              if (leftReview != null)
+                                Expanded(
+                                  child: buildReviewTile(context, leftReview,
+                                      leftReviewType, leftReviewId),
+                                ),
+                              if (rightReview != null)
+                                Expanded(
+                                  child: buildReviewTile(context, rightReview,
+                                      rightReviewType, rightReviewId),
+                                ),
+                            ],
+                          );
+                        },
+                      ),
+                      ListView.builder(
+                        itemCount: (currentUser.tvShowReviews.length / 2).ceil(),
+                        itemBuilder: (BuildContext context, int index) {
+                          final leftReviewIndex = index * 2;
+                          final rightReviewIndex = index * 2 + 1;
+                          final leftReviewId =
+                              (leftReviewIndex < currentUser.tvShowReviews.length)
+                                  ? currentUser.tvShowReviews[leftReviewIndex][1]
+                                  : null;
+                          final rightReviewId =
+                              (rightReviewIndex < currentUser.tvShowReviews.length)
+                                  ? currentUser.tvShowReviews[rightReviewIndex][1]
+                                  : null;
+                          final leftReview = (leftReviewId != null)
+                              ? (currentUser.tvShowReviews[leftReviewIndex][2])
+                              : null;
+                          final rightReview = (rightReviewId != null)
+                              ? (currentUser.tvShowReviews[rightReviewIndex][2])
+                              : null;
+                          final leftReviewType = (leftReviewId != null)
+                              ? (currentUser.tvShowReviews[leftReviewIndex][0])
+                              : null;
+                          final rightReviewType = (rightReviewId != null)
+                              ? (currentUser.tvShowReviews[rightReviewIndex][0])
+                              : null;
+                          return Row(
+                            children: [
+                              if (leftReview != null)
+                                Expanded(
+                                  child: buildReviewTile(context, leftReview,
+                                      leftReviewType, leftReviewId),
+                                ),
+                              if (rightReview != null)
+                                Expanded(
+                                  child: buildReviewTile(context, rightReview,
+                                      rightReviewType, rightReviewId),
+                                ),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-            ],
-          );
-        },
-      ),
+              ],
+            ),
+          ),
+        )
+      ]),
       bottomNavigationBar: CommonBottomAppBar(-1),
     );
   }
