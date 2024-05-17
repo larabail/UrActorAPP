@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -15,9 +16,7 @@ import 'main.dart';
 import 'objects/Person.dart';
 import 'person_result.dart';
 import 'movie_result.dart';
-import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';
-import 'dart:convert';
 
 class Profile extends StatefulWidget {
   const Profile();
@@ -115,60 +114,6 @@ class _ProfileState extends State<Profile> {
         now.subtract(Duration(days: now.weekday - 1 + (7 * weekOffset)));
     DateTime endOfWeek = startOfWeek.add(const Duration(days: 6));
 
-    Future<List<Map<String, dynamic>>> actorData() async {
-      List<Map<String, dynamic>> favActsData = [];
-      int i = 0;
-      for (List item in currentUser.favActors) {
-        if (i < 9) {
-          final response =
-              await http.get(Uri.parse('$PERSON_LINK${item[1]}$API_KEY'));
-          if (response.statusCode == 200) {
-            final json = jsonDecode(response.body);
-            if (json['profile_path'] == null) {
-              json['profile_path'] =
-                  'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
-            } else {
-              json['profile_path'] = IMG_LINK + json['profile_path'];
-            }
-            favActsData.add(json);
-          } else {
-            throw Exception('Failed to load actor details');
-          }
-        } else {
-          return favActsData;
-        }
-        i++;
-      }
-      return favActsData;
-    }
-
-    Future<List<Map<String, dynamic>>> topMovies() async {
-      int i = 0;
-      List<Map<String, dynamic>> movies = [];
-
-      List moviesTemp = [];
-      currentUser.rewatchedMovies.forEach((key, value) {
-        moviesTemp.add([value, key]);
-      });
-
-      moviesTemp.sort((a, b) => b[0].compareTo(a[0]));
-
-      while (i < 9 && i < moviesTemp.length) {
-        String completeLinkMovie =
-            MOVIE_LINK + moviesTemp[i][1].toString() + API_KEY;
-
-        final response = await http.get(Uri.parse(completeLinkMovie));
-        if (response.statusCode == 200) {
-          final json = jsonDecode(response.body);
-          movies.add(json);
-        } else {
-          throw Exception('Failed to load actor details');
-        }
-        i++;
-      }
-      return movies;
-    }
-
     Future<String> uploadImage() async {
       final ImagePicker _picker = ImagePicker();
       XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -216,33 +161,6 @@ class _ProfileState extends State<Profile> {
       return downloadUrl;
     }
 
-    Future<List<Map<String, dynamic>>> dirData() async {
-      List<Map<String, dynamic>> favActsData = [];
-      int i = 0;
-      for (List item in currentUser.favDirectors) {
-        if (i < 9) {
-          final response =
-              await http.get(Uri.parse('$PERSON_LINK${item[1]}$API_KEY'));
-          if (response.statusCode == 200) {
-            final json = jsonDecode(response.body);
-            if (json['profile_path'] == null) {
-              json['profile_path'] =
-                  'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
-            } else {
-              json['profile_path'] = IMG_LINK + json['profile_path'];
-            }
-            favActsData.add(json);
-          } else {
-            throw Exception('Failed to load director details');
-          }
-        } else {
-          return favActsData;
-        }
-        i++;
-      }
-      return favActsData;
-    }
-
     Map filteredData = {};
 
     Map tempData = Map.fromEntries(currentUser.calendar.entries.where((entry) {
@@ -287,6 +205,13 @@ class _ProfileState extends State<Profile> {
         maxMovies = movies.length;
       }
     }
+
+    List moviesTemp = [];
+    currentUser.rewatchedMovies.forEach((key, value) {
+      moviesTemp.add([value, key]);
+    });
+
+    moviesTemp.sort((a, b) => b[0].compareTo(a[0]));
 
     return Scaffold(
       appBar: const CustomAppBar(),
@@ -568,298 +493,12 @@ class _ProfileState extends State<Profile> {
                                 ),
                               ),
                             ])),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[900],
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      margin: const EdgeInsets.all(5.0),
-                      padding: const EdgeInsets.all(10),
-                      child: Column(
-                        children: [
-                          const Row(
-                            children: [
-                              Icon(Icons.movie),
-                              SizedBox(width: 10),
-                              Text(
-                                'Most Seen Movies',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.22,
-                            child: FutureBuilder<List<Map>>(
-                              future: topMovies(),
-                              builder: (context, snapshot) {
-                                if (snapshot.hasData) {
-                                  final movies = snapshot.data!;
-                                  if (movies.isNotEmpty) {
-                                    return ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: movies.length,
-                                      itemBuilder: (context, index) {
-                                        final movie = movies[index];
-                                        return GestureDetector(
-                                          onTap: () {
-                                            Movie tempMovie = Movie(
-                                                id: movie['id'].toString(),
-                                                title: movie['title'],
-                                                coverPhoto:
-                                                    movie["poster_path"] ?? "");
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      MovieResult(
-                                                          movie: tempMovie)),
-                                            );
-                                          },
-                                          child: Container(
-                                            margin: const EdgeInsets.fromLTRB(
-                                                5.0, 10.0, 10.0, 0),
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.31,
-                                            height: MediaQuery.of(context)
-                                                    .size
-                                                    .height *
-                                                0.18,
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(27),
-                                              image: DecorationImage(
-                                                image: NetworkImage(
-                                                  IMG_LINK +
-                                                      movie['poster_path'],
-                                                ),
-                                                fit: BoxFit.fitWidth,
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  } else {
-                                    return const Center(
-                                        child: Text(
-                                            "You haven't seen any movies more than once yet!"));
-                                  }
-                                } else if (snapshot.hasError) {
-                                  return const Center(
-                                    child: Text("Failed to load movie details"),
-                                  );
-                                } else {
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                }
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[900],
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      margin: const EdgeInsets.all(5.0),
-                      padding: const EdgeInsets.all(10),
-                      child: Column(
-                        children: [
-                          const Row(
-                            children: [
-                              Icon(Icons.theater_comedy),
-                              SizedBox(width: 10),
-                              Text(
-                                'Favorite Actors',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.22,
-                            child: FutureBuilder<List<Map>>(
-                              future: actorData(),
-                              builder: (context, snapshot) {
-                                if (snapshot.hasData) {
-                                  final persons = snapshot.data!;
-                                  if (persons.isNotEmpty) {
-                                    return ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: persons.length,
-                                      itemBuilder: (context, index) {
-                                        final person = persons[index];
-                                        return GestureDetector(
-                                          onTap: () {
-                                            Person personResult = Person(
-                                                id: person["id"].toString(),
-                                                name: person["name"].toString(),
-                                                data: person);
-
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      PersonResult(
-                                                        personResult:
-                                                            personResult,
-                                                      )),
-                                            );
-                                          },
-                                          child: Container(
-                                            margin: const EdgeInsets.fromLTRB(
-                                                5.0, 10.0, 10.0, 0),
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.31,
-                                            height: MediaQuery.of(context)
-                                                    .size
-                                                    .height *
-                                                0.15,
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(27),
-                                              image: DecorationImage(
-                                                image: NetworkImage(
-                                                  IMG_LINK +
-                                                      person['profile_path'],
-                                                ),
-                                                fit: BoxFit.fitWidth,
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  } else {
-                                    return const Center(
-                                        child: Text(
-                                            "You haven't looked up any actors yet!"));
-                                  }
-                                } else if (snapshot.hasError) {
-                                  return const Center(
-                                    child: Text("Failed to load movie details"),
-                                  );
-                                } else {
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                }
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[900],
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      margin: const EdgeInsets.all(5.0),
-                      padding: const EdgeInsets.all(10),
-                      child: Column(
-                        children: [
-                          const Row(
-                            children: [
-                              Icon(Icons.chair),
-                              SizedBox(width: 10),
-                              Text(
-                                'Favorite Directors',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.22,
-                            child: FutureBuilder<List<Map>>(
-                              future: dirData(),
-                              builder: (context, snapshot) {
-                                if (snapshot.hasData) {
-                                  final persons = snapshot.data!;
-                                  if (persons.isNotEmpty) {
-                                    return ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: persons.length,
-                                      itemBuilder: (context, index) {
-                                        final person = persons[index];
-                                        return GestureDetector(
-                                          onTap: () {
-                                            Person personResult = Person(
-                                                id: person["id"].toString(),
-                                                name: person["name"].toString(),
-                                                data: person);
-
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      PersonResult(
-                                                        personResult:
-                                                            personResult,
-                                                      )),
-                                            );
-                                          },
-                                          child: Container(
-                                            margin: const EdgeInsets.fromLTRB(
-                                                5.0, 10.0, 10.0, 0),
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.31,
-                                            height: MediaQuery.of(context)
-                                                    .size
-                                                    .height *
-                                                0.18,
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(27),
-                                              image: DecorationImage(
-                                                image: NetworkImage(
-                                                  IMG_LINK +
-                                                      person['profile_path'],
-                                                ),
-                                                fit: BoxFit.fitWidth,
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  } else {
-                                    return const Center(
-                                        child: Text(
-                                            "You haven't looked up any directors yet!"));
-                                  }
-                                } else if (snapshot.hasError) {
-                                  return const Center(
-                                    child: Text("Failed to load movie details"),
-                                  );
-                                } else {
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                }
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    buildProfileContainer(
+                        "Most Seen Movies", moviesTemp, Icons.movie, "Movie"),
+                    buildProfileContainer("Favorite Actors",
+                        currentUser.favActors, Icons.theater_comedy, "Person"),
+                    buildProfileContainer("Favorite Directors",
+                        currentUser.favDirectors, Icons.chair, "Person"),
                   ],
                 ),
               ],
@@ -868,6 +507,104 @@ class _ProfileState extends State<Profile> {
         ],
       ),
       bottomNavigationBar: CommonBottomAppBar(3),
+    );
+  }
+
+  Widget buildProfileContainer(String title, List content, icon, type) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(10),
+      ),
+      margin: const EdgeInsets.all(5.0),
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(icon),
+              const SizedBox(width: 10),
+              Text(
+                'Your $title',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (content.isEmpty) const Text("Nothing here yet"),
+          if (content.isEmpty) const SizedBox(height: 10),
+          if (content.isNotEmpty)
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.22,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: content.length > 10 ? 10 : content.length,
+                itemBuilder: (context, index) {
+                  var item;
+                  if (type == "Person") {
+                    item = Person(id: content[index][1], name: "", data: {});
+                  } else {
+                    item =
+                        Movie(id: content[index][1], title: "", coverPhoto: "");
+                  }
+                  return FutureBuilder<Map>(
+                    future: type == "Person"
+                        ? item.getSimpleData()
+                        : item.getData(),
+                    builder:
+                        (BuildContext context, AsyncSnapshot<Map> snapshot) {
+                      if (snapshot.hasData) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => type == "Person"
+                                      ? PersonResult(
+                                          personResult: item as Person)
+                                      : MovieResult(movie: item as Movie)),
+                            );
+                          },
+                          child: Container(
+                            margin:
+                                const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
+                            width: MediaQuery.of(context).size.width * 0.28,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(27),
+                              image: DecorationImage(
+                                image: CachedNetworkImageProvider(
+                                  type == "Person"
+                                      ? snapshot.data!["profile_path"]
+                                      : IMG_LINK +
+                                          snapshot.data!["poster_path"],
+                                ),
+                                fit: BoxFit.fitWidth,
+                              ),
+                            ),
+                          ),
+                        );
+                      } else if (snapshot.hasError) {
+                        return const Center(
+                            child: Text("Failed to load movie details"));
+                      } else {
+                        return Container(
+                            margin:
+                                const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
+                            width: MediaQuery.of(context).size.width * 0.28,
+                            height: MediaQuery.of(context).size.height * 0.18,
+                            child: const Center(
+                                child: CircularProgressIndicator()));
+                      }
+                    },
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
