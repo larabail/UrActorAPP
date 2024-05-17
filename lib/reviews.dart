@@ -91,7 +91,7 @@ class _ReviewsState extends State<Reviews> {
                       child: Container(
                         margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
                         width: MediaQuery.of(context).size.width * 0.28,
-                        height: MediaQuery.of(context).size.height * 0.18,
+                        height: MediaQuery.of(context).size.height * 0.15,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(27),
                           image: DecorationImage(
