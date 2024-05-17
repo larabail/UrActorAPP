@@ -374,7 +374,7 @@ class _FriendProfileState extends State<FriendProfile> {
           if (content.isEmpty) const SizedBox(height: 10),
           if (content.isNotEmpty)
             SizedBox(
-              height: MediaQuery.of(context).size.height * 0.22,
+              height: MediaQuery.of(context).size.height * 0.18,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: content.length > 10 ? 10 : content.length,
@@ -494,7 +494,7 @@ class _FriendProfileState extends State<FriendProfile> {
           if (content.isEmpty) const SizedBox(height: 10),
           if (content.isNotEmpty)
             SizedBox(
-              height: MediaQuery.of(context).size.height * 0.22,
+              height: MediaQuery.of(context).size.height * 0.18,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: content.length > 10 ? 10 : content.length,
