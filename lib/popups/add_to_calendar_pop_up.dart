@@ -130,32 +130,8 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
           .toList(),
       'type': widget.type,
     };
-    if (widget.dateRange != "") {
-      DateTime startDate = DateTime.parse(widget.dateRange.split("T")[0]);
-      DateTime endDate = DateTime.parse(widget.dateRange.split("T")[2]);
-
-      for (DateTime date = startDate;
-          date.isBefore(endDate.add(const Duration(days: 1)));
-          date = date.add(const Duration(days: 1))) {
-        String dateStr = date.toIso8601String().split("T")[0];
-        if (currentUser.calendar.keys.toList().contains(dateStr)) {
-          currentUser.calendar[dateStr].add(myObject);
-        } else {
-          currentUser.calendar[dateStr] = [
-            myObject,
-          ];
-        }
-      }
-    } else {
-      if (currentUser.calendar.keys.toList().contains(widget.dateForMap)) {
-        currentUser.calendar[widget.dateForMap].add(myObject);
-      } else {
-        currentUser.calendar[widget.dateForMap] = [
-          myObject,
-        ];
-      }
-    }
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    FirebaseUtils.updateCurrentUserCalendar(
+        widget.dateRange, myObject, widget.dateForMap);
     for (var friend in friendsWatchedWith.keys) {
       myObject["friends"] = [
         currentUser.uid,
@@ -175,181 +151,32 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
           currentUser.seenWith[friend] = {"Movies": [], "TVShows": []};
           currentUser.seenWith[friend][key].add(id.toString());
         }
-        var userDoc =
-            FirebaseFirestore.instance.collection(friend).doc("Calendar");
-        if (widget.dateRange != "") {
-          DateTime startDate = DateTime.parse(widget.dateRange.split("T")[0]);
-          DateTime endDate = DateTime.parse(widget.dateRange.split("T")[2]);
-
-          for (DateTime date = startDate;
-              date.isBefore(endDate.add(const Duration(days: 1)));
-              date = date.add(const Duration(days: 1))) {
-            String dateStr = date.toIso8601String().split("T")[0];
-            await userDoc.update({
-              dateStr: FieldValue.arrayUnion([myObject])
-            });
-          }
-        } else {
-          await userDoc.update({
-            widget.dateForMap: FieldValue.arrayUnion([myObject])
-          });
-        }
-
-        userDoc = FirebaseFirestore.instance.collection(friend).doc(key);
-        await userDoc.update({
-          'Seen': FieldValue.arrayUnion([id])
-        });
-
-        userDoc = FirebaseFirestore.instance.collection(friend).doc("Seen");
-        await userDoc.update({
-          key: FieldValue.arrayUnion([id])
-        });
-
-        DocumentReference userDoc2 =
-            firestore.collection(friend).doc("SeenWith");
-        Map<String, dynamic> item = {};
-        List<dynamic> watchedWithList = friendsWatchedWith.keys
-            .where((key) => friendsWatchedWith[key] == true)
-            .toList();
-        item[id] = watchedWithList;
-
-        await firestore.runTransaction((transaction) async {
-          DocumentSnapshot snapshot = await transaction.get(userDoc2);
-
-          if (!snapshot.exists) {
-            throw Exception("Document does not exist!");
-          }
-
-          Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-          if (data.containsKey(key) && data[key] is Map<String, dynamic>) {
-            Map<String, dynamic> moviesMap = data[key];
-
-            if (moviesMap.containsKey(id)) {
-              List existingList = moviesMap[id]["friends"];
-              for (String person in watchedWithList) {
-                if (!existingList.contains(person) && person != friend) {
-                  existingList.add(person);
-                }
-              }
-              if (!existingList.contains(currentUser.uid)) {
-                existingList.add(currentUser.uid);
-              }
-              moviesMap[id] = {"friends": existingList};
-              transaction.update(userDoc2, {key: moviesMap});
-            } else {
-              watchedWithList.remove(friend);
-              watchedWithList.add(currentUser.uid);
-              moviesMap[id] = {"friends": watchedWithList};
-              transaction.update(userDoc2, {key: moviesMap});
-            }
-          } else {
-            transaction.set(
-                userDoc2,
-                {
-                  key: {
-                    id: {"friends": watchedWithList}
-                  }
-                },
-                SetOptions(merge: true));
-          }
-        }).catchError((error) {
-          print("Failed to update document: $error");
-        });
+        await FirebaseUtils.updateCalendar(
+            widget.dateRange, friend, myObject, widget.dateForMap);
+        await FirebaseUtils.updateSeen(key, friend, id);
+        await FirebaseUtils.updateSeenWith(friend, friendsWatchedWith, id, key);
         if (widget.type == "movie") {
-          userDoc =
-              FirebaseFirestore.instance.collection(friend).doc("Rewatched");
-          DocumentSnapshot doc = await userDoc.get();
-          if (doc.exists) {
-            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-            if (data.containsKey(id)) {
-              await userDoc.update({id: FieldValue.increment(1)});
-            } else {
-              await userDoc.update({id: 1});
-            }
-          }
+          await FirebaseUtils.updateRewatched(friend, id);
         }
       }
     }
-
-    DocumentReference userDoc2 =
-        firestore.collection(currentUser.uid).doc("SeenWith");
-    Map<String, dynamic> item = {};
     List<dynamic> watchedWithList = friendsWatchedWith.keys
         .where((key) => friendsWatchedWith[key] == true)
         .toList();
-    item[id] = watchedWithList;
+    await FirebaseUtils.updateCurrentUserSeenWith(
+        currentUser.uid, id, key, friendsWatchedWith, watchedWithList);
     myObject["friends"] = watchedWithList;
-
-    firestore.runTransaction((transaction) async {
-      DocumentSnapshot snapshot = await transaction.get(userDoc2);
-
-      if (!snapshot.exists) {
-        throw Exception("Document does not exist!");
-      }
-      Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-
-      if (data.containsKey(key) && data[key] is Map<String, dynamic>) {
-        Map<String, dynamic> moviesMap = data[key];
-
-        if (moviesMap.containsKey(id)) {
-          List existingList = moviesMap[id]["friends"];
-          for (String person in watchedWithList) {
-            if (!existingList.contains(person)) {
-              existingList.add(person);
-            }
-          }
-          moviesMap[id] = {"friends": existingList};
-        } else {
-          moviesMap[id] = {"friends": watchedWithList};
-        }
-        transaction.update(userDoc2, {key: moviesMap});
-      } else {
-        transaction.set(
-            userDoc2,
-            {
-              key: {
-                id: {"friends": watchedWithList}
-              }
-            },
-            SetOptions(merge: true));
-      }
-    }).catchError((error) {
-      print("Failed to update document: $error");
-    });
-    var userDoc = db.collection(currentUser.uid).doc("Calendar");
-    Map<Object, Object> updatedCalendar = {};
-    for (String key in currentUser.calendar.keys) {
-      updatedCalendar[key] = currentUser.calendar[key];
-    }
-    await userDoc.update(updatedCalendar);
-
+    await FirebaseUtils.updateCurrentUserCalendarDocument();
     if (widget.type == "movie") {
       if (currentUser.rewatchedMovies.keys.toList().contains(id)) {
         currentUser.rewatchedMovies[id] += 1;
       } else {
         currentUser.rewatchedMovies[id] = 1;
       }
-
-      userDoc = db.collection(currentUser.uid).doc("Rewatched");
-      Map<Object, Object> updatedRewatched = {};
-      for (String key in currentUser.rewatchedMovies.keys) {
-        updatedRewatched[key] = currentUser.rewatchedMovies[key];
-      }
-      await userDoc.update(updatedRewatched);
-
+      await FirebaseUtils.updateCurrentUserRewatched();
       if (!Utils.containsList(currentUser.seenMovies, ["Movies", id])) {
-        userDoc = FirebaseFirestore.instance
-            .collection(currentUser.uid)
-            .doc('Movies');
         id = id.toString();
-        await userDoc.update({
-          'Seen': FieldValue.arrayUnion([id])
-        });
-        userDoc =
-            FirebaseFirestore.instance.collection(currentUser.uid).doc('Seen');
-        await userDoc.update({
-          key: FieldValue.arrayUnion([id])
-        });
+        await FirebaseUtils.updateSeen(key, currentUser.uid, id);
         currentUser.seenMovies += [
           ["Movies", id]
         ];
@@ -359,22 +186,11 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
       }
     } else {
       if (!Utils.containsList(currentUser.seenTVShows, ["TVShows", id])) {
-        userDoc = FirebaseFirestore.instance
-            .collection(currentUser.uid)
-            .doc('TVShows');
         id = id.toString();
-        await userDoc.update({
-          'Seen': FieldValue.arrayUnion([id])
-        });
-        userDoc =
-            FirebaseFirestore.instance.collection(currentUser.uid).doc('Seen');
-        await userDoc.update({
-          key: FieldValue.arrayUnion([id])
-        });
+        await FirebaseUtils.updateSeen(key, currentUser.uid, id);
         currentUser.seenTVShows += [
           ["TVShows", id]
         ];
-
         currentUser.seen += [
           ["TVShows", id]
         ];
@@ -870,7 +686,6 @@ class _AddToCalendarState extends State<AddToCalendar> {
       ];
     }
 
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
     for (var friend in friendsWatchedWith.keys) {
       myObject["friends"] = [
         currentUser.uid,
@@ -890,165 +705,30 @@ class _AddToCalendarState extends State<AddToCalendar> {
           currentUser.seenWith[friend] = {"Movies": [], "TVShows": []};
           currentUser.seenWith[friend]["Movies"].add(id.toString());
         }
-        var userDoc =
-            FirebaseFirestore.instance.collection(friend).doc("Calendar");
-        await userDoc.update({
-          widget.dateForMap: FieldValue.arrayUnion([myObject])
-        });
-
-        userDoc = FirebaseFirestore.instance.collection(friend).doc("Movies");
-        await userDoc.update({
-          'Seen': FieldValue.arrayUnion([id])
-        });
-        userDoc = FirebaseFirestore.instance.collection(friend).doc("Seen");
-        await userDoc.update({
-          "Movies": FieldValue.arrayUnion([id])
-        });
-        DocumentReference userDoc2 =
-            firestore.collection(friend).doc("SeenWith");
-        Map<String, dynamic> item = {};
-        List<dynamic> watchedWithList = friendsWatchedWith.keys
-            .where((key) => friendsWatchedWith[key] == true)
-            .toList();
-        item[id] = watchedWithList;
-
-        await firestore.runTransaction((transaction) async {
-          DocumentSnapshot snapshot = await transaction.get(userDoc2);
-
-          if (!snapshot.exists) {
-            throw Exception("Document does not exist!");
-          }
-
-          Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-
-          if (data.containsKey('Movies') &&
-              data['Movies'] is Map<String, dynamic>) {
-            Map<String, dynamic> moviesMap = data['Movies'];
-
-            if (moviesMap.containsKey(id)) {
-              List existingList = moviesMap[id]["friends"];
-              for (String person in watchedWithList) {
-                if (!existingList.contains(person) && person != friend) {
-                  existingList.add(person);
-                }
-              }
-              if (!existingList.contains(currentUser.uid)) {
-                existingList.add(currentUser.uid);
-              }
-              moviesMap[id] = {"friends": existingList};
-              transaction.update(userDoc2, {"Movies": moviesMap});
-            } else {
-              watchedWithList.remove(friend);
-              watchedWithList.add(currentUser.uid);
-              moviesMap[id] = {"friends": watchedWithList};
-              transaction.update(userDoc2, {"Movies": moviesMap});
-            }
-          } else {
-            transaction.set(
-                userDoc2,
-                {
-                  'Movies': {
-                    id: {"friends": watchedWithList}
-                  }
-                },
-                SetOptions(merge: true));
-          }
-        }).catchError((error) {
-          print("Failed to update document: $error");
-        });
-
-        userDoc =
-            FirebaseFirestore.instance.collection(friend).doc("Rewatched");
-        DocumentSnapshot doc = await userDoc.get();
-        if (doc.exists) {
-          Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-          if (data.containsKey(id)) {
-            await userDoc.update({id: FieldValue.increment(1)});
-          } else {
-            await userDoc.update({id: 1});
-          }
-        }
+        await FirebaseUtils.updateCalendar(
+            "", friend, myObject, widget.dateForMap);
+        await FirebaseUtils.updateSeen("Movies", friend, id);
+        await FirebaseUtils.updateSeenWith(
+            friend, friendsWatchedWith, id, "Movies");
+        await FirebaseUtils.updateRewatched(friend, id);
       }
     }
-
-    DocumentReference userDoc2 =
-        firestore.collection(currentUser.uid).doc("SeenWith");
-    Map<String, dynamic> item = {};
     List<dynamic> watchedWithList = friendsWatchedWith.keys
         .where((key) => friendsWatchedWith[key] == true)
         .toList();
-    item[id] = watchedWithList;
     myObject["friends"] = watchedWithList;
+    await FirebaseUtils.updateCurrentUserSeenWith(
+        currentUser.uid, id, "Movies", friendsWatchedWith, watchedWithList);
 
-    firestore.runTransaction((transaction) async {
-      DocumentSnapshot snapshot = await transaction.get(userDoc2);
-
-      if (!snapshot.exists) {
-        throw Exception("Document does not exist!");
-      }
-      Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-
-      if (data.containsKey('Movies') &&
-          data['Movies'] is Map<String, dynamic>) {
-        Map<String, dynamic> moviesMap = data['Movies'];
-
-        if (moviesMap.containsKey(id)) {
-          List existingList = moviesMap[id]["friends"];
-          for (String person in watchedWithList) {
-            if (!existingList.contains(person)) {
-              existingList.add(person);
-            }
-          }
-          moviesMap[id] = {"friends": existingList};
-        } else {
-          moviesMap[id] = {"friends": watchedWithList};
-        }
-        transaction.update(userDoc2, {'Movies': moviesMap});
-      } else {
-        transaction.set(
-            userDoc2,
-            {
-              'Movies': {
-                id: {"friends": watchedWithList}
-              }
-            },
-            SetOptions(merge: true));
-      }
-    }).catchError((error) {
-      print("Failed to update document: $error");
-    });
-    var userDoc = db.collection(currentUser.uid).doc("Calendar");
-    Map<Object, Object> updatedCalendar = {};
-    for (String key in currentUser.calendar.keys) {
-      updatedCalendar[key] = currentUser.calendar[key];
-    }
-    await userDoc.update(updatedCalendar);
-
+    await FirebaseUtils.updateCurrentUserCalendarDocument();
     if (currentUser.rewatchedMovies.keys.toList().contains(id)) {
       currentUser.rewatchedMovies[id] += 1;
     } else {
       currentUser.rewatchedMovies[id] = 1;
     }
-
-    userDoc = db.collection(currentUser.uid).doc("Rewatched");
-    Map<Object, Object> updatedRewatched = {};
-    for (String key in currentUser.rewatchedMovies.keys) {
-      updatedRewatched[key] = currentUser.rewatchedMovies[key];
-    }
-    await userDoc.update(updatedRewatched);
-
+    await FirebaseUtils.updateCurrentUserRewatched();
     if (!Utils.containsList(currentUser.seenMovies, ["Movies", id])) {
-      userDoc =
-          FirebaseFirestore.instance.collection(currentUser.uid).doc('Movies');
-      id = id.toString();
-      await userDoc.update({
-        'Seen': FieldValue.arrayUnion([id])
-      });
-      userDoc =
-          FirebaseFirestore.instance.collection(currentUser.uid).doc('Seen');
-      await userDoc.update({
-        'Movies': FieldValue.arrayUnion([id])
-      });
+      await FirebaseUtils.updateSeen("Movies", currentUser.uid, id);
       currentUser.seenMovies += [
         ["Movies", id]
       ];
