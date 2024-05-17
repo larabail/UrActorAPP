@@ -22,6 +22,7 @@ class AppUser {
   Map reviews = {};
   Map tvShowReviews = {};
   Map rewatchedMovies = {};
+  Map rewatchedTVShows = {};
   Map playlists = {};
   Map seenWith = {};
   List seen = [];
@@ -147,6 +148,8 @@ class AppUser {
           allReviews = allReviews.reversed.toList();
         } else if (doc.id == "Rewatched") {
           rewatchedMovies = doc.data() as Map;
+        } else if (doc.id == "RewatchedTV") {
+          rewatchedTVShows = doc.data() as Map;
         } else if (doc.id == "TVShows") {
           Map w = doc.data() as Map;
           w.forEach((key, el) {
@@ -232,6 +235,7 @@ class AppUser {
     tvShowReviews = {};
     allReviews = [];
     rewatchedMovies = {};
+    rewatchedTVShows = {};
     playlists = {};
     seenWith = {};
     settings = {};

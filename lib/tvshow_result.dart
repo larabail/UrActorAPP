@@ -35,6 +35,7 @@ class TVShowResult extends StatefulWidget {
 }
 
 class _TVShowResultState extends State<TVShowResult> {
+  final myController = TextEditingController(text: "");
   bool isExpanded = false;
 
   void check() {
@@ -67,6 +68,18 @@ class _TVShowResultState extends State<TVShowResult> {
   @override
   Widget build(BuildContext context) {
     reviewed = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (currentUser.rewatchedMovies.keys
+          .toList()
+          .contains(widget.tvshow.id)) {
+        myController.text =
+            (currentUser.rewatchedMovies[widget.tvshow.id]).toString();
+      } else if (widget.tvshow.isSeen()) {
+        myController.text = "1";
+      } else {
+        myController.text = "0";
+      }
+    });
     check();
 
     Future<void> onTap(String type, String id, String title, int runtime,
@@ -832,6 +845,27 @@ class _TVShowResultState extends State<TVShowResult> {
                       ],
                     ),
                   ),
+                  SizedBox(
+                    width: 200,
+                    child: TextField(
+                      controller: myController,
+                      decoration: const InputDecoration(
+                        labelText: "Times seen",
+                        hintStyle: TextStyle(color: Colors.grey),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        labelStyle: TextStyle(color: Colors.grey),
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        FirebaseUtils.incrementWatchedTV(
+                            value.toString(), snapshot.data!["id"].toString());
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   if (Utils.contains_non_type(
                       currentUser.seenTVShows, ['TVShows', widget.tvshow.id]))
                     ExpansionTile(

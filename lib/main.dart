@@ -421,11 +421,18 @@ class _MyHomePageState extends State<MyHomePage> {
                       ));
                 },
               ),
-              buildMainPageContainer("Watchlist",
-                  currentUser.watchlistTVShows + currentUser.watchlist, Icons.bookmark, Watchlist()),
               buildMainPageContainer(
-                  "Favorites", currentUser.favTVShows + currentUser.favMovies, Icons.favorite, Favorites()),
-              buildMainPageContainer("Seen", currentUser.seen, Icons.remove_red_eye, Seen()),
+                  "Watchlist",
+                  currentUser.watchlistTVShows + currentUser.watchlist,
+                  Icons.bookmark,
+                  Watchlist()),
+              buildMainPageContainer(
+                  "Favorites",
+                  currentUser.favTVShows + currentUser.favMovies,
+                  Icons.favorite,
+                  Favorites()),
+              buildMainPageContainer(
+                  "Seen", currentUser.seen, Icons.remove_red_eye, Seen()),
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey[900],
@@ -476,7 +483,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       const SizedBox(height: 10),
                     if (currentUser.allReviews.isNotEmpty)
                       SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.18,
+                        height: MediaQuery.of(context).size.height * 0.225,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           itemCount: currentUser.allReviews.length > 10
@@ -525,7 +532,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                 0.28,
                                         height:
                                             MediaQuery.of(context).size.height *
-                                                0.125,
+                                                0.18,
                                         decoration: BoxDecoration(
                                           borderRadius:
                                               BorderRadius.circular(27),
@@ -539,7 +546,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                         ),
                                       ),
                                       Text(
-                                        'Your Rating: ${review["Rating"]}',
+                                        '${review["Rating"]}/10',
                                         textAlign: TextAlign.center,
                                         style: const TextStyle(
                                           fontSize: 15,
