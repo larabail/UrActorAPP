@@ -120,7 +120,6 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
   void addMovieSubmit(String id, String title, int runtime, double rating,
       Map friendsWatchedWith) async {
     String key = widget.type == "movie" ? "Movies" : "TVShows";
-    print("DEBUG: $key");
     Map myObject = {
       'id': id,
       'title': title,
@@ -199,6 +198,11 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
         userDoc = FirebaseFirestore.instance.collection(friend).doc(key);
         await userDoc.update({
           'Seen': FieldValue.arrayUnion([id])
+        });
+
+        userDoc = FirebaseFirestore.instance.collection(friend).doc("Seen");
+        await userDoc.update({
+          key: FieldValue.arrayUnion([id])
         });
 
         DocumentReference userDoc2 =
@@ -334,27 +338,44 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
       await userDoc.update(updatedRewatched);
 
       if (!Utils.containsList(currentUser.seenMovies, ["Movies", id])) {
-        final userDoc = FirebaseFirestore.instance
+        userDoc = FirebaseFirestore.instance
             .collection(currentUser.uid)
             .doc('Movies');
         id = id.toString();
         await userDoc.update({
           'Seen': FieldValue.arrayUnion([id])
         });
+        userDoc =
+            FirebaseFirestore.instance.collection(currentUser.uid).doc('Seen');
+        await userDoc.update({
+          key: FieldValue.arrayUnion([id])
+        });
         currentUser.seenMovies += [
+          ["Movies", id]
+        ];
+        currentUser.seen += [
           ["Movies", id]
         ];
       }
     } else {
       if (!Utils.containsList(currentUser.seenTVShows, ["TVShows", id])) {
-        final userDoc = FirebaseFirestore.instance
+        userDoc = FirebaseFirestore.instance
             .collection(currentUser.uid)
             .doc('TVShows');
         id = id.toString();
         await userDoc.update({
           'Seen': FieldValue.arrayUnion([id])
         });
+        userDoc =
+            FirebaseFirestore.instance.collection(currentUser.uid).doc('Seen');
+        await userDoc.update({
+          key: FieldValue.arrayUnion([id])
+        });
         currentUser.seenTVShows += [
+          ["TVShows", id]
+        ];
+
+        currentUser.seen += [
           ["TVShows", id]
         ];
       }
@@ -879,7 +900,10 @@ class _AddToCalendarState extends State<AddToCalendar> {
         await userDoc.update({
           'Seen': FieldValue.arrayUnion([id])
         });
-
+        userDoc = FirebaseFirestore.instance.collection(friend).doc("Seen");
+        await userDoc.update({
+          "Movies": FieldValue.arrayUnion([id])
+        });
         DocumentReference userDoc2 =
             firestore.collection(friend).doc("SeenWith");
         Map<String, dynamic> item = {};
@@ -1014,13 +1038,21 @@ class _AddToCalendarState extends State<AddToCalendar> {
     await userDoc.update(updatedRewatched);
 
     if (!Utils.containsList(currentUser.seenMovies, ["Movies", id])) {
-      final userDoc =
+      userDoc =
           FirebaseFirestore.instance.collection(currentUser.uid).doc('Movies');
       id = id.toString();
       await userDoc.update({
         'Seen': FieldValue.arrayUnion([id])
       });
+      userDoc =
+          FirebaseFirestore.instance.collection(currentUser.uid).doc('Seen');
+      await userDoc.update({
+        'Movies': FieldValue.arrayUnion([id])
+      });
       currentUser.seenMovies += [
+        ["Movies", id]
+      ];
+      currentUser.seen += [
         ["Movies", id]
       ];
     }
