@@ -423,384 +423,11 @@ class _MyHomePageState extends State<MyHomePage> {
                       ));
                 },
               ),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[900],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                margin: const EdgeInsets.all(5.0),
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.bookmark),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'Your Watchlist',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => Watchlist()),
-                            );
-                          },
-                          child: Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Text(
-                                'See All (${currentUser.watchlist.length + currentUser.watchlistTVShows.length} items)',
-                                style: const TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    if (currentUser.watchlist.length +
-                            currentUser.watchlistTVShows.length ==
-                        0)
-                      const Text("Haven't seen any movies yet"),
-                    if (currentUser.watchlist.length +
-                            currentUser.watchlistTVShows.length ==
-                        0)
-                      const SizedBox(height: 10),
-                    if (currentUser.watchlist.length +
-                            currentUser.watchlistTVShows.length !=
-                        0)
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.18,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: currentUser.watchlist.length > 10
-                              ? 10
-                              : currentUser.watchlist.length,
-                          itemBuilder: (context, index) {
-                            Movie tempMovie = Movie(
-                                id: currentUser.watchlist.reversed
-                                    .toList()[index][1],
-                                title: "title",
-                                coverPhoto: "coverPhoto");
-                            return FutureBuilder<Map>(
-                              future: tempMovie.getData(),
-                              builder: (BuildContext context,
-                                  AsyncSnapshot<Map> snapshot) {
-                                if (snapshot.hasData) {
-                                  return GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                MovieResult(movie: tempMovie)),
-                                      );
-                                    },
-                                    child: Container(
-                                      margin: const EdgeInsets.fromLTRB(
-                                          5.0, 10.0, 10.0, 0),
-                                      width: MediaQuery.of(context).size.width *
-                                          0.28,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(27),
-                                        image: DecorationImage(
-                                          image: CachedNetworkImageProvider(
-                                            IMG_LINK +
-                                                snapshot.data!["poster_path"],
-                                          ),
-                                          fit: BoxFit.fitWidth,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                } else if (snapshot.hasError) {
-                                  return const Center(
-                                      child:
-                                          Text("Failed to load movie details"));
-                                } else {
-                                  return Container(
-                                      margin: const EdgeInsets.fromLTRB(
-                                          5.0, 10.0, 10.0, 0),
-                                      width: MediaQuery.of(context).size.width *
-                                          0.28,
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              0.18,
-                                      child: const Center(
-                                          child: CircularProgressIndicator()));
-                                }
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[900],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                margin: const EdgeInsets.all(5.0),
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.favorite),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'Your Favorites',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => Favorites()),
-                            );
-                          },
-                          child: Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Text(
-                                'See All (${currentUser.favMovies.length + currentUser.favTVShows.length} items)',
-                                style: const TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    if (currentUser.favMovies.length +
-                            currentUser.favTVShows.length ==
-                        0)
-                      const Text("Haven't seen any movies yet"),
-                    if (currentUser.favMovies.length +
-                            currentUser.favTVShows.length ==
-                        0)
-                      const SizedBox(height: 10),
-                    if (currentUser.favMovies.length +
-                            currentUser.favTVShows.length !=
-                        0)
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.18,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: currentUser.favMovies.length > 10
-                              ? 10
-                              : currentUser.favMovies.length,
-                          itemBuilder: (context, index) {
-                            Movie tempMovie = Movie(
-                                id: currentUser.favMovies.reversed
-                                    .toList()[index][1],
-                                title: "title",
-                                coverPhoto: "coverPhoto");
-                            return FutureBuilder<Map>(
-                              future: tempMovie.getData(),
-                              builder: (BuildContext context,
-                                  AsyncSnapshot<Map> snapshot) {
-                                if (snapshot.hasData) {
-                                  return GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                MovieResult(movie: tempMovie)),
-                                      );
-                                    },
-                                    child: Container(
-                                      margin: const EdgeInsets.fromLTRB(
-                                          5.0, 10.0, 10.0, 0),
-                                      width: MediaQuery.of(context).size.width *
-                                          0.28,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(27),
-                                        image: DecorationImage(
-                                          image: CachedNetworkImageProvider(
-                                            IMG_LINK +
-                                                snapshot.data!["poster_path"],
-                                          ),
-                                          fit: BoxFit.fitWidth,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                } else if (snapshot.hasError) {
-                                  return const Center(
-                                      child:
-                                          Text("Failed to load movie details"));
-                                } else {
-                                  return Container(
-                                      margin: const EdgeInsets.fromLTRB(
-                                          5.0, 10.0, 10.0, 0),
-                                      width: MediaQuery.of(context).size.width *
-                                          0.28,
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              0.18,
-                                      child: const Center(
-                                          child: CircularProgressIndicator()));
-                                }
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[900],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                margin: const EdgeInsets.all(5.0),
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.remove_red_eye),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'Your Seen',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => Seen()),
-                            );
-                          },
-                          child: Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Text(
-                                'See All (${currentUser.seen.length} items)',
-                                style: const TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    if (currentUser.seen.isEmpty)
-                      const Text("Haven't seen anything yet"),
-                    if (currentUser.seen.isEmpty) const SizedBox(height: 10),
-                    if (currentUser.seen.isNotEmpty)
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.18,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: currentUser.seen.length > 10
-                              ? 10
-                              : currentUser.seen.length,
-                          itemBuilder: (context, index) {
-                            MediaItem tempMedia;
-                            if (currentUser.seen.reversed.toList()[index][0] ==
-                                "Movies") {
-                              tempMedia = Movie(
-                                  id: currentUser.seen.reversed.toList()[index]
-                                      [1],
-                                  title: "title",
-                                  coverPhoto: "coverPhoto");
-                            } else {
-                              tempMedia = TVShow(
-                                  id: currentUser.seen.reversed.toList()[index]
-                                      [1],
-                                  title: "title",
-                                  coverPhoto: "coverPhoto");
-                            }
-                            return FutureBuilder<Map>(
-                              future: tempMedia.getData(),
-                              builder: (BuildContext context,
-                                  AsyncSnapshot<Map> snapshot) {
-                                if (snapshot.hasData) {
-                                  return GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) => currentUser
-                                                        .seen.reversed
-                                                        .toList()[index][0] ==
-                                                    "Movies"
-                                                ? MovieResult(
-                                                    movie: tempMedia as Movie)
-                                                : TVShowResult(
-                                                    tvshow:
-                                                        tempMedia as TVShow)),
-                                      );
-                                    },
-                                    child: Container(
-                                      margin: const EdgeInsets.fromLTRB(
-                                          5.0, 10.0, 10.0, 0),
-                                      width: MediaQuery.of(context).size.width *
-                                          0.28,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(27),
-                                        image: DecorationImage(
-                                          image: CachedNetworkImageProvider(
-                                            IMG_LINK +
-                                                snapshot.data!["poster_path"],
-                                          ),
-                                          fit: BoxFit.fitWidth,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                } else if (snapshot.hasError) {
-                                  return const Center(
-                                      child:
-                                          Text("Failed to load movie details"));
-                                } else {
-                                  return Container(
-                                      margin: const EdgeInsets.fromLTRB(
-                                          5.0, 10.0, 10.0, 0),
-                                      width: MediaQuery.of(context).size.width *
-                                          0.28,
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              0.18,
-                                      child: const Center(
-                                          child: CircularProgressIndicator()));
-                                }
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+              buildMainPageContainer("Watchlist",
+                  currentUser.watchlistTVShows + currentUser.watchlist, Icons.bookmark, Watchlist()),
+              buildMainPageContainer(
+                  "Favorites", currentUser.favTVShows + currentUser.favMovies, Icons.favorite, Favorites()),
+              buildMainPageContainer("Seen", currentUser.seen, Icons.remove_red_eye, Seen()),
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey[900],
@@ -970,5 +597,127 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       );
     }
+  }
+
+  Widget buildMainPageContainer(String title, List content, icon, page) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(10),
+      ),
+      margin: const EdgeInsets.all(5.0),
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(icon),
+              const SizedBox(width: 10),
+              Text(
+                'Your $title',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => page,
+                    ),
+                  );
+                },
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Text(
+                      'See All (${content.length} items)',
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (content.isEmpty) const Text("Nothing here yet"),
+          if (content.isEmpty) const SizedBox(height: 10),
+          if (content.isNotEmpty)
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.18,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: content.length > 10 ? 10 : content.length,
+                itemBuilder: (context, index) {
+                  MediaItem tempMedia;
+                  if (content.reversed.toList()[index][0] == "Movies") {
+                    tempMedia = Movie(
+                        id: content.reversed.toList()[index][1],
+                        title: "title",
+                        coverPhoto: "coverPhoto");
+                  } else {
+                    tempMedia = TVShow(
+                        id: content.reversed.toList()[index][1],
+                        title: "title",
+                        coverPhoto: "coverPhoto");
+                  }
+                  return FutureBuilder<Map>(
+                    future: tempMedia.getData(),
+                    builder:
+                        (BuildContext context, AsyncSnapshot<Map> snapshot) {
+                      if (snapshot.hasData) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => content.reversed
+                                              .toList()[index][0] ==
+                                          "Movies"
+                                      ? MovieResult(movie: tempMedia as Movie)
+                                      : TVShowResult(
+                                          tvshow: tempMedia as TVShow)),
+                            );
+                          },
+                          child: Container(
+                            margin:
+                                const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
+                            width: MediaQuery.of(context).size.width * 0.28,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(27),
+                              image: DecorationImage(
+                                image: CachedNetworkImageProvider(
+                                  IMG_LINK + snapshot.data!["poster_path"],
+                                ),
+                                fit: BoxFit.fitWidth,
+                              ),
+                            ),
+                          ),
+                        );
+                      } else if (snapshot.hasError) {
+                        return const Center(
+                            child: Text("Failed to load movie details"));
+                      } else {
+                        return Container(
+                            margin:
+                                const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
+                            width: MediaQuery.of(context).size.width * 0.28,
+                            height: MediaQuery.of(context).size.height * 0.18,
+                            child: const Center(
+                                child: CircularProgressIndicator()));
+                      }
+                    },
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
