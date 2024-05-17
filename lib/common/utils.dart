@@ -133,6 +133,18 @@ class FirebaseUtils {
     }
   }
 
+  static void incrementWatchedTV(String value, String id) {
+    if (value != "") {
+      var userDoc = FirebaseFirestore.instance
+          .collection(currentUser.uid)
+          .doc("RewatchedTV");
+      Map<String, int> doc = {};
+      currentUser.rewatchedTVShows[id] = int.parse(value);
+      doc[id] = int.parse(value);
+      userDoc.update(doc);
+    }
+  }
+
   static Future<bool> deleteReview(id, type, context) async {
     reviewInfo = {};
     reviewed = false;

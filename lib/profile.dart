@@ -190,13 +190,16 @@ class _ProfileState extends State<Profile> {
     List<BarChartGroupData> chartData = filteredData.entries.map((entry) {
       final day = DateTime.parse(entry.key).day;
       final moviesCount = entry.value.length;
-      return BarChartGroupData(x: day, barRods: [
-        BarChartRodData(
+      return BarChartGroupData(
+        x: day,
+        barRods: [
+          BarChartRodData(
             y: moviesCount.toDouble(),
             colors: [Colors.blue],
-            width: 7 // Adjust this value to change the bar thickness
-            )
-      ]);
+            width: 7,
+          )
+        ],
+      );
     }).toList();
 
     int maxMovies = 0;
@@ -499,6 +502,38 @@ class _ProfileState extends State<Profile> {
                         currentUser.favActors, Icons.theater_comedy, "Person"),
                     buildProfileContainer("Favorite Directors",
                         currentUser.favDirectors, Icons.chair, "Person"),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    GestureDetector(
+                      onTap: () {},
+                      child: Container(
+                        width: 225,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[900],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.edit, color: Colors.blue),
+                            SizedBox(width: 10),
+                            Text(
+                              'Modify Profile Sections',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
                   ],
                 ),
               ],

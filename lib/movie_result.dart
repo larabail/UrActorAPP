@@ -18,7 +18,6 @@ import 'person_result.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'dart:async';
 
-
 class MovieResult extends StatefulWidget {
   final Movie movie;
   const MovieResult({Key? key, required this.movie}) : super(key: key);
@@ -703,7 +702,8 @@ class _MovieResultState extends State<MovieResult> {
                                           onTap: () async {
                                             bool success =
                                                 await FirebaseUtils.editReview(
-                                                    snapshot.data!["id"], "Movies",
+                                                    snapshot.data!["id"],
+                                                    "Movies",
                                                     context);
                                             if (success) {
                                               setState(() {});
