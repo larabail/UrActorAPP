@@ -18,6 +18,23 @@ class Person {
     required this.data,
   });
 
+  Future<Map> getSimpleData() async {
+    final response =
+              await http.get(Uri.parse('$PERSON_LINK$id$API_KEY'));
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      if (json['profile_path'] == null) {
+        json['profile_path'] =
+            'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
+      } else {
+        json['profile_path'] = IMG_LINK + json['profile_path'];
+      }
+      return json;
+    } else {
+      throw Exception('Failed to load director details');
+    }
+  }
+
   Future<Map> getPersonData(AppUser currentUser, Map oscars) async {
     int scoreActor = 0;
     int scoreDirector = 0;
