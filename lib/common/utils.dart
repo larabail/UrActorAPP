@@ -51,6 +51,7 @@ class Utils {
     }
     return false;
   }
+
 }
 
 class FirebaseUtils {
