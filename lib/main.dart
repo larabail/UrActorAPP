@@ -284,7 +284,6 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     );
                   }
-
                   return GestureDetector(
                       onTap: () {
                         Playlist listResult = Playlist(
@@ -314,7 +313,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               AspectRatio(
-                                aspectRatio: 1, // Equal width and height
+                                aspectRatio: 1,
                                 child: Container(
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5),
@@ -359,7 +358,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
                                               if (textPainter
                                                   .didExceedMaxLines) {
-                                                // Text is too long, use Marquee
                                                 return SizedBox(
                                                   height: 20,
                                                   child: Marquee(
