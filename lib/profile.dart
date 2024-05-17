@@ -16,9 +16,7 @@ import 'main.dart';
 import 'objects/Person.dart';
 import 'person_result.dart';
 import 'movie_result.dart';
-import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';
-import 'dart:convert';
 
 class Profile extends StatefulWidget {
   const Profile();
@@ -116,60 +114,6 @@ class _ProfileState extends State<Profile> {
         now.subtract(Duration(days: now.weekday - 1 + (7 * weekOffset)));
     DateTime endOfWeek = startOfWeek.add(const Duration(days: 6));
 
-    Future<List<Map<String, dynamic>>> actorData() async {
-      List<Map<String, dynamic>> favActsData = [];
-      int i = 0;
-      for (List item in currentUser.favActors) {
-        if (i < 9) {
-          final response =
-              await http.get(Uri.parse('$PERSON_LINK${item[1]}$API_KEY'));
-          if (response.statusCode == 200) {
-            final json = jsonDecode(response.body);
-            if (json['profile_path'] == null) {
-              json['profile_path'] =
-                  'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
-            } else {
-              json['profile_path'] = IMG_LINK + json['profile_path'];
-            }
-            favActsData.add(json);
-          } else {
-            throw Exception('Failed to load actor details');
-          }
-        } else {
-          return favActsData;
-        }
-        i++;
-      }
-      return favActsData;
-    }
-
-    Future<List<Map<String, dynamic>>> topMovies() async {
-      int i = 0;
-      List<Map<String, dynamic>> movies = [];
-
-      List moviesTemp = [];
-      currentUser.rewatchedMovies.forEach((key, value) {
-        moviesTemp.add([value, key]);
-      });
-
-      moviesTemp.sort((a, b) => b[0].compareTo(a[0]));
-
-      while (i < 9 && i < moviesTemp.length) {
-        String completeLinkMovie =
-            MOVIE_LINK + moviesTemp[i][1].toString() + API_KEY;
-
-        final response = await http.get(Uri.parse(completeLinkMovie));
-        if (response.statusCode == 200) {
-          final json = jsonDecode(response.body);
-          movies.add(json);
-        } else {
-          throw Exception('Failed to load actor details');
-        }
-        i++;
-      }
-      return movies;
-    }
-
     Future<String> uploadImage() async {
       final ImagePicker _picker = ImagePicker();
       XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -215,33 +159,6 @@ class _ProfileState extends State<Profile> {
       });
 
       return downloadUrl;
-    }
-
-    Future<List<Map<String, dynamic>>> dirData() async {
-      List<Map<String, dynamic>> favActsData = [];
-      int i = 0;
-      for (List item in currentUser.favDirectors) {
-        if (i < 9) {
-          final response =
-              await http.get(Uri.parse('$PERSON_LINK${item[1]}$API_KEY'));
-          if (response.statusCode == 200) {
-            final json = jsonDecode(response.body);
-            if (json['profile_path'] == null) {
-              json['profile_path'] =
-                  'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
-            } else {
-              json['profile_path'] = IMG_LINK + json['profile_path'];
-            }
-            favActsData.add(json);
-          } else {
-            throw Exception('Failed to load director details');
-          }
-        } else {
-          return favActsData;
-        }
-        i++;
-      }
-      return favActsData;
     }
 
     Map filteredData = {};
