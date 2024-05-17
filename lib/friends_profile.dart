@@ -4,6 +4,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
+import 'package:uractor/objects/Media.dart';
+import 'package:uractor/objects/TVShow.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'common/utils.dart';
@@ -18,6 +20,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'seenTogether.dart';
+import 'tvshow_result.dart';
 
 int weekOffset = 0; // This will be used to go to previous or next weeks
 
@@ -156,6 +159,13 @@ class _FriendProfileState extends State<FriendProfile> {
       });
 
       moviesTemp.sort((a, b) => b[0].compareTo(a[0]));
+      List seenTogetherTotal = [];
+      for (String item in currentUser.seenWith[friendUid]["TVShows"]) {
+        seenTogetherTotal.add(["TVShows", item]);
+      }
+      for (String item in currentUser.seenWith[friendUid]["Movies"]) {
+        seenTogetherTotal.add(["Movies", item]);
+      }
       return Scaffold(
         appBar: const CustomAppBar(),
         body: SingleChildScrollView(
@@ -295,130 +305,30 @@ class _FriendProfileState extends State<FriendProfile> {
                 ),
               ]),
               const SizedBox(height: 10),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[900],
-                  borderRadius: BorderRadius.circular(10),
+              if (currentUser.seenWith.containsKey(friendUid))
+                buildMainPageContainer(
+                  "Seen Together",
+                  seenTogetherTotal,
+                  Icons.group,
+                  SeenTogether(
+                    friendSettings: friendSettings,
+                  ),
                 ),
-                margin: const EdgeInsets.all(5.0),
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                            Icons.group), // Replace with your preferred icon
-                        const SizedBox(width: 10),
-                        const Text(
-                          'Seen Together',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (currentUser.seenWith.containsKey(friendUid))
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => SeenTogether(
-                                          friendSettings: friendSettings,
-                                        )),
-                              );
-                            },
-                            child: Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: Text(
-                                  'See All (${currentUser.seenWith[friendUid]["Movies"].length + currentUser.seenWith[friendUid]["TVShows"].length} items)',
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    if (currentUser.seenWith.containsKey(friendUid))
-                      SizedBox(
-                        height: 150,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount:
-                              currentUser.seenWith[friendUid]["Movies"].length >
-                                      10
-                                  ? 10
-                                  : currentUser
-                                      .seenWith[friendUid]["Movies"].length,
-                          itemBuilder: (context, index) {
-                            return FutureBuilder<Map<String, dynamic>>(
-                              future: getData(
-                                  currentUser.seenWith[friendUid]["Movies"]
-                                      [index],
-                                  'Movies'),
-                              builder: (BuildContext context,
-                                  AsyncSnapshot<Map> snapshot) {
-                                if (snapshot.hasData) {
-                                  return GestureDetector(
-                                    onTap: () {
-                                      Movie tempMovie = Movie(
-                                          id: snapshot.data!['id'].toString(),
-                                          title: snapshot.data!['title'],
-                                          coverPhoto:
-                                              snapshot.data!['poster'] ?? "");
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                MovieResult(movie: tempMovie)),
-                                      );
-                                    },
-                                    child: Container(
-                                      margin: const EdgeInsets.fromLTRB(
-                                          5.0, 10.0, 10.0, 0),
-                                      width: MediaQuery.of(context).size.width *
-                                          0.28,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(27),
-                                        image: DecorationImage(
-                                          image: NetworkImage(
-                                              snapshot.data!['poster']),
-                                          fit: BoxFit.fitWidth,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                } else if (snapshot.hasError) {
-                                  return const Center(
-                                      child:
-                                          Text("Failed to load movie details"));
-                                } else {
-                                  return Container(
-                                      margin: const EdgeInsets.fromLTRB(
-                                          5.0, 10.0, 10.0, 0),
-                                      width: MediaQuery.of(context).size.width *
-                                          0.28,
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              0.18,
-                                      child: const Center(
-                                          child: CircularProgressIndicator()));
-                                }
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                    if (!currentUser.seenWith.containsKey(friendUid))
-                      const Text("Haven't watched any movies together yet"),
-                  ],
+              if (!currentUser.seenWith.containsKey(friendUid))
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[900],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  margin: const EdgeInsets.all(5.0),
+                  padding: const EdgeInsets.all(10),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Haven't watched any movies together yet"),
+                    ],
+                  ),
                 ),
-              ),
               const SizedBox(height: 10),
               buildProfileContainer(
                   "Most Seen Movies", moviesTemp, Icons.movie, "Movie"),
@@ -506,6 +416,128 @@ class _FriendProfileState extends State<FriendProfile> {
                                       ? snapshot.data!["profile_path"]
                                       : IMG_LINK +
                                           snapshot.data!["poster_path"],
+                                ),
+                                fit: BoxFit.fitWidth,
+                              ),
+                            ),
+                          ),
+                        );
+                      } else if (snapshot.hasError) {
+                        return const Center(
+                            child: Text("Failed to load movie details"));
+                      } else {
+                        return Container(
+                            margin:
+                                const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
+                            width: MediaQuery.of(context).size.width * 0.28,
+                            height: MediaQuery.of(context).size.height * 0.18,
+                            child: const Center(
+                                child: CircularProgressIndicator()));
+                      }
+                    },
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildMainPageContainer(String title, List content, icon, page) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(10),
+      ),
+      margin: const EdgeInsets.all(5.0),
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(icon),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => page,
+                    ),
+                  );
+                },
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Text(
+                      'See All (${content.length} items)',
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (content.isEmpty) const Text("Nothing here yet"),
+          if (content.isEmpty) const SizedBox(height: 10),
+          if (content.isNotEmpty)
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.22,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: content.length > 10 ? 10 : content.length,
+                itemBuilder: (context, index) {
+                  MediaItem tempMedia;
+                  if (content.reversed.toList()[index][0] == "Movies") {
+                    tempMedia = Movie(
+                        id: content.reversed.toList()[index][1],
+                        title: "title",
+                        coverPhoto: "coverPhoto");
+                  } else {
+                    tempMedia = TVShow(
+                        id: content.reversed.toList()[index][1],
+                        title: "title",
+                        coverPhoto: "coverPhoto");
+                  }
+                  return FutureBuilder<Map>(
+                    future: tempMedia.getData(),
+                    builder:
+                        (BuildContext context, AsyncSnapshot<Map> snapshot) {
+                      if (snapshot.hasData) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => content.reversed
+                                              .toList()[index][0] ==
+                                          "Movies"
+                                      ? MovieResult(movie: tempMedia as Movie)
+                                      : TVShowResult(
+                                          tvshow: tempMedia as TVShow)),
+                            );
+                          },
+                          child: Container(
+                            margin:
+                                const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
+                            width: MediaQuery.of(context).size.width * 0.28,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(27),
+                              image: DecorationImage(
+                                image: CachedNetworkImageProvider(
+                                  IMG_LINK + snapshot.data!["poster_path"],
                                 ),
                                 fit: BoxFit.fitWidth,
                               ),
