@@ -525,6 +525,200 @@ class FirebaseUtils {
     });
     Navigator.pop(context);
   }
+
+  static Future<void> updateCalendar(
+      String dateRange, String uid, Map newData, String dateForMap) async {
+    var userDoc = FirebaseFirestore.instance.collection(uid).doc("Calendar");
+    if (dateRange != "") {
+      DateTime startDate = DateTime.parse(dateRange.split("T")[0]);
+      DateTime endDate = DateTime.parse(dateRange.split("T")[2]);
+
+      for (DateTime date = startDate;
+          date.isBefore(endDate.add(const Duration(days: 1)));
+          date = date.add(const Duration(days: 1))) {
+        String dateStr = date.toIso8601String().split("T")[0];
+        await userDoc.update({
+          dateStr: FieldValue.arrayUnion([newData])
+        });
+      }
+    } else {
+      await userDoc.update({
+        dateForMap: FieldValue.arrayUnion([newData])
+      });
+    }
+  }
+
+  static void updateCurrentUserCalendar(
+      String dateRange, Map newData, String dateForMap) {
+    if (dateRange != "") {
+      DateTime startDate = DateTime.parse(dateRange.split("T")[0]);
+      DateTime endDate = DateTime.parse(dateRange.split("T")[2]);
+
+      for (DateTime date = startDate;
+          date.isBefore(endDate.add(const Duration(days: 1)));
+          date = date.add(const Duration(days: 1))) {
+        String dateStr = date.toIso8601String().split("T")[0];
+        if (currentUser.calendar.keys.toList().contains(dateStr)) {
+          currentUser.calendar[dateStr].add(newData);
+        } else {
+          currentUser.calendar[dateStr] = [
+            newData,
+          ];
+        }
+      }
+    } else {
+      if (currentUser.calendar.keys.toList().contains(dateForMap)) {
+        currentUser.calendar[dateForMap].add(newData);
+      } else {
+        currentUser.calendar[dateForMap] = [
+          newData,
+        ];
+      }
+    }
+  }
+
+  // Can I add this to the updateCurrentUserCalendar function? Instead of making it a whole new one?
+  static Future<void> updateCurrentUserCalendarDocument() async {
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    var userDoc = db.collection(currentUser.uid).doc("Calendar");
+    Map<Object, Object> updatedCalendar = {};
+    for (String key in currentUser.calendar.keys) {
+      updatedCalendar[key] = currentUser.calendar[key];
+    }
+    await userDoc.update(updatedCalendar);
+  }
+
+  static Future<void> updateSeen(String type, String uid, String id) async {
+    var userDoc = FirebaseFirestore.instance.collection(uid).doc(type);
+    await userDoc.update({
+      'Seen': FieldValue.arrayUnion([id])
+    });
+    userDoc = FirebaseFirestore.instance.collection(uid).doc("Seen");
+    await userDoc.update({
+      type: FieldValue.arrayUnion([id])
+    });
+  }
+
+  static Future<void> updateSeenWith(
+      String uid, Map friendsWatchedWith, String id, String type) async {
+    var userDoc2 = FirebaseFirestore.instance.collection(uid).doc("SeenWith");
+    Map<String, dynamic> item = {};
+    List<dynamic> watchedWithList = friendsWatchedWith.keys
+        .where((key) => friendsWatchedWith[key] == true)
+        .toList();
+    item[id] = watchedWithList;
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(userDoc2);
+      if (!snapshot.exists) {
+        throw Exception("Document does not exist!");
+      }
+
+      Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+      if (data.containsKey(type) && data[type] is Map<String, dynamic>) {
+        Map<String, dynamic> moviesMap = data[type];
+
+        if (moviesMap.containsKey(id)) {
+          List existingList = moviesMap[id]["friends"];
+          for (String person in watchedWithList) {
+            if (!existingList.contains(person) && person != uid) {
+              existingList.add(person);
+            }
+          }
+          if (!existingList.contains(currentUser.uid)) {
+            existingList.add(currentUser.uid);
+          }
+          moviesMap[id] = {"friends": existingList};
+          transaction.update(userDoc2, {type: moviesMap});
+        } else {
+          watchedWithList.remove(uid);
+          watchedWithList.add(currentUser.uid);
+          moviesMap[id] = {"friends": watchedWithList};
+          transaction.update(userDoc2, {type: moviesMap});
+        }
+      } else {
+        transaction.set(
+            userDoc2,
+            {
+              type: {
+                id: {"friends": watchedWithList}
+              }
+            },
+            SetOptions(merge: true));
+      }
+    }).catchError((error) {
+      print("Failed to update document: $error");
+    });
+  }
+
+  static Future<void> updateRewatched(String uid, String id) async {
+    var userDoc = FirebaseFirestore.instance.collection(uid).doc("Rewatched");
+    DocumentSnapshot doc = await userDoc.get();
+    if (doc.exists) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      if (data.containsKey(id)) {
+        await userDoc.update({id: FieldValue.increment(1)});
+      } else {
+        await userDoc.update({id: 1});
+      }
+    }
+  }
+
+  static Future<void> updateCurrentUserRewatched() async {
+    var userDoc =
+        FirebaseFirestore.instance.collection(currentUser.uid).doc("Rewatched");
+    Map<Object, Object> updatedRewatched = {};
+    for (String key in currentUser.rewatchedMovies.keys) {
+      updatedRewatched[key] = currentUser.rewatchedMovies[key];
+    }
+    await userDoc.update(updatedRewatched);
+  }
+
+  static Future<void> updateCurrentUserSeenWith(String uid, String id,
+      String type, Map friendsWatchedWith, List watchedWithList) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    DocumentReference userDoc2 =
+        firestore.collection(currentUser.uid).doc("SeenWith");
+    Map<String, dynamic> item = {};
+
+    item[id] = watchedWithList;
+
+    firestore.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(userDoc2);
+
+      if (!snapshot.exists) {
+        throw Exception("Document does not exist!");
+      }
+      Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+
+      if (data.containsKey(type) && data[type] is Map<String, dynamic>) {
+        Map<String, dynamic> moviesMap = data[type];
+
+        if (moviesMap.containsKey(id)) {
+          List existingList = moviesMap[id]["friends"];
+          for (String person in watchedWithList) {
+            if (!existingList.contains(person)) {
+              existingList.add(person);
+            }
+          }
+          moviesMap[id] = {"friends": existingList};
+        } else {
+          moviesMap[id] = {"friends": watchedWithList};
+        }
+        transaction.update(userDoc2, {type: moviesMap});
+      } else {
+        transaction.set(
+            userDoc2,
+            {
+              type: {
+                id: {"friends": watchedWithList}
+              }
+            },
+            SetOptions(merge: true));
+      }
+    }).catchError((error) {
+      print("Failed to update document: $error");
+    });
+  }
 }
 
 class ApiUtils {
