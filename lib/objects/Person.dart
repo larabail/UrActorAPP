@@ -316,15 +316,17 @@ class Person {
       json['num_oscars'] = 0;
     }
 
-    int tempNum =
-        await updateStatsDoc(scoreDirector, currentUser, "FavDirectors");
+    int tempNum = await updateStatsDoc(
+        scoreDirector + tempScoreCrew, currentUser, "FavDirectors");
     json["director_ranking"] = tempNum;
     json["allDirMovies"] = allDirMovies;
 
-    tempNum = await updateStatsDoc(scoreActor, currentUser, "FavActors");
+    tempNum = await updateStatsDoc(
+        scoreActor + tempScoreActor, currentUser, "FavActors");
     json["actor_ranking"] = tempNum;
 
-    tempNum = await updateStatsDoc(scoreWriter, currentUser, "FavWriters");
+    tempNum = await updateStatsDoc(
+        scoreWriter + tempScoreWriter, currentUser, "FavWriters");
     json["writer_ranking"] = tempNum;
 
     await fetchNewStats(currentUser);
