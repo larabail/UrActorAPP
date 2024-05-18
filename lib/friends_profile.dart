@@ -465,10 +465,12 @@ class _FriendProfileState extends State<FriendProfile> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => type == "Person"
-                                      ? PersonResult(
-                                          personResult: item as Person)
-                                      : MovieResult(movie: item as Movie)),
+                                builder: (context) => type == "Person"
+                                    ? PersonResult(personResult: item as Person)
+                                    : type == "Movie"
+                                        ? MovieResult(movie: item as Movie)
+                                        : TVShowResult(tvshow: item as TVShow),
+                              ),
                             );
                           },
                           child: Container(
