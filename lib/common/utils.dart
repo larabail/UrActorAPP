@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -253,7 +255,6 @@ class FirebaseUtils {
     });
     if (type == "Movies") {
       final today = DateTime.now();
-
       final snapshot =
           await FirebaseFirestore.instance.collection(currentUser.uid).get();
       for (var doc in snapshot.docs) {
@@ -671,6 +672,19 @@ class FirebaseUtils {
 
   static Future<void> updateRewatched(String uid, String id) async {
     var userDoc = FirebaseFirestore.instance.collection(uid).doc("Rewatched");
+    DocumentSnapshot doc = await userDoc.get();
+    if (doc.exists) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      if (data.containsKey(id)) {
+        await userDoc.update({id: FieldValue.increment(1)});
+      } else {
+        await userDoc.update({id: 1});
+      }
+    }
+  }
+
+  static Future<void> updateRewatchedTV(String uid, String id) async {
+    var userDoc = FirebaseFirestore.instance.collection(uid).doc("RewatchedTV");
     DocumentSnapshot doc = await userDoc.get();
     if (doc.exists) {
       Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
