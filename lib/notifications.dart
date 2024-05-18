@@ -1,8 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uractor/movie_result.dart';
+import 'package:uractor/objects/Movie.dart';
+import 'package:uractor/objects/TVShow.dart';
+import 'package:uractor/tvshow_result.dart';
 
 import 'main.dart';
+import 'objects/Media.dart';
 
 class Notifications extends StatefulWidget {
   const Notifications({super.key});
@@ -77,58 +82,83 @@ class _NotificationsState extends State<Notifications> {
             var notification = currentUser.notifications[notificationKey];
 
             return Padding(
-              padding: const EdgeInsets.all(15),
+              padding: const EdgeInsets.fromLTRB(15, 5, 15, 5),
               child: SizedBox(
                 height: 125,
-                child: Stack(
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                          width: MediaQuery.of(context).size.width * 0.28,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(27),
-                            image: DecorationImage(
-                              image: CachedNetworkImageProvider(
-                                notification["coverPhoto"],
-                              ),
-                              fit: BoxFit.fitWidth,
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.5,
-                          child: Text(
-                            '${notification["sender"]["username"]} wants you to checkout "${notification['title']}"',
-                            style: const TextStyle(
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (!notification['read'])
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Text(
-                            'NEW',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ),
+                child: GestureDetector(
+                  onTap: () {
+                    MediaItem tempItem;
+                    if (notification["type"] == "movie") {
+                      tempItem = Movie(
+                          id: notification["id"],
+                          title: notification["title"],
+                          coverPhoto: notification["coverPhoto"]);
+                    } else {
+                      tempItem = TVShow(
+                          id: notification["id"],
+                          title: notification["title"],
+                          coverPhoto: notification["coverPhoto"]);
+                    }
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => notification["type"] == "movie"
+                            ? MovieResult(movie: tempItem as Movie)
+                            : TVShowResult(tvshow: tempItem as TVShow),
                       ),
-                  ],
+                    );
+                  },
+                  child: Stack(
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            margin:
+                                const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
+                            width: MediaQuery.of(context).size.width * 0.28,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(27),
+                              image: DecorationImage(
+                                image: CachedNetworkImageProvider(
+                                  notification["coverPhoto"],
+                                ),
+                                fit: BoxFit.fitWidth,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width * 0.5,
+                            child: Text(
+                              '${notification["sender"]["username"]} wants you to checkout the ${notification['type']} "${notification['title']}"',
+                              style: const TextStyle(
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (!notification['read'])
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
+                              'NEW',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             );
