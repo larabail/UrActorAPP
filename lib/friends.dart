@@ -113,7 +113,7 @@ class _FriendsState extends State<Friends> {
               actions: [
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop(); // Close the dialog
+                    Navigator.of(context).pop();
                   },
                   child: const Text(
                     'Cancel',
@@ -134,27 +134,22 @@ class _FriendsState extends State<Friends> {
       body: RefreshIndicator(
         onRefresh: _refreshFriends,
         child: ListView.builder(
-          itemCount: currentUser.friends.length + 1, // Increase itemCount by 1
+          itemCount: currentUser.friends.length + 1,
           itemBuilder: (context, index) {
             if (index == 0) {
-              // Add a custom ListTile at the beginning
               return ListTile(
                 leading: const Padding(
-                  padding: EdgeInsets.only(left: 16.0), // Add left padding
+                  padding: EdgeInsets.only(left: 16.0),
                   child: Column(
-                    mainAxisAlignment:
-                        MainAxisAlignment.center, // Center vertically
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.mail), // Icon to the left
+                      Icon(Icons.mail),
                     ],
                   ),
                 ),
-                title: const Text(
-                    'Friend requests'), // Text to the right of the icon
-                subtitle: const Text(
-                    'Approve or reject requests'), // Subtitle below the title
+                title: const Text('Friend requests'),
+                subtitle: const Text('Approve or reject requests'),
                 onTap: () {
-                  // Navigate to FriendRequestsPage when ListTile is tapped
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -165,7 +160,6 @@ class _FriendsState extends State<Friends> {
                 },
               );
             } else {
-              // Adjust the index to account for the added ListTile
               int friendIndex = index - 1;
 
               return FutureBuilder<DocumentSnapshot>(
@@ -186,7 +180,6 @@ class _FriendsState extends State<Friends> {
                     String userName = data['username'] ?? '';
                     return GestureDetector(
                       onTap: () {
-                        // Navigate to Profile Page
                         friendUid = currentUser.friends[friendIndex];
                         Navigator.push(
                           context,
