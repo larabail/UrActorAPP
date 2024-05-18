@@ -3,7 +3,10 @@ import 'package:uractor/common/utils.dart';
 import 'package:uractor/main.dart';
 
 class ProfileSectionsDialogue extends StatefulWidget {
-  const ProfileSectionsDialogue({Key? key}) : super(key: key);
+  final VoidCallback onDialogClosed;
+
+  const ProfileSectionsDialogue({Key? key, required this.onDialogClosed})
+      : super(key: key);
 
   @override
   _ProfileSectionsDialogueState createState() =>
@@ -11,7 +14,7 @@ class ProfileSectionsDialogue extends StatefulWidget {
 }
 
 class _ProfileSectionsDialogueState extends State<ProfileSectionsDialogue> {
-  late List<MapEntry<String, dynamic>> sectionsList;
+  late List<MapEntry<dynamic, dynamic>> sectionsList;
 
   @override
   void initState() {
@@ -88,10 +91,10 @@ class _ProfileSectionsDialogueState extends State<ProfileSectionsDialogue> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
-                Map newSections =
-                    Map.fromEntries(sectionsList);
+                Map newSections = Map.fromEntries(sectionsList);
                 await FirebaseUtils.updateProfileSections(newSections);
 
+                widget.onDialogClosed();
                 Navigator.of(context).pop();
               },
               child: const Text("Save"),

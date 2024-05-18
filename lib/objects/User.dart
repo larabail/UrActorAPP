@@ -13,6 +13,7 @@ class AppUser {
   List favActors = [];
   List friends = [];
   List favDirectors = [];
+  List favWriters = [];
   List favMovies = [];
   List favTVShows = [];
   List seenMovies = [];
@@ -61,6 +62,12 @@ class AppUser {
               .map((entry) => [entry.value, entry.key])
               .toList();
           favDirectors.sort((a, b) => b[0].compareTo(a[0]));
+        } else if (doc.id == "FavWriters") {
+          Map tempFavWriters = doc.data() as Map;
+          favWriters = tempFavWriters.entries
+              .map((entry) => [entry.value, entry.key])
+              .toList();
+          favWriters.sort((a, b) => b[0].compareTo(a[0]));
         } else if (doc.id == "Favorites") {
           Map allFavs = doc.data() as Map;
           allFavs.forEach((key, el) {
@@ -224,6 +231,7 @@ class AppUser {
     allMovies = [];
     favActors = [];
     favDirectors = [];
+    favWriters = [];
     favMovies = [];
     favTVShows = [];
     friends = [];
