@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 import '../main.dart';
 
@@ -28,6 +29,15 @@ class AppUser {
   Map seenWith = {};
   List seen = [];
   List allReviews = [];
+  Map<String, dynamic> notifications = {};
+  ValueNotifier<int> unreadNotificationsCount = ValueNotifier<int>(0);
+
+  void updateNotifications(Map<String, dynamic> newNotifications) {
+    notifications = newNotifications;
+    unreadNotificationsCount.value = notifications.values
+        .where((element) => element["read"] == false)
+        .length;
+  }
 
   AppUser({
     required this.uid,
@@ -184,6 +194,9 @@ class AppUser {
         } else if (doc.id == "Friends") {
           Map f = doc.data() as Map;
           friends = f["friends"];
+        } else if (doc.id == "Notifications") {
+          Map f = doc.data() as Map;
+          notifications = f as Map<String, dynamic>;
         } else if (doc.id == "Seen") {
           Map w = doc.data() as Map;
           w.forEach((key, el) {
@@ -222,6 +235,7 @@ class AppUser {
         oscars[d["tmdb_id"].toString()] = doc.data();
       }
     });
+    updateNotifications(notifications);
     return true;
   }
 
@@ -248,6 +262,7 @@ class AppUser {
     seenWith = {};
     settings = {};
     friends = [];
+    notifications = {};
   }
 
   void clearUser() {

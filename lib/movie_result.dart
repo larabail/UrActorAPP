@@ -1,6 +1,8 @@
 // ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, no_leading_underscores_for_local_identifiers
 
+import 'package:uractor/objects/Media.dart';
 import 'package:uractor/popups/add_to_calendar_pop_up.dart';
+import 'package:uractor/popups/share.dart';
 
 import 'cast_and_crew.dart';
 import 'common/utils.dart';
@@ -223,7 +225,6 @@ class _MovieResultState extends State<MovieResult> {
                                         0.45,
                                     height: MediaQuery.of(context).size.height *
                                         0.18,
-                                    // Use Align to position the text
                                     child: Padding(
                                       padding: const EdgeInsets.all(16.0),
                                       child: Align(
@@ -231,8 +232,7 @@ class _MovieResultState extends State<MovieResult> {
                                         child: Text(
                                           valueLeft,
                                           style: const TextStyle(
-                                            color: Colors
-                                                .white, // Make sure the text is visible on the gradient
+                                            color: Colors.white,
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold,
                                             letterSpacing: 1.25,
@@ -423,6 +423,42 @@ class _MovieResultState extends State<MovieResult> {
                             ),
                           ),
                         ),
+                        Align(
+                          alignment: Alignment.topRight,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(100),
+                              color: Colors.black.withOpacity(0.5),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  onPressed: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      builder: (_) {
+                                        MediaItem tempItem = Movie(
+                                            id: widget.movie.id,
+                                            title: snapshot.data!["title"],
+                                            coverPhoto: IMG_LINK +
+                                                snapshot.data!["poster_path"]);
+                                        return Share(
+                                          item: tempItem,
+                                          type: "movie",
+                                        );
+                                      },
+                                    );
+                                  },
+                                  icon: const Icon(
+                                    Icons.share,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -434,12 +470,9 @@ class _MovieResultState extends State<MovieResult> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            padding:
-                                const EdgeInsets.all(8), // Optional padding
+                            padding: const EdgeInsets.all(8),
                             constraints: BoxConstraints(
-                              maxHeight: isExpanded
-                                  ? double.infinity
-                                  : 85, // Max height constraint
+                              maxHeight: isExpanded ? double.infinity : 85,
                             ),
                             child: Text(
                               snapshot.data!['overview'],
@@ -461,12 +494,10 @@ class _MovieResultState extends State<MovieResult> {
                                 });
                               },
                               child: const SizedBox(
-                                width: double
-                                    .infinity, // Ensures the container takes full width
+                                width: double.infinity,
                                 child: Text(
                                   "Read All",
-                                  textAlign: TextAlign
-                                      .right, // Aligns text to the right
+                                  textAlign: TextAlign.right,
                                 ),
                               ),
                             ),
@@ -474,7 +505,7 @@ class _MovieResultState extends State<MovieResult> {
                       ),
                     ),
                   Container(
-                    height: 30, // fixed height
+                    height: 30,
                     margin: const EdgeInsets.fromLTRB(20.0, 5.0, 0, 5.0),
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
@@ -668,13 +699,10 @@ class _MovieResultState extends State<MovieResult> {
                               child: Container(
                                 width: MediaQuery.of(context).size.width * 0.8,
                                 decoration: BoxDecoration(
-                                  color: const Color.fromARGB(
-                                      255, 26, 25, 25), // dark grey background
-                                  borderRadius: BorderRadius.circular(
-                                      27), // border radius
+                                  color: const Color.fromARGB(255, 26, 25, 25),
+                                  borderRadius: BorderRadius.circular(27),
                                 ),
-                                padding: const EdgeInsets.all(
-                                    15), // optional padding
+                                padding: const EdgeInsets.all(15),
                                 child: Column(
                                   children: [
                                     Text(
@@ -837,7 +865,7 @@ class _MovieResultState extends State<MovieResult> {
                         ),
                         if (snapshot.data!['providers'].length != 0)
                           Container(
-                            height: 30, // fixed height
+                            height: 30,
                             margin: const EdgeInsets.fromLTRB(5.0, 5.0, 0, 5.0),
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
@@ -898,9 +926,7 @@ class _MovieResultState extends State<MovieResult> {
                       keyboardType: TextInputType.number,
                       onChanged: (value) {
                         FirebaseUtils.incrementWatched(
-                            value.toString(),
-                            snapshot.data!["id"]
-                                .toString()); // replace 'yourDocumentId' with your actual document ID
+                            value.toString(), snapshot.data!["id"].toString());
                       },
                     ),
                   ),
@@ -938,9 +964,7 @@ class _MovieResultState extends State<MovieResult> {
                                       const EdgeInsets.symmetric(vertical: 2.0),
                                   child: Row(
                                     children: [
-                                      const SizedBox(
-                                          width:
-                                              16), // Added margin to the left
+                                      const SizedBox(width: 16),
                                       const Icon(Icons.calendar_today,
                                           size: 16, color: Colors.grey),
                                       const SizedBox(width: 8),
@@ -956,7 +980,6 @@ class _MovieResultState extends State<MovieResult> {
                                       ),
                                       Expanded(
                                         child: FutureBuilder<List<String>>(
-                                          // Assuming getProfilePhotos returns a Future of List<String> where each String is a URL
                                           future:
                                               FirebaseUtils.getProfilePhotos(
                                                   friendsWhoWatched),
@@ -964,16 +987,14 @@ class _MovieResultState extends State<MovieResult> {
                                             if (snapshot.connectionState ==
                                                 ConnectionState.waiting) {
                                               return const SizedBox(
-                                                height:
-                                                    32.0, // Adjust the size as needed
+                                                height: 32.0,
                                                 child: Center(
                                                     child:
                                                         CircularProgressIndicator()),
                                               );
                                             } else if (snapshot.hasError) {
                                               return const SizedBox(
-                                                height:
-                                                    32.0, // Adjust the size as needed
+                                                height: 32.0,
                                                 child: Center(
                                                     child: Text(
                                                         'Error loading images')),
@@ -981,14 +1002,12 @@ class _MovieResultState extends State<MovieResult> {
                                             } else if (snapshot.hasData) {
                                               var images = snapshot.data!;
                                               return SizedBox(
-                                                height:
-                                                    32.0, // Adjust the size as needed
+                                                height: 32.0,
                                                 child: Stack(
                                                   children: List.generate(
                                                       images.length, (index) {
-                                                    // Calculate the left offset for each photo
-                                                    double offset = index *
-                                                        10.0; // Adjust the multiplier as needed for the desired overlap
+                                                    double offset =
+                                                        index * 10.0;
                                                     return Positioned(
                                                       left: offset,
                                                       child: ClipOval(
@@ -1081,8 +1100,7 @@ class _MovieResultState extends State<MovieResult> {
                             } else if (snapshot.hasData) {
                               return GridView.builder(
                                 shrinkWrap: true,
-                                physics:
-                                    const NeverScrollableScrollPhysics(), // to disable GridView's scrolling
+                                physics: const NeverScrollableScrollPhysics(),
                                 gridDelegate:
                                     const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
@@ -1099,7 +1117,6 @@ class _MovieResultState extends State<MovieResult> {
 
                                   return GestureDetector(
                                       onTap: () async {
-                                        // Navigate to Profile Page
                                         var querySnapshot =
                                             await FirebaseFirestore.instance
                                                 .collection('usernames')
@@ -1165,7 +1182,6 @@ class _MovieResultState extends State<MovieResult> {
                                                       overflow:
                                                           TextOverflow.ellipsis,
                                                     ),
-                                                    // ... other text elements if needed ...
                                                   ],
                                                 ),
                                               ),
@@ -1194,8 +1210,7 @@ class _MovieResultState extends State<MovieResult> {
                                         return AlertDialog(
                                           title: const Text('Add Friends'),
                                           content: SizedBox(
-                                            height:
-                                                250, // Set your desired height here
+                                            height: 250,
                                             child: SingleChildScrollView(
                                               child: Column(
                                                 children: List.generate(
@@ -1373,7 +1388,6 @@ class _MovieResultState extends State<MovieResult> {
                                                   await firestore
                                                       .runTransaction(
                                                           (transaction) async {
-                                                    // Get the document snapshot
                                                     DocumentSnapshot snapshot =
                                                         await transaction
                                                             .get(userDoc2);
@@ -1463,7 +1477,6 @@ class _MovieResultState extends State<MovieResult> {
                                                 item[id] = watchedWithList;
                                                 firestore.runTransaction(
                                                     (transaction) async {
-                                                  // Get the document snapshot
                                                   DocumentSnapshot snapshot =
                                                       await transaction
                                                           .get(userDoc2);
@@ -1473,12 +1486,10 @@ class _MovieResultState extends State<MovieResult> {
                                                         "Document does not exist!");
                                                   }
 
-                                                  // Get the current data
                                                   Map<String, dynamic> data =
                                                       snapshot.data() as Map<
                                                           String, dynamic>;
 
-                                                  // Check if 'Movies' map exists and if the 'id' is already a key in the 'Movies' map
                                                   if (data.containsKey(
                                                           'Movies') &&
                                                       data['Movies'] is Map<
@@ -1487,10 +1498,8 @@ class _MovieResultState extends State<MovieResult> {
                                                         moviesMap =
                                                         data['Movies'];
 
-                                                    // Check if the 'id' already exists in the 'Movies' map
                                                     if (moviesMap
                                                         .containsKey(id)) {
-                                                      // If it exists, append the new list to the existing one
                                                       List existingList =
                                                           moviesMap[id]
                                                               ["friends"];
@@ -1506,17 +1515,14 @@ class _MovieResultState extends State<MovieResult> {
                                                         "friends": existingList
                                                       };
                                                     } else {
-                                                      // If the 'id' doesn't exist, add the new key-value pair
                                                       moviesMap[id] = {
                                                         "friends":
                                                             watchedWithList
                                                       };
                                                     }
-                                                    // Update the 'Movies' map
                                                     transaction.update(userDoc2,
                                                         {'Movies': moviesMap});
                                                   } else {
-                                                    // If 'Movies' map doesn't exist, create it and add the 'id' and list
                                                     transaction.set(
                                                         userDoc2,
                                                         {
@@ -1740,14 +1746,6 @@ class _MovieResultState extends State<MovieResult> {
                           },
                         ),
                       ),
-                      // Container(
-                      //   width: MediaQuery.of(context).size.width,
-                      //   margin: const EdgeInsets.fromLTRB(30.0, 20.0, 0, 5.0),
-                      //   child: const Text(
-                      //     "Main Crew:",
-                      //     style: TextStyle(fontSize: 18),
-                      //   ),
-                      // ),
                       Container(
                         width: MediaQuery.of(context).size.width * 1,
                         height: 50,
@@ -1813,50 +1811,6 @@ class _MovieResultState extends State<MovieResult> {
                                   ));
                             }
                             return Container();
-
-                            // int adjustedIndex =
-                            //     director != null ? index - 1 : index;
-                            // adjustedIndex = writer != null
-                            //     ? adjustedIndex - 1
-                            //     : adjustedIndex;
-
-                            // if (director != null &&
-                            //     snapshot.data!['crew'][adjustedIndex] ==
-                            //         director) {
-                            //   adjustedIndex++;
-                            // }
-
-                            // if (writer != null &&
-                            //     snapshot.data!['crew'][adjustedIndex] ==
-                            //         writer) {
-                            //   adjustedIndex++;
-                            // }
-
-                            // if (adjustedIndex < snapshot.data!['crew'].length) {
-                            //   Map person =
-                            //       snapshot.data!['crew'][adjustedIndex];
-                            //   return GestureDetector(
-                            //       onTap: () {
-                            //         Person personResult = Person(
-                            //             id: person["id"].toString(),
-                            //             name: person["name"].toString(),
-                            //             data: person);
-
-                            //         Navigator.push(
-                            //           context,
-                            //           MaterialPageRoute(
-                            //               builder: (context) => PersonResult(
-                            //                     personResult: personResult,
-                            //                   )),
-                            //         );
-                            //       },
-                            //       child: Text(
-                            //         "${person['job']}: ${person['name']}",
-                            //         style: const TextStyle(fontSize: 15),
-                            //       ));
-                            // } else {
-                            //   return Container();
-                            // }
                           },
                         ),
                       ),
@@ -1881,7 +1835,6 @@ class _MovieResultState extends State<MovieResult> {
                           ),
                         );
                       } catch (e) {
-                        // Handle the exception
                         return const Center(
                           child: Text(''),
                         );

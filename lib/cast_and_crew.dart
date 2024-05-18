@@ -101,14 +101,12 @@ class ItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print(person.data);
     return FutureBuilder<Map>(
       future: person.getSimpleData(),
       builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
         if (snapshot.hasData) {
           return GestureDetector(
             onTap: () {
-              // Handle the click event here
               Person tempMediaItem = Person(
                   id: snapshot.data!["id"].toString(),
                   name: snapshot.data!["name"],
