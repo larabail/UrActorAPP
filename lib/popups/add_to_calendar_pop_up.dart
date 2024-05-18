@@ -103,11 +103,9 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Text(
-                item['title'] ??
-                    (item["name"] ??
-                        'Unkown'), // Replace 'title' with the appropriate key
+                item['title'] ?? (item["name"] ?? 'Unkown'),
                 style: const TextStyle(
-                  fontSize: 14, // Adjust the font size as needed
+                  fontSize: 14,
                 ),
               ),
             ),

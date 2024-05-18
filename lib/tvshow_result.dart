@@ -12,12 +12,13 @@ import 'friends.dart';
 import 'friends_profile.dart';
 import 'package:intl/intl.dart' as intl;
 import 'main.dart';
-// import 'package:http/http.dart' as http;
-// import 'dart:convert';
+import 'objects/Media.dart';
 import 'objects/Person.dart';
 import 'objects/TVShow.dart';
 import 'person_result.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+
+import 'popups/share.dart';
 
 String _imageProviderSeen = 'assets/seen_before.png';
 String _imageProviderWatchlist = 'assets/watchlist_before.png';
@@ -208,7 +209,6 @@ class _TVShowResultState extends State<TVShowResult> {
                                         0.45,
                                     height: MediaQuery.of(context).size.height *
                                         0.18,
-                                    // Use Align to position the text
                                     child: Padding(
                                       padding: const EdgeInsets.all(16.0),
                                       child: Align(
@@ -216,8 +216,7 @@ class _TVShowResultState extends State<TVShowResult> {
                                         child: Text(
                                           valueLeft,
                                           style: const TextStyle(
-                                            color: Colors
-                                                .white, // Make sure the text is visible on the gradient
+                                            color: Colors.white,
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold,
                                             letterSpacing: 1.25,
@@ -408,6 +407,42 @@ class _TVShowResultState extends State<TVShowResult> {
                                 wordSpacing: 2,
                                 height: 1.5,
                               ),
+                            ),
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.topRight,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(100),
+                              color: Colors.black.withOpacity(0.5),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  onPressed: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      builder: (_) {
+                                        MediaItem tempItem = TVShow(
+                                            id: widget.tvshow.id,
+                                            title: snapshot.data!["name"],
+                                            coverPhoto: IMG_LINK +
+                                                snapshot.data!["poster_path"]);
+                                        return Share(
+                                          item: tempItem,
+                                          type: "tvshow",
+                                        );
+                                      },
+                                    );
+                                  },
+                                  icon: const Icon(
+                                    Icons.share,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -814,7 +849,7 @@ class _TVShowResultState extends State<TVShowResult> {
                         ),
                         if (snapshot.data!['providers'].length != 0)
                           Container(
-                            height: 30, // fixed height
+                            height: 30,
                             margin: const EdgeInsets.fromLTRB(5.0, 5.0, 0, 5.0),
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
@@ -914,9 +949,7 @@ class _TVShowResultState extends State<TVShowResult> {
                                       const EdgeInsets.symmetric(vertical: 2.0),
                                   child: Row(
                                     children: [
-                                      const SizedBox(
-                                          width:
-                                              16), // Added margin to the left
+                                      const SizedBox(width: 16),
                                       const Icon(Icons.calendar_today,
                                           size: 16, color: Colors.grey),
                                       const SizedBox(width: 8),
@@ -1137,13 +1170,6 @@ class _TVShowResultState extends State<TVShowResult> {
                                                   ],
                                                 ),
                                               ),
-                                              // IconButton(
-                                              //   icon: Icon(
-                                              //       Icons
-                                              //           .remove_circle_outline_outlined,
-                                              //       color: Colors.red),
-                                              //   onPressed: () async {},
-                                              // ),
                                             ],
                                           ),
                                         ),

@@ -214,213 +214,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ],
               ),
-              GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 2.75,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                ),
-                padding: const EdgeInsets.all(10),
-                itemCount: currentUser.playlists.length < 6
-                    ? currentUser.playlists.length
-                    : 6,
-                itemBuilder: (context, index) {
-                  String key = currentUser.playlists.keys.elementAt(index);
-                  dynamic value = currentUser.playlists[key]['Name'];
-                  dynamic image = currentUser.playlists[key]['CoverPhoto'];
-                  dynamic movies = currentUser.playlists[key]['Movies'];
-                  dynamic tvshows = currentUser.playlists[key]['TV Shows'];
-                  dynamic accessCode = currentUser.playlists[key]['AccessCode'];
-
-                  int totalContent =
-                      (movies?.length ?? 0) + (tvshows?.length ?? 0);
-
-                  if (index == 5 && currentUser.playlists.length > 6) {
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const Playlists()),
-                        );
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[900],
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.all(10),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.library_books,
-                                color: Colors.white, size: 20),
-                            const SizedBox(
-                              width: 10,
-                            ),
-                            Column(
-                              children: [
-                                const Text(
-                                  'See All',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  '${currentUser.playlists.length} playlists',
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-                  return GestureDetector(
-                      onTap: () {
-                        Playlist listResult = Playlist(
-                            id: key.toString(),
-                            name: value.toString(),
-                            backdrop: image.toString(),
-                            movies: movies,
-                            tvshows: tvshows,
-                            accesscode: accessCode.toString(),
-                            users: currentUser.playlists[key]["Users"]);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => ListResult(
-                                    list_result: listResult,
-                                  )),
-                        );
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[900],
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.all(10),
-                        child: IntrinsicHeight(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              AspectRatio(
-                                aspectRatio: 1,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(5),
-                                    image: DecorationImage(
-                                      image: NetworkImage(image),
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          LayoutBuilder(
-                                            builder: (context, constraints) {
-                                              final text = TextSpan(
-                                                text: value,
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              );
-                                              final textPainter = TextPainter(
-                                                text: text,
-                                                textDirection:
-                                                    TextDirection.ltr,
-                                                maxLines: 1,
-                                              )..layout(
-                                                  maxWidth:
-                                                      constraints.maxWidth);
-
-                                              if (textPainter
-                                                  .didExceedMaxLines) {
-                                                return SizedBox(
-                                                  height: 20,
-                                                  child: Marquee(
-                                                    text: value,
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                    scrollAxis: Axis.horizontal,
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    blankSpace: 20.0,
-                                                    velocity: 25.0,
-                                                    pauseAfterRound:
-                                                        const Duration(
-                                                            seconds: 1),
-                                                    startPadding: 0.0,
-                                                    accelerationDuration:
-                                                        const Duration(
-                                                            seconds: 1),
-                                                    accelerationCurve:
-                                                        Curves.linear,
-                                                    decelerationDuration:
-                                                        const Duration(
-                                                            milliseconds: 500),
-                                                    decelerationCurve:
-                                                        Curves.easeOut,
-                                                  ),
-                                                );
-                                              } else {
-                                                return Text(
-                                                  value,
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                );
-                                              }
-                                            },
-                                          ),
-                                          Text(
-                                            '$totalContent items',
-                                            style: const TextStyle(
-                                              color: Colors.grey,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ));
-                },
-              ),
+              buildPlaylistsSection(),
               buildMainPageContainer(
                   "Watchlist",
                   currentUser.watchlistTVShows + currentUser.watchlist,
@@ -602,6 +396,202 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       );
     }
+  }
+
+  Widget buildPlaylistsSection() {
+    return GridView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 2.75,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      padding: const EdgeInsets.all(10),
+      itemCount:
+          currentUser.playlists.length < 6 ? currentUser.playlists.length : 6,
+      itemBuilder: (context, index) {
+        String key = currentUser.playlists.keys.elementAt(index);
+        dynamic value = currentUser.playlists[key]['Name'];
+        dynamic image = currentUser.playlists[key]['CoverPhoto'];
+        dynamic movies = currentUser.playlists[key]['Movies'];
+        dynamic tvshows = currentUser.playlists[key]['TV Shows'];
+        dynamic accessCode = currentUser.playlists[key]['AccessCode'];
+
+        int totalContent = (movies?.length ?? 0) + (tvshows?.length ?? 0);
+
+        if (index == 5 && currentUser.playlists.length > 6) {
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const Playlists()),
+              );
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[900],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                children: [
+                  const Icon(Icons.library_books,
+                      color: Colors.white, size: 20),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Column(
+                    children: [
+                      const Text(
+                        'See All',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${currentUser.playlists.length} playlists',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        return GestureDetector(
+          onTap: () {
+            Playlist listResult = Playlist(
+                id: key.toString(),
+                name: value.toString(),
+                backdrop: image.toString(),
+                movies: movies,
+                tvshows: tvshows,
+                accesscode: accessCode.toString(),
+                users: currentUser.playlists[key]["Users"]);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ListResult(
+                  list_result: listResult,
+                ),
+              ),
+            );
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[900],
+              borderRadius: BorderRadius.circular(10),
+            ),
+            padding: const EdgeInsets.all(10),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AspectRatio(
+                    aspectRatio: 1,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(5),
+                        image: DecorationImage(
+                          image: NetworkImage(image),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final text = TextSpan(
+                                    text: value,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  );
+                                  final textPainter = TextPainter(
+                                    text: text,
+                                    textDirection: TextDirection.ltr,
+                                    maxLines: 1,
+                                  )..layout(maxWidth: constraints.maxWidth);
+
+                                  if (textPainter.didExceedMaxLines) {
+                                    return SizedBox(
+                                      height: 20,
+                                      child: Marquee(
+                                        text: value,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        scrollAxis: Axis.horizontal,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        blankSpace: 20.0,
+                                        velocity: 25.0,
+                                        pauseAfterRound:
+                                            const Duration(seconds: 1),
+                                        startPadding: 0.0,
+                                        accelerationDuration:
+                                            const Duration(seconds: 1),
+                                        accelerationCurve: Curves.linear,
+                                        decelerationDuration:
+                                            const Duration(milliseconds: 500),
+                                        decelerationCurve: Curves.easeOut,
+                                      ),
+                                    );
+                                  } else {
+                                    return Text(
+                                      value,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                              Text(
+                                '$totalContent items',
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget buildMainPageContainer(String title, List content, icon, page) {
