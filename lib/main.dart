@@ -189,7 +189,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => Notifications()),
+                            builder: (context) => const Notifications()),
                       );
                     },
                     child: Container(
@@ -238,8 +238,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                 ),
                             ],
                           ),
-                          SizedBox(width: 10),
-                          Text(
+                          const SizedBox(width: 10),
+                          const Text(
                             'Notifications',
                             style: TextStyle(
                               fontSize: 14,
