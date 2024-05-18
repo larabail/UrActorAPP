@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/cast_and_crew.dart';
@@ -182,7 +183,7 @@ class _TVShowResultState extends State<TVShowResult> {
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(27),
                                       image: DecorationImage(
-                                        image: NetworkImage(imageLeft),
+                                        image: CachedNetworkImageProvider(imageLeft),
                                         fit: BoxFit.cover,
                                       ),
                                     ),
@@ -260,7 +261,7 @@ class _TVShowResultState extends State<TVShowResult> {
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(27),
                                       image: DecorationImage(
-                                        image: NetworkImage(imageRight),
+                                        image: CachedNetworkImageProvider(imageRight),
                                         fit: BoxFit.cover,
                                       ),
                                     ),
@@ -362,7 +363,7 @@ class _TVShowResultState extends State<TVShowResult> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10),
                               image: DecorationImage(
-                                image: NetworkImage(
+                                image: CachedNetworkImageProvider(
                                   IMG_LINK + snapshot.data!['backdrop_path'],
                                 ),
                                 fit: BoxFit.cover,
@@ -862,7 +863,7 @@ class _TVShowResultState extends State<TVShowResult> {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10),
                                     image: DecorationImage(
-                                      image: NetworkImage(
+                                      image: CachedNetworkImageProvider(
                                         IMG_LINK +
                                             snapshot.data!['providers'][index]
                                                 [1],

@@ -1,5 +1,6 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/utils.dart';
 import 'package:uractor/objects/Movie.dart';
@@ -74,7 +75,6 @@ class _SearchResultState extends State<Search> {
 
     Widget buildItem(BuildContext context, Map item) {
       if (item.containsKey("poster_path") && item.containsKey("title")) {
-        // movieResult = [item['id'], item['title'], "Movies"];
         item['profile_path'] = getDefaultImagePath(item['poster_path']);
       } else if (item.containsKey("poster_path") && item.containsKey("name")) {
         item['profile_path'] = getDefaultImagePath(item['poster_path']);
@@ -93,7 +93,7 @@ class _SearchResultState extends State<Search> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(27),
                 image: DecorationImage(
-                  image: NetworkImage(item['profile_path']),
+                  image: CachedNetworkImageProvider(item['profile_path']),
                   fit: BoxFit.fitWidth,
                 ),
               ),

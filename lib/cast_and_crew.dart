@@ -1,5 +1,6 @@
 // ignore_for_file: use_key_in_widget_constructors, must_be_immutable
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/objects/Person.dart';
 import 'package:uractor/person_result.dart';
@@ -128,7 +129,7 @@ class ItemCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(27),
                   image: DecorationImage(
-                    image: NetworkImage(snapshot.data!['profile_path']),
+                    image: CachedNetworkImageProvider(snapshot.data!['profile_path']),
                     fit: BoxFit.fitWidth,
                   ),
                 ),

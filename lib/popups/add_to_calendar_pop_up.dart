@@ -1,5 +1,6 @@
 // ignore_for_file: library_private_types_in_public_api
 // ignore_for_file: use_build_context_synchronously, non_constant_identifier_names
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -89,7 +90,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(27),
               image: DecorationImage(
-                image: NetworkImage(item['profile_path']),
+                image: CachedNetworkImageProvider(item['profile_path']),
                 fit: BoxFit.fitWidth,
               ),
               border: isSelected
