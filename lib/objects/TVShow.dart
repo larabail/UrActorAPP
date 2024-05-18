@@ -29,14 +29,12 @@ class TVShow extends MediaItem {
 
     Map json = await ApiUtils.fetchMovieDetails(showId, name, "show");
 
-    // Handle seen times and review
-    // json["times_seen"] = currentUser.rewatchedMovies.containsKey(movieId)
-    //     ? currentUser.rewatchedMovies[movieId]
-    //     : (isSeen() ? 1 : 0);
+    json["times_seen"] = currentUser.rewatchedTVShows.containsKey(showId)
+        ? currentUser.rewatchedTVShows[showId]
+        : (isSeen() ? 1 : 0);
     json["review"] =
         reviewed ? (currentUser.tvShowReviews[showId] as Map?) : null;
 
-    // Process seen dates
     json["seen_dates"] =
         ApiUtils.processSeenDates(currentUser.calendar, showId, "series");
 
@@ -62,5 +60,16 @@ class TVShow extends MediaItem {
 
   bool isFavorite() {
     return Utils.contains(currentUser.favTVShows, ['TVShows', id], "TVShows");
+  }
+
+  Future<Map> getSeasonsData(int season) async {
+    final String showId = id.toString();
+    final response =
+        await http.get(Uri.parse('$TV_SHOW_LINK$showId/season/$season$API_KEY'));
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return json as Map;
+    }
+    return {};
   }
 }
