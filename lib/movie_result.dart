@@ -1655,12 +1655,13 @@ class _MovieResultState extends State<MovieResult> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => CastCrew(
-                                        data: {
-                                          "cast": snapshot.data!['cast'],
-                                          "crew": snapshot.data!['crew']
-                                        },
-                                      )),
+                                builder: (context) => CastCrew(
+                                  data: {
+                                    "cast": snapshot.data!['cast'],
+                                    "crew": snapshot.data!['crew']
+                                  },
+                                ),
+                              ),
                             );
                           },
                           child: const Text(

@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/cast_and_crew.dart';
+import 'package:uractor/season_guide.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'common/constants.dart';
@@ -498,16 +499,29 @@ class _TVShowResultState extends State<TVShowResult> {
                           children: [
                             const Icon(Icons.access_time, color: Colors.white),
                             const SizedBox(width: 5),
-                            Text(
-                              snapshot.data!['seasons'].length - 1 > 0
-                                  ? snapshot.data!['seasons'].length - 1 > 1
-                                      ? '${snapshot.data!['seasons'].length - 1} seasons'
-                                      : '${snapshot.data!['seasons'].length - 1} season'
-                                  : '${snapshot.data!['seasons'].length} season',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => SeasonGuide(
+                                      tvShowData: snapshot.data!,
+                                      show: widget.tvshow,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                snapshot.data!['number_of_seasons'] > 0
+                                    ? snapshot.data!['number_of_seasons'] > 1
+                                        ? '${snapshot.data!['number_of_seasons']} seasons →'
+                                        : '${snapshot.data!['number_of_seasons']} season →'
+                                    : '${snapshot.data!['number_of_seasons']} season →',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ],
