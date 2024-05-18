@@ -544,9 +544,8 @@ class _ListResultState extends State<ListResult> {
                   child: Align(
                     alignment: Alignment.bottomRight,
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.end, // Align text to the right
-                      mainAxisSize: MainAxisSize.min, // Fit to content
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           widget.list_result.name,
@@ -562,8 +561,8 @@ class _ListResultState extends State<ListResult> {
                         Text(
                           'Movies: ${widget.list_result.movies.length}, TV Shows: ${widget.list_result.tvshows.length}',
                           style: const TextStyle(
-                            fontSize: 15, // Adjust the font size as needed
-                            color: Colors.grey, // Adjust the color as needed
+                            fontSize: 15,
+                            color: Colors.grey,
                           ),
                         ),
                       ],

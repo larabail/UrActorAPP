@@ -241,6 +241,38 @@ class _PlaylistsState extends State<Playlists> {
                                     ),
                                   ),
                                 ),
+                                Align(
+                                  alignment: Alignment.topRight,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(100),
+                                      color: Colors.black.withOpacity(0.5),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          onPressed: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) =>
+                                                  ListInfoDialog(
+                                                list_result:
+                                                    currentUser.playlists[key],
+                                              ),
+                                            ).then((_) {
+                                              setState(() {});
+                                            });
+                                          },
+                                          icon: const Icon(
+                                            Icons.more_vert,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
