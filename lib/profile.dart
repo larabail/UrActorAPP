@@ -8,6 +8,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:uractor/popups/profile_sections_popup.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'common/constants.dart';
@@ -506,7 +507,14 @@ class _ProfileState extends State<Profile> {
                       height: 10,
                     ),
                     GestureDetector(
-                      onTap: () {},
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext ontext) {
+                            return ProfileSectionsDialogue();
+                          },
+                        );
+                      },
                       child: Container(
                         width: 225,
                         padding: const EdgeInsets.symmetric(
