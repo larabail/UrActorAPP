@@ -28,7 +28,6 @@ class _NotificationsState extends State<Notifications> {
     setState(() {
       currentUser.notifications = currentUser.notifications;
     });
-    currentUser.updateNotifications(currentUser.notifications);
   }
 
   Future<void> _markNotificationsAsRead() async {
@@ -48,14 +47,13 @@ class _NotificationsState extends State<Notifications> {
       }
       await batch.commit();
 
-      await Future.delayed(const Duration(seconds: 3));
+      await Future.delayed(const Duration(seconds: 1));
 
       setState(() {
         for (var notificationKey in currentUser.notifications.keys) {
           currentUser.notifications[notificationKey]['read'] = true;
         }
       });
-      currentUser.updateNotifications(currentUser.notifications);
     } catch (e) {
       print('Error marking notifications as read: $e');
     }
