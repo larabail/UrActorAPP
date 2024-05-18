@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uractor/cast_and_crew.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'common/constants.dart';
@@ -498,9 +499,11 @@ class _TVShowResultState extends State<TVShowResult> {
                             const Icon(Icons.access_time, color: Colors.white),
                             const SizedBox(width: 5),
                             Text(
-                              snapshot.data!['seasons'].length - 1 > 1
-                                  ? '${snapshot.data!['seasons'].length - 1} seasons'
-                                  : '${snapshot.data!['seasons'].length - 1} season',
+                              snapshot.data!['seasons'].length - 1 > 0
+                                  ? snapshot.data!['seasons'].length - 1 > 1
+                                      ? '${snapshot.data!['seasons'].length - 1} seasons'
+                                      : '${snapshot.data!['seasons'].length - 1} season'
+                                  : '${snapshot.data!['seasons'].length} season',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
@@ -1500,9 +1503,23 @@ class _TVShowResultState extends State<TVShowResult> {
                       Container(
                         width: MediaQuery.of(context).size.width,
                         margin: const EdgeInsets.fromLTRB(30.0, 20.0, 0.0, 5.0),
-                        child: const Text(
-                          "Main Cast:",
-                          style: TextStyle(fontSize: 18),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => CastCrew(
+                                        data: {
+                                          "cast": snapshot.data!['cast'],
+                                          "crew": snapshot.data!['crew']
+                                        },
+                                      )),
+                            );
+                          },
+                          child: const Text(
+                            "Cast and Crew: (See All)",
+                            style: TextStyle(fontSize: 18),
+                          ),
                         ),
                       ),
                       Container(

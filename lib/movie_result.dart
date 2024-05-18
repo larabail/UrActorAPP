@@ -2,6 +2,7 @@
 
 import 'package:uractor/popups/add_to_calendar_pop_up.dart';
 
+import 'cast_and_crew.dart';
 import 'common/utils.dart';
 import 'common/constants.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -1649,9 +1650,23 @@ class _MovieResultState extends State<MovieResult> {
                       Container(
                         width: MediaQuery.of(context).size.width,
                         margin: const EdgeInsets.fromLTRB(30.0, 20.0, 0.0, 5.0),
-                        child: const Text(
-                          "Main Cast:",
-                          style: TextStyle(fontSize: 18),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => CastCrew(
+                                        data: {
+                                          "cast": snapshot.data!['cast'],
+                                          "crew": snapshot.data!['crew']
+                                        },
+                                      )),
+                            );
+                          },
+                          child: const Text(
+                            "Cast and Crew: (See All)",
+                            style: TextStyle(fontSize: 18),
+                          ),
                         ),
                       ),
                       Container(
