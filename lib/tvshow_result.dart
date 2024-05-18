@@ -73,7 +73,7 @@ class _TVShowResultState extends State<TVShowResult> {
   Widget build(BuildContext context) {
     reviewed = false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (currentUser.rewatchedMovies.keys
+      if (currentUser.rewatchedTVShows.keys
           .toList()
           .contains(widget.tvshow.id)) {
         myController.text =
@@ -183,7 +183,8 @@ class _TVShowResultState extends State<TVShowResult> {
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(27),
                                       image: DecorationImage(
-                                        image: CachedNetworkImageProvider(imageLeft),
+                                        image: CachedNetworkImageProvider(
+                                            imageLeft),
                                         fit: BoxFit.cover,
                                       ),
                                     ),
@@ -261,7 +262,8 @@ class _TVShowResultState extends State<TVShowResult> {
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(27),
                                       image: DecorationImage(
-                                        image: CachedNetworkImageProvider(imageRight),
+                                        image: CachedNetworkImageProvider(
+                                            imageRight),
                                         fit: BoxFit.cover,
                                       ),
                                     ),
