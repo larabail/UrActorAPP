@@ -41,7 +41,6 @@ class _ShareState extends State<Share> {
           friendNotifications.data() as Map<String, dynamic>;
       finalNotifications[finalNotifications.keys.toList().length.toString()] =
           tempNotification;
-      print(finalNotifications);
       await friendNotificationDoc.set(finalNotifications);
     } catch (e) {
       print('Error sending notification: $e');
