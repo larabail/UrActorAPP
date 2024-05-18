@@ -191,13 +191,30 @@ class _ProfileState extends State<Profile> {
     }
     List<BarChartGroupData> chartData = filteredData.entries.map((entry) {
       final day = DateTime.parse(entry.key).day;
-      final moviesCount = entry.value.length;
+      int moviesCount = 0;
+      int seriesCount = 0;
+      for (Map item in entry.value) {
+        if (item.keys.toList().contains("type")) {
+          if (item["type"] == "series") {
+            seriesCount += 1;
+          } else {
+            moviesCount += 1;
+          }
+        } else {
+          moviesCount += 1;
+        }
+      }
       return BarChartGroupData(
         x: day,
         barRods: [
           BarChartRodData(
             y: moviesCount.toDouble(),
-            colors: [Colors.blue],
+            colors: [Colors.green],
+            width: 7,
+          ),
+          BarChartRodData(
+            y: seriesCount.toDouble(),
+            colors: [Colors.red],
             width: 7,
           )
         ],
@@ -205,9 +222,16 @@ class _ProfileState extends State<Profile> {
     }).toList();
 
     int maxMovies = 0;
-    for (var movies in currentUser.calendar.values) {
-      if (movies.length > maxMovies) {
-        maxMovies = movies.length;
+    for (var day in currentUser.calendar.values) {
+      int count = 0;
+      print(day);
+      for (Map movie in day) {
+        if (movie["type"] != "series") {
+          count += 1;
+        }
+      }
+      if (count > maxMovies) {
+        maxMovies = count;
       }
     }
 
@@ -491,8 +515,8 @@ class _ProfileState extends State<Profile> {
                                               showTitles: true,
                                               getTextStyles: (context, value) =>
                                                   const TextStyle(
-                                                      color: Colors.green,
-                                                      fontSize: 15),
+                                                      color: Colors.lightBlue,
+                                                      fontSize: 14),
                                             ),
                                           ),
                                         ),
@@ -511,10 +535,9 @@ class _ProfileState extends State<Profile> {
                                               const SizedBox(width: 10),
                                               Expanded(
                                                 child: Text(
-                                                  "Record: $maxMovies movies in a day",
+                                                  "Current Record: $maxMovies movies in a day",
                                                   style: const TextStyle(
-                                                    fontSize: 18,
-                                                    color: Colors.yellow,
+                                                    fontSize: 15,
                                                   ),
                                                 ),
                                               ),
