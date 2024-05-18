@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
 import 'package:uractor/objects/Media.dart';
@@ -82,7 +83,7 @@ class ItemCard extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(27),
                 image: DecorationImage(
-                  image: NetworkImage(snapshot.data!['poster']),
+                  image: CachedNetworkImageProvider(snapshot.data!['poster']),
                   fit: BoxFit.fitWidth,
                 ),
               ),

@@ -369,7 +369,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                           borderRadius:
                                               BorderRadius.circular(27),
                                           image: DecorationImage(
-                                            image: NetworkImage(
+                                            image: CachedNetworkImageProvider(
                                               IMG_LINK +
                                                   snapshot.data!["poster_path"],
                                             ),
@@ -539,7 +539,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(5),
                         image: DecorationImage(
-                          image: NetworkImage(image),
+                          image: CachedNetworkImageProvider(image),
                           fit: BoxFit.cover,
                         ),
                       ),

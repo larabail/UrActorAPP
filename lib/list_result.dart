@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously, use_key_in_widget_constructors, must_be_immutable, non_constant_identifier_names, no_leading_underscores_for_local_identifiers
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
@@ -455,7 +456,7 @@ class _ListResultState extends State<ListResult> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(27),
                 image: DecorationImage(
-                  image: NetworkImage(snapshot.data!['poster']),
+                  image: CachedNetworkImageProvider(snapshot.data!['poster']),
                   fit: BoxFit.fitWidth,
                 ),
               ),
@@ -519,7 +520,7 @@ class _ListResultState extends State<ListResult> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
                     image: DecorationImage(
-                      image: NetworkImage(
+                      image: CachedNetworkImageProvider(
                         widget.list_result.backdrop,
                       ),
                       fit: BoxFit.cover,

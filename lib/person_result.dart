@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/Person.dart';
@@ -92,7 +93,7 @@ class _PersonResultState extends State<PersonResult> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(27),
                                 image: DecorationImage(
-                                  image: NetworkImage(snapshot
+                                  image: CachedNetworkImageProvider(snapshot
                                               .data!["profile_path"] !=
                                           null
                                       ? IMG_LINK +
@@ -495,7 +496,7 @@ class _PersonResultState extends State<PersonResult> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(27),
               image: DecorationImage(
-                image: NetworkImage(IMG_LINK + movie['poster_path']),
+                image: CachedNetworkImageProvider(IMG_LINK + movie['poster_path']),
                 fit: BoxFit.fitWidth,
               ),
             ),
@@ -551,7 +552,7 @@ class _PersonResultState extends State<PersonResult> {
                 ],
               ),
               image: DecorationImage(
-                image: NetworkImage(IMG_LINK + movie['poster_path']),
+                image: CachedNetworkImageProvider(IMG_LINK + movie['poster_path']),
                 fit: BoxFit.fitWidth,
               ),
             ),
@@ -632,7 +633,7 @@ class _PersonResultState extends State<PersonResult> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(27),
               image: DecorationImage(
-                image: NetworkImage(IMG_LINK + movie['poster_path']),
+                image: CachedNetworkImageProvider(IMG_LINK + movie['poster_path']),
                 fit: BoxFit.fitWidth,
               ),
             ),
@@ -688,7 +689,7 @@ class _PersonResultState extends State<PersonResult> {
                 ],
               ),
               image: DecorationImage(
-                image: NetworkImage(IMG_LINK + movie['poster_path']),
+                image: CachedNetworkImageProvider(IMG_LINK + movie['poster_path']),
                 fit: BoxFit.fitWidth,
               ),
             ),
