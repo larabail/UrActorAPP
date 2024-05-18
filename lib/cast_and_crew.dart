@@ -25,7 +25,7 @@ class _CastCrewState extends State<CastCrew> {
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 10.0),
             child: Text(
-              "Full Cast & Crew",
+              "Cast & Crew",
               style: TextStyle(
                 fontSize: 24.0,
                 fontWeight: FontWeight.bold,

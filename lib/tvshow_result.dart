@@ -75,7 +75,7 @@ class _TVShowResultState extends State<TVShowResult> {
           .toList()
           .contains(widget.tvshow.id)) {
         myController.text =
-            (currentUser.rewatchedMovies[widget.tvshow.id]).toString();
+            (currentUser.rewatchedTVShows[widget.tvshow.id]).toString();
       } else if (widget.tvshow.isSeen()) {
         myController.text = "1";
       } else {
@@ -650,13 +650,10 @@ class _TVShowResultState extends State<TVShowResult> {
                               child: Container(
                                 width: MediaQuery.of(context).size.width * 0.8,
                                 decoration: BoxDecoration(
-                                  color: const Color.fromARGB(
-                                      255, 26, 25, 25), // dark grey background
-                                  borderRadius: BorderRadius.circular(
-                                      27), // border radius
+                                  color: const Color.fromARGB(255, 26, 25, 25),
+                                  borderRadius: BorderRadius.circular(27),
                                 ),
-                                padding: const EdgeInsets.all(
-                                    15), // optional padding
+                                padding: const EdgeInsets.all(15),
                                 child: Column(
                                   children: [
                                     Text(
