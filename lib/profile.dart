@@ -8,6 +8,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:uractor/objects/TVShow.dart';
 import 'package:uractor/popups/profile_sections_popup.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
@@ -216,6 +217,52 @@ class _ProfileState extends State<Profile> {
     });
 
     moviesTemp.sort((a, b) => b[0].compareTo(a[0]));
+
+    List tvTemp = [];
+    currentUser.rewatchedTVShows.forEach((key, value) {
+      tvTemp.add([value, key]);
+    });
+
+    tvTemp.sort((a, b) => b[0].compareTo(a[0]));
+
+    List<Widget> buildProfileSections() {
+      List<Widget> sections = [];
+      var profileSections = currentUser.settings["profileSections"];
+      List<MapEntry<dynamic, dynamic>> sectionsList =
+          currentUser.settings["profileSections"].entries.toList();
+      sectionsList
+          .sort((a, b) => a.value["weight"].compareTo(b.value["weight"]));
+
+      var sectionKeys = Map.fromEntries(sectionsList).keys.toList();
+      for (var key in sectionKeys) {
+        if (profileSections[key]["show"]) {
+          switch (key) {
+            case "Actors":
+              sections.add(buildProfileContainer("Favorite Actors",
+                  currentUser.favActors, Icons.theater_comedy, "Person"));
+              break;
+            case "Directors":
+              sections.add(buildProfileContainer("Favorite Directors",
+                  currentUser.favDirectors, Icons.chair, "Person"));
+              break;
+            case "MostSeenMovies":
+              sections.add(buildProfileContainer(
+                  "Most Seen Movies", moviesTemp, Icons.movie, "Movie"));
+              break;
+            case "Writers":
+              sections.add(buildProfileContainer("Favorite Writers",
+                  currentUser.favWriters, Icons.edit, "Person"));
+              break;
+            case "MostSeenTVShows":
+              sections.add(buildProfileContainer(
+                  "Most Seen TV Shows", tvTemp, Icons.tv, "TVShow"));
+              break;
+          }
+        }
+      }
+
+      return sections;
+    }
 
     return Scaffold(
       appBar: const CustomAppBar(),
@@ -497,12 +544,7 @@ class _ProfileState extends State<Profile> {
                                 ),
                               ),
                             ])),
-                    buildProfileContainer(
-                        "Most Seen Movies", moviesTemp, Icons.movie, "Movie"),
-                    buildProfileContainer("Favorite Actors",
-                        currentUser.favActors, Icons.theater_comedy, "Person"),
-                    buildProfileContainer("Favorite Directors",
-                        currentUser.favDirectors, Icons.chair, "Person"),
+                    ...buildProfileSections(),
                     const SizedBox(
                       height: 10,
                     ),
@@ -511,7 +553,11 @@ class _ProfileState extends State<Profile> {
                         showDialog(
                           context: context,
                           builder: (BuildContext ontext) {
-                            return ProfileSectionsDialogue();
+                            return ProfileSectionsDialogue(
+                              onDialogClosed: () {
+                                setState(() {});
+                              },
+                            );
                           },
                         );
                       },
@@ -589,9 +635,12 @@ class _ProfileState extends State<Profile> {
                   var item;
                   if (type == "Person") {
                     item = Person(id: content[index][1], name: "", data: {});
-                  } else {
+                  } else if (type == "Movie") {
                     item =
                         Movie(id: content[index][1], title: "", coverPhoto: "");
+                  } else {
+                    item = TVShow(
+                        id: content[index][1], title: "", coverPhoto: "");
                   }
                   return FutureBuilder<Map>(
                     future: type == "Person"

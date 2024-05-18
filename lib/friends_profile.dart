@@ -35,7 +35,9 @@ class _FriendProfileState extends State<FriendProfile> {
   List friendFavActors = [];
   Map friendSettings = {};
   Map friendRewatchedMovies = {};
+  Map friendRewatchedTV = {};
   List friendFavDirectors = [];
+  List friendFavWriters = [];
   Map friendCalendar = {};
   bool gotData = false;
 
@@ -90,12 +92,20 @@ class _FriendProfileState extends State<FriendProfile> {
               .map((entry) => [entry.value, entry.key])
               .toList();
           friendFavDirectors.sort((a, b) => b[0].compareTo(a[0]));
+        } else if (doc.id == "FavWriters" && friendFavWriters.isEmpty) {
+          Map tempFavWriters = doc.data() as Map;
+          friendFavWriters = tempFavWriters.entries
+              .map((entry) => [entry.value, entry.key])
+              .toList();
+          friendFavWriters.sort((a, b) => b[0].compareTo(a[0]));
         } else if (doc.id == "Settings" &&
             friendSettings.keys.toList().isEmpty) {
           friendSettings = doc.data() as Map;
         } else if (doc.id == "Rewatched" &&
             friendRewatchedMovies.keys.isEmpty) {
           friendRewatchedMovies = doc.data() as Map;
+        } else if (doc.id == "RewatchedTV" && friendRewatchedTV.keys.isEmpty) {
+          friendRewatchedTV = doc.data() as Map;
         } else if (doc.id == "Calendar" && friendCalendar.keys.isEmpty) {
           friendCalendar = doc.data() as Map;
         }
@@ -166,6 +176,53 @@ class _FriendProfileState extends State<FriendProfile> {
       for (String item in currentUser.seenWith[friendUid]["Movies"]) {
         seenTogetherTotal.add(["Movies", item]);
       }
+
+      List tvTemp = [];
+      friendRewatchedTV.forEach((key, value) {
+        tvTemp.add([value, key]);
+      });
+
+      tvTemp.sort((a, b) => b[0].compareTo(a[0]));
+
+      List<Widget> buildProfileSections() {
+        List<Widget> sections = [];
+        var profileSections = friendSettings["profileSections"];
+        List<MapEntry<dynamic, dynamic>> sectionsList =
+            friendSettings["profileSections"].entries.toList();
+        sectionsList
+            .sort((a, b) => a.value["weight"].compareTo(b.value["weight"]));
+
+        var sectionKeys = Map.fromEntries(sectionsList).keys.toList();
+        for (var key in sectionKeys) {
+          if (profileSections[key]["show"]) {
+            switch (key) {
+              case "Actors":
+                sections.add(buildProfileContainer("Favorite Actors",
+                    friendFavActors, Icons.theater_comedy, "Person"));
+                break;
+              case "Directors":
+                sections.add(buildProfileContainer("Favorite Directors",
+                    friendFavDirectors, Icons.chair, "Person"));
+                break;
+              case "MostSeenMovies":
+                sections.add(buildProfileContainer(
+                    "Most Seen Movies", moviesTemp, Icons.movie, "Movie"));
+                break;
+              case "Writers":
+                sections.add(buildProfileContainer("Favorite Writers",
+                    friendFavWriters, Icons.edit, "Person"));
+                break;
+              case "MostSeenTVShows":
+                sections.add(buildProfileContainer(
+                    "Most Seen TV Shows", tvTemp, Icons.tv, "TVShow"));
+                break;
+            }
+          }
+        }
+
+        return sections;
+      }
+
       return Scaffold(
         appBar: const CustomAppBar(),
         body: SingleChildScrollView(
@@ -330,12 +387,7 @@ class _FriendProfileState extends State<FriendProfile> {
                   ),
                 ),
               const SizedBox(height: 10),
-              buildProfileContainer(
-                  "Most Seen Movies", moviesTemp, Icons.movie, "Movie"),
-              buildProfileContainer("Favorite Actors", friendFavActors,
-                  Icons.theater_comedy, "Person"),
-              buildProfileContainer("Favorite Directors", friendFavDirectors,
-                  Icons.chair, "Person"),
+              ...buildProfileSections(),
             ],
           ),
         ),

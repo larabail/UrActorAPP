@@ -1,3 +1,5 @@
+// ignore_for_file: non_constant_identifier_names
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:uractor/objects/User.dart';
@@ -19,8 +21,7 @@ class Person {
   });
 
   Future<Map> getSimpleData() async {
-    final response =
-              await http.get(Uri.parse('$PERSON_LINK$id$API_KEY'));
+    final response = await http.get(Uri.parse('$PERSON_LINK$id$API_KEY'));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       if (json['profile_path'] == null) {
@@ -38,14 +39,19 @@ class Person {
   Future<Map> getPersonData(AppUser currentUser, Map oscars) async {
     int scoreActor = 0;
     int scoreDirector = 0;
+    int scoreWriter = 0;
     int stats = 0;
     int statsTv = 0;
     int allDirMovies = 0;
     int statsDir = 0;
+    int statsWriterMovies = 0;
+    int statsWriterTV = 0;
     List countedMoviesDirector = [];
     List countedMoviesActor = [];
+    List countedMoviesWriter = [];
     List countedTVShowsDirector = [];
     List countedTVShowsActor = [];
+    List countedTVShowsWriter = [];
     Map json = {};
     String formattedName =
         name.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "-");
@@ -165,6 +171,23 @@ class Person {
                 scoreDirector += 2;
               }
               countedMoviesDirector.add(element["id"].toString());
+            } else if ((element["job"] == "Writer" ||
+                    element["job"] == "Screenplay") &&
+                !countedMoviesWriter.contains(element["id"].toString())) {
+              statsWriterMovies += 1;
+              if (Utils.contains_non_type(currentUser.favMovies,
+                  ['Movies', element["id"].toString()])) {
+                scoreWriter += 3;
+              }
+              if (currentUser.rewatchedMovies.keys
+                  .toList()
+                  .contains(element["id"])) {
+                scoreWriter += int.parse(
+                    currentUser.rewatchedMovies[element["id"].toString()]);
+              } else {
+                scoreWriter += 2;
+              }
+              countedMoviesWriter.add(element["id"].toString());
             }
           } else if (Utils.contains_non_type(currentUser.watchlist,
                   ['Movies', element["id"].toString()]) &&
@@ -172,6 +195,12 @@ class Person {
               !countedMoviesDirector.contains(element["id"].toString())) {
             scoreDirector += 1;
             countedMoviesDirector.add(element["id"].toString());
+          } else if (Utils.contains_non_type(currentUser.watchlist,
+                  ['Movies', element["id"].toString()]) &&
+              (element["job"] == "Writer" || element["job"] == "Screenplay") &&
+              !countedMoviesWriter.contains(element["id"].toString())) {
+            scoreWriter += 1;
+            countedMoviesWriter.add(element["id"].toString());
           }
           if (element["job"] == "Director") {
             allDirMovies += 1;
@@ -200,6 +229,17 @@ class Person {
                   scoreDirector += 1;
                 }
                 countedTVShowsDirector.add(element["id"].toString());
+              } else if ((element["job"] == "Writer" ||
+                      element["job"] == "Screenplay") &&
+                  !countedTVShowsWriter.contains(element["id"].toString())) {
+                statsWriterTV += 1;
+                if (Utils.contains_non_type(currentUser.favTVShows,
+                    ['TVShows', element["id"].toString()])) {
+                  scoreWriter += 3;
+                } else {
+                  scoreWriter += 1;
+                }
+                countedTVShowsWriter.add(element["id"].toString());
               }
             } else if (Utils.contains_non_type(currentUser.watchlistTVShows,
                     ['TVShows', element["id"].toString()]) &&
@@ -207,6 +247,13 @@ class Person {
                 !countedTVShowsDirector.contains(element["id"].toString())) {
               scoreDirector += 1;
               countedTVShowsDirector.add(element["id"].toString());
+            } else if (Utils.contains_non_type(currentUser.watchlistTVShows,
+                    ['TVShows', element["id"].toString()]) &&
+                (element["job"] == "Writer" ||
+                    element["job"] == "Screenplay") &&
+                !countedTVShowsWriter.contains(element["id"].toString())) {
+              scoreWriter += 1;
+              countedTVShowsWriter.add(element["id"].toString());
             }
 
             if (element["job"] == "Director") {
@@ -267,8 +314,33 @@ class Person {
             }
             json["actor_ranking"] = num;
           });
+          var WriterDoc = FirebaseFirestore.instance
+              .collection(currentUser.uid)
+              .doc("FavWriters");
+          Map<Object, Object?> writerStats = {};
+          writerStats[id.toString()] = scoreWriter;
+          await WriterDoc.update(writerStats);
+          await WriterDoc.get().then((DocumentSnapshot doc) async {
+            Map info = doc.data() as Map;
+            List writers = [];
+            info.forEach((key, value) {
+              List item = [value, key];
+              writers.add(item);
+            });
+            writers.sort((a, b) => a[0].compareTo(b[0]));
+            writers = writers.reversed.toList();
+            int num = 0;
+            for (var writer in writers) {
+              num++;
+              if (writer[1].toString() == id.toString()) {
+                break;
+              }
+            }
+            json["writer_ranking"] = num;
+          });
           currentUser.favActors = [];
           currentUser.favDirectors = [];
+          currentUser.favWriters = [];
           await FirebaseFirestore.instance
               .collection(currentUser.uid)
               .get()
@@ -287,14 +359,24 @@ class Person {
                     .map((entry) => [entry.value, entry.key])
                     .toList();
                 currentUser.favDirectors.sort((a, b) => b[0].compareTo(a[0]));
+              } else if (doc.id == "FavWriters" &&
+                  currentUser.favWriters.isEmpty) {
+                Map tempFavWriters = doc.data() as Map;
+                currentUser.favWriters = tempFavWriters.entries
+                    .map((entry) => [entry.value, entry.key])
+                    .toList();
+                currentUser.favWriters.sort((a, b) => b[0].compareTo(a[0]));
               }
             }
           });
           personStats["scoreActor"] = scoreActor;
           personStats["scoreDirector"] = scoreDirector;
+          personStats["scoreWriter"] = scoreWriter;
           personStats["stats"] = stats;
           personStats["stats_tv"] = statsTv;
           personStats["stats_dir"] = statsDir;
+          personStats["stats_writer_movies"] = statsWriterMovies;
+          personStats["stats_writer_tv"] = statsWriterTV;
           personStats["allDirMovies"] = allDirMovies;
           return json;
         } else {
