@@ -10,6 +10,7 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'package:uractor/popups/profile_sections_popup.dart';
+import 'package:uractor/tvshow_result.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'common/constants.dart';
@@ -714,7 +715,9 @@ class _ProfileState extends State<Profile> {
                               MaterialPageRoute(
                                 builder: (context) => type == "Person"
                                     ? PersonResult(personResult: item as Person)
-                                    : MovieResult(movie: item as Movie),
+                                    : type == "Movie"
+                                        ? MovieResult(movie: item as Movie)
+                                        : TVShowResult(tvshow: item as TVShow),
                               ),
                             );
                           },
