@@ -93,7 +93,6 @@ class _ProfileSectionsDialogueState extends State<ProfileSectionsDialogue> {
               onPressed: () async {
                 Map newSections = Map.fromEntries(sectionsList);
                 await FirebaseUtils.updateProfileSections(newSections);
-
                 widget.onDialogClosed();
                 Navigator.of(context).pop();
               },
