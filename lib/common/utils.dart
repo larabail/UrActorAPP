@@ -51,7 +51,6 @@ class Utils {
     }
     return false;
   }
-
 }
 
 class FirebaseUtils {
@@ -143,6 +142,13 @@ class FirebaseUtils {
       doc[id] = int.parse(value);
       userDoc.update(doc);
     }
+  }
+
+  static Future<void> updateProfileSections(Map newSections) async {
+    var userDoc =
+        FirebaseFirestore.instance.collection(currentUser.uid).doc("Settings");
+    currentUser.settings["profileSections"] = newSections;
+    userDoc.update(currentUser.settings as Map<String, dynamic>);
   }
 
   static Future<bool> deleteReview(id, type, context) async {
