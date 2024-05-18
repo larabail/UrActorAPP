@@ -1,9 +1,10 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
+import 'package:uractor/notifications.dart';
 import 'package:uractor/objects/Playlist.dart';
 import 'package:uractor/objects/User.dart';
 import 'package:uractor/tvshow_result.dart';
-import 'package:uractor/upcoming.dart';
+// import 'package:uractor/upcoming.dart';
 
 import 'common/constants.dart';
 import 'package:flutter/material.dart';
@@ -187,7 +188,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => Upcoming()),
+                        MaterialPageRoute(
+                            builder: (context) => Notifications()),
                       );
                     },
                     child: Container(
@@ -197,12 +199,48 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                       margin: const EdgeInsets.all(5.0),
                       padding: const EdgeInsets.all(10),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(Icons.upcoming_rounded),
+                          Stack(
+                            children: [
+                              Icon(
+                                currentUser.notifications.values
+                                        .where((element) =>
+                                            element["read"] == false)
+                                        .isNotEmpty
+                                    ? Icons.notifications
+                                    : Icons.notifications_none,
+                              ),
+                              if (currentUser.notifications.values
+                                  .where((element) => element["read"] == false)
+                                  .isNotEmpty)
+                                Positioned(
+                                  right: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(1),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 12,
+                                      minHeight: 12,
+                                    ),
+                                    child: Text(
+                                      '${currentUser.notifications.values.where((element) => element["read"] == false).length}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 8,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                           SizedBox(width: 10),
                           Text(
-                            'Upcoming Movies',
+                            'Notifications',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
