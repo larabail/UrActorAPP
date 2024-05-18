@@ -128,8 +128,12 @@ class _PersonResultState extends State<PersonResult> {
                                 0)
                               ranking("Actor", snapshot.data!['actor_ranking'],
                                   stats['scoreActor']),
-                            if (widget
-                                    .personResult.personStats['allDirMovies'] !=
+                            if ((snapshot.data!['movie_credits_crew']
+                                        .where((c) => c["job"] == "Director")
+                                        .length +
+                                    snapshot.data!['tv_credits_crew']
+                                        .where((c) => c["job"] == "Director")
+                                        .length) !=
                                 0)
                               ranking(
                                   "Director",
@@ -157,16 +161,37 @@ class _PersonResultState extends State<PersonResult> {
                                   stats["stats"] + stats["stats_tv"],
                                   snapshot.data!['movie_credits_cast'].length +
                                       snapshot.data!['tv_credits_cast'].length),
-                            if (widget
-                                    .personResult.personStats['allDirMovies'] !=
+                            if ((snapshot.data!['movie_credits_crew']
+                                        .where((c) => c["job"] == "Director")
+                                        .length +
+                                    snapshot.data!['tv_credits_crew']
+                                        .where((c) => c["job"] == "Director")
+                                        .length) !=
                                 0)
-                              statsProgress("Director", stats["stats_dir"],
-                                  snapshot.data!['allDirMovies']),
-                            if (widget
-                                    .personResult.personStats["allDirMovies"] !=
+                              statsProgress(
+                                  "Director",
+                                  stats["stats_dir"],
+                                  (snapshot.data!['movie_credits_crew']
+                                          .where((c) => c["job"] == "Director")
+                                          .length +
+                                      snapshot.data!['tv_credits_crew']
+                                          .where((c) => c["job"] == "Director")
+                                          .length)),
+                            if ((snapshot.data!['movie_credits_crew']
+                                        .where((c) => c["job"] == "Director")
+                                        .length +
+                                    snapshot.data!['tv_credits_crew']
+                                        .where((c) => c["job"] == "Director")
+                                        .length) !=
                                 0)
-                              progressBar(stats["stats_dir"],
-                                  snapshot.data!['allDirMovies']),
+                              progressBar(
+                                  stats["stats_dir"],
+                                  (snapshot.data!['movie_credits_crew']
+                                          .where((c) => c["job"] == "Director")
+                                          .length +
+                                      snapshot.data!['tv_credits_crew']
+                                          .where((c) => c["job"] == "Director")
+                                          .length)),
                             if (snapshot.data!['movie_credits_crew']
                                 .where((c) => c["job"] == "Writer")
                                 .isNotEmpty)
@@ -496,7 +521,8 @@ class _PersonResultState extends State<PersonResult> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(27),
               image: DecorationImage(
-                image: CachedNetworkImageProvider(IMG_LINK + movie['poster_path']),
+                image:
+                    CachedNetworkImageProvider(IMG_LINK + movie['poster_path']),
                 fit: BoxFit.fitWidth,
               ),
             ),
@@ -552,7 +578,8 @@ class _PersonResultState extends State<PersonResult> {
                 ],
               ),
               image: DecorationImage(
-                image: CachedNetworkImageProvider(IMG_LINK + movie['poster_path']),
+                image:
+                    CachedNetworkImageProvider(IMG_LINK + movie['poster_path']),
                 fit: BoxFit.fitWidth,
               ),
             ),
@@ -633,7 +660,8 @@ class _PersonResultState extends State<PersonResult> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(27),
               image: DecorationImage(
-                image: CachedNetworkImageProvider(IMG_LINK + movie['poster_path']),
+                image:
+                    CachedNetworkImageProvider(IMG_LINK + movie['poster_path']),
                 fit: BoxFit.fitWidth,
               ),
             ),
@@ -689,7 +717,8 @@ class _PersonResultState extends State<PersonResult> {
                 ],
               ),
               image: DecorationImage(
-                image: CachedNetworkImageProvider(IMG_LINK + movie['poster_path']),
+                image:
+                    CachedNetworkImageProvider(IMG_LINK + movie['poster_path']),
                 fit: BoxFit.fitWidth,
               ),
             ),
