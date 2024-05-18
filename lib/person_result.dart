@@ -368,7 +368,6 @@ class _PersonResultState extends State<PersonResult> {
       ));
     }
     if (data['tv_credits_cast'].length > 0) {
-      print(data["tv_credits_cast"]);
       data['tv_credits_cast'].sort((a, b) {
         DateTime dateA = DateTime.parse(a['first_air_date'] != null
             ? a["first_air_date"] == ""

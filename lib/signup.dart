@@ -147,6 +147,7 @@ class SignUp extends StatelessWidget {
                             const Map<String, dynamic> Calendar = {};
                             const Map<String, dynamic> Rewatched = {};
                             const Map<String, dynamic> RewatchedTV = {};
+                            const Map<String, dynamic> Notifications = {};
                             const Map<String, dynamic> Friends = {
                               "friends": []
                             };
@@ -228,6 +229,10 @@ class SignUp extends StatelessWidget {
                                 .collection(credential.user!.uid)
                                 .doc("Friends")
                                 .set(Friends);
+                            FirebaseFirestore.instance
+                                .collection(credential.user!.uid)
+                                .doc("Notifications")
+                                .set(Notifications);
                           });
                           try {
                             await FirebaseAuth.instance
