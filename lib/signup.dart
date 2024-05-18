@@ -123,7 +123,14 @@ class SignUp extends StatelessWidget {
                               .then((credential) {
                             const Map<String, dynamic> data = {"Seen": []};
                             const Map<String, dynamic> tvshows = {"Seen": []};
-                            const Map<String, dynamic> Review = {"Seen": []};
+                            const Map<String, dynamic> seenDoc = {
+                              "Movies": [],
+                              "TVShows": []
+                            };
+                            const Map<String, dynamic> Review = {
+                              "Movies": [],
+                              "TVShows": []
+                            };
                             const Map<String, dynamic> Favorites = {
                               "Movies": [],
                               "TVShows": []
@@ -139,6 +146,7 @@ class SignUp extends StatelessWidget {
                             const Map<String, dynamic> FavActors = {};
                             const Map<String, dynamic> Calendar = {};
                             const Map<String, dynamic> Rewatched = {};
+                            const Map<String, dynamic> RewatchedTV = {};
                             const Map<String, dynamic> Friends = {
                               "friends": []
                             };
@@ -151,7 +159,14 @@ class SignUp extends StatelessWidget {
                               "dontAskCalendar": false,
                               "providers": [],
                               "profile_photo": "",
-                              "username": ""
+                              "username": "",
+                              "profileSections": {
+                                "Actors": {"show": true, "weight": 1},
+                                "Directors": {"show": true, "weight": 3},
+                                "MostSeenMovies": {"show": true, "weight": 0},
+                                "Writers": {"show": false, "weight": 4},
+                                "MostSeenTVShows": {"show": false, "weight": 2}
+                              },
                             };
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
@@ -161,6 +176,10 @@ class SignUp extends StatelessWidget {
                                 .collection(credential.user!.uid)
                                 .doc("TVShows")
                                 .set(tvshows);
+                            FirebaseFirestore.instance
+                                .collection(credential.user!.uid)
+                                .doc("Seen")
+                                .set(seenDoc);
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("SeenWith")
@@ -197,6 +216,10 @@ class SignUp extends StatelessWidget {
                                 .collection(credential.user!.uid)
                                 .doc("Rewatched")
                                 .set(Rewatched);
+                            FirebaseFirestore.instance
+                                .collection(credential.user!.uid)
+                                .doc("RewatchedTV")
+                                .set(RewatchedTV);
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("Settings")
