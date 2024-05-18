@@ -170,11 +170,13 @@ class _FriendProfileState extends State<FriendProfile> {
 
       moviesTemp.sort((a, b) => b[0].compareTo(a[0]));
       List seenTogetherTotal = [];
-      for (String item in currentUser.seenWith[friendUid]["TVShows"]) {
-        seenTogetherTotal.add(["TVShows", item]);
-      }
-      for (String item in currentUser.seenWith[friendUid]["Movies"]) {
-        seenTogetherTotal.add(["Movies", item]);
+      if (currentUser.seenWith.keys.toList().contains(friendUid)) {
+        for (String item in currentUser.seenWith[friendUid]["TVShows"]) {
+          seenTogetherTotal.add(["TVShows", item]);
+        }
+        for (String item in currentUser.seenWith[friendUid]["Movies"]) {
+          seenTogetherTotal.add(["Movies", item]);
+        }
       }
 
       List tvTemp = [];
@@ -449,9 +451,12 @@ class _FriendProfileState extends State<FriendProfile> {
                   var item;
                   if (type == "Person") {
                     item = Person(id: content[index][1], name: "", data: {});
-                  } else {
+                  } else if (type == "Movie") {
                     item =
                         Movie(id: content[index][1], title: "", coverPhoto: "");
+                  } else {
+                    item = TVShow(
+                        id: content[index][1], title: "", coverPhoto: "");
                   }
                   return FutureBuilder<Map>(
                     future: type == "Person"
