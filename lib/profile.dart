@@ -225,7 +225,6 @@ class _ProfileState extends State<Profile> {
     int maxMovies = 0;
     for (var day in currentUser.calendar.values) {
       int count = 0;
-      print(day);
       for (Map movie in day) {
         if (movie["type"] != "series") {
           count += 1;
