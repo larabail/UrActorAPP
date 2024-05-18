@@ -178,7 +178,9 @@ class Person {
             score += 3;
           }
           if (rewatched.keys.toList().contains(element["id"].toString())) {
-            score += rewatched[element["id"].toString()] as int;
+            score += rewatched[element["id"].toString()] as int > 1
+                ? rewatched[element["id"].toString()] as int
+                : 2;
           } else {
             score += 2;
           }
@@ -201,7 +203,6 @@ class Person {
     int scoreDirector = 0;
     int scoreWriter = 0;
     int statsWriterTV = 0;
-    int allDirMovies = 0;
     int statsDir = 0;
     List favs =
         type == "Movies" ? currentUser.favMovies : currentUser.favTVShows;
@@ -209,6 +210,9 @@ class Person {
         type == "Movies" ? currentUser.seenMovies : currentUser.seenTVShows;
     List watchlist =
         type == "Movies" ? currentUser.watchlist : currentUser.watchlistTVShows;
+    Map rewatched = type == "Movies"
+        ? currentUser.rewatchedMovies
+        : currentUser.rewatchedTVShows;
     for (var element in crew) {
       if (Utils.contains_non_type(seen, [type, element["id"].toString()])) {
         if (element["job"] == "Director" &&
@@ -216,8 +220,13 @@ class Person {
           statsDir += 1;
           if (Utils.contains_non_type(favs, [type, element["id"].toString()])) {
             scoreDirector += 3;
+          }
+          if (rewatched.keys.toList().contains(element["id"].toString())) {
+            scoreDirector += rewatched[element["id"].toString()] as int > 1
+                ? rewatched[element["id"].toString()] as int
+                : 2;
           } else {
-            scoreDirector += 1;
+            scoreDirector += 2;
           }
           countedTVShowsDirector.add(element["id"].toString());
         } else if ((element["job"] == "Writer" ||
@@ -226,8 +235,13 @@ class Person {
           statsWriterTV += 1;
           if (Utils.contains_non_type(favs, [type, element["id"].toString()])) {
             scoreWriter += 3;
+          }
+          if (rewatched.keys.toList().contains(element["id"].toString())) {
+            scoreWriter += rewatched[element["id"].toString()] as int > 1
+                ? rewatched[element["id"].toString()] as int
+                : 2;
           } else {
-            scoreWriter += 1;
+            scoreWriter += 2;
           }
           countedTVShowsWriter.add(element["id"].toString());
         }
@@ -244,12 +258,18 @@ class Person {
         scoreWriter += 1;
         countedTVShowsWriter.add(element["id"].toString());
       }
-
-      if (element["job"] == "Director") {
-        allDirMovies += 1;
+      if (element["job"] == "Director" &&
+          !countedTVShowsDirector.contains(element["id"].toString())) {
+        countedTVShowsDirector.add(element["id"].toString());
       }
     }
-    return [scoreDirector, statsDir, allDirMovies, scoreWriter, statsWriterTV];
+    return [
+      scoreDirector,
+      statsDir,
+      countedTVShowsDirector.length,
+      scoreWriter,
+      statsWriterTV
+    ];
   }
 
   Future<Map> getPersonData(AppUser currentUser, Map oscars) async {
@@ -271,8 +291,7 @@ class Person {
 
     List actorStatsTV =
         getCastStats(currentUser, json['tv_credits_cast'], "TVShows");
-    int tempScore = actorStatsTV[0];
-    scoreActor += tempScore;
+    int tempScoreActor = actorStatsTV[0];
     statsTv = actorStatsTV[1];
 
     List crewStats =
@@ -285,14 +304,11 @@ class Person {
 
     List crewStatsTV =
         getCrewStats(currentUser, json['tv_credits_crew'], "TVShows");
-    tempScore = crewStatsTV[0];
-    scoreDirector += tempScore;
-    int tempStats = crewStats[1];
-    statsDir += tempStats;
-    int tempDirMovies = crewStats[2];
-    allDirMovies += tempDirMovies;
-    scoreWriter = crewStats[3];
-    statsWriterTV = crewStats[4];
+    int tempScoreCrew = crewStatsTV[0];
+    int tempStats = crewStatsTV[1];
+    int tempDirMovies = crewStatsTV[2];
+    int tempScoreWriter = crewStatsTV[3];
+    statsWriterTV = crewStatsTV[4];
 
     if (oscars.keys.contains(id.toString())) {
       json['num_oscars'] = oscars[id.toString()]['num_oscars'];
@@ -304,7 +320,6 @@ class Person {
         await updateStatsDoc(scoreDirector, currentUser, "FavDirectors");
     json["director_ranking"] = tempNum;
     json["allDirMovies"] = allDirMovies;
-    json["actor_ranking"] = tempNum;
 
     tempNum = await updateStatsDoc(scoreActor, currentUser, "FavActors");
     json["actor_ranking"] = tempNum;
@@ -314,15 +329,15 @@ class Person {
 
     await fetchNewStats(currentUser);
 
-    personStats["scoreActor"] = scoreActor;
-    personStats["scoreDirector"] = scoreDirector;
-    personStats["scoreWriter"] = scoreWriter;
+    personStats["scoreActor"] = scoreActor + tempScoreActor;
+    personStats["scoreDirector"] = scoreDirector + tempScoreCrew;
+    personStats["scoreWriter"] = scoreWriter + tempScoreWriter;
     personStats["stats"] = stats;
     personStats["stats_tv"] = statsTv;
-    personStats["stats_dir"] = statsDir;
+    personStats["stats_dir"] = statsDir + tempStats;
     personStats["stats_writer_movies"] = statsWriterMovies;
     personStats["stats_writer_tv"] = statsWriterTV;
-    personStats["allDirMovies"] = allDirMovies;
+    personStats["allDirMovies"] = allDirMovies + tempDirMovies;
     return json;
   }
 }
