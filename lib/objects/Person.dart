@@ -36,34 +36,19 @@ class Person {
     }
   }
 
-  Future<Map> getPersonData(AppUser currentUser, Map oscars) async {
-    int scoreActor = 0;
-    int scoreDirector = 0;
-    int scoreWriter = 0;
-    int stats = 0;
-    int statsTv = 0;
-    int allDirMovies = 0;
-    int statsDir = 0;
-    int statsWriterMovies = 0;
-    int statsWriterTV = 0;
-    List countedMoviesDirector = [];
-    List countedMoviesActor = [];
-    List countedMoviesWriter = [];
-    List countedTVShowsDirector = [];
-    List countedTVShowsActor = [];
-    List countedTVShowsWriter = [];
+  Future<Map> getCastCredits() async {
     Map json = {};
     String formattedName =
         name.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "-");
-    final response =
+    final personResponse =
         await http.get(Uri.parse('$PERSON_LINK$id-$formattedName$API_KEY'));
-    json = jsonDecode(response.body);
-    if (response.statusCode == 200) {
-      final r2 = await http
+    json = jsonDecode(personResponse.body);
+    if (personResponse.statusCode == 200) {
+      final movieCreditsResponse = await http
           .get(Uri.parse('$PERSON_LINK$id-$formattedName$MOVIE_CREDITS_LINK'));
-      if (r2.statusCode == 200) {
+      if (movieCreditsResponse.statusCode == 200) {
         List movieCast = [];
-        for (Map movie in jsonDecode(r2.body)['cast']) {
+        for (Map movie in jsonDecode(movieCreditsResponse.body)['cast']) {
           if (movie["poster_path"] != null) {
             if (!movie["character"].toString().toLowerCase().contains("self") &&
                 !movie["character"]
@@ -79,314 +64,265 @@ class Person {
             }
           }
         }
-        json['movie_credits_cast'] = movieCast;
-        for (var element in movieCast) {
-          if (Utils.contains_non_type(
-              currentUser.seenMovies, ["Movies", element["id"]])) {
-            if (!countedMoviesActor.contains(element["id"].toString())) {
-              stats += 1;
-              if (Utils.contains_non_type(currentUser.favMovies,
-                  ['Movies', element["id"].toString()])) {
-                scoreActor += 3;
-              }
-              if (currentUser.rewatchedMovies.keys
-                  .toList()
-                  .contains(element["id"].toString())) {
-                scoreActor += currentUser
-                    .rewatchedMovies[element["id"].toString()] as int;
-              } else {
-                scoreActor += 2;
-              }
-              countedMoviesActor.add(element["id"].toString());
-            }
-          } else if (Utils.contains_non_type(currentUser.watchlist,
-                  ['Movies', element["id"].toString()]) &&
-              !countedMoviesActor.contains(element["id"].toString())) {
-            scoreActor += 1;
-            countedMoviesActor.add(element["id"].toString());
-          }
-        }
-        final r3 = await http.get(
-            Uri.parse('$PERSON_LINK$id-$formattedName$TV_SHOW_CREDITS_LINK'));
-        if (r3.statusCode == 200) {
-          List tvCast = [];
-          for (Map show in jsonDecode(r3.body)['cast']) {
-            if (show["poster_path"] != null) {
-              if (!show["character"]
-                      .toString()
-                      .toLowerCase()
-                      .contains("self") &&
-                  show["character"].toString() != "") {
-                tvCast.add(show);
-              }
-            }
-          }
-          json['tv_credits_cast'] = tvCast;
-          for (var element in tvCast) {
-            if (Utils.contains_non_type(
-                currentUser.seenTVShows, ["TVShows", element["id"]])) {
-              if (!countedTVShowsActor.contains(element["id"].toString())) {
-                statsTv += 1;
-                if (Utils.contains_non_type(currentUser.favTVShows,
-                    ['TVShows', element["id"].toString()])) {
-                  scoreActor += 3;
-                } else {
-                  scoreActor += 2;
-                }
-                countedTVShowsActor.add(element["id"].toString());
-              }
-            } else if (Utils.contains_non_type(currentUser.watchlistTVShows,
-                    ['TVShows', element["id"].toString()]) &&
-                !countedTVShowsActor.contains(element["id"].toString())) {
-              scoreActor += 1;
-              countedTVShowsActor.add(element["id"].toString());
-            }
-          }
-        } else {
-          throw Exception('Failed to load movie details');
-        }
         List movieCrew = [];
-        for (Map movie in jsonDecode(r2.body)['crew']) {
+        for (Map movie in jsonDecode(movieCreditsResponse.body)['crew']) {
           if (movie["poster_path"] != null && movie["job"] != "Thanks") {
             movieCrew.add(movie);
           }
         }
         json['movie_credits_crew'] = movieCrew;
-        for (var element in movieCrew) {
-          if (Utils.contains_non_type(
-              currentUser.seenMovies, ["Movies", element["id"].toString()])) {
-            if (element["job"] == "Director" &&
-                !countedMoviesDirector.contains(element["id"].toString())) {
-              statsDir += 1;
-              if (Utils.contains_non_type(currentUser.favMovies,
-                  ['Movies', element["id"].toString()])) {
-                scoreDirector += 3;
-              }
-              if (currentUser.rewatchedMovies.keys
-                  .toList()
-                  .contains(element["id"])) {
-                scoreDirector += int.parse(
-                    currentUser.rewatchedMovies[element["id"].toString()]);
-              } else {
-                scoreDirector += 2;
-              }
-              countedMoviesDirector.add(element["id"].toString());
-            } else if ((element["job"] == "Writer" ||
-                    element["job"] == "Screenplay") &&
-                !countedMoviesWriter.contains(element["id"].toString())) {
-              statsWriterMovies += 1;
-              if (Utils.contains_non_type(currentUser.favMovies,
-                  ['Movies', element["id"].toString()])) {
-                scoreWriter += 3;
-              }
-              if (currentUser.rewatchedMovies.keys
-                  .toList()
-                  .contains(element["id"])) {
-                scoreWriter += int.parse(
-                    currentUser.rewatchedMovies[element["id"].toString()]);
-              } else {
-                scoreWriter += 2;
-              }
-              countedMoviesWriter.add(element["id"].toString());
-            }
-          } else if (Utils.contains_non_type(currentUser.watchlist,
-                  ['Movies', element["id"].toString()]) &&
-              element["job"] == "Director" &&
-              !countedMoviesDirector.contains(element["id"].toString())) {
-            scoreDirector += 1;
-            countedMoviesDirector.add(element["id"].toString());
-          } else if (Utils.contains_non_type(currentUser.watchlist,
-                  ['Movies', element["id"].toString()]) &&
-              (element["job"] == "Writer" || element["job"] == "Screenplay") &&
-              !countedMoviesWriter.contains(element["id"].toString())) {
-            scoreWriter += 1;
-            countedMoviesWriter.add(element["id"].toString());
-          }
-          if (element["job"] == "Director") {
-            allDirMovies += 1;
-          }
-        }
-        final r4 = await http.get(
-            Uri.parse('$PERSON_LINK$id-$formattedName$TV_SHOW_CREDITS_LINK'));
-        if (r4.statusCode == 200) {
-          List tvCrew = [];
-          for (Map show in jsonDecode(r4.body)['crew']) {
-            if (show["poster_path"] != null) {
-              tvCrew.add(show);
-            }
-          }
-          json['tv_credits_crew'] = tvCrew;
-          for (var element in tvCrew) {
-            if (Utils.contains_non_type(currentUser.seenTVShows,
-                ["TVShows", element["id"].toString()])) {
-              if (element["job"] == "Director" &&
-                  !countedTVShowsDirector.contains(element["id"].toString())) {
-                statsDir += 1;
-                if (Utils.contains_non_type(currentUser.favTVShows,
-                    ['TVShows', element["id"].toString()])) {
-                  scoreDirector += 3;
-                } else {
-                  scoreDirector += 1;
-                }
-                countedTVShowsDirector.add(element["id"].toString());
-              } else if ((element["job"] == "Writer" ||
-                      element["job"] == "Screenplay") &&
-                  !countedTVShowsWriter.contains(element["id"].toString())) {
-                statsWriterTV += 1;
-                if (Utils.contains_non_type(currentUser.favTVShows,
-                    ['TVShows', element["id"].toString()])) {
-                  scoreWriter += 3;
-                } else {
-                  scoreWriter += 1;
-                }
-                countedTVShowsWriter.add(element["id"].toString());
-              }
-            } else if (Utils.contains_non_type(currentUser.watchlistTVShows,
-                    ['TVShows', element["id"].toString()]) &&
-                element["job"] == "Director" &&
-                !countedTVShowsDirector.contains(element["id"].toString())) {
-              scoreDirector += 1;
-              countedTVShowsDirector.add(element["id"].toString());
-            } else if (Utils.contains_non_type(currentUser.watchlistTVShows,
-                    ['TVShows', element["id"].toString()]) &&
-                (element["job"] == "Writer" ||
-                    element["job"] == "Screenplay") &&
-                !countedTVShowsWriter.contains(element["id"].toString())) {
-              scoreWriter += 1;
-              countedTVShowsWriter.add(element["id"].toString());
-            }
-
-            if (element["job"] == "Director") {
-              allDirMovies += 1;
-            }
-          }
-          if (oscars.keys.contains(id.toString())) {
-            json['num_oscars'] = oscars[id.toString()]['num_oscars'];
-          } else {
-            json['num_oscars'] = 0;
-          }
-          var userDoc = FirebaseFirestore.instance
-              .collection(currentUser.uid)
-              .doc("FavDirectors");
-          Map<Object, Object?> directorStats = {};
-          directorStats[id.toString()] = scoreDirector;
-          await userDoc.update(directorStats);
-          await userDoc.get().then((DocumentSnapshot doc) async {
-            Map info = doc.data() as Map;
-            List actrs = [];
-            info.forEach((key, value) {
-              List item = [value, key];
-              actrs.add(item);
-            });
-            actrs.sort((a, b) => a[0].compareTo(b[0]));
-            actrs = actrs.reversed.toList();
-            int num = 0;
-            for (var act in actrs) {
-              num++;
-              if (act[1].toString() == id.toString()) {
-                break;
-              }
-            }
-            json["director_ranking"] = num;
-            json["allDirMovies"] = allDirMovies;
-          });
-          var ActorDoc = FirebaseFirestore.instance
-              .collection(currentUser.uid)
-              .doc("FavActors");
-          Map<Object, Object?> actorStats = {};
-          actorStats[id.toString()] = scoreActor;
-          await ActorDoc.update(actorStats);
-          await ActorDoc.get().then((DocumentSnapshot doc) async {
-            Map info = doc.data() as Map;
-            List actrs = [];
-            info.forEach((key, value) {
-              List item = [value, key];
-              actrs.add(item);
-            });
-            actrs.sort((a, b) => a[0].compareTo(b[0]));
-            actrs = actrs.reversed.toList();
-            int num = 0;
-            for (var act in actrs) {
-              num++;
-              if (act[1].toString() == id.toString()) {
-                break;
-              }
-            }
-            json["actor_ranking"] = num;
-          });
-          var WriterDoc = FirebaseFirestore.instance
-              .collection(currentUser.uid)
-              .doc("FavWriters");
-          Map<Object, Object?> writerStats = {};
-          writerStats[id.toString()] = scoreWriter;
-          await WriterDoc.update(writerStats);
-          await WriterDoc.get().then((DocumentSnapshot doc) async {
-            Map info = doc.data() as Map;
-            List writers = [];
-            info.forEach((key, value) {
-              List item = [value, key];
-              writers.add(item);
-            });
-            writers.sort((a, b) => a[0].compareTo(b[0]));
-            writers = writers.reversed.toList();
-            int num = 0;
-            for (var writer in writers) {
-              num++;
-              if (writer[1].toString() == id.toString()) {
-                break;
-              }
-            }
-            json["writer_ranking"] = num;
-          });
-          currentUser.favActors = [];
-          currentUser.favDirectors = [];
-          currentUser.favWriters = [];
-          await FirebaseFirestore.instance
-              .collection(currentUser.uid)
-              .get()
-              .then((QuerySnapshot querySnapshot) {
-            for (var doc in querySnapshot.docs) {
-              if (doc.id == "FavActors" && currentUser.favActors.isEmpty) {
-                Map tempFavActors = doc.data() as Map;
-                currentUser.favActors = tempFavActors.entries
-                    .map((entry) => [entry.value, entry.key])
-                    .toList();
-                currentUser.favActors.sort((a, b) => b[0].compareTo(a[0]));
-              } else if (doc.id == "FavDirectors" &&
-                  currentUser.favDirectors.isEmpty) {
-                Map tempFavDirectors = doc.data() as Map;
-                currentUser.favDirectors = tempFavDirectors.entries
-                    .map((entry) => [entry.value, entry.key])
-                    .toList();
-                currentUser.favDirectors.sort((a, b) => b[0].compareTo(a[0]));
-              } else if (doc.id == "FavWriters" &&
-                  currentUser.favWriters.isEmpty) {
-                Map tempFavWriters = doc.data() as Map;
-                currentUser.favWriters = tempFavWriters.entries
-                    .map((entry) => [entry.value, entry.key])
-                    .toList();
-                currentUser.favWriters.sort((a, b) => b[0].compareTo(a[0]));
-              }
-            }
-          });
-          personStats["scoreActor"] = scoreActor;
-          personStats["scoreDirector"] = scoreDirector;
-          personStats["scoreWriter"] = scoreWriter;
-          personStats["stats"] = stats;
-          personStats["stats_tv"] = statsTv;
-          personStats["stats_dir"] = statsDir;
-          personStats["stats_writer_movies"] = statsWriterMovies;
-          personStats["stats_writer_tv"] = statsWriterTV;
-          personStats["allDirMovies"] = allDirMovies;
-          return json;
-        } else {
-          throw Exception('Failed to load movie details');
-        }
-      } else {
-        throw Exception('Failed to load movie details');
+        json['movie_credits_cast'] = movieCast;
       }
-    } else {
-      throw Exception('Failed to load movie details');
+
+      final tvCreditsResponse = await http.get(
+          Uri.parse('$PERSON_LINK$id-$formattedName$TV_SHOW_CREDITS_LINK'));
+      if (tvCreditsResponse.statusCode == 200) {
+        List tvCast = [];
+        for (Map show in jsonDecode(tvCreditsResponse.body)['cast']) {
+          if (show["poster_path"] != null) {
+            if (!show["character"].toString().toLowerCase().contains("self") &&
+                show["character"].toString() != "") {
+              tvCast.add(show);
+            }
+          }
+        }
+        json['tv_credits_cast'] = tvCast;
+        List tvCrew = [];
+        for (Map show in jsonDecode(tvCreditsResponse.body)['crew']) {
+          if (show["poster_path"] != null) {
+            tvCrew.add(show);
+          }
+        }
+        json['tv_credits_crew'] = tvCrew;
+      }
     }
+    return json;
+  }
+
+  Future<int> updateStatsDoc(int score, AppUser currentUser, docName) async {
+    var ActorDoc =
+        FirebaseFirestore.instance.collection(currentUser.uid).doc(docName);
+    Map<Object, Object?> actorStats = {};
+    actorStats[id.toString()] = score;
+    await ActorDoc.update(actorStats);
+    var doc = await ActorDoc.get();
+    Map info = doc.data() as Map;
+    List actrs = [];
+    info.forEach((key, value) {
+      List item = [value, key];
+      actrs.add(item);
+    });
+    actrs.sort((a, b) => a[0].compareTo(b[0]));
+    actrs = actrs.reversed.toList();
+    int num = 0;
+    for (var act in actrs) {
+      num++;
+      if (act[1].toString() == id.toString()) {
+        break;
+      }
+    }
+    return num;
+  }
+
+  Future<void> fetchNewStats(AppUser currentUser) async {
+    currentUser.favActors = [];
+    currentUser.favDirectors = [];
+    currentUser.favWriters = [];
+    await FirebaseFirestore.instance
+        .collection(currentUser.uid)
+        .get()
+        .then((QuerySnapshot querySnapshot) {
+      for (var doc in querySnapshot.docs) {
+        if (doc.id == "FavActors" && currentUser.favActors.isEmpty) {
+          Map tempFavActors = doc.data() as Map;
+          currentUser.favActors = tempFavActors.entries
+              .map((entry) => [entry.value, entry.key])
+              .toList();
+          currentUser.favActors.sort((a, b) => b[0].compareTo(a[0]));
+        } else if (doc.id == "FavDirectors" &&
+            currentUser.favDirectors.isEmpty) {
+          Map tempFavDirectors = doc.data() as Map;
+          currentUser.favDirectors = tempFavDirectors.entries
+              .map((entry) => [entry.value, entry.key])
+              .toList();
+          currentUser.favDirectors.sort((a, b) => b[0].compareTo(a[0]));
+        } else if (doc.id == "FavWriters" && currentUser.favWriters.isEmpty) {
+          Map tempFavWriters = doc.data() as Map;
+          currentUser.favWriters = tempFavWriters.entries
+              .map((entry) => [entry.value, entry.key])
+              .toList();
+          currentUser.favWriters.sort((a, b) => b[0].compareTo(a[0]));
+        }
+      }
+    });
+  }
+
+  List getCastStats(AppUser currentUser, List cast, String type) {
+    List counted = [];
+    int stats = 0;
+    int score = 0;
+    List seen =
+        type == "Movies" ? currentUser.seenMovies : currentUser.seenTVShows;
+    List favs =
+        type == "Movies" ? currentUser.favMovies : currentUser.favTVShows;
+    List watchlist =
+        type == "Movies" ? currentUser.watchlist : currentUser.watchlistTVShows;
+    Map rewatched = type == "Movies"
+        ? currentUser.rewatchedMovies
+        : currentUser.rewatchedTVShows;
+    for (var element in cast) {
+      if (Utils.contains_non_type(seen, [type, element["id"]])) {
+        if (!counted.contains(element["id"].toString())) {
+          stats += 1;
+          if (Utils.contains_non_type(favs, [type, element["id"].toString()])) {
+            score += 3;
+          }
+          if (rewatched.keys.toList().contains(element["id"].toString())) {
+            score += rewatched[element["id"].toString()] as int;
+          } else {
+            score += 2;
+          }
+          counted.add(element["id"].toString());
+        }
+      } else if (Utils.contains_non_type(
+              watchlist, [type, element["id"].toString()]) &&
+          !counted.contains(element["id"].toString())) {
+        score += 1;
+        counted.add(element["id"].toString());
+      }
+    }
+
+    return [score, stats];
+  }
+
+  List getCrewStats(AppUser currentUser, List crew, String type) {
+    List countedTVShowsDirector = [];
+    List countedTVShowsWriter = [];
+    int scoreDirector = 0;
+    int scoreWriter = 0;
+    int statsWriterTV = 0;
+    int allDirMovies = 0;
+    int statsDir = 0;
+    List favs =
+        type == "Movies" ? currentUser.favMovies : currentUser.favTVShows;
+    List seen =
+        type == "Movies" ? currentUser.seenMovies : currentUser.seenTVShows;
+    List watchlist =
+        type == "Movies" ? currentUser.watchlist : currentUser.watchlistTVShows;
+    for (var element in crew) {
+      if (Utils.contains_non_type(seen, [type, element["id"].toString()])) {
+        if (element["job"] == "Director" &&
+            !countedTVShowsDirector.contains(element["id"].toString())) {
+          statsDir += 1;
+          if (Utils.contains_non_type(favs, [type, element["id"].toString()])) {
+            scoreDirector += 3;
+          } else {
+            scoreDirector += 1;
+          }
+          countedTVShowsDirector.add(element["id"].toString());
+        } else if ((element["job"] == "Writer" ||
+                element["job"] == "Screenplay") &&
+            !countedTVShowsWriter.contains(element["id"].toString())) {
+          statsWriterTV += 1;
+          if (Utils.contains_non_type(favs, [type, element["id"].toString()])) {
+            scoreWriter += 3;
+          } else {
+            scoreWriter += 1;
+          }
+          countedTVShowsWriter.add(element["id"].toString());
+        }
+      } else if (Utils.contains_non_type(
+              watchlist, [type, element["id"].toString()]) &&
+          element["job"] == "Director" &&
+          !countedTVShowsDirector.contains(element["id"].toString())) {
+        scoreDirector += 1;
+        countedTVShowsDirector.add(element["id"].toString());
+      } else if (Utils.contains_non_type(
+              watchlist, [type, element["id"].toString()]) &&
+          (element["job"] == "Writer" || element["job"] == "Screenplay") &&
+          !countedTVShowsWriter.contains(element["id"].toString())) {
+        scoreWriter += 1;
+        countedTVShowsWriter.add(element["id"].toString());
+      }
+
+      if (element["job"] == "Director") {
+        allDirMovies += 1;
+      }
+    }
+    return [scoreDirector, statsDir, allDirMovies, scoreWriter, statsWriterTV];
+  }
+
+  Future<Map> getPersonData(AppUser currentUser, Map oscars) async {
+    int scoreActor = 0;
+    int scoreDirector = 0;
+    int scoreWriter = 0;
+    int stats = 0;
+    int statsTv = 0;
+    int allDirMovies = 0;
+    int statsDir = 0;
+    int statsWriterMovies = 0;
+    int statsWriterTV = 0;
+    Map json = await getCastCredits();
+
+    List actorStats =
+        getCastStats(currentUser, json['movie_credits_cast'], "Movies");
+    scoreActor = actorStats[0];
+    stats = actorStats[1];
+
+    List actorStatsTV =
+        getCastStats(currentUser, json['tv_credits_cast'], "TVShows");
+    int tempScore = actorStatsTV[0];
+    scoreActor += tempScore;
+    statsTv = actorStatsTV[1];
+
+    List crewStats =
+        getCrewStats(currentUser, json['movie_credits_crew'], "Movies");
+    scoreDirector = crewStats[0];
+    statsDir = crewStats[1];
+    allDirMovies = crewStats[2];
+    scoreWriter = crewStats[3];
+    statsWriterMovies = crewStats[4];
+
+    List crewStatsTV =
+        getCrewStats(currentUser, json['tv_credits_crew'], "TVShows");
+    tempScore = crewStatsTV[0];
+    scoreDirector += tempScore;
+    int tempStats = crewStats[1];
+    statsDir += tempStats;
+    int tempDirMovies = crewStats[2];
+    allDirMovies += tempDirMovies;
+    scoreWriter = crewStats[3];
+    statsWriterTV = crewStats[4];
+
+    if (oscars.keys.contains(id.toString())) {
+      json['num_oscars'] = oscars[id.toString()]['num_oscars'];
+    } else {
+      json['num_oscars'] = 0;
+    }
+
+    int tempNum =
+        await updateStatsDoc(scoreDirector, currentUser, "FavDirectors");
+    json["director_ranking"] = tempNum;
+    json["allDirMovies"] = allDirMovies;
+    json["actor_ranking"] = tempNum;
+
+    tempNum = await updateStatsDoc(scoreActor, currentUser, "FavActors");
+    json["actor_ranking"] = tempNum;
+
+    tempNum = await updateStatsDoc(scoreWriter, currentUser, "FavWriters");
+    json["writer_ranking"] = tempNum;
+
+    await fetchNewStats(currentUser);
+
+    personStats["scoreActor"] = scoreActor;
+    personStats["scoreDirector"] = scoreDirector;
+    personStats["scoreWriter"] = scoreWriter;
+    personStats["stats"] = stats;
+    personStats["stats_tv"] = statsTv;
+    personStats["stats_dir"] = statsDir;
+    personStats["stats_writer_movies"] = statsWriterMovies;
+    personStats["stats_writer_tv"] = statsWriterTV;
+    personStats["allDirMovies"] = allDirMovies;
+    return json;
   }
 }
