@@ -193,7 +193,8 @@ class _PersonResultState extends State<PersonResult> {
                                           .where((c) => c["job"] == "Director")
                                           .length)),
                             if (snapshot.data!['movie_credits_crew']
-                                .where((c) => c["job"] == "Writer")
+                                .where((c) => (c["job"] == "Writer" ||
+                                    c["job"] == "Screenplay"))
                                 .isNotEmpty)
                               statsProgress(
                                   "Writer",
@@ -208,7 +209,8 @@ class _PersonResultState extends State<PersonResult> {
                                               c["job"] == "Screenplay"))
                                           .length)),
                             if (snapshot.data!['movie_credits_crew']
-                                .where((c) => c["job"] == "Writer")
+                                .where((c) => (c["job"] == "Writer" ||
+                                    c["job"] == "Screenplay"))
                                 .isNotEmpty)
                               progressBar(
                                   stats["stats_writer_movies"] +
