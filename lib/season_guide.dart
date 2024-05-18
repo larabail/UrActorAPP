@@ -1,5 +1,6 @@
 // ignore_for_file: use_key_in_widget_constructors, must_be_immutable
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/cast_and_crew.dart';
 import 'package:uractor/common/constants.dart';
@@ -93,7 +94,7 @@ class ItemCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(27),
             image: DecorationImage(
-              image: NetworkImage(info['poster_path'] != null
+              image: CachedNetworkImageProvider(info['poster_path'] != null
                   ? IMG_LINK + info['poster_path']
                   : "https://cdn-icons-png.flaticon.com/512/3088/3088765.png"),
               fit: BoxFit.fitWidth,
@@ -261,7 +262,7 @@ class EpisodeCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(27),
                   image: DecorationImage(
-                    image: NetworkImage(snapshot.data!["still_path"] != null
+                    image: CachedNetworkImageProvider(snapshot.data!["still_path"] != null
                         ? IMG_LINK + snapshot.data!['still_path']
                         : "https://cdn-icons-png.flaticon.com/512/3088/3088765.png"),
                     fit: BoxFit.fitWidth,

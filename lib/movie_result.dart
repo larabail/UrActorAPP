@@ -1,5 +1,6 @@
 // ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, no_leading_underscores_for_local_identifiers
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:uractor/objects/Media.dart';
 import 'package:uractor/popups/add_to_calendar_pop_up.dart';
 import 'package:uractor/popups/share.dart';
@@ -198,7 +199,7 @@ class _MovieResultState extends State<MovieResult> {
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(27),
                                       image: DecorationImage(
-                                        image: NetworkImage(imageLeft),
+                                        image: CachedNetworkImageProvider(imageLeft),
                                         fit: BoxFit.cover,
                                       ),
                                     ),
@@ -276,7 +277,7 @@ class _MovieResultState extends State<MovieResult> {
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(27),
                                       image: DecorationImage(
-                                        image: NetworkImage(imageRight),
+                                        image: CachedNetworkImageProvider(imageRight),
                                         fit: BoxFit.cover,
                                       ),
                                     ),
@@ -375,7 +376,7 @@ class _MovieResultState extends State<MovieResult> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10),
                               image: DecorationImage(
-                                image: NetworkImage(
+                                image: CachedNetworkImageProvider(
                                   IMG_LINK + snapshot.data!['backdrop_path'],
                                 ),
                                 fit: BoxFit.cover,
@@ -878,7 +879,7 @@ class _MovieResultState extends State<MovieResult> {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10),
                                     image: DecorationImage(
-                                      image: NetworkImage(
+                                      image: CachedNetworkImageProvider(
                                         IMG_LINK +
                                             snapshot.data!['providers'][index]
                                                 [1],

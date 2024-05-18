@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
@@ -228,7 +229,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
                                                     0.2,
                                                 decoration: BoxDecoration(
                                                   image: DecorationImage(
-                                                    image: NetworkImage(event[
+                                                    image: CachedNetworkImageProvider(event[
                                                                 'poster_path'] !=
                                                             null
                                                         ? imgLink +
