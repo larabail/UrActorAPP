@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 
 import '../main.dart';
 
@@ -30,14 +29,6 @@ class AppUser {
   List seen = [];
   List allReviews = [];
   Map<String, dynamic> notifications = {};
-  ValueNotifier<int> unreadNotificationsCount = ValueNotifier<int>(0);
-
-  void updateNotifications(Map<String, dynamic> newNotifications) {
-    notifications = newNotifications;
-    unreadNotificationsCount.value = notifications.values
-        .where((element) => element["read"] == false)
-        .length;
-  }
 
   AppUser({
     required this.uid,
@@ -235,7 +226,6 @@ class AppUser {
         oscars[d["tmdb_id"].toString()] = doc.data();
       }
     });
-    updateNotifications(notifications);
     return true;
   }
 
