@@ -211,21 +211,35 @@ class _ProfileState extends State<Profile> {
       }
     }
 
-    List moviesTemp = [];
-    currentUser.rewatchedMovies.forEach((key, value) {
-      moviesTemp.add([value, key]);
-    });
-
-    moviesTemp.sort((a, b) => b[0].compareTo(a[0]));
-
-    List tvTemp = [];
-    currentUser.rewatchedTVShows.forEach((key, value) {
-      tvTemp.add([value, key]);
-    });
-
-    tvTemp.sort((a, b) => b[0].compareTo(a[0]));
-
     List<Widget> buildProfileSections() {
+      List moviesTemp = [];
+      currentUser.rewatchedMovies.forEach((key, value) {
+        if (value != 0) moviesTemp.add([value, key]);
+      });
+
+      moviesTemp.sort((a, b) => b[0].compareTo(a[0]));
+
+      List tvTemp = [];
+      currentUser.rewatchedTVShows.forEach((key, value) {
+        if (value != 0) tvTemp.add([value, key]);
+      });
+
+      tvTemp.sort((a, b) => b[0].compareTo(a[0]));
+
+      List tempActors = [];
+      for (List item in currentUser.favActors) {
+        if (item[0] != 0) tempActors.add(item);
+      }
+
+      List tempWriters = [];
+      for (List item in currentUser.favWriters) {
+        if (item[0] != 0) tempWriters.add(item);
+      }
+
+      List tempDirectors = [];
+      for (List item in currentUser.favDirectors) {
+        if (item[0] != 0) tempDirectors.add(item);
+      }
       List<Widget> sections = [];
       var profileSections = currentUser.settings["profileSections"];
       List<MapEntry<dynamic, dynamic>> sectionsList =
@@ -238,20 +252,20 @@ class _ProfileState extends State<Profile> {
         if (profileSections[key]["show"]) {
           switch (key) {
             case "Actors":
-              sections.add(buildProfileContainer("Favorite Actors",
-                  currentUser.favActors, Icons.theater_comedy, "Person"));
+              sections.add(buildProfileContainer("Favorite Actors", tempActors,
+                  Icons.theater_comedy, "Person"));
               break;
             case "Directors":
-              sections.add(buildProfileContainer("Favorite Directors",
-                  currentUser.favDirectors, Icons.chair, "Person"));
+              sections.add(buildProfileContainer(
+                  "Favorite Directors", tempDirectors, Icons.chair, "Person"));
               break;
             case "MostSeenMovies":
               sections.add(buildProfileContainer(
                   "Most Seen Movies", moviesTemp, Icons.movie, "Movie"));
               break;
             case "Writers":
-              sections.add(buildProfileContainer("Favorite Writers",
-                  currentUser.favWriters, Icons.edit, "Person"));
+              sections.add(buildProfileContainer(
+                  "Favorite Writers", tempWriters, Icons.edit, "Person"));
               break;
             case "MostSeenTVShows":
               sections.add(buildProfileContainer(
@@ -648,16 +662,37 @@ class _ProfileState extends State<Profile> {
                         : item.getData(),
                     builder:
                         (BuildContext context, AsyncSnapshot<Map> snapshot) {
-                      if (snapshot.hasData) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Container(
+                          margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
+                          width: MediaQuery.of(context).size.width * 0.28,
+                          height: MediaQuery.of(context).size.height * 0.18,
+                          child:
+                              const Center(child: CircularProgressIndicator()),
+                        );
+                      } else if (snapshot.hasError) {
+                        return const Center(
+                            child: Text("Failed to load details"));
+                      } else if (!snapshot.hasData) {
+                        return const Center(child: Text("No data available"));
+                      } else {
+                        String imageUrl;
+                        if (type == "Person") {
+                          imageUrl = snapshot.data!["profile_path"] ??
+                              'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
+                        } else {
+                          imageUrl =
+                              IMG_LINK + (snapshot.data!["poster_path"] ?? '');
+                        }
                         return GestureDetector(
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => type == "Person"
-                                      ? PersonResult(
-                                          personResult: item as Person)
-                                      : MovieResult(movie: item as Movie)),
+                                builder: (context) => type == "Person"
+                                    ? PersonResult(personResult: item as Person)
+                                    : MovieResult(movie: item as Movie),
+                              ),
                             );
                           },
                           child: Container(
@@ -667,28 +702,12 @@ class _ProfileState extends State<Profile> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(27),
                               image: DecorationImage(
-                                image: CachedNetworkImageProvider(
-                                  type == "Person"
-                                      ? snapshot.data!["profile_path"]
-                                      : IMG_LINK +
-                                          snapshot.data!["poster_path"],
-                                ),
+                                image: CachedNetworkImageProvider(imageUrl),
                                 fit: BoxFit.fitWidth,
                               ),
                             ),
                           ),
                         );
-                      } else if (snapshot.hasError) {
-                        return const Center(
-                            child: Text("Failed to load movie details"));
-                      } else {
-                        return Container(
-                            margin:
-                                const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                            width: MediaQuery.of(context).size.width * 0.28,
-                            height: MediaQuery.of(context).size.height * 0.18,
-                            child: const Center(
-                                child: CircularProgressIndicator()));
                       }
                     },
                   );

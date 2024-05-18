@@ -184,6 +184,21 @@ class _FriendProfileState extends State<FriendProfile> {
 
       tvTemp.sort((a, b) => b[0].compareTo(a[0]));
 
+      List tempActors = [];
+      for (List item in friendFavActors) {
+        if (item[0] != 0) tempActors.add(item);
+      }
+
+      List tempWriters = [];
+      for (List item in friendFavWriters) {
+        if (item[0] != 0) tempWriters.add(item);
+      }
+
+      List tempDirectors = [];
+      for (List item in friendFavDirectors) {
+        if (item[0] != 0) tempDirectors.add(item);
+      }
+
       List<Widget> buildProfileSections() {
         List<Widget> sections = [];
         var profileSections = friendSettings["profileSections"];
@@ -198,19 +213,19 @@ class _FriendProfileState extends State<FriendProfile> {
             switch (key) {
               case "Actors":
                 sections.add(buildProfileContainer("Favorite Actors",
-                    friendFavActors, Icons.theater_comedy, "Person"));
+                    tempActors, Icons.theater_comedy, "Person"));
                 break;
               case "Directors":
                 sections.add(buildProfileContainer("Favorite Directors",
-                    friendFavDirectors, Icons.chair, "Person"));
+                    tempDirectors, Icons.chair, "Person"));
                 break;
               case "MostSeenMovies":
                 sections.add(buildProfileContainer(
                     "Most Seen Movies", moviesTemp, Icons.movie, "Movie"));
                 break;
               case "Writers":
-                sections.add(buildProfileContainer("Favorite Writers",
-                    friendFavWriters, Icons.edit, "Person"));
+                sections.add(buildProfileContainer(
+                    "Favorite Writers", tempWriters, Icons.edit, "Person"));
                 break;
               case "MostSeenTVShows":
                 sections.add(buildProfileContainer(
