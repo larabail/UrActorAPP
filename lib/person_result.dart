@@ -1,5 +1,3 @@
-// ignore_for_file: library_private_types_in_public_api
-
 import 'package:flutter/material.dart';
 import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/Person.dart';
@@ -92,80 +90,110 @@ class _PersonResultState extends State<PersonResult> {
                     ),
                   ),
                   ExpansionTile(
-                      title: const Padding(
-                        padding: EdgeInsets.all(20),
-                        child: Text("Your Statistics"),
-                      ),
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(10, 0, 10, 25),
-                          child: Column(
-                            children: [
+                    title: const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Text("Your Statistics"),
+                    ),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(10, 0, 10, 25),
+                        child: Column(
+                          children: [
+                            if (snapshot.data!['movie_credits_cast'].length !=
+                                0)
                               Text(
                                 "Actor ranking: #${snapshot.data!['actor_ranking']} (${widget.personResult.personStats['scoreActor']})",
                                 style: const TextStyle(fontSize: 16),
                               ),
-                              if (widget.personResult
-                                      .personStats['allDirMovies'] !=
-                                  0)
-                                Text(
-                                  "Director ranking: #${snapshot.data!['director_ranking']} (${widget.personResult.personStats['scoreDirector']})",
-                                  style: const TextStyle(fontSize: 16),
+                            if (widget
+                                    .personResult.personStats['allDirMovies'] !=
+                                0)
+                              Text(
+                                "Director ranking: #${snapshot.data!['director_ranking']} (${widget.personResult.personStats['scoreDirector']})",
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            if (snapshot.data!['movie_credits_crew']
+                                    .where((c) => (c["job"] == "Writer" ||
+                                        c["job"] == "Screenplay"))
+                                    .length !=
+                                0)
+                              Text(
+                                "Writer ranking: #${snapshot.data!['writer_ranking']} (${widget.personResult.personStats['scoreWriter']})",
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            if (snapshot.data!['movie_credits_cast'].length !=
+                                0)
+                              Text(
+                                "Actor Progress: ${widget.personResult.personStats['stats'] + widget.personResult.personStats['stats_tv']} / ${(snapshot.data!['movie_credits_cast'].length + snapshot.data!['tv_credits_cast'].length)} (${double.parse((widget.personResult.personStats['stats'] + widget.personResult.personStats['stats_tv'] / (snapshot.data!['movie_credits_cast'].length + snapshot.data!['tv_credits_cast'].length) * 100).toStringAsFixed(2))}%)",
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            if (snapshot.data!['movie_credits_cast'].length !=
+                                0)
+                              Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: LinearProgressIndicator(
+                                  value: (widget.personResult
+                                              .personStats['stats'] +
+                                          widget.personResult
+                                              .personStats['stats_tv']) /
+                                      (snapshot.data!['movie_credits_cast']
+                                              .length +
+                                          snapshot
+                                              .data!['tv_credits_cast'].length),
                                 ),
-                              if (snapshot.data!['movie_credits_cast'].length !=
-                                  0)
-                                Text(
-                                  "Actor Movie Progress: ${widget.personResult.personStats['stats']} / ${(snapshot.data!['movie_credits_cast'].length)} (${double.parse((widget.personResult.personStats['stats'] / (snapshot.data!['movie_credits_cast'].length) * 100).toStringAsFixed(2))}%)",
-                                  style: const TextStyle(fontSize: 16),
+                              ),
+                            if (widget
+                                    .personResult.personStats['allDirMovies'] !=
+                                0)
+                              Text(
+                                "Director Progress: ${widget.personResult.personStats['stats_dir']} / ${(snapshot.data!['allDirMovies'])} (${double.parse((widget.personResult.personStats['stats_dir'] / (snapshot.data!['allDirMovies']) * 100).toStringAsFixed(2))}%)",
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            if (widget
+                                    .personResult.personStats["allDirMovies"] !=
+                                0)
+                              Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: LinearProgressIndicator(
+                                  value: widget.personResult
+                                          .personStats['stats_dir'] /
+                                      (snapshot.data!['allDirMovies']),
                                 ),
-                              if (snapshot.data!['movie_credits_cast'].length !=
-                                  0)
-                                Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: LinearProgressIndicator(
-                                    value: widget
-                                            .personResult.personStats['stats'] /
-                                        (snapshot.data!['movie_credits_cast']
-                                            .length),
-                                  ),
+                              ),
+                            if (snapshot.data!['movie_credits_crew']
+                                .where((c) => c["job"] == "Writer")
+                                .isNotEmpty)
+                              Text(
+                                "Writer Progress: ${widget.personResult.personStats['stats_writer_movies'] + widget.personResult.personStats['stats_writer_tv']} / ${(snapshot.data!['movie_credits_crew'].where((c) => (c["job"] == "Writer" || c["job"] == "Screenplay")).length) + (snapshot.data!['tv_credits_crew'].where((c) => (c["job"] == "Writer" || c["job"] == "Screenplay")).length)} (${double.parse(((widget.personResult.personStats['stats_writer_movies'] + widget.personResult.personStats['stats_writer_tv']) / (snapshot.data!['movie_credits_crew'].where((c) => (c["job"] == "Writer" || c["job"] == "Screenplay")).length + snapshot.data!['tv_credits_crew'].where((c) => (c["job"] == "Writer" || c["job"] == "Screenplay")).length) * 100).toStringAsFixed(2))}%)",
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            if (snapshot.data!['movie_credits_crew']
+                                .where((c) => c["job"] == "Writer")
+                                .isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: LinearProgressIndicator(
+                                  value: (widget.personResult.personStats[
+                                              'stats_writer_movies'] +
+                                          widget.personResult
+                                              .personStats['stats_writer_tv']) /
+                                      (snapshot.data!['movie_credits_crew']
+                                              .where((c) =>
+                                                  (c["job"] == "Writer" ||
+                                                      c["job"] == "Screenplay"))
+                                              .length +
+                                          snapshot.data!['tv_credits_crew']
+                                              .where((c) =>
+                                                  (c["job"] == "Writer" ||
+                                                      c["job"] == "Screenplay"))
+                                              .length),
                                 ),
-                              if (snapshot.data!['tv_credits_cast'].length != 0)
-                                Text(
-                                  "Actor TV Show Progress: ${widget.personResult.personStats['stats_tv']} / ${(snapshot.data!['tv_credits_cast'].length)} (${double.parse((widget.personResult.personStats['stats_tv'] / (snapshot.data!['tv_credits_cast'].length) * 100).toStringAsFixed(2))}%)",
-                                  style: const TextStyle(fontSize: 16),
-                                ),
-                              if (snapshot.data!['tv_credits_cast'].length != 0)
-                                Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: LinearProgressIndicator(
-                                    value: widget.personResult
-                                            .personStats['stats_tv'] /
-                                        (snapshot
-                                            .data!['tv_credits_cast'].length),
-                                  ),
-                                ),
-                              if (widget.personResult
-                                      .personStats['allDirMovies'] !=
-                                  0)
-                                Text(
-                                  "Director Progress: ${widget.personResult.personStats['stats_dir']} / ${(snapshot.data!['allDirMovies'])} (${double.parse((widget.personResult.personStats['stats_dir'] / (snapshot.data!['allDirMovies']) * 100).toStringAsFixed(2))}%)",
-                                  style: const TextStyle(fontSize: 16),
-                                ),
-                              if (widget.personResult
-                                      .personStats["allDirMovies"] !=
-                                  0)
-                                Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: LinearProgressIndicator(
-                                    value: widget.personResult
-                                            .personStats['stats_dir'] /
-                                        (snapshot.data!['allDirMovies']),
-                                  ),
-                                ),
-                            ],
-                          ),
+                              ),
+                          ],
                         ),
-                      ]),
+                      ),
+                    ],
+                  ),
                   if ((snapshot.data!['movie_credits_crew'].length != 0 ||
                           snapshot.data!['tv_credits_crew'].length != 0) &&
                       (snapshot.data!["movie_credits_cast"].length != 0 ||
