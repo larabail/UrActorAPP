@@ -22,8 +22,7 @@ class _ShareState extends State<Share> {
   Future<void> sendNotification(
       String friendId, MediaItem media, String type) async {
     try {
-      currentUser
-          .notifications[currentUser.notifications.keys.length.toString()] = {
+      Map tempNotification = {
         'type': type,
         'id': media.id,
         "title": media.title,
@@ -35,10 +34,15 @@ class _ShareState extends State<Share> {
         "read": false,
         'timestamp': FieldValue.serverTimestamp(),
       };
-      await FirebaseFirestore.instance
-          .collection(friendId)
-          .doc("Notifications")
-          .set(currentUser.notifications);
+      var friendNotificationDoc =
+          FirebaseFirestore.instance.collection(friendId).doc("Notifications");
+      var friendNotifications = await friendNotificationDoc.get();
+      var finalNotifications =
+          friendNotifications.data() as Map<String, dynamic>;
+      finalNotifications[finalNotifications.keys.toList().length.toString()] =
+          tempNotification;
+      print(finalNotifications);
+      await friendNotificationDoc.set(finalNotifications);
     } catch (e) {
       print('Error sending notification: $e');
     }
