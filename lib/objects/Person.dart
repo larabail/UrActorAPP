@@ -213,7 +213,20 @@ class Person {
     Map rewatched = type == "Movies"
         ? currentUser.rewatchedMovies
         : currentUser.rewatchedTVShows;
+    List tempCreditsCrew = [];
+    List countedItems = [];
     for (var element in crew) {
+      if (countedItems.contains(element["id"].toString())) {
+        for (Map credit in tempCreditsCrew) {
+          if (credit["id"].toString() == element["id"].toString()) {
+            credit["job"] = "${credit["job"]} / ${element["job"]}";
+          }
+        }
+      } else {
+        tempCreditsCrew.add(element);
+        countedItems.add(element["id"].toString());
+      }
+
       if (Utils.contains_non_type(seen, [type, element["id"].toString()])) {
         if (element["job"] == "Director" &&
             !countedTVShowsDirector.contains(element["id"].toString())) {
@@ -268,7 +281,8 @@ class Person {
       statsDir,
       countedTVShowsDirector.length,
       scoreWriter,
-      statsWriterTV
+      statsWriterTV,
+      tempCreditsCrew
     ];
   }
 
@@ -301,6 +315,8 @@ class Person {
     allDirMovies = crewStats[2];
     scoreWriter = crewStats[3];
     statsWriterMovies = crewStats[4];
+    List tempMovieCreditsCrew = crewStats[5];
+    json['movie_credits_crew'] = tempMovieCreditsCrew;
 
     List crewStatsTV =
         getCrewStats(currentUser, json['tv_credits_crew'], "TVShows");
@@ -309,11 +325,24 @@ class Person {
     int tempDirMovies = crewStatsTV[2];
     int tempScoreWriter = crewStatsTV[3];
     statsWriterTV = crewStatsTV[4];
+    List tempTVCreditsCrew = crewStatsTV[5];
+    json['tv_credits_crew'] = tempTVCreditsCrew;
 
     if (oscars.keys.contains(id.toString())) {
       json['num_oscars'] = oscars[id.toString()]['num_oscars'];
+      json["oscars"] = {};
+      for (String year in oscars[id.toString()]["oscars"].keys.toList()) {
+        for (Map award in oscars[id.toString()]["oscars"][year]) {
+          if (json["oscars"].containsKey(award["movie"].toLowerCase())) {
+            json["oscars"][award["movie"].toLowerCase()].add(award["oscar"]);
+          } else {
+            json["oscars"][award["movie"].toLowerCase()] = [award["oscar"]];
+          }
+        }
+      }
     } else {
       json['num_oscars'] = 0;
+      json["oscars"] = {};
     }
 
     int tempNum = await updateStatsDoc(

@@ -318,8 +318,8 @@ class _PersonResultState extends State<PersonResult> {
               ),
             );
           } else if (snapshot.hasError) {
-            return const Center(
-              child: Text("Failed to load movie details"),
+            return Center(
+              child: Text(snapshot.error.toString()),
             );
           } else {
             return const Center(
@@ -333,7 +333,7 @@ class _PersonResultState extends State<PersonResult> {
   }
 
   Widget buildMediaRow(BuildContext context, List<dynamic> mediaList, int index,
-      String mediaType, bool isCrew) {
+      String mediaType, bool isCrew, Map oscars) {
     int leftIndex = index * 3;
     int middleIndex = index * 3 + 1;
     int rightIndex = index * 3 + 2;
@@ -362,8 +362,8 @@ class _PersonResultState extends State<PersonResult> {
           Navigator.push(context, route);
         },
         child: isCrew
-            ? seenCrew(context, media, mediaType)
-            : seen(context, media, mediaType),
+            ? seenCrew(context, media, mediaType, oscars)
+            : seen(context, media, mediaType, oscars),
       );
     }
 
@@ -409,8 +409,8 @@ class _PersonResultState extends State<PersonResult> {
       tabViews.add(ListView.builder(
         scrollDirection: Axis.vertical,
         itemCount: (data['movie_credits_cast'].length / 3).ceil(),
-        itemBuilder: (context, index) => buildMediaRow(
-            context, data['movie_credits_cast'], index, "Movies", false),
+        itemBuilder: (context, index) => buildMediaRow(context,
+            data['movie_credits_cast'], index, "Movies", false, data["oscars"]),
       ));
     }
     if (data['tv_credits_cast'].length > 0) {
@@ -431,8 +431,8 @@ class _PersonResultState extends State<PersonResult> {
       tabViews.add(ListView.builder(
         scrollDirection: Axis.vertical,
         itemCount: (data['tv_credits_cast'].length / 3).ceil(),
-        itemBuilder: (context, index) => buildMediaRow(
-            context, data['tv_credits_cast'], index, "TVShows", false),
+        itemBuilder: (context, index) => buildMediaRow(context,
+            data['tv_credits_cast'], index, "TVShows", false, data["oscars"]),
       ));
     }
 
@@ -477,8 +477,8 @@ class _PersonResultState extends State<PersonResult> {
       tabViews.add(ListView.builder(
         scrollDirection: Axis.vertical,
         itemCount: (data['movie_credits_crew'].length / 3).ceil(),
-        itemBuilder: (context, index) => buildMediaRow(
-            context, data['movie_credits_crew'], index, "Movies", true),
+        itemBuilder: (context, index) => buildMediaRow(context,
+            data['movie_credits_crew'], index, "Movies", true, data["oscars"]),
       ));
     }
     if (data['tv_credits_crew'].length > 0) {
@@ -499,8 +499,8 @@ class _PersonResultState extends State<PersonResult> {
       tabViews.add(ListView.builder(
         scrollDirection: Axis.vertical,
         itemCount: (data['tv_credits_crew'].length / 3).ceil(),
-        itemBuilder: (context, index) => buildMediaRow(
-            context, data['tv_credits_crew'], index, "TVShows", true),
+        itemBuilder: (context, index) => buildMediaRow(context,
+            data['tv_credits_crew'], index, "TVShows", true, data["oscars"]),
       ));
     }
 
@@ -522,7 +522,7 @@ class _PersonResultState extends State<PersonResult> {
     );
   }
 
-  seen(BuildContext context, movie, type) {
+  seen(BuildContext context, movie, type, oscars) {
     if (!Utils.contains_non_type(currentUser.seenMovies, [type, movie['id']]) &&
         !Utils.contains_non_type(
             currentUser.seenTVShows, [type, movie['id']])) {
@@ -541,6 +541,28 @@ class _PersonResultState extends State<PersonResult> {
               ),
             ),
           ),
+          if (type == "Movies" &&
+              oscars.containsKey(movie["title"].toLowerCase()))
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Center(
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.06,
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        oscars[movie["title"].toLowerCase()].length,
+                        (index) => SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.06,
+                          child: Image.asset("assets/oscar2.png"),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -614,6 +636,28 @@ class _PersonResultState extends State<PersonResult> {
               ),
             ),
           ),
+          if (type == "Movies" &&
+              oscars.containsKey(movie["title"].toLowerCase()))
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Center(
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.06,
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        oscars[movie["title"].toLowerCase()].length,
+                        (index) => SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.06,
+                          child: Image.asset("assets/oscar2.png"),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -661,7 +705,7 @@ class _PersonResultState extends State<PersonResult> {
     }
   }
 
-  seenCrew(BuildContext context, movie, type) {
+  seenCrew(BuildContext context, movie, type, oscars) {
     if (!Utils.contains_non_type(currentUser.seenMovies, [type, movie['id']]) &&
         !Utils.contains_non_type(
             currentUser.seenTVShows, [type, movie['id']])) {
@@ -680,6 +724,28 @@ class _PersonResultState extends State<PersonResult> {
               ),
             ),
           ),
+          if (type == "Movies" &&
+              oscars.containsKey(movie["title"].toLowerCase()))
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Center(
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.06,
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        oscars[movie["title"].toLowerCase()].length,
+                        (index) => SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.06,
+                          child: Image.asset("assets/oscar2.png"),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -753,6 +819,28 @@ class _PersonResultState extends State<PersonResult> {
               ),
             ),
           ),
+          if (type == "Movies" &&
+              oscars.containsKey(movie["title"].toLowerCase()))
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Center(
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.06,
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        oscars[movie["title"].toLowerCase()].length,
+                        (index) => SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.06,
+                          child: Image.asset("assets/oscar2.png"),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
