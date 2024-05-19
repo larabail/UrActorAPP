@@ -143,7 +143,7 @@ class _PersonResultState extends State<PersonResult> {
                                         .where((c) => (c["job"] == "Writer" ||
                                             c["job"] == "Screenplay"))
                                         .length !=
-                                    0 &&
+                                    0 ||
                                 snapshot.data!['tv_credits_crew']
                                     .where((c) => (c["job"] == "Writer" ||
                                         c["job"] == "Screenplay"))
@@ -199,7 +199,7 @@ class _PersonResultState extends State<PersonResult> {
                             if (snapshot.data!['movie_credits_crew']
                                     .where((c) => (c["job"] == "Writer" ||
                                         c["job"] == "Screenplay"))
-                                    .isNotEmpty &&
+                                    .isNotEmpty ||
                                 snapshot.data!['tv_credits_crew']
                                     .where((c) => (c["job"] == "Writer" ||
                                         c["job"] == "Screenplay"))
@@ -219,7 +219,7 @@ class _PersonResultState extends State<PersonResult> {
                             if (snapshot.data!['movie_credits_crew']
                                     .where((c) => (c["job"] == "Writer" ||
                                         c["job"] == "Screenplay"))
-                                    .isNotEmpty &&
+                                    .isNotEmpty ||
                                 snapshot.data!['tv_credits_crew']
                                     .where((c) => (c["job"] == "Writer" ||
                                         c["job"] == "Screenplay"))
