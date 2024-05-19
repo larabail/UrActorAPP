@@ -793,10 +793,25 @@ class ApiUtils {
         trailerResponse.statusCode != 200) {
       throw Exception('Failed to load credits or trailer data');
     }
+    List countedCrew = [];
+    List finalCrew = [];
+    for (Map crewMember in jsonDecode(creditsResponse.body)["crew"]) {
+      if (countedCrew.contains(crewMember["id"])) {
+        for (Map credit in finalCrew) {
+          if (credit["id"].toString() == crewMember["id"].toString()) {
+            credit["job"] = "${credit["job"]} / ${crewMember["job"]}";
+          }
+        }
+      } else {
+        finalCrew.add(crewMember);
+        countedCrew.add(crewMember["id"]);
+      }
+    }
+    print("DEBUG: $finalCrew");
 
     Map<String, dynamic> data = {
       'cast': jsonDecode(creditsResponse.body)["cast"],
-      'crew': jsonDecode(creditsResponse.body)["crew"],
+      'crew': finalCrew,
       'trailer': null
     };
 
