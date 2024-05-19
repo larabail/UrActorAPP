@@ -1329,6 +1329,14 @@ class _TVShowResultState extends State<TVShowResult> {
                                                 'Seen':
                                                     FieldValue.arrayUnion([id])
                                               });
+                                              userDoc = FirebaseFirestore
+                                                  .instance
+                                                  .collection(friend)
+                                                  .doc("Seen");
+                                              await userDoc.update({
+                                                'TVShows':
+                                                    FieldValue.arrayUnion([id])
+                                              });
                                               if (currentUser.seenWith
                                                       .containsKey(friend) &&
                                                   !currentUser.seenWith[friend]

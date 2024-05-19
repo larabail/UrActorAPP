@@ -129,7 +129,7 @@ class _NotificationsState extends State<Notifications> {
                           SizedBox(
                             width: MediaQuery.of(context).size.width * 0.5,
                             child: Text(
-                              '${notification["sender"]["username"]} wants you to checkout the ${notification['type']} "${notification['title']}"',
+                              '${notification["sender"]["username"]} wants you to check out the ${notification['type']} "${notification['title']}"',
                               style: const TextStyle(
                                 fontSize: 14,
                               ),
