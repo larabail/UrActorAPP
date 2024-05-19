@@ -151,6 +151,9 @@ class _FriendCalendarState extends State<FriendCalendar> {
         if (response.statusCode == 200) {
           dynamic json = jsonDecode(response.body);
           if (!Utils.containsMap(movies, json)) {
+            if (element.containsKey("friends")) {
+              json["friends"] = element["friends"];
+            }
             movies.add(json);
           }
         } else {
@@ -162,7 +165,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
             builder: (_) {
               return SingleChildScrollView(
                 child: SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.375,
+                  height: MediaQuery.of(context).size.height * 0.31,
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
                     child: Column(
@@ -173,12 +176,15 @@ class _FriendCalendarState extends State<FriendCalendar> {
                               fontSize: 20, fontWeight: FontWeight.bold),
                         ),
                         Expanded(
-                          // height: MediaQuery.of(context).size.height * 0.3,
                           child: ListView(
                             scrollDirection: Axis.horizontal,
                             children: [
                               ...movies
-                                  .map((event) => Column(
+                                  .map(
+                                    (event) => Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8.0),
+                                      child: Column(
                                         children: [
                                           GestureDetector(
                                             onTap: () {
@@ -212,37 +218,129 @@ class _FriendCalendarState extends State<FriendCalendar> {
                                                 ),
                                               );
                                             },
-                                            child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(
-                                                  50), // Set the border radius here
-                                              child: Container(
-                                                margin:
-                                                    const EdgeInsets.fromLTRB(
-                                                        5.0, 7.0, 5.0, 0),
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.3,
-                                                height: MediaQuery.of(context)
-                                                        .size
-                                                        .height *
-                                                    0.2,
-                                                decoration: BoxDecoration(
-                                                  image: DecorationImage(
-                                                    image: CachedNetworkImageProvider(event[
-                                                                'poster_path'] !=
-                                                            null
-                                                        ? imgLink +
-                                                            event['poster_path']
-                                                        : "https://cringemdb.com/img/movie-poster-placeholder.png"),
-                                                    fit: BoxFit.cover,
+                                            child: Stack(
+                                              children: [
+                                                ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(30),
+                                                  child: Container(
+                                                    width:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width *
+                                                            0.32,
+                                                    height:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .height *
+                                                            0.2,
+                                                    decoration: BoxDecoration(
+                                                      image: DecorationImage(
+                                                        image:
+                                                            CachedNetworkImageProvider(
+                                                          event['poster_path'] !=
+                                                                  null
+                                                              ? IMG_LINK +
+                                                                  event[
+                                                                      'poster_path']
+                                                              : "https://cringemdb.com/img/movie-poster-placeholder.png",
+                                                        ),
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
+                                                if (event
+                                                    .containsKey("friends"))
+                                                  Positioned(
+                                                    bottom: 8,
+                                                    left: 8,
+                                                    right: 8,
+                                                    child: Row(
+                                                      children: [
+                                                        Expanded(
+                                                          child: FutureBuilder<
+                                                              List<String>>(
+                                                            future: FirebaseUtils
+                                                                .getProfilePhotos(
+                                                                    event[
+                                                                        "friends"]),
+                                                            builder: (context,
+                                                                snapshot) {
+                                                              if (snapshot
+                                                                      .connectionState ==
+                                                                  ConnectionState
+                                                                      .waiting) {
+                                                                return const SizedBox(
+                                                                  height: 32.0,
+                                                                  child: Center(
+                                                                      child:
+                                                                          CircularProgressIndicator()),
+                                                                );
+                                                              } else if (snapshot
+                                                                  .hasError) {
+                                                                return const SizedBox(
+                                                                  height: 32.0,
+                                                                  child: Center(
+                                                                      child: Text(
+                                                                          'Error loading images')),
+                                                                );
+                                                              } else if (snapshot
+                                                                  .hasData) {
+                                                                var images =
+                                                                    snapshot
+                                                                        .data!;
+                                                                return SizedBox(
+                                                                  height: 32.0,
+                                                                  child: Stack(
+                                                                    children: List.generate(
+                                                                        images
+                                                                            .length,
+                                                                        (index) {
+                                                                      double
+                                                                          offset =
+                                                                          index *
+                                                                              10.0;
+                                                                      return Positioned(
+                                                                        left:
+                                                                            offset,
+                                                                        child:
+                                                                            ClipOval(
+                                                                          child: images[index] != ""
+                                                                              ? Image.network(
+                                                                                  images[index],
+                                                                                  height: 25,
+                                                                                  width: 25,
+                                                                                  fit: BoxFit.cover,
+                                                                                )
+                                                                              : Image.asset(
+                                                                                  'assets/main_profile.png',
+                                                                                  height: 25,
+                                                                                  width: 25,
+                                                                                  fit: BoxFit.cover,
+                                                                                ),
+                                                                        ),
+                                                                      );
+                                                                    }),
+                                                                  ),
+                                                                );
+                                                              } else {
+                                                                return const SizedBox
+                                                                    .shrink();
+                                                              }
+                                                            },
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                              ],
                                             ),
                                           ),
                                         ],
-                                      ))
+                                      ),
+                                    ),
+                                  )
                                   .toList(),
                             ],
                           ),
