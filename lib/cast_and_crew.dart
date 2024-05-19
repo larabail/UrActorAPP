@@ -87,7 +87,7 @@ class CastCrewTabView extends StatelessWidget {
                       name: item["name"],
                       data: item));
             }
-            return const SizedBox.shrink(); // Return an empty widget if no item
+            return const SizedBox.shrink();
           }),
         );
       },
@@ -129,7 +129,8 @@ class ItemCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(27),
                   image: DecorationImage(
-                    image: CachedNetworkImageProvider(snapshot.data!['profile_path']),
+                    image: CachedNetworkImageProvider(
+                        snapshot.data!['profile_path']),
                     fit: BoxFit.fitWidth,
                   ),
                 ),
@@ -143,7 +144,7 @@ class ItemCard extends StatelessWidget {
                       child: Text(
                         "${snapshot.data!['name']}",
                         style: const TextStyle(
-                          fontSize: 14, // Adjust the font size as needed
+                          fontSize: 14,
                         ),
                       ),
                     ),
@@ -155,7 +156,7 @@ class ItemCard extends StatelessWidget {
                       child: Text(
                         "as ${person.data["character"] ?? person.data["job"]}",
                         style: const TextStyle(
-                          fontSize: 14, // Adjust the font size as needed
+                          fontSize: 14,
                         ),
                       ),
                     ),
