@@ -1,6 +1,7 @@
 // ignore_for_file: unnecessary_brace_in_string_interps, no_leading_underscores_for_local_identifiers, avoid_function_literals_in_foreach_calls, use_build_context_synchronously, library_private_types_in_public_api
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/common/utils.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'package:uractor/tvshow_result.dart';
 import 'common/constants.dart';
@@ -385,6 +386,7 @@ class _CalendarState extends State<Calendar> {
             '${element.containsKey("type") ? element["type"] == "movie" ? MOVIE_LINK : TV_SHOW_LINK : MOVIE_LINK}${id}-${name}${API_KEY}'));
         if (response.statusCode == 200) {
           dynamic json = jsonDecode(response.body);
+          json["friends"] = element["friends"];
           movies.add(json);
         } else {
           throw Exception('Failed to load movie details');
@@ -409,14 +411,14 @@ class _CalendarState extends State<Calendar> {
                           height: 10,
                         ),
                         Expanded(
-                            child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: [
-                            ...movies
-                                .map((event) => Padding(
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              ...movies
+                                  .map(
+                                    (event) => Padding(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal:
-                                              8.0), // Adjust the padding value as needed
+                                          horizontal: 8.0),
                                       child: Column(
                                         children: [
                                           GestureDetector(
@@ -451,30 +453,123 @@ class _CalendarState extends State<Calendar> {
                                                 ),
                                               );
                                             },
-                                            child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(
-                                                  30), // Set the border radius here
-                                              child: Container(
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.32,
-                                                height: MediaQuery.of(context)
-                                                        .size
-                                                        .height *
-                                                    0.2,
-                                                decoration: BoxDecoration(
-                                                  image: DecorationImage(
-                                                    image: CachedNetworkImageProvider(event[
-                                                                'poster_path'] !=
-                                                            null
-                                                        ? IMG_LINK +
-                                                            event['poster_path']
-                                                        : "https://cringemdb.com/img/movie-poster-placeholder.png"),
-                                                    fit: BoxFit.cover,
+                                            child: Stack(
+                                              children: [
+                                                ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(30),
+                                                  child: Container(
+                                                    width:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width *
+                                                            0.32,
+                                                    height:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .height *
+                                                            0.2,
+                                                    decoration: BoxDecoration(
+                                                      image: DecorationImage(
+                                                        image:
+                                                            CachedNetworkImageProvider(
+                                                          event['poster_path'] !=
+                                                                  null
+                                                              ? IMG_LINK +
+                                                                  event[
+                                                                      'poster_path']
+                                                              : "https://cringemdb.com/img/movie-poster-placeholder.png",
+                                                        ),
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
+                                                if (event
+                                                    .containsKey("friends"))
+                                                  Positioned(
+                                                    bottom: 8,
+                                                    left: 8,
+                                                    right: 8,
+                                                    child: Row(
+                                                      children: [
+                                                        Expanded(
+                                                          child: FutureBuilder<
+                                                              List<String>>(
+                                                            future: FirebaseUtils
+                                                                .getProfilePhotos(
+                                                                    event[
+                                                                        "friends"]),
+                                                            builder: (context,
+                                                                snapshot) {
+                                                              if (snapshot
+                                                                      .connectionState ==
+                                                                  ConnectionState
+                                                                      .waiting) {
+                                                                return const SizedBox(
+                                                                  height: 32.0,
+                                                                  child: Center(
+                                                                      child:
+                                                                          CircularProgressIndicator()),
+                                                                );
+                                                              } else if (snapshot
+                                                                  .hasError) {
+                                                                return const SizedBox(
+                                                                  height: 32.0,
+                                                                  child: Center(
+                                                                      child: Text(
+                                                                          'Error loading images')),
+                                                                );
+                                                              } else if (snapshot
+                                                                  .hasData) {
+                                                                var images =
+                                                                    snapshot
+                                                                        .data!;
+                                                                return SizedBox(
+                                                                  height: 32.0,
+                                                                  child: Stack(
+                                                                    children: List.generate(
+                                                                        images
+                                                                            .length,
+                                                                        (index) {
+                                                                      double
+                                                                          offset =
+                                                                          index *
+                                                                              10.0;
+                                                                      return Positioned(
+                                                                        left:
+                                                                            offset,
+                                                                        child:
+                                                                            ClipOval(
+                                                                          child: images[index] != ""
+                                                                              ? Image.network(
+                                                                                  images[index],
+                                                                                  height: 25,
+                                                                                  width: 25,
+                                                                                  fit: BoxFit.cover,
+                                                                                )
+                                                                              : Image.asset(
+                                                                                  'assets/main_profile.png',
+                                                                                  height: 25,
+                                                                                  width: 25,
+                                                                                  fit: BoxFit.cover,
+                                                                                ),
+                                                                        ),
+                                                                      );
+                                                                    }),
+                                                                  ),
+                                                                );
+                                                              } else {
+                                                                return const SizedBox
+                                                                    .shrink();
+                                                              }
+                                                            },
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                              ],
                                             ),
                                           ),
                                           IconButton(
@@ -499,10 +594,12 @@ class _CalendarState extends State<Calendar> {
                                           ),
                                         ],
                                       ),
-                                    ))
-                                .toList(),
-                          ],
-                        )),
+                                    ),
+                                  )
+                                  .toList(),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -522,12 +619,10 @@ class _CalendarState extends State<Calendar> {
         child: Column(
           children: [
             SizedBox(
-              height:
-                  MediaQuery.of(context).size.height * 0.57, // Adjust as needed
+              height: MediaQuery.of(context).size.height * 0.57,
               child: TableCalendar(
                   firstDay: DateTime.utc(1990, 10, 16),
                   lastDay: DateTime.utc(2030, 3, 14),
-                  // focusedDay: DateTime.now(),
                   headerStyle: const HeaderStyle(
                     formatButtonVisible: false,
                     titleCentered: true,
@@ -552,7 +647,7 @@ class _CalendarState extends State<Calendar> {
                     setState(() {
                       _selectedDay =
                           selectedDay.toIso8601String().split('T')[0];
-                      _focusedDay = focusedDay; // update focusedDay here
+                      _focusedDay = focusedDay;
                       _updateMonthlyStats(focusedDay);
                     });
                     _onDaySelected(selectedDay, focusedDay);
@@ -584,8 +679,7 @@ class _CalendarState extends State<Calendar> {
                   Column(
                     children: [
                       const Icon(Icons.star, size: 40, color: Colors.yellow),
-                      Text(
-                          '${_monthlyStats[1].toStringAsFixed(2)}', // Round to 2 decimal places
+                      Text('${_monthlyStats[1].toStringAsFixed(2)}',
                           style: const TextStyle(
                               fontSize: 20, fontWeight: FontWeight.bold)),
                       const Text('Avg. Rating', style: TextStyle(fontSize: 15)),

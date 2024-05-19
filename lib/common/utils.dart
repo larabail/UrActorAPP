@@ -473,19 +473,17 @@ class FirebaseUtils {
 
   static Future<List<String>> getProfilePhotos(List uids) async {
     List<String> profilePhotos = [];
-
     for (String tempUid in uids) {
-      var document = await FirebaseFirestore.instance
-          .collection(tempUid)
-          .doc("Settings")
-          .get();
-      if (document.exists && document.data()!.containsKey('profile_photo')) {
-        profilePhotos.add(document.data()!['profile_photo']);
+      var document =
+          FirebaseFirestore.instance.collection(tempUid).doc("Settings");
+      var content = await document.get();
+      var data = content.data() as Map;
+      if (content.exists && data.containsKey('profile_photo')) {
+        profilePhotos.add(data['profile_photo']);
       } else {
-        profilePhotos.add(""); //eplace with your default image URL
+        profilePhotos.add("");
       }
     }
-
     return profilePhotos;
   }
 
