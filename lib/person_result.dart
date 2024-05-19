@@ -52,6 +52,26 @@ class _PersonResultState extends State<PersonResult> {
         future: widget.personResult.getPersonData(currentUser, oscars),
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
           if (snapshot.hasData) {
+            bool containsDirector = (snapshot.data!['movie_credits_crew'] !=
+                        null &&
+                    snapshot.data!['movie_credits_crew']
+                        .where((c) =>
+                            c["job"] != null && c["job"].contains("Director"))
+                        .isNotEmpty) ||
+                (snapshot.data!['tv_credits_crew'] != null &&
+                    snapshot.data!['tv_credits_crew']
+                        .where((c) =>
+                            c["job"] != null && c["job"].contains("Director"))
+                        .isNotEmpty);
+            bool containsWriter = snapshot.data!['movie_credits_crew']
+                        .where((c) => (c["job"].contains("Writer") ||
+                            c["job"].contains("Screenplay")))
+                        .length !=
+                    0 ||
+                snapshot.data!['tv_credits_crew']
+                    .where((c) => (c["job"].contains("Writer") ||
+                        c["job"].contains("Screenplay")))
+                    .isNotEmpty;
             return SingleChildScrollView(
               child: Column(
                 children: [
@@ -128,26 +148,12 @@ class _PersonResultState extends State<PersonResult> {
                                 0)
                               ranking("Actor", snapshot.data!['actor_ranking'],
                                   stats['scoreActor']),
-                            if ((snapshot.data!['movie_credits_crew']
-                                        .where((c) => c["job"] == "Director")
-                                        .length +
-                                    snapshot.data!['tv_credits_crew']
-                                        .where((c) => c["job"] == "Director")
-                                        .length) !=
-                                0)
+                            if (containsDirector)
                               ranking(
                                   "Director",
                                   snapshot.data!['director_ranking'],
                                   stats['scoreDirector']),
-                            if (snapshot.data!['movie_credits_crew']
-                                        .where((c) => (c["job"] == "Writer" ||
-                                            c["job"] == "Screenplay"))
-                                        .length !=
-                                    0 ||
-                                snapshot.data!['tv_credits_crew']
-                                    .where((c) => (c["job"] == "Writer" ||
-                                        c["job"] == "Screenplay"))
-                                    .isNotEmpty)
+                            if (containsWriter)
                               ranking(
                                   "Writer",
                                   snapshot.data!['writer_ranking'],
@@ -165,75 +171,61 @@ class _PersonResultState extends State<PersonResult> {
                                   stats["stats"] + stats["stats_tv"],
                                   snapshot.data!['movie_credits_cast'].length +
                                       snapshot.data!['tv_credits_cast'].length),
-                            if ((snapshot.data!['movie_credits_crew']
-                                        .where((c) => c["job"] == "Director")
-                                        .length +
-                                    snapshot.data!['tv_credits_crew']
-                                        .where((c) => c["job"] == "Director")
-                                        .length) !=
-                                0)
+                            if (containsDirector)
                               statsProgress(
                                   "Director",
                                   stats["stats_dir"],
                                   (snapshot.data!['movie_credits_crew']
-                                          .where((c) => c["job"] == "Director")
+                                          .where((c) =>
+                                              c["job"] != null &&
+                                              c["job"].contains("Director"))
                                           .length +
                                       snapshot.data!['tv_credits_crew']
-                                          .where((c) => c["job"] == "Director")
+                                          .where((c) =>
+                                              c["job"] != null &&
+                                              c["job"].contains("Director"))
                                           .length)),
-                            if ((snapshot.data!['movie_credits_crew']
-                                        .where((c) => c["job"] == "Director")
-                                        .length +
-                                    snapshot.data!['tv_credits_crew']
-                                        .where((c) => c["job"] == "Director")
-                                        .length) !=
-                                0)
+                            if (containsDirector)
                               progressBar(
                                   stats["stats_dir"],
                                   (snapshot.data!['movie_credits_crew']
-                                          .where((c) => c["job"] == "Director")
+                                          .where((c) =>
+                                              c["job"] != null &&
+                                              c["job"].contains("Director"))
                                           .length +
                                       snapshot.data!['tv_credits_crew']
-                                          .where((c) => c["job"] == "Director")
+                                          .where((c) =>
+                                              c["job"] != null &&
+                                              c["job"].contains("Director"))
                                           .length)),
-                            if (snapshot.data!['movie_credits_crew']
-                                    .where((c) => (c["job"] == "Writer" ||
-                                        c["job"] == "Screenplay"))
-                                    .isNotEmpty ||
-                                snapshot.data!['tv_credits_crew']
-                                    .where((c) => (c["job"] == "Writer" ||
-                                        c["job"] == "Screenplay"))
-                                    .isNotEmpty)
+                            if (containsWriter)
                               statsProgress(
                                   "Writer",
                                   stats["stats_writer_movies"] +
                                       stats["stats_writer_tv"],
                                   (snapshot.data!['movie_credits_crew']
-                                          .where((c) => (c["job"] == "Writer" ||
-                                              c["job"] == "Screenplay"))
+                                          .where((c) => (c["job"]
+                                                  .contains("Writer") ||
+                                              c["job"].contains("Screenplay")))
                                           .length +
                                       snapshot.data!['tv_credits_crew']
-                                          .where((c) => (c["job"] == "Writer" ||
-                                              c["job"] == "Screenplay"))
+                                          .where((c) => (c["job"]
+                                                  .contains("Writer") ||
+                                              c["job"].contains("Screenplay")))
                                           .length)),
-                            if (snapshot.data!['movie_credits_crew']
-                                    .where((c) => (c["job"] == "Writer" ||
-                                        c["job"] == "Screenplay"))
-                                    .isNotEmpty ||
-                                snapshot.data!['tv_credits_crew']
-                                    .where((c) => (c["job"] == "Writer" ||
-                                        c["job"] == "Screenplay"))
-                                    .isNotEmpty)
+                            if (containsWriter)
                               progressBar(
                                   stats["stats_writer_movies"] +
                                       stats["stats_writer_tv"],
                                   (snapshot.data!['movie_credits_crew']
-                                          .where((c) => (c["job"] == "Writer" ||
-                                              c["job"] == "Screenplay"))
+                                          .where((c) => (c["job"]
+                                                  .contains("Writer") ||
+                                              c["job"].contains("Screenplay")))
                                           .length +
                                       snapshot.data!['tv_credits_crew']
-                                          .where((c) => (c["job"] == "Writer" ||
-                                              c["job"] == "Screenplay"))
+                                          .where((c) => (c["job"]
+                                                  .contains("Writer") ||
+                                              c["job"].contains("Screenplay")))
                                           .length)),
                           ],
                         ),
