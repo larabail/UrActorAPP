@@ -1769,13 +1769,15 @@ class _MovieResultState extends State<MovieResult> {
                               : 5,
                           itemBuilder: (BuildContext context, int index) {
                             var director = snapshot.data!['crew'].firstWhere(
-                              (person) => person['job'] == 'Director',
+                              (person) =>
+                                  person['job'].contains('Director') &&
+                                  person['job'] != null,
                               orElse: () => null,
                             );
                             var writer = snapshot.data!['crew'].firstWhere(
                               (person) =>
-                                  person['job'] == 'Writer' ||
-                                  person['job'] == 'Screenplay',
+                                  person['job'].contains('Writer') ||
+                                  person['job'].contains('Screenplay'),
                               orElse: () => null,
                             );
 
@@ -1818,7 +1820,7 @@ class _MovieResultState extends State<MovieResult> {
                                     );
                                   },
                                   child: Text(
-                                    "${writer['job'] == "Writer" ? "Written" : writer["job"]} by ${writer['name']}",
+                                    "${writer['job'].contains("Writer") ? "Written" : "Screenplay"} by ${writer['name']}",
                                     style: const TextStyle(fontSize: 15),
                                   ));
                             }
