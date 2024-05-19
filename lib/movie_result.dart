@@ -199,7 +199,8 @@ class _MovieResultState extends State<MovieResult> {
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(27),
                                       image: DecorationImage(
-                                        image: CachedNetworkImageProvider(imageLeft),
+                                        image: CachedNetworkImageProvider(
+                                            imageLeft),
                                         fit: BoxFit.cover,
                                       ),
                                     ),
@@ -277,7 +278,8 @@ class _MovieResultState extends State<MovieResult> {
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(27),
                                       image: DecorationImage(
-                                        image: CachedNetworkImageProvider(imageRight),
+                                        image: CachedNetworkImageProvider(
+                                            imageRight),
                                         fit: BoxFit.cover,
                                       ),
                                     ),
@@ -1349,6 +1351,15 @@ class _MovieResultState extends State<MovieResult> {
                                                           .doc("Movies");
                                                   await userDoc.update({
                                                     'Seen':
+                                                        FieldValue.arrayUnion(
+                                                            [id])
+                                                  });
+                                                  userDoc = FirebaseFirestore
+                                                      .instance
+                                                      .collection(friend)
+                                                      .doc("Seen");
+                                                  await userDoc.update({
+                                                    'Movies':
                                                         FieldValue.arrayUnion(
                                                             [id])
                                                   });

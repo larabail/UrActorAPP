@@ -79,6 +79,7 @@ class FirebaseUtils {
       items.remove(id);
       await userDoc.update({'Seen': items});
 
+      currentUser.seen.removeWhere((pair) => pair[1] == id && pair[0] == type);
       if (type == "Movies") {
         currentUser.seenMovies.removeWhere((pair) => pair[1] == id);
       } else if (type == "TVShows") {
