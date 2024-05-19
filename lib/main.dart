@@ -264,7 +264,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   Icons.favorite,
                   Favorites()),
               buildMainPageContainer(
-                  "Seen", currentUser.seen, Icons.remove_red_eye, Seen()),
+                  "Seen",
+                  currentUser.seenTVShows + currentUser.seenMovies,
+                  Icons.remove_red_eye,
+                  Seen()),
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey[900],
