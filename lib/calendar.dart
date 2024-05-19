@@ -386,7 +386,9 @@ class _CalendarState extends State<Calendar> {
             '${element.containsKey("type") ? element["type"] == "movie" ? MOVIE_LINK : TV_SHOW_LINK : MOVIE_LINK}${id}-${name}${API_KEY}'));
         if (response.statusCode == 200) {
           dynamic json = jsonDecode(response.body);
-          json["friends"] = element["friends"];
+          if (element.containsKey("friends")) {
+            json["friends"] = element["friends"];
+          }
           movies.add(json);
         } else {
           throw Exception('Failed to load movie details');
