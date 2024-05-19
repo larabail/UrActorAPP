@@ -143,6 +143,7 @@ class SignUp extends StatelessWidget {
                               "Country": "US"
                             };
                             const Map<String, dynamic> FavDirectors = {};
+                            const Map<String, dynamic> FavWriters = {};
                             const Map<String, dynamic> FavActors = {};
                             const Map<String, dynamic> Calendar = {};
                             const Map<String, dynamic> Rewatched = {};
@@ -209,6 +210,10 @@ class SignUp extends StatelessWidget {
                                 .collection(credential.user!.uid)
                                 .doc("FavDirectors")
                                 .set(FavDirectors);
+                            FirebaseFirestore.instance
+                                .collection(credential.user!.uid)
+                                .doc("FavWriters")
+                                .set(FavWriters);
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("FavActors")
