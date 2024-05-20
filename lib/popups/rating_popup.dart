@@ -69,6 +69,7 @@ class _RatingDialogState extends State<RatingDialog> {
           }
         }
       }
+      currentUser.allReviews = currentUser.allReviews.reversed.toList();
     });
     reviewInfo = {};
     Navigator.pop(context);
