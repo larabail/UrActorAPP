@@ -318,7 +318,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       const SizedBox(height: 10),
                     if (currentUser.allReviews.isNotEmpty)
                       SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.212,
+                        height: MediaQuery.of(context).size.height * 0.22,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           itemCount: currentUser.allReviews.length > 10
