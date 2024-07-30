@@ -487,7 +487,14 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
 class AddToCalendar extends StatefulWidget {
   final String dateForMap;
   final Movie movie;
-  const AddToCalendar({Key? key, required this.movie, required this.dateForMap})
+  final bool modifying;
+  final List friends;
+  const AddToCalendar(
+      {Key? key,
+      required this.movie,
+      required this.dateForMap,
+      required this.modifying,
+      required this.friends})
       : super(key: key);
 
   @override
@@ -499,10 +506,19 @@ class _AddToCalendarState extends State<AddToCalendar> {
   Map<String, bool> selectedFriends = {};
 
   @override
+  void initState() {
+    super.initState();
+    for (String friendUid in widget.friends) {
+      selectedFriends[friendUid] =
+          widget.modifying && widget.friends.contains(friendUid);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15), // Add rounded corners
+        borderRadius: BorderRadius.circular(15),
       ),
       elevation: 0,
       child: Container(
@@ -522,7 +538,7 @@ class _AddToCalendarState extends State<AddToCalendar> {
               Padding(
                 padding: const EdgeInsets.all(10.0),
                 child: SizedBox(
-                  height: 125, // Set your desired height here
+                  height: 125,
                   child: ListView.builder(
                     shrinkWrap: true,
                     itemCount: currentUser.friends.length,
@@ -627,12 +643,21 @@ class _AddToCalendarState extends State<AddToCalendar> {
                 ElevatedButton(
                   onPressed: () async {
                     Map data = await widget.movie.getExtendedData();
-                    addMovieSubmit(
-                        widget.movie.id,
-                        widget.movie.title,
-                        data["runtime"] ?? 0,
-                        double.parse(data["imdb_rating"]),
-                        selectedFriends);
+                    if (!widget.modifying) {
+                      addMovieSubmit(
+                          widget.movie.id,
+                          widget.movie.title,
+                          data["runtime"] ?? 0,
+                          double.parse(data["imdb_rating"]),
+                          selectedFriends);
+                    } else {
+                      modifyCalendarEntry(
+                          widget.movie.id,
+                          widget.movie.title,
+                          data["runtime"] ?? 0,
+                          double.parse(data["imdb_rating"]),
+                          selectedFriends);
+                    }
                     Navigator.pop(context, true);
                   },
                   style: ElevatedButton.styleFrom(
@@ -663,6 +688,104 @@ class _AddToCalendarState extends State<AddToCalendar> {
         ),
       ),
     );
+  }
+
+  Future<void> deleteFromCalendar(String uid, String id, String title) async {
+    var userDoc = FirebaseFirestore.instance.collection(uid).doc("Calendar");
+    DocumentSnapshot calendarDoc = await userDoc.get();
+    Map calendarData = calendarDoc.data() as Map;
+    Map<Object, Object> updatedCalendar = {};
+    for (String key in calendarData.keys) {
+      if (key == widget.dateForMap) {
+        if (calendarData[key].length == 1) {
+          var movie = calendarData[key][0];
+          if (movie['id'].toString() == id.toString() &&
+              movie['title'].toString() == title.toString()) {
+            calendarData[key] = [];
+          }
+        } else {
+          List movies = calendarData[key];
+
+          int movieIndex = movies.indexWhere((movie) =>
+              movie['id'].toString() == id.toString() &&
+              movie['title'].toString() == title.toString());
+
+          if (movieIndex != -1) {
+            movies.removeAt(movieIndex);
+          }
+          break;
+        }
+      }
+    }
+    for (String key in calendarData.keys) {
+      if (calendarData[key].isNotEmpty) {
+        updatedCalendar[key] = calendarData[key];
+      } else {
+        updatedCalendar[key] = [];
+      }
+    }
+    await userDoc.update(updatedCalendar);
+  }
+
+  Future<bool> modifyCalendarEntry(String id, String title, int runtime,
+      double rating, Map friendsMap) async {
+    List watchedWithList =
+        friendsMap.keys.where((key) => friendsMap[key] == true).toList();
+    List oldFriends = [];
+    for (Map movieInfo in currentUser.calendar[widget.dateForMap]) {
+      if (movieInfo["id"] == id) {
+        oldFriends = List.from(movieInfo["friends"]);
+        movieInfo["friends"] = watchedWithList;
+        break;
+      }
+    }
+    Map newData = {
+      'id': id,
+      'title': title,
+      'runtime': runtime,
+      'rating': rating,
+      'friends': watchedWithList,
+    };
+    await FirebaseUtils.updateCalendar(
+        "", currentUser.uid, newData, widget.dateForMap);
+    await deleteFromCalendar(currentUser.uid, id, title);
+
+    List allFriends = [];
+    for (String friend in oldFriends) {
+      if (!allFriends.contains(friend)) {
+        allFriends.add(friend);
+      }
+    }
+    for (String friend in watchedWithList) {
+      if (!allFriends.contains(friend)) {
+        allFriends.add(friend);
+      }
+    }
+
+    for (String friend in allFriends) {
+      List finalFriends = [];
+
+      finalFriends = List.from(watchedWithList);
+      finalFriends.remove(friend);
+      if (watchedWithList.contains(friend)) {
+        finalFriends.add(currentUser.uid);
+      } else {
+        finalFriends = [];
+      }
+
+      Map friendNewData = {
+        'id': id,
+        'title': title,
+        'runtime': runtime,
+        'rating': rating,
+        'friends': finalFriends,
+      };
+      await deleteFromCalendar(friend, id, title);
+      await FirebaseUtils.updateCalendar(
+          "", friend, friendNewData, widget.dateForMap);
+      continue;
+    }
+    return true;
   }
 
   Future<bool> addMovieSubmit(String id, String title, int runtime,

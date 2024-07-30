@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../common/constants.dart';
 import '../common/utils.dart';
 import '../main.dart';
@@ -26,11 +28,11 @@ class Movie extends MediaItem {
   @override
   Future<Map> getExtendedData() async {
     final String movieId = id.toString();
+    
     final String name =
         title.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "-");
 
     Map json = await ApiUtils.fetchMovieDetails(movieId, name, "movie");
-
     // Handle seen times and review
     json["times_seen"] = currentUser.rewatchedMovies.containsKey(movieId)
         ? currentUser.rewatchedMovies[movieId]
@@ -64,5 +66,36 @@ class Movie extends MediaItem {
 
   bool isFavorite() {
     return Utils.contains(currentUser.favMovies, ['Movies', id], "Movies");
+  }
+
+  Future removeFriend(String friendUid, List friendsWatchedWith) async {
+    var userDoc = await FirebaseFirestore.instance
+        .collection(currentUser.uid)
+        .doc("SeenWith")
+        .get();
+    Map docData = userDoc.data() as Map;
+    Map<String, dynamic> movieMap = docData["Movies"];
+    List<dynamic> friendsList = movieMap[id]["friends"];
+    friendsList.remove(friendUid);
+    movieMap[id]["friends"] = friendsList;
+    await FirebaseFirestore.instance
+        .collection(currentUser.uid)
+        .doc("SeenWith")
+        .update({"Movies": movieMap});
+    currentUser.seenWith[friendUid]["Movies"].remove(id);
+
+    var friendsDoc = await FirebaseFirestore.instance
+        .collection(friendUid)
+        .doc("SeenWith")
+        .get();
+    docData = friendsDoc.data() as Map;
+    movieMap = docData["Movies"];
+    friendsList = movieMap[id]["friends"];
+    friendsList.remove(currentUser.uid);
+    movieMap[id]["friends"] = friendsList;
+    await FirebaseFirestore.instance
+        .collection(friendUid)
+        .doc("SeenWith")
+        .update({"Movies": movieMap});
   }
 }
