@@ -1050,12 +1050,10 @@ class _MovieResultState extends State<MovieResult> {
                                             context: context,
                                             builder: (BuildContext context) {
                                               return AddToCalendar(
-                                                movie: widget.movie,
-                                                dateForMap: selectedDate
-                                                    .toIso8601String()
-                                                    .split("T")[0],
+                                                media: widget.movie,
+                                                dateForMap: date[0],
                                                 modifying: true,
-                                                friends: friendsWhoWatched,
+                                                friends: friendsWhoWatched, type: "movie"
                                               );
                                             },
                                           );
@@ -1073,32 +1071,33 @@ class _MovieResultState extends State<MovieResult> {
                                                   currentUser.uid,
                                                   widget.movie.id,
                                                   widget.movie.title,
-                                                  selectedDate
-                                                      .toIso8601String()
-                                                      .split("T")[0]);
+                                                  date[0]);
 
                                           setState(() {
-                                            String date = selectedDate
-                                                .toIso8601String()
-                                                .split("T")[0];
                                             List movies =
-                                                currentUser.calendar[date];
+                                                currentUser.calendar[date[0]];
                                             movies.removeWhere((element) =>
                                                 element["id"] ==
-                                                widget.movie.id);
-                                            currentUser.calendar[date] = movies;
-                                            currentUser.rewatchedMovies[
-                                                            widget.movie.id] -
-                                                        1 >
-                                                    0
-                                                ? currentUser.rewatchedMovies[
-                                                    widget.movie.id] -= 1
-                                                : 0;
-                                            FirebaseUtils.setRewatched(
-                                                currentUser.uid,
-                                                widget.movie.id,
-                                                currentUser.rewatchedMovies[
-                                                    widget.movie.id]);
+                                                    widget.movie.id &&
+                                                element["type"] == "movie");
+                                            currentUser.calendar[date[0]] =
+                                                movies;
+                                            if (currentUser.rewatchedMovies.keys
+                                                .toList()
+                                                .contains(widget.movie.id)) {
+                                              currentUser.rewatchedMovies[
+                                                              widget.movie.id] -
+                                                          1 >
+                                                      0
+                                                  ? currentUser.rewatchedMovies[
+                                                      widget.movie.id] -= 1
+                                                  : 0;
+                                              FirebaseUtils.setRewatched(
+                                                  currentUser.uid,
+                                                  widget.movie.id,
+                                                  currentUser.rewatchedMovies[
+                                                      widget.movie.id]);
+                                            }
                                           });
                                         },
                                         child: const Icon(Icons.delete),
@@ -1361,7 +1360,6 @@ class _MovieResultState extends State<MovieResult> {
                                     );
                                   },
                                 );
-
                                 if (pickedDate != null) {
                                   selectedDate = pickedDate;
                                   if (currentUser.friends.isNotEmpty) {
@@ -1369,18 +1367,18 @@ class _MovieResultState extends State<MovieResult> {
                                       context: context,
                                       builder: (BuildContext context) {
                                         return AddToCalendar(
-                                          movie: widget.movie,
+                                          media: widget.movie,
                                           dateForMap: selectedDate
                                               .toIso8601String()
                                               .split("T")[0],
                                           modifying: false,
                                           friends: const [],
+                                          type: "movie",
                                         );
                                       },
                                     );
                                     if (result != null) {
-                                      setState(() {
-                                      });
+                                      setState(() {});
                                     }
                                   }
                                 }
