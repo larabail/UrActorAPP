@@ -363,6 +363,7 @@ class _MovieResultState extends State<MovieResult> {
         future: widget.movie.getExtendedData(),
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
           if (snapshot.hasData) {
+            widget.movie.title = snapshot.data!["title"];
             return SingleChildScrollView(
               child: Column(
                 children: [
@@ -1045,7 +1046,6 @@ class _MovieResultState extends State<MovieResult> {
                                       const SizedBox(width: 10),
                                       GestureDetector(
                                         onTap: () async {
-                                          
                                           final result = await showDialog(
                                             context: context,
                                             builder: (BuildContext context) {
@@ -1067,7 +1067,40 @@ class _MovieResultState extends State<MovieResult> {
                                       ),
                                       const SizedBox(width: 10),
                                       GestureDetector(
-                                        onTap: () async {},
+                                        onTap: () async {
+                                          await FirebaseUtils
+                                              .deleteFromCalendar(
+                                                  currentUser.uid,
+                                                  widget.movie.id,
+                                                  widget.movie.title,
+                                                  selectedDate
+                                                      .toIso8601String()
+                                                      .split("T")[0]);
+
+                                          setState(() {
+                                            String date = selectedDate
+                                                .toIso8601String()
+                                                .split("T")[0];
+                                            List movies =
+                                                currentUser.calendar[date];
+                                            movies.removeWhere((element) =>
+                                                element["id"] ==
+                                                widget.movie.id);
+                                            currentUser.calendar[date] = movies;
+                                            currentUser.rewatchedMovies[
+                                                            widget.movie.id] -
+                                                        1 >
+                                                    0
+                                                ? currentUser.rewatchedMovies[
+                                                    widget.movie.id] -= 1
+                                                : 0;
+                                            FirebaseUtils.setRewatched(
+                                                currentUser.uid,
+                                                widget.movie.id,
+                                                currentUser.rewatchedMovies[
+                                                    widget.movie.id]);
+                                          });
+                                        },
                                         child: const Icon(Icons.delete),
                                       ),
                                     ],
@@ -1346,7 +1379,8 @@ class _MovieResultState extends State<MovieResult> {
                                       },
                                     );
                                     if (result != null) {
-                                      setState(() {});
+                                      setState(() {
+                                      });
                                     }
                                   }
                                 }
