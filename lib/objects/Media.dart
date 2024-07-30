@@ -1,7 +1,7 @@
 abstract class MediaItem {
   final String id;
   final String coverPhoto;
-  final String title;
+  String title;
 
   MediaItem({
     required this.id,

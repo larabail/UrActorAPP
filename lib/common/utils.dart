@@ -567,6 +567,43 @@ class FirebaseUtils {
     }
   }
 
+  static Future<void> deleteFromCalendar(String uid, String id, String title, String date) async {
+    var userDoc = FirebaseFirestore.instance.collection(uid).doc("Calendar");
+    DocumentSnapshot calendarDoc = await userDoc.get();
+    Map calendarData = calendarDoc.data() as Map;
+    Map<Object, Object> updatedCalendar = {};
+    for (String key in calendarData.keys) {
+      if (key == date) {
+        if (calendarData[key].length == 1) {
+          var movie = calendarData[key][0];
+          if (movie['id'].toString() == id.toString() &&
+              movie['title'].toString() == title.toString()) {
+            calendarData[key] = [];
+          }
+        } else {
+          List movies = calendarData[key];
+
+          int movieIndex = movies.indexWhere((movie) =>
+              movie['id'].toString() == id.toString() &&
+              movie['title'].toString() == title.toString());
+
+          if (movieIndex != -1) {
+            movies.removeAt(movieIndex);
+          }
+          break;
+        }
+      }
+    }
+    for (String key in calendarData.keys) {
+      if (calendarData[key].isNotEmpty) {
+        updatedCalendar[key] = calendarData[key];
+      } else {
+        updatedCalendar[key] = [];
+      }
+    }
+    await userDoc.update(updatedCalendar);
+  }
+
   static void updateCurrentUserCalendar(
       String dateRange, Map newData, String dateForMap) {
     if (dateRange != "") {
@@ -676,6 +713,19 @@ class FirebaseUtils {
       Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
       if (data.containsKey(id)) {
         await userDoc.update({id: FieldValue.increment(1)});
+      } else {
+        await userDoc.update({id: 1});
+      }
+    }
+  }
+
+  static Future<void> setRewatched(String uid, String id, int value) async {
+    var userDoc = FirebaseFirestore.instance.collection(uid).doc("Rewatched");
+    DocumentSnapshot doc = await userDoc.get();
+    if (doc.exists) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      if (data.containsKey(id)) {
+        await userDoc.update({id: value});
       } else {
         await userDoc.update({id: 1});
       }
