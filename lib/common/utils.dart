@@ -732,6 +732,19 @@ class FirebaseUtils {
     }
   }
 
+  static Future<void> setRewatchedTV(String uid, String id, int value) async {
+    var userDoc = FirebaseFirestore.instance.collection(uid).doc("RewatchedTV");
+    DocumentSnapshot doc = await userDoc.get();
+    if (doc.exists) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      if (data.containsKey(id)) {
+        await userDoc.update({id: value});
+      } else {
+        await userDoc.update({id: 1});
+      }
+    }
+  }
+
   static Future<void> updateRewatchedTV(String uid, String id) async {
     var userDoc = FirebaseFirestore.instance.collection(uid).doc("RewatchedTV");
     DocumentSnapshot doc = await userDoc.get();

@@ -19,6 +19,7 @@ import 'objects/TVShow.dart';
 import 'person_result.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
+import 'popups/add_to_calendar_pop_up.dart';
 import 'popups/share.dart';
 
 String _imageProviderSeen = 'assets/seen_before.png';
@@ -1026,6 +1027,50 @@ class _TVShowResultState extends State<TVShowResult> {
                                           },
                                         ),
                                       ),
+                                      const SizedBox(width: 10),
+                                      GestureDetector(
+                                        onTap: () async {
+                                          final result = await showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return AddToCalendar(
+                                                media: widget.tvshow,
+                                                dateForMap: date[0],
+                                                modifying: true,
+                                                friends: friendsWhoWatched, type: "series"
+                                              );
+                                            },
+                                          );
+                                          if (result != null) {
+                                            setState(() {});
+                                          }
+                                        },
+                                        child: const Icon(Icons.edit),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      GestureDetector(
+                                        onTap: () async {
+                                          await FirebaseUtils
+                                              .deleteFromCalendar(
+                                                  currentUser.uid,
+                                                  widget.tvshow.id,
+                                                  widget.tvshow.title,
+                                                  date[0]);
+
+                                          setState(() {
+                                            List movies =
+                                                currentUser.calendar[date[0]];
+                                            movies.removeWhere((element) =>
+                                                element["id"] ==
+                                                    widget.tvshow.id &&
+                                                element["type"] == "series");
+                                            currentUser.calendar[date[0]] =
+                                                movies;
+                                            
+                                          });
+                                        },
+                                        child: const Icon(Icons.delete),
+                                      ),
                                     ],
                                   ),
                                 );
@@ -1115,6 +1160,7 @@ class _TVShowResultState extends State<TVShowResult> {
 
                                         friendUid = querySnapshot.docs.first
                                             .data()['uid'];
+
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
@@ -1171,6 +1217,47 @@ class _TVShowResultState extends State<TVShowResult> {
                                                           TextOverflow.ellipsis,
                                                     ),
                                                   ],
+                                                ),
+                                              ),
+                                              const SizedBox(
+                                                width: 10,
+                                              ),
+                                              GestureDetector(
+                                                onTap: () async {
+                                                  List friendsWatchedWith = [];
+                                                  currentUser.seenWith.entries
+                                                      .where((entry) => entry
+                                                          .value["Movies"]
+                                                          ?.contains(
+                                                              widget.tvshow.id))
+                                                      .forEach((element) {
+                                                    friendsWatchedWith
+                                                        .add(element.key);
+                                                  });
+                                                  var querySnapshot =
+                                                      await FirebaseFirestore
+                                                          .instance
+                                                          .collection(
+                                                              'usernames')
+                                                          .where('username',
+                                                              isEqualTo:
+                                                                  username)
+                                                          .limit(1)
+                                                          .get();
+                                                  friendUid = querySnapshot
+                                                      .docs.first
+                                                      .data()['uid'];
+                                                  await widget.tvshow
+                                                      .removeFriend(friendUid,
+                                                          friendsWatchedWith);
+                                                  setState(() {
+                                                    currentUser.seenWith =
+                                                        currentUser.seenWith;
+                                                  });
+                                                },
+                                                child: const Icon(
+                                                  Icons.remove,
+                                                  color: Colors.red,
                                                 ),
                                               ),
                                             ],

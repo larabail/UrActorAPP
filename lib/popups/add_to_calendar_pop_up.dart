@@ -486,15 +486,17 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
 
 class AddToCalendar extends StatefulWidget {
   final String dateForMap;
-  final Movie movie;
+  final MediaItem media;
   final bool modifying;
   final List friends;
+  final String type;
   const AddToCalendar(
       {Key? key,
-      required this.movie,
+      required this.media,
       required this.dateForMap,
       required this.modifying,
-      required this.friends})
+      required this.friends,
+      required this.type})
       : super(key: key);
 
   @override
@@ -642,21 +644,22 @@ class _AddToCalendarState extends State<AddToCalendar> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    Map data = await widget.movie.getExtendedData();
+                    Map data = await widget.media.getExtendedData();
                     if (!widget.modifying) {
                       addMovieSubmit(
-                          widget.movie.id,
-                          widget.movie.title,
+                          widget.media.id,
+                          widget.media.title,
                           data["runtime"] ?? 0,
                           double.parse(data["imdb_rating"]),
                           selectedFriends);
                     } else {
                       modifyCalendarEntry(
-                          widget.movie.id,
-                          widget.movie.title,
+                          widget.media.id,
+                          widget.media.title,
                           data["runtime"] ?? 0,
                           double.parse(data["imdb_rating"]),
-                          selectedFriends);
+                          selectedFriends,
+                          widget.type);
                     }
                     Navigator.pop(context, true);
                   },
@@ -691,7 +694,7 @@ class _AddToCalendarState extends State<AddToCalendar> {
   }
 
   Future<bool> modifyCalendarEntry(String id, String title, int runtime,
-      double rating, Map friendsMap) async {
+      double rating, Map friendsMap, String type) async {
     List watchedWithList =
         friendsMap.keys.where((key) => friendsMap[key] == true).toList();
     List oldFriends = [];
@@ -708,10 +711,12 @@ class _AddToCalendarState extends State<AddToCalendar> {
       'runtime': runtime,
       'rating': rating,
       'friends': watchedWithList,
+      'type': type,
     };
     await FirebaseUtils.updateCalendar(
         "", currentUser.uid, newData, widget.dateForMap);
-    await FirebaseUtils.deleteFromCalendar(currentUser.uid, id, title, widget.dateForMap);
+    await FirebaseUtils.deleteFromCalendar(
+        currentUser.uid, id, title, widget.dateForMap);
 
     List allFriends = [];
     for (String friend in oldFriends) {
@@ -742,8 +747,10 @@ class _AddToCalendarState extends State<AddToCalendar> {
         'runtime': runtime,
         'rating': rating,
         'friends': finalFriends,
+        'type': type,
       };
-      await FirebaseUtils.deleteFromCalendar(friend, id, title, widget.dateForMap);
+      await FirebaseUtils.deleteFromCalendar(
+          friend, id, title, widget.dateForMap);
       await FirebaseUtils.updateCalendar(
           "", friend, friendNewData, widget.dateForMap);
       continue;
