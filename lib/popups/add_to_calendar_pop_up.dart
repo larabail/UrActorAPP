@@ -690,43 +690,6 @@ class _AddToCalendarState extends State<AddToCalendar> {
     );
   }
 
-  Future<void> deleteFromCalendar(String uid, String id, String title) async {
-    var userDoc = FirebaseFirestore.instance.collection(uid).doc("Calendar");
-    DocumentSnapshot calendarDoc = await userDoc.get();
-    Map calendarData = calendarDoc.data() as Map;
-    Map<Object, Object> updatedCalendar = {};
-    for (String key in calendarData.keys) {
-      if (key == widget.dateForMap) {
-        if (calendarData[key].length == 1) {
-          var movie = calendarData[key][0];
-          if (movie['id'].toString() == id.toString() &&
-              movie['title'].toString() == title.toString()) {
-            calendarData[key] = [];
-          }
-        } else {
-          List movies = calendarData[key];
-
-          int movieIndex = movies.indexWhere((movie) =>
-              movie['id'].toString() == id.toString() &&
-              movie['title'].toString() == title.toString());
-
-          if (movieIndex != -1) {
-            movies.removeAt(movieIndex);
-          }
-          break;
-        }
-      }
-    }
-    for (String key in calendarData.keys) {
-      if (calendarData[key].isNotEmpty) {
-        updatedCalendar[key] = calendarData[key];
-      } else {
-        updatedCalendar[key] = [];
-      }
-    }
-    await userDoc.update(updatedCalendar);
-  }
-
   Future<bool> modifyCalendarEntry(String id, String title, int runtime,
       double rating, Map friendsMap) async {
     List watchedWithList =
@@ -748,7 +711,7 @@ class _AddToCalendarState extends State<AddToCalendar> {
     };
     await FirebaseUtils.updateCalendar(
         "", currentUser.uid, newData, widget.dateForMap);
-    await deleteFromCalendar(currentUser.uid, id, title);
+    await FirebaseUtils.deleteFromCalendar(currentUser.uid, id, title, widget.dateForMap);
 
     List allFriends = [];
     for (String friend in oldFriends) {
@@ -780,7 +743,7 @@ class _AddToCalendarState extends State<AddToCalendar> {
         'rating': rating,
         'friends': finalFriends,
       };
-      await deleteFromCalendar(friend, id, title);
+      await FirebaseUtils.deleteFromCalendar(friend, id, title, widget.dateForMap);
       await FirebaseUtils.updateCalendar(
           "", friend, friendNewData, widget.dateForMap);
       continue;
