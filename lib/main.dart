@@ -745,7 +745,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             width: MediaQuery.of(context).size.width * 0.28,
                             height: MediaQuery.of(context).size.height * 0.18,
                             child: const Center(
-                                child: CircularProgressIndicator()));
+                                child: CircularProgressIndicator(),),);
                       }
                     },
                   );

@@ -751,6 +751,7 @@ class FirebaseUtils {
       print("Failed to update document: $error");
     });
   }
+
 }
 
 class ApiUtils {
