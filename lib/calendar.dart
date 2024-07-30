@@ -52,7 +52,7 @@ class _CalendarState extends State<Calendar> {
           var movie = currentUser.calendar[key][0];
           if (movie['id'].toString() == id.toString() &&
               movie['title'].toString() == title.toString()) {
-            currentUser.calendar[key] = []; // Clear the list
+            currentUser.calendar[key] = [];
           }
         } else {
           List movies = currentUser.calendar[key];
@@ -64,7 +64,6 @@ class _CalendarState extends State<Calendar> {
           if (movieIndex != -1) {
             movies.removeAt(movieIndex);
           }
-
           break;
         }
       }
@@ -80,7 +79,7 @@ class _CalendarState extends State<Calendar> {
     await userDoc.update(updatedCalendar);
 
     if (currentUser.rewatchedMovies.keys.toList().contains(id)) {
-      currentUser.rewatchedMovies[id] -= 1;
+      currentUser.rewatchedMovies[id] - 1 > 0 ? currentUser.rewatchedMovies[id] -= 1 : 0;
       if (currentUser.rewatchedMovies[id] == 0) {
         List w;
         await FirebaseFirestore.instance
