@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../common/constants.dart';
 import '../common/utils.dart';
 import '../main.dart';
@@ -71,5 +73,35 @@ class TVShow extends MediaItem {
       return json as Map;
     }
     return {};
+  }
+  Future removeFriend(String friendUid, List friendsWatchedWith) async {
+    var userDoc = await FirebaseFirestore.instance
+        .collection(currentUser.uid)
+        .doc("SeenWith")
+        .get();
+    Map docData = userDoc.data() as Map;
+    Map<String, dynamic> movieMap = docData["TVShows"];
+    List<dynamic> friendsList = movieMap[id]["friends"];
+    friendsList.remove(friendUid);
+    movieMap[id]["friends"] = friendsList;
+    await FirebaseFirestore.instance
+        .collection(currentUser.uid)
+        .doc("SeenWith")
+        .update({"TVShows": movieMap});
+    currentUser.seenWith[friendUid]["TVShows"].remove(id);
+
+    var friendsDoc = await FirebaseFirestore.instance
+        .collection(friendUid)
+        .doc("SeenWith")
+        .get();
+    docData = friendsDoc.data() as Map;
+    movieMap = docData["TVShows"];
+    friendsList = movieMap[id]["friends"];
+    friendsList.remove(currentUser.uid);
+    movieMap[id]["friends"] = friendsList;
+    await FirebaseFirestore.instance
+        .collection(friendUid)
+        .doc("SeenWith")
+        .update({"TVShows": movieMap});
   }
 }
