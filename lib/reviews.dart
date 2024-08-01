@@ -9,6 +9,7 @@ import '/objects/TVShow.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'common/utils.dart';
+import 'package:uractor/common/firebaseutils.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
 import 'dart:convert';
