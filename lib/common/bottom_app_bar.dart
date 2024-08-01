@@ -24,11 +24,13 @@ class CommonBottomAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     void onItemTapped(int index) {
-      _selectedIndex = index;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => pages[_selectedIndex]),
-      );
+      if (_selectedIndex != index) {
+        _selectedIndex = index;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => pages[_selectedIndex]),
+        );
+      }
     }
 
     return BottomNavigationBar(
