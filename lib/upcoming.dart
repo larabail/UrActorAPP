@@ -3,7 +3,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
-import 'package:uractor/common/utils.dart';
+import '../common/apiutils.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'movie_result.dart';

@@ -2,7 +2,7 @@
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:uractor/common/utils.dart';
+import '../common/apiutils.dart';
 import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/Person.dart';
 import 'package:uractor/objects/TVShow.dart';

@@ -7,7 +7,7 @@ import 'package:uractor/popups/add_to_calendar_pop_up.dart';
 import 'package:uractor/popups/share.dart';
 
 import 'cast_and_crew.dart';
-import 'common/utils.dart';
+import 'package:uractor/common/firebaseutils.dart';
 import 'common/constants.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -180,13 +180,13 @@ class _MovieResultState extends State<MovieResult> {
                           if (keyLeft != null)
                             GestureDetector(
                               onTap: () {
-                                if (moviesLeft.contains(id)) {
-                                  FirebaseUtils.deleteFromList(id, keyLeft,
-                                      moviesLeft, context, "Movies");
-                                } else {
-                                  FirebaseUtils.addToList(id, keyLeft,
-                                      moviesLeft, context, "Movies");
-                                }
+                                FirebaseUtils.updateList(
+                                    id,
+                                    keyLeft,
+                                    moviesLeft,
+                                    context,
+                                    "Movies",
+                                    !moviesLeft.contains(id));
                               },
                               child: Stack(
                                 children: [
@@ -259,13 +259,13 @@ class _MovieResultState extends State<MovieResult> {
                           if (keyRight != null)
                             GestureDetector(
                               onTap: () {
-                                if (moviesRight.contains(id)) {
-                                  FirebaseUtils.deleteFromList(id, keyRight,
-                                      moviesRight, context, "Movies");
-                                } else {
-                                  FirebaseUtils.addToList(id, keyRight,
-                                      moviesRight, context, "Movies");
-                                }
+                                FirebaseUtils.updateList(
+                                    id,
+                                    keyLeft,
+                                    moviesLeft,
+                                    context,
+                                    "Movies",
+                                    !moviesLeft.contains(id));
                               },
                               child: Stack(
                                 children: [
@@ -930,8 +930,8 @@ class _MovieResultState extends State<MovieResult> {
                       ),
                       keyboardType: TextInputType.number,
                       onChanged: (value) {
-                        FirebaseUtils.incrementWatched(
-                            value.toString(), snapshot.data!["id"].toString());
+                        FirebaseUtils.incrementWatched(currentUser.uid, value.toString(),
+                            snapshot.data!["id"].toString(), "movie");
                       },
                     ),
                   ),
@@ -1050,11 +1050,11 @@ class _MovieResultState extends State<MovieResult> {
                                             context: context,
                                             builder: (BuildContext context) {
                                               return AddToCalendar(
-                                                media: widget.movie,
-                                                dateForMap: date[0],
-                                                modifying: true,
-                                                friends: friendsWhoWatched, type: "movie"
-                                              );
+                                                  media: widget.movie,
+                                                  dateForMap: date[0],
+                                                  modifying: true,
+                                                  friends: friendsWhoWatched,
+                                                  type: "movie");
                                             },
                                           );
                                           if (result != null) {
@@ -1096,7 +1096,8 @@ class _MovieResultState extends State<MovieResult> {
                                                   currentUser.uid,
                                                   widget.movie.id,
                                                   currentUser.rewatchedMovies[
-                                                      widget.movie.id]);
+                                                      widget.movie.id],
+                                                  "movie");
                                             }
                                           });
                                         },

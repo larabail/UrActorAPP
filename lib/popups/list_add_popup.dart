@@ -3,7 +3,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:uractor/common/utils.dart';
+import '../common/apiutils.dart';
 import 'dart:math';
 import '../common/constants.dart';
 import '../main.dart';
