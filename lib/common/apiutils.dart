@@ -62,7 +62,6 @@ class ApiUtils {
         countedCrew.add(crewMember["id"]);
       }
     }
-    print("DEBUG: $finalCrew");
 
     Map<String, dynamic> data = {
       'cast': jsonDecode(creditsResponse.body)["cast"],
