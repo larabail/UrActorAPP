@@ -9,6 +9,7 @@ import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'common/constants.dart';
 import 'common/utils.dart';
+import 'package:uractor/common/firebaseutils.dart';
 import 'friends.dart';
 import 'friends_profile.dart';
 import 'package:intl/intl.dart' as intl;
@@ -164,13 +165,13 @@ class _TVShowResultState extends State<TVShowResult> {
                           if (keyLeft != null)
                             GestureDetector(
                               onTap: () {
-                                if (moviesLeft.contains(id)) {
-                                  FirebaseUtils.deleteFromList(id, keyLeft,
-                                      moviesLeft, context, "TVShows");
-                                } else {
-                                  FirebaseUtils.addToList(id, keyLeft,
-                                      moviesLeft, context, "TVShows");
-                                }
+                                FirebaseUtils.updateList(
+                                    id,
+                                    keyLeft,
+                                    moviesLeft,
+                                    context,
+                                    "TVShows",
+                                    !moviesLeft.contains(id));
                               },
                               child: Stack(
                                 children: [
@@ -243,13 +244,13 @@ class _TVShowResultState extends State<TVShowResult> {
                           if (keyRight != null)
                             GestureDetector(
                               onTap: () {
-                                if (moviesRight.contains(id)) {
-                                  FirebaseUtils.deleteFromList(id, keyRight,
-                                      moviesRight, context, "TVShows");
-                                } else {
-                                  FirebaseUtils.addToList(id, keyRight,
-                                      moviesRight, context, "TVShows");
-                                }
+                                FirebaseUtils.updateList(
+                                    id,
+                                    keyLeft,
+                                    moviesLeft,
+                                    context,
+                                    "TVShows",
+                                    !moviesLeft.contains(id));
                               },
                               child: Stack(
                                 children: [
@@ -913,8 +914,8 @@ class _TVShowResultState extends State<TVShowResult> {
                       ),
                       keyboardType: TextInputType.number,
                       onChanged: (value) {
-                        FirebaseUtils.incrementWatchedTV(
-                            value.toString(), snapshot.data!["id"].toString());
+                        FirebaseUtils.incrementWatched(currentUser.uid, value.toString(),
+                            snapshot.data!["id"].toString(), "series");
                       },
                     ),
                   ),
@@ -1034,11 +1035,11 @@ class _TVShowResultState extends State<TVShowResult> {
                                             context: context,
                                             builder: (BuildContext context) {
                                               return AddToCalendar(
-                                                media: widget.tvshow,
-                                                dateForMap: date[0],
-                                                modifying: true,
-                                                friends: friendsWhoWatched, type: "series"
-                                              );
+                                                  media: widget.tvshow,
+                                                  dateForMap: date[0],
+                                                  modifying: true,
+                                                  friends: friendsWhoWatched,
+                                                  type: "series");
                                             },
                                           );
                                           if (result != null) {
@@ -1066,7 +1067,6 @@ class _TVShowResultState extends State<TVShowResult> {
                                                 element["type"] == "series");
                                             currentUser.calendar[date[0]] =
                                                 movies;
-                                            
                                           });
                                         },
                                         child: const Icon(Icons.delete),

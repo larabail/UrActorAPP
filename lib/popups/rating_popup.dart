@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../common/utils.dart';
+import 'package:uractor/common/firebaseutils.dart';
 import '../main.dart';
 
 final myController = TextEditingController(text: "");

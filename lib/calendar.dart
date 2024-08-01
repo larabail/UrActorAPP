@@ -1,7 +1,7 @@
 // ignore_for_file: unnecessary_brace_in_string_interps, no_leading_underscores_for_local_identifiers, avoid_function_literals_in_foreach_calls, use_build_context_synchronously, library_private_types_in_public_api
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:uractor/common/utils.dart';
+import 'package:uractor/common/firebaseutils.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'package:uractor/tvshow_result.dart';
 import 'common/constants.dart';

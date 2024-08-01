@@ -10,6 +10,7 @@ import 'dart:convert';
 
 import '../common/constants.dart';
 import '../common/utils.dart';
+import 'package:uractor/common/firebaseutils.dart';
 import '../main.dart';
 import '../objects/Media.dart';
 
@@ -155,7 +156,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
         await FirebaseUtils.updateSeen(key, friend, id);
         await FirebaseUtils.updateSeenWith(friend, friendsWatchedWith, id, key);
         if (widget.type == "movie") {
-          await FirebaseUtils.updateRewatched(friend, id);
+          await FirebaseUtils.updateRewatched(friend, id, "movie");
         }
       }
     }
@@ -802,7 +803,7 @@ class _AddToCalendarState extends State<AddToCalendar> {
         await FirebaseUtils.updateSeen("Movies", friend, id);
         await FirebaseUtils.updateSeenWith(
             friend, friendsWatchedWith, id, "Movies");
-        await FirebaseUtils.updateRewatched(friend, id);
+        await FirebaseUtils.updateRewatched(friend, id, "movie");
       }
     }
     List<dynamic> watchedWithList = friendsWatchedWith.keys

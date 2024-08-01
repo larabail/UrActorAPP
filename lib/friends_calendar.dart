@@ -6,6 +6,7 @@ import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'common/constants.dart';
 import 'common/utils.dart';
+import 'package:uractor/common/firebaseutils.dart';
 import 'friends.dart';
 import 'objects/Movie.dart';
 import 'objects/TVShow.dart';
