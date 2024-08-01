@@ -75,6 +75,7 @@ class TVShow extends MediaItem {
     }
     return {};
   }
+  
   Future removeFriend(String friendUid, List friendsWatchedWith) async {
     var userDoc = await FirebaseFirestore.instance
         .collection(currentUser.uid)
