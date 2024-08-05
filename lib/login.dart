@@ -5,6 +5,8 @@ import 'signup.dart';
 import 'main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+String password = "";
+
 class Login extends StatelessWidget {
   const Login({super.key});
 
@@ -14,10 +16,8 @@ class Login extends StatelessWidget {
     currentUser.clearUserData();
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     String email = "";
-    String password = "";
 
     void resetPassword(BuildContext context, String emailAddress) async {
-      print(emailAddress);
       if (emailAddress == "") {
         await showDialog(
           context: context,
@@ -162,7 +162,6 @@ class Login extends StatelessWidget {
                       'Forgot Password?',
                     ),
                     onTap: () {
-                      // print(email);
                       resetPassword(context, email);
                     },
                   ),
@@ -216,7 +215,7 @@ class _PasswordFieldState extends State<PasswordField> {
         return null;
       },
       onSaved: (String? value) {
-        // Handle saving the password value
+        password = value!;
       },
     );
   }
