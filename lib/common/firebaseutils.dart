@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/objects/Media.dart';
 
 import '../main.dart';
 import '../popups/rating_popup.dart';
@@ -697,5 +698,49 @@ class FirebaseUtils {
     }).catchError((error) {
       print("Failed to update document: $error");
     });
+  }
+
+  static Future<Map> friendsWhoHaveSeen(
+      String uid, MediaItem mediaItem, String type) async {
+    type = type == "movie" ? "Movies" : "TVShows";
+    Map friends = {};
+    Map friendsDocInfo = await getDocumentData(uid, "Friends");
+    List allFriends = friendsDocInfo["data"]["friends"];
+    for (String friendUid in allFriends) {
+      Map friendSeenDocInfo = await getDocumentData(friendUid, type);
+      Map itemsSeen = friendSeenDocInfo["data"];
+      bool seen = itemsSeen.values.toList()[0].contains(mediaItem.id);
+      if (seen) {
+        Map friendsSettingDocInfo =
+            await getDocumentData(friendUid, "Settings");
+        String profilePhoto = friendsSettingDocInfo["data"]["profile_photo"];
+        String username = friendsSettingDocInfo["data"]["username"];
+        friends["$friendUid-$username"] = profilePhoto;
+      }
+    }
+    return friends;
+  }
+
+  static Future<Map> getReviewByUser(
+      String uid, MediaItem mediaItem, String type) async {
+    type = type == "movie" ? "Movies" : "TVShows";
+    Map reviewDocInfo = await getDocumentData(uid, "Reviews");
+    List reviewData = reviewDocInfo["data"][type];
+    Map review = reviewData
+        .where((element) => element.keys.toList()[0] == mediaItem.id)
+        .first;
+    return review;
+  }
+
+  static Future<bool> favedBy(MediaItem mediaItem, String userUid, String docName, String type) async {
+    Map docData = await getDocumentData(userUid, docName);
+    Map mediaData = docData["data"];
+    List favItems = mediaData[type];
+    print(favItems);
+    print(mediaItem.id);
+    if (favItems.contains(mediaItem.id)) {
+      return true;
+    }
+    return false;
   }
 }

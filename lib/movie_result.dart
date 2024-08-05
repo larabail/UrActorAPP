@@ -884,7 +884,7 @@ class _MovieResultState extends State<MovieResult> {
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              FriendProfile(friendUID: friendUid),
+                              FriendProfile(friendUid: friendUid),
                         ),
                       );
                     },

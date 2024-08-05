@@ -185,7 +185,7 @@ class _FriendsState extends State<Friends> {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                FriendProfile(friendUID: friendUid),
+                                FriendProfile(friendUid: friendUid),
                           ),
                         );
                       },
