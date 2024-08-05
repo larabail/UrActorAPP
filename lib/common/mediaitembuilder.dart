@@ -1,5 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/common/firebaseutils.dart';
+import 'package:uractor/friendsThoughts.dart';
+import 'package:uractor/main.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'package:uractor/popups/share.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
@@ -67,6 +70,95 @@ Widget getCover(Map data, context, MediaItem mediaItem, String type) {
                 wordSpacing: 2,
                 height: 1.5,
               ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: FutureBuilder<Map>(
+              future: FirebaseUtils.friendsWhoHaveSeen(
+                  currentUser.uid, mediaItem, type),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(
+                    height: 32.0,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                } else if (snapshot.hasError) {
+                  return const SizedBox(
+                    height: 32.0,
+                    child: Center(child: Text('Error loading friends')),
+                  );
+                } else if (snapshot.hasData) {
+                  var images = snapshot.data!.values.toList();
+                  int extraCount = images.length - 3;
+                  return GestureDetector(
+                    onTap: () => {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => FriendsThoughts(
+                                friends: snapshot.data!, mediaItem: mediaItem, type: type, data: data)),
+                      )
+                    },
+                    child: SizedBox(
+                      height: 32.0,
+                      child: Stack(
+                        children: List.generate(
+                          images.length > 3 ? 3 : images.length,
+                          (index) {
+                            double offset = index * 10.0;
+                            if (index == 2 && images.length > 3) {
+                              return Positioned(
+                                left: offset,
+                                child: ClipOval(
+                                  child: Container(
+                                    height: 25,
+                                    width: 25,
+                                    color: Colors.grey,
+                                    child: Center(
+                                      child: Text(
+                                        '+$extraCount',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            } else {
+                              return Positioned(
+                                left: offset,
+                                child: ClipOval(
+                                  child: images[index] != ""
+                                      ? Image.network(
+                                          images[index],
+                                          height: 25,
+                                          width: 25,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Image.asset(
+                                          'assets/main_profile.png',
+                                          height: 25,
+                                          width: 25,
+                                          fit: BoxFit.cover,
+                                        ),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                } else {
+                  return const SizedBox.shrink();
+                }
+              },
             ),
           ),
         ),

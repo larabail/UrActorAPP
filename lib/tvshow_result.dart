@@ -746,7 +746,7 @@ class _TVShowResultState extends State<TVShowResult> {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                FriendProfile(friendUID: friendUid),
+                                FriendProfile(friendUid: friendUid),
                           ),
                         );
                       },

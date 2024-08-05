@@ -25,7 +25,8 @@ import 'tvshow_result.dart';
 int weekOffset = 0; // This will be used to go to previous or next weeks
 
 class FriendProfile extends StatefulWidget {
-  const FriendProfile({super.key, required String friendUID});
+  final String friendUid;
+  const FriendProfile({super.key, required this.friendUid});
 
   @override
   _FriendProfileState createState() => _FriendProfileState();
@@ -76,7 +77,7 @@ class _FriendProfileState extends State<FriendProfile> {
 
   Future<void> getFirebaseData() async {
     await FirebaseFirestore.instance
-        .collection(friendUid)
+        .collection(widget.friendUid)
         .get()
         .then((QuerySnapshot querySnapshot) {
       for (var doc in querySnapshot.docs) {
