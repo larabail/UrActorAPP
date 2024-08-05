@@ -13,10 +13,12 @@ class Login extends StatelessWidget {
     currentUser.clearUser();
     currentUser.clearUserData();
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-    late String email, password;
+    String email = "";
+    String password = "";
 
-    void resetPassword(String email) async {
-      if (email == "") {
+    void resetPassword(BuildContext context, String emailAddress) async {
+      print(emailAddress);
+      if (emailAddress == "") {
         await showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -36,14 +38,14 @@ class Login extends StatelessWidget {
         );
       } else {
         try {
-          await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-          // Show a confirmation message to the user
+          await FirebaseAuth.instance
+              .sendPasswordResetEmail(email: emailAddress);
           await showDialog(
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
                 title: const Text('Password'),
-                content: const Text('Rest Password Email has been sent'),
+                content: const Text('Reset Password Email has been sent'),
                 actions: <Widget>[
                   TextButton(
                     child: const Text('Okay'),
@@ -56,7 +58,6 @@ class Login extends StatelessWidget {
             },
           );
         } catch (e) {
-          // An error happened.
           await showDialog(
             context: context,
             builder: (BuildContext context) {
@@ -110,35 +111,12 @@ class Login extends StatelessWidget {
                       }
                       return null;
                     },
-                    onSaved: (String? value) {
+                    onChanged: (String? value) {
                       email = value!;
                     },
                   ),
                   const SizedBox(height: 16.0),
-                  TextFormField(
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      hintText: 'Your Password',
-                      hintStyle:
-                          TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(width: 1.0),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(width: 2.0),
-                      ),
-                    ),
-                    validator: (String? value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      return null;
-                    },
-                    onSaved: (String? value) {
-                      password = value!;
-                    },
-                  ),
+                  PasswordField(),
                   const SizedBox(height: 16.0),
                   ElevatedButton(
                     child: const Text('Login'),
@@ -184,7 +162,8 @@ class Login extends StatelessWidget {
                       'Forgot Password?',
                     ),
                     onTap: () {
-                      resetPassword(email);
+                      // print(email);
+                      resetPassword(context, email);
                     },
                   ),
                 ],
@@ -193,6 +172,52 @@ class Login extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class PasswordField extends StatefulWidget {
+  @override
+  _PasswordFieldState createState() => _PasswordFieldState();
+}
+
+class _PasswordFieldState extends State<PasswordField> {
+  bool _obscureText = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      obscureText: _obscureText,
+      decoration: InputDecoration(
+        labelText: 'Password',
+        hintText: 'Your Password',
+        hintStyle: const TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
+        enabledBorder: const OutlineInputBorder(
+          borderSide: BorderSide(width: 1.0),
+        ),
+        focusedBorder: const OutlineInputBorder(
+          borderSide: BorderSide(width: 2.0),
+        ),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _obscureText ? Icons.visibility : Icons.visibility_off,
+          ),
+          onPressed: () {
+            setState(() {
+              _obscureText = !_obscureText;
+            });
+          },
+        ),
+      ),
+      validator: (String? value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter your password';
+        }
+        return null;
+      },
+      onSaved: (String? value) {
+        // Handle saving the password value
+      },
     );
   }
 }
