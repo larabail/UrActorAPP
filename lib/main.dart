@@ -440,6 +440,10 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget buildPlaylistsSection() {
+    List filteredKeys = currentUser.playlists.keys
+        .where((key) => key != "recommendations")
+        .toList();
+
     return GridView.builder(
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
@@ -450,10 +454,9 @@ class _MyHomePageState extends State<MyHomePage> {
         mainAxisSpacing: 10,
       ),
       padding: const EdgeInsets.all(10),
-      itemCount:
-          currentUser.playlists.length < 6 ? currentUser.playlists.length : 6,
+      itemCount: filteredKeys.length < 6 ? filteredKeys.length : 6,
       itemBuilder: (context, index) {
-        String key = currentUser.playlists.keys.elementAt(index);
+        String key = filteredKeys[index];
         dynamic value = currentUser.playlists[key]['Name'];
         dynamic image = currentUser.playlists[key]['CoverPhoto'];
         dynamic movies = currentUser.playlists[key]['Movies'];
@@ -462,6 +465,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
         int totalContent = (movies?.length ?? 0) + (tvshows?.length ?? 0);
 
+        // "See All" button logic
         if (index == 5 && currentUser.playlists.length > 6) {
           return GestureDetector(
             onTap: () {
@@ -480,9 +484,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 children: [
                   const Icon(Icons.library_books,
                       color: Colors.white, size: 20),
-                  const SizedBox(
-                    width: 10,
-                  ),
+                  const SizedBox(width: 10),
                   Column(
                     children: [
                       const Text(
@@ -507,6 +509,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           );
         }
+
         return GestureDetector(
           onTap: () {
             Playlist listResult = Playlist(
@@ -740,12 +743,13 @@ class _MyHomePageState extends State<MyHomePage> {
                             child: Text("Failed to load movie details"));
                       } else {
                         return Container(
-                            margin:
-                                const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                            width: MediaQuery.of(context).size.width * 0.28,
-                            height: MediaQuery.of(context).size.height * 0.18,
-                            child: const Center(
-                                child: CircularProgressIndicator(),),);
+                          margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
+                          width: MediaQuery.of(context).size.width * 0.28,
+                          height: MediaQuery.of(context).size.height * 0.18,
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
                       }
                     },
                   );
