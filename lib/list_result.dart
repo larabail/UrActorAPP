@@ -435,10 +435,22 @@ class _ListResultState extends State<ListResult> {
     }
   }
 
-  Future<List> getMovieNames(List movieIds) async {
-    final responses =
-        await Future.wait(movieIds.map((id) => fetchMovieName(id.toString())));
-    return responses;
+  Future<List<String>> getMovieNames(List movieIds) async {
+    List<String> movieNames = [];
+    const int maxConcurrentRequests = 20;
+    List<Future<String>> requestBatch = [];
+
+    for (var i = 0; i < movieIds.length; i++) {
+      requestBatch.add(fetchMovieName(movieIds[i]));
+      if (requestBatch.length == maxConcurrentRequests ||
+          i == movieIds.length - 1) {
+        final responses = await Future.wait(requestBatch);
+        movieNames.addAll(responses);
+        requestBatch.clear();
+      }
+    }
+
+    return movieNames;
   }
 
   Future<int?> fetchMovieId(String movieTitle) async {
@@ -499,23 +511,13 @@ class _ListResultState extends State<ListResult> {
   Future<void> sendMessage() async {
     const apiUrl = 'https://api.openai.com/v1/chat/completions';
 
-    List seenMovieIds = [];
-    currentUser.seenMovies.forEach((element) {
-      seenMovieIds.add(element[1]);
-    });
-
-    List lovedMovieIds = [];
-    currentUser.favMovies.forEach((element) {
-      lovedMovieIds.add(element[1]);
-    });
+    List seenMovieIds =
+        currentUser.seenMovies.map((m) => m[1].toString()).toList();
 
     List seenMovieNames = await getMovieNames(seenMovieIds);
-    List lovedMovieNames = await getMovieNames(lovedMovieIds);
     String moviesList = seenMovieNames.join(", ");
-    String lovedList = lovedMovieNames.join(", ");
     String prompt =
-        "Given these movies I've seen: $moviesList, and the movies I've loved: $lovedList, "
-        "recommend 21 movies I should watch next that I haven't seen yet. "
+        "Given these movies I've seen: $moviesList, recommend sixty movies I should watch next. Do not recommend any movies I've already seen."
         "Please return the list as a semicolon-separated CSV, like this: title1;title2;title3.";
 
     final response = await http.post(
@@ -538,10 +540,20 @@ class _ListResultState extends State<ListResult> {
       final data = jsonDecode(response.body);
       List ids = await getMovieIds(
           data['choices'][0]['message']['content'].split(";"));
-      List unseenRecommendations =
-          ids.where((id) => !seenMovieIds.contains(id)).toList();
-      await FirebaseUtils.updateRecommendations(
-          unseenRecommendations, "Movies");
+      List unseenRecommendations = ids
+          .where((id) => !currentUser.seenMovies
+              .map((m) => m[1].toString())
+              .contains(id.toString()))
+          .toList();
+
+      if (unseenRecommendations.length >= 30) {
+        List finalRecommendations = unseenRecommendations.take(30).toList();
+        await FirebaseUtils.updateRecommendations(
+            finalRecommendations, "Movies");
+      } else {
+        await FirebaseUtils.updateRecommendations(
+            unseenRecommendations, "Movies");
+      }
     } else {
       throw Exception(response.body);
     }
