@@ -39,6 +39,15 @@ class _PlaylistsState extends State<Playlists> {
             currentUser.playlists[doc.id] = docData;
           }
         }
+        currentUser.playlists["recommendations"] = {
+          "AccessCode": "",
+          "CoverPhoto":
+              "https://firebasestorage.googleapis.com/v0/b/actordb-cf981.appspot.com/o/UrActor.png?alt=media&token=0b752722-80da-4b84-b205-15bb7dde5a88",
+          "Movies": currentUser.recommendations["Movies"],
+          "TV Shows": currentUser.recommendations["TVShows"],
+          "Name": "You'll like these",
+          "Users": [currentUser.uid,]
+        };
       }
     });
     setState(() {});
@@ -161,7 +170,6 @@ class _PlaylistsState extends State<Playlists> {
                             currentUser.playlists[key]['AccessCode'];
                         return GestureDetector(
                           onTap: () {
-                            // Handle the click event here
                             Playlist listResult = Playlist(
                                 id: key.toString(),
                                 name: value.toString(),
