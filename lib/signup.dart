@@ -156,6 +156,10 @@ class SignUp extends StatelessWidget {
                               "Movies": {},
                               "TVShows": {}
                             };
+                            const Map<String, dynamic> Recommendations = {
+                              "Movies": {},
+                              "TVShows": {}
+                            };
                             const Map<String, dynamic> Settings = {
                               "darkMode": true,
                               "dontAskCalendar": false,
@@ -238,6 +242,10 @@ class SignUp extends StatelessWidget {
                                 .collection(credential.user!.uid)
                                 .doc("Notifications")
                                 .set(Notifications);
+                            FirebaseFirestore.instance
+                                .collection(credential.user!.uid)
+                                .doc("Recommendations")
+                                .set(Recommendations);
                           });
                           try {
                             await FirebaseAuth.instance

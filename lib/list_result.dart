@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
+import 'package:uractor/common/firebaseutils.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'package:uractor/popups/grant_access_dialogue.dart';
 import 'common/appbar.dart';
@@ -421,6 +422,132 @@ class _ListResultState extends State<ListResult> {
     return data;
   }
 
+  final String apiKey =
+      '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'; // Replace with your API Key
+  Future<String> fetchMovieName(String movieId) async {
+    final url = '$MOVIE_LINK$movieId$API_KEY';
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['title'];
+    } else {
+      return url;
+    }
+  }
+
+  Future<List<String>> getMovieNames(List movieIds) async {
+    List<String> movieNames = [];
+
+    for (var id in movieIds) {
+      String movieName = await fetchMovieName(id.toString());
+      movieNames.add(movieName);
+    }
+
+    return movieNames;
+  }
+
+  Future<int?> fetchMovieId(String movieTitle) async {
+    movieTitle = movieTitle.split('. ').length > 1
+        ? movieTitle.split('. ')[1].trim()
+        : movieTitle;
+
+    final url =
+        'https://api.themoviedb.org/3/search/movie$API_KEY&query=${Uri.encodeComponent(movieTitle)}';
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['results'] != null && data['results'].length > 0) {
+        return data['results'][0]['id'];
+      } else {
+        return null;
+      }
+    } else {
+      throw Exception('Failed to search movie');
+    }
+  }
+
+  Future<List<int>> getMovieIds(List<String> movieTitles) async {
+    List<int> movieIds = [];
+    for (var title in movieTitles) {
+      int? movieId = await fetchMovieId(title);
+      if (movieId != null) {
+        movieIds.add(movieId);
+      }
+    }
+
+    return movieIds;
+  }
+
+  void showLoadingDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text("Fetching recommendations..."),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void hideLoadingDialog(BuildContext context) {
+    Navigator.of(context).pop(); // Pop the dialog off the stack
+  }
+
+  Future<void> sendMessage() async {
+    const apiUrl = 'https://api.openai.com/v1/chat/completions';
+
+    List seenMovieIds = [];
+    currentUser.seenMovies.forEach((element) {
+      seenMovieIds.add(element[1]);
+    });
+
+    List lovedMovieIds = [];
+    currentUser.favMovies.forEach((element) {
+      lovedMovieIds.add(element[1]);
+    });
+
+    List<String> seenMovieNames = await getMovieNames(seenMovieIds);
+    List<String> lovedMovieNames = await getMovieNames(lovedMovieIds);
+    String moviesList = seenMovieNames.join(", ");
+    String lovedList = lovedMovieNames.join(", ");
+    String prompt =
+        "Given these movies I've seen: $moviesList, and the movies I've loved: $lovedList recommend exactly 21 movies I should watch next. "
+        "Please return the list as a semicolon-separated CSV, like this: title1;title2;title3";
+    final response = await http.post(
+      Uri.parse(apiUrl),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $apiKey',
+      },
+      body: jsonEncode({
+        'model': 'gpt-4o',
+        'max_tokens': 150,
+        'temperature': 0.7,
+        'messages': [
+          {"role": "user", "content": prompt}
+        ],
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      List ids = await getMovieIds(
+          data['choices'][0]['message']['content'].split(";"));
+      await FirebaseUtils.updateRecommendations(ids, "Movies");
+      print(ids);
+    } else {
+      throw Exception(response.body);
+    }
+  }
+
   Widget buildMediaItem(
       String mediaId, String mediaType, BuildContext context) {
     return FutureBuilder<Map<String, dynamic>>(
@@ -491,11 +618,14 @@ class _ListResultState extends State<ListResult> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             if (leftIndex < mediaList.length)
-              buildMediaItem(mediaList[leftIndex], mediaType, context),
+              buildMediaItem(
+                  mediaList[leftIndex].toString(), mediaType, context),
             if (middleIndex < mediaList.length)
-              buildMediaItem(mediaList[middleIndex], mediaType, context),
+              buildMediaItem(
+                  mediaList[middleIndex].toString(), mediaType, context),
             if (rightIndex < mediaList.length)
-              buildMediaItem(mediaList[rightIndex], mediaType, context),
+              buildMediaItem(
+                  mediaList[rightIndex].toString(), mediaType, context),
           ],
         );
       },
@@ -558,7 +688,6 @@ class _ListResultState extends State<ListResult> {
                             height: 1.5,
                           ),
                         ),
-                        // Add your count text here
                         Text(
                           'Movies: ${widget.list_result.movies.length}, TV Shows: ${widget.list_result.tvshows.length}',
                           style: const TextStyle(
@@ -578,22 +707,23 @@ class _ListResultState extends State<ListResult> {
                         color: Colors.black.withOpacity(0.5),
                       ),
                       child: Column(mainAxisSize: MainAxisSize.min, children: [
-                        IconButton(
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) => ListInfoDialog(
-                                list_result: widget.list_result,
-                              ),
-                            ).then((_) {
-                              setState(() {});
-                            });
-                          },
-                          icon: const Icon(
-                            Icons.more_vert,
-                            color: Colors.white,
+                        if (widget.list_result.id != "recommendations")
+                          IconButton(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => ListInfoDialog(
+                                  list_result: widget.list_result,
+                                ),
+                              ).then((_) {
+                                setState(() {});
+                              });
+                            },
+                            icon: const Icon(
+                              Icons.more_vert,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
                       ])),
                 ),
               ],
@@ -602,80 +732,123 @@ class _ListResultState extends State<ListResult> {
           const SizedBox(
             height: 10,
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return MovieAddDialogue(
-                        list_result: widget.list_result,
-                      );
-                    },
-                  ).then((value) => setState(() {}));
-                },
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[900],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.movie, color: Colors.green),
-                      SizedBox(width: 10),
-                      Text(
-                        'Add Movie',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
+          if (widget.list_result.id == "recommendations")
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: () async {
+                    showLoadingDialog(context);
+                    await sendMessage();
+                    hideLoadingDialog(context);
+                    setState(() {
+                      currentUser.recommendations = currentUser.recommendations;
+                      widget.list_result.movies =
+                          currentUser.recommendations["Movies"];
+                      widget.list_result.tvshows =
+                          currentUser.recommendations["TVShows"];
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.refresh, color: Colors.green),
+                        SizedBox(width: 10),
+                        Text(
+                          'Get New Suggestions',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 20),
-              GestureDetector(
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return TvAddDialogue(
-                        list_result: widget.list_result,
-                      );
-                    },
-                  ).then((value) => setState(() {}));
-                },
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[900],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.tv, color: Colors.green),
-                      SizedBox(width: 10),
-                      Text(
-                        'Add TV Show',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
+              ],
+            ),
+          if (widget.list_result.id != "recommendations")
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return MovieAddDialogue(
+                          list_result: widget.list_result,
+                        );
+                      },
+                    ).then((value) => setState(() {}));
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.movie, color: Colors.green),
+                        SizedBox(width: 10),
+                        Text(
+                          'Add Movie',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 20),
+                GestureDetector(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return TvAddDialogue(
+                          list_result: widget.list_result,
+                        );
+                      },
+                    ).then((value) => setState(() {}));
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.tv, color: Colors.green),
+                        SizedBox(width: 10),
+                        Text(
+                          'Add TV Show',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           const SizedBox(
             height: 10,
           ),

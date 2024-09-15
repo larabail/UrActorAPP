@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/firebaseutils.dart';
-import 'package:uractor/friendsThoughts.dart';
+import 'package:uractor/friends_thoughts.dart';
 import 'package:uractor/main.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'package:uractor/popups/share.dart';
