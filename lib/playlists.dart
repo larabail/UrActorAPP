@@ -42,11 +42,13 @@ class _PlaylistsState extends State<Playlists> {
         currentUser.playlists["recommendations"] = {
           "AccessCode": "",
           "CoverPhoto":
-              "https://firebasestorage.googleapis.com/v0/b/actordb-cf981.appspot.com/o/UrActor.png?alt=media&token=0b752722-80da-4b84-b205-15bb7dde5a88",
+              "https://firebasestorage.googleapis.com/v0/b/actordb-cf981.appspot.com/o/madmax5487_a_simple_2d_art_marker_backdrop_for_an_ai_generated__30ab5e32-f385-469f-8fb4-9f751eee34d3.png?alt=media&token=25dac07c-8e15-4beb-9f02-d04327ef8867",
           "Movies": currentUser.recommendations["Movies"],
           "TV Shows": currentUser.recommendations["TVShows"],
-          "Name": "You'll like these",
-          "Users": [currentUser.uid,]
+          "Name": "Handpicked for You",
+          "Users": [
+            currentUser.uid,
+          ]
         };
       }
     });
@@ -144,6 +146,59 @@ class _PlaylistsState extends State<Playlists> {
                 ),
               ],
             ),
+            if (currentUser.playlists["recommendations"]["Movies"].isEmpty &&
+                currentUser.playlists["recommendations"]["TV Shows"].isEmpty)
+              GestureDetector(
+                onTap: () {
+                  Playlist listResult = Playlist(
+                      id: "recommendations",
+                      name: currentUser.playlists["recommendations"]["Name"]
+                          .toString(),
+                      backdrop: currentUser.playlists["recommendations"]
+                              ["CoverPhoto"]
+                          .toString(),
+                      movies: currentUser.playlists["recommendations"]
+                          ["Movies"],
+                      tvshows: currentUser.playlists["recommendations"]
+                          ["TV Shows"],
+                      accesscode: currentUser.playlists["recommendations"]
+                              ["AccessCode"]
+                          .toString(),
+                      users: currentUser.playlists["recommendations"]
+                          ["Users"]);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ListResult(
+                        list_result: listResult,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  margin: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 5.0),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[900],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.new_releases, color: Colors.white),
+                      SizedBox(width: 10),
+                      Text(
+                        'Generate Handpicked Recommendations',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             const SizedBox(
               height: 10,
             ),
@@ -168,124 +223,132 @@ class _PlaylistsState extends State<Playlists> {
                             currentUser.playlists[key]['TV Shows'];
                         dynamic accessCode =
                             currentUser.playlists[key]['AccessCode'];
-                        return GestureDetector(
-                          onTap: () {
-                            Playlist listResult = Playlist(
-                                id: key.toString(),
-                                name: value.toString(),
-                                backdrop: image.toString(),
-                                movies: movies,
-                                tvshows: tvshows,
-                                accesscode: accessCode.toString(),
-                                users: currentUser.playlists[key]["Users"]);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => ListResult(
-                                        list_result: listResult,
-                                      )),
-                            );
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.fromLTRB(
-                                10.0, 10.0, 10.0, 5.0),
-                            height: 200,
-                            width: 200,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(27),
-                            ),
-                            child: Stack(
-                              children: [
-                                Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    image: DecorationImage(
-                                      image: CachedNetworkImageProvider(
-                                        image,
+                        if (currentUser.playlists["recommendations"]["Movies"]
+                                .isNotEmpty ||
+                            currentUser
+                                .playlists["recommendations"]["TV Shows"]
+                                .isNotEmpty) {
+                          return GestureDetector(
+                            onTap: () {
+                              Playlist listResult = Playlist(
+                                  id: key.toString(),
+                                  name: value.toString(),
+                                  backdrop: image.toString(),
+                                  movies: movies,
+                                  tvshows: tvshows,
+                                  accesscode: accessCode.toString(),
+                                  users: currentUser.playlists[key]["Users"]);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => ListResult(
+                                          list_result: listResult,
+                                        )),
+                              );
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.fromLTRB(
+                                  10.0, 10.0, 10.0, 5.0),
+                              height: 200,
+                              width: 200,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(27),
+                              ),
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      image: DecorationImage(
+                                        image: CachedNetworkImageProvider(
+                                          image,
+                                        ),
+                                        fit: BoxFit.cover,
                                       ),
-                                      fit: BoxFit.cover,
                                     ),
                                   ),
-                                ),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Colors.transparent,
-                                        Colors.black.withOpacity(1),
-                                      ],
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.black.withOpacity(1),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Align(
-                                    alignment: Alignment.bottomRight,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          value,
-                                          style: const TextStyle(
-                                            fontSize: 30,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 1.5,
-                                            wordSpacing: 2,
-                                            height: 1.5,
+                                  Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Align(
+                                      alignment: Alignment.bottomRight,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            value,
+                                            style: const TextStyle(
+                                              fontSize: 30,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 1.5,
+                                              wordSpacing: 2,
+                                              height: 1.5,
+                                            ),
                                           ),
-                                        ),
-                                        Text(
-                                          'Movies: ${movies.length}, TV Shows: ${tvshows.length}',
-                                          style: const TextStyle(
-                                            fontSize: 15,
-                                            color: Colors.grey,
+                                          Text(
+                                            'Movies: ${movies.length}, TV Shows: ${tvshows.length}',
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              color: Colors.grey,
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                                // Align(
-                                //   alignment: Alignment.topRight,
-                                //   child: Container(
-                                //     decoration: BoxDecoration(
-                                //       borderRadius: BorderRadius.circular(100),
-                                //       color: Colors.black.withOpacity(0.5),
-                                //     ),
-                                //     child: Column(
-                                //       mainAxisSize: MainAxisSize.min,
-                                //       children: [
-                                //         IconButton(
-                                //           onPressed: () {
-                                //             showDialog(
-                                //               context: context,
-                                //               builder: (context) =>
-                                //                   ListInfoDialog(
-                                //                 list_result:
-                                //                     currentUser.playlists[key],
-                                //               ),
-                                //             ).then((_) {
-                                //               setState(() {});
-                                //             });
-                                //           },
-                                //           icon: const Icon(
-                                //             Icons.more_vert,
-                                //             color: Colors.white,
-                                //           ),
-                                //         ),
-                                //       ],
-                                //     ),
-                                //   ),
-                                // ),
-                              ],
+                                  // Align(
+                                  //   alignment: Alignment.topRight,
+                                  //   child: Container(
+                                  //     decoration: BoxDecoration(
+                                  //       borderRadius: BorderRadius.circular(100),
+                                  //       color: Colors.black.withOpacity(0.5),
+                                  //     ),
+                                  //     child: Column(
+                                  //       mainAxisSize: MainAxisSize.min,
+                                  //       children: [
+                                  //         IconButton(
+                                  //           onPressed: () {
+                                  //             showDialog(
+                                  //               context: context,
+                                  //               builder: (context) =>
+                                  //                   ListInfoDialog(
+                                  //                 list_result:
+                                  //                     currentUser.playlists[key],
+                                  //               ),
+                                  //             ).then((_) {
+                                  //               setState(() {});
+                                  //             });
+                                  //           },
+                                  //           icon: const Icon(
+                                  //             Icons.more_vert,
+                                  //             color: Colors.white,
+                                  //           ),
+                                  //         ),
+                                  //       ],
+                                  //     ),
+                                  //   ),
+                                  // ),
+                                ],
+                              ),
                             ),
-                          ),
-                        );
+                          );
+                        } else {
+                          return Container();
+                        }
                       },
                     ),
                   ),

@@ -453,13 +453,14 @@ class _ListResultState extends State<ListResult> {
     return movieNames;
   }
 
-  Future<int?> fetchMovieId(String movieTitle) async {
+  Future<int?> fetchId(String movieTitle, String type) async {
     movieTitle = movieTitle.split('. ').length > 1
         ? movieTitle.split('. ')[1].trim()
         : movieTitle;
 
     final url =
-        'https://api.themoviedb.org/3/search/movie$API_KEY&query=${Uri.encodeComponent(movieTitle)}';
+        'https://api.themoviedb.org/3/search/${type == "Movies" ? "movie" : "tv"}$API_KEY&query=${Uri.encodeComponent(movieTitle)}';
+    
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
@@ -474,10 +475,10 @@ class _ListResultState extends State<ListResult> {
     }
   }
 
-  Future<List<int>> getMovieIds(List<String> movieTitles) async {
+  Future<List<int>> getIds(List<String> movieTitles, String type) async {
     List<int> movieIds = [];
     for (var title in movieTitles) {
-      int? movieId = await fetchMovieId(title);
+      int? movieId = await fetchId(title, type);
       if (movieId != null) {
         movieIds.add(movieId);
       }
@@ -505,20 +506,29 @@ class _ListResultState extends State<ListResult> {
   }
 
   void hideLoadingDialog(BuildContext context) {
-    Navigator.of(context).pop(); // Pop the dialog off the stack
+    Navigator.of(context).pop();
   }
 
-  Future<void> sendMessage() async {
+  Future<void> sendMessage(String type) async {
     const apiUrl = 'https://api.openai.com/v1/chat/completions';
-
-    List seenMovieIds =
-        currentUser.seenMovies.map((m) => m[1].toString()).toList();
-
-    List seenMovieNames = await getMovieNames(seenMovieIds);
-    String moviesList = seenMovieNames.join(", ");
-    String prompt =
-        "Given these movies I've seen: $moviesList, recommend sixty movies I should watch next. Do not recommend any movies I've already seen."
-        "Please return the list as a semicolon-separated CSV, like this: title1;title2;title3.";
+    List seenIds = [];
+    List seenNames = [];
+    String prompt = "";
+    if (type == "Movies") {
+      seenIds = currentUser.seenMovies.map((m) => m[1].toString()).toList();
+      seenNames = await getMovieNames(seenIds);
+      String moviesList = seenNames.join(", ");
+      prompt =
+          "Given these movies I've seen: $moviesList, recommend sixty movies I should watch next. Do not recommend any movies I've already seen."
+          "Please return the list as a semicolon-separated CSV, like this: title1;title2;title3.";
+    } else {
+      seenIds = currentUser.seenTVShows.map((m) => m[1].toString()).toList();
+      seenNames = await getMovieNames(seenIds);
+      String moviesList = seenNames.join(", ");
+      prompt =
+          "Given these tv shows I've seen: $moviesList, recommend sixty tv shows I should watch next. Do not recommend any shows I've already seen."
+          "Please return the list as a semicolon-separated CSV, like this: title1;title2;title3.";
+    }
 
     final response = await http.post(
       Uri.parse(apiUrl),
@@ -538,21 +548,23 @@ class _ListResultState extends State<ListResult> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      List ids = await getMovieIds(
-          data['choices'][0]['message']['content'].split(";"));
-      List unseenRecommendations = ids
+      List ids = await getIds(
+          data['choices'][0]['message']['content'].split(";"), type);
+      List unseenRecommendations = type == "Movies" ? ids
           .where((id) => !currentUser.seenMovies
+              .map((m) => m[1].toString())
+              .contains(id.toString()))
+          .toList() : ids
+          .where((id) => !currentUser.seenTVShows
               .map((m) => m[1].toString())
               .contains(id.toString()))
           .toList();
 
       if (unseenRecommendations.length >= 30) {
         List finalRecommendations = unseenRecommendations.take(30).toList();
-        await FirebaseUtils.updateRecommendations(
-            finalRecommendations, "Movies");
+        await FirebaseUtils.updateRecommendations(finalRecommendations, type);
       } else {
-        await FirebaseUtils.updateRecommendations(
-            unseenRecommendations, "Movies");
+        await FirebaseUtils.updateRecommendations(unseenRecommendations, type);
       }
     } else {
       throw Exception(response.body);
@@ -750,7 +762,7 @@ class _ListResultState extends State<ListResult> {
                 GestureDetector(
                   onTap: () async {
                     showLoadingDialog(context);
-                    await sendMessage();
+                    await sendMessage("Movies");
                     hideLoadingDialog(context);
                     setState(() {
                       currentUser.recommendations = currentUser.recommendations;
@@ -762,7 +774,7 @@ class _ListResultState extends State<ListResult> {
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
+                        horizontal: 10, vertical: 10),
                     decoration: BoxDecoration(
                       color: Colors.grey[900],
                       borderRadius: BorderRadius.circular(10),
@@ -772,7 +784,46 @@ class _ListResultState extends State<ListResult> {
                         Icon(Icons.refresh, color: Colors.green),
                         SizedBox(width: 10),
                         Text(
-                          'Get New Suggestions',
+                          'New Movies',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(
+                  width: 10,
+                ),
+                GestureDetector(
+                  onTap: () async {
+                    showLoadingDialog(context);
+                    await sendMessage("TVShows");
+                    hideLoadingDialog(context);
+                    setState(() {
+                      currentUser.recommendations = currentUser.recommendations;
+                      widget.list_result.movies =
+                          currentUser.recommendations["Movies"];
+                      widget.list_result.tvshows =
+                          currentUser.recommendations["TVShows"];
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.refresh, color: Colors.green),
+                        SizedBox(width: 10),
+                        Text(
+                          'New Shows',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 13,
