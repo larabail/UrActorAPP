@@ -423,25 +423,24 @@ class _ListResultState extends State<ListResult> {
   }
 
   final String apiKey =
-      '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'; // Replace with your API Key
-  Future<String> fetchMovieName(String movieId) async {
-    final url = '$MOVIE_LINK$movieId$API_KEY';
+      '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';
+  Future<String> fetchMovieName(String movieId, String type) async {
+    final url = '${type == "Movies" ? MOVIE_LINK : TV_SHOW_LINK}$movieId$API_KEY';
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data['title'];
+      return type == "Movies" ? data['title'] : data['name'];
     } else {
       return url;
     }
   }
 
-  Future<List<String>> getMovieNames(List movieIds) async {
+  Future<List<String>> getMovieNames(List movieIds, String type) async {
     List<String> movieNames = [];
     const int maxConcurrentRequests = 20;
     List<Future<String>> requestBatch = [];
-
     for (var i = 0; i < movieIds.length; i++) {
-      requestBatch.add(fetchMovieName(movieIds[i]));
+      requestBatch.add(fetchMovieName(movieIds[i], type));
       if (requestBatch.length == maxConcurrentRequests ||
           i == movieIds.length - 1) {
         final responses = await Future.wait(requestBatch);
@@ -449,7 +448,6 @@ class _ListResultState extends State<ListResult> {
         requestBatch.clear();
       }
     }
-
     return movieNames;
   }
 
@@ -460,7 +458,7 @@ class _ListResultState extends State<ListResult> {
 
     final url =
         'https://api.themoviedb.org/3/search/${type == "Movies" ? "movie" : "tv"}$API_KEY&query=${Uri.encodeComponent(movieTitle)}';
-    
+
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
@@ -516,14 +514,14 @@ class _ListResultState extends State<ListResult> {
     String prompt = "";
     if (type == "Movies") {
       seenIds = currentUser.seenMovies.map((m) => m[1].toString()).toList();
-      seenNames = await getMovieNames(seenIds);
+      seenNames = await getMovieNames(seenIds, type);
       String moviesList = seenNames.join(", ");
       prompt =
           "Given these movies I've seen: $moviesList, recommend sixty movies I should watch next. Do not recommend any movies I've already seen."
           "Please return the list as a semicolon-separated CSV, like this: title1;title2;title3.";
     } else {
       seenIds = currentUser.seenTVShows.map((m) => m[1].toString()).toList();
-      seenNames = await getMovieNames(seenIds);
+      seenNames = await getMovieNames(seenIds, type);
       String moviesList = seenNames.join(", ");
       prompt =
           "Given these tv shows I've seen: $moviesList, recommend sixty tv shows I should watch next. Do not recommend any shows I've already seen."
@@ -550,15 +548,17 @@ class _ListResultState extends State<ListResult> {
       final data = jsonDecode(response.body);
       List ids = await getIds(
           data['choices'][0]['message']['content'].split(";"), type);
-      List unseenRecommendations = type == "Movies" ? ids
-          .where((id) => !currentUser.seenMovies
-              .map((m) => m[1].toString())
-              .contains(id.toString()))
-          .toList() : ids
-          .where((id) => !currentUser.seenTVShows
-              .map((m) => m[1].toString())
-              .contains(id.toString()))
-          .toList();
+      List unseenRecommendations = type == "Movies"
+          ? ids
+              .where((id) => !currentUser.seenMovies
+                  .map((m) => m[1].toString())
+                  .contains(id.toString()))
+              .toList()
+          : ids
+              .where((id) => !currentUser.seenTVShows
+                  .map((m) => m[1].toString())
+                  .contains(id.toString()))
+              .toList();
 
       if (unseenRecommendations.length >= 30) {
         List finalRecommendations = unseenRecommendations.take(30).toList();
