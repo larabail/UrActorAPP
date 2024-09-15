@@ -9,7 +9,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class Movie extends MediaItem {
-  // String movieId, movieTitle, movieCoverPhoto;
   Movie({
     required String id,
     required String title,

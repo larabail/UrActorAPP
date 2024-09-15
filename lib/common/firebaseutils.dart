@@ -732,15 +732,29 @@ class FirebaseUtils {
     return review;
   }
 
-  static Future<bool> favedBy(MediaItem mediaItem, String userUid, String docName, String type) async {
+  static Future<bool> favedBy(
+      MediaItem mediaItem, String userUid, String docName, String type) async {
     Map docData = await getDocumentData(userUid, docName);
     Map mediaData = docData["data"];
     List favItems = mediaData[type];
-    print(favItems);
-    print(mediaItem.id);
     if (favItems.contains(mediaItem.id)) {
       return true;
     }
     return false;
+  }
+
+  static Future<void> updateRecommendations(
+      List newRecommendations, String type) async {
+    Map recommendations =
+        await getDocumentData(currentUser.uid, "Recommendations");
+    DocumentReference recommendationsDoc = recommendations["snapshot"];
+    Map<String, dynamic> recommendationsData = recommendations["data"];
+    if (type == "Movies") {
+      recommendationsData["Movies"] = newRecommendations;
+    } else {
+      recommendationsData["TVShows"] = newRecommendations;
+    }
+    currentUser.recommendations = recommendationsData;
+    recommendationsDoc.update(recommendationsData);
   }
 }

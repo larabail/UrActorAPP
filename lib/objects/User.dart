@@ -28,6 +28,7 @@ class AppUser {
   Map seenWith = {};
   List seen = [];
   List allReviews = [];
+  Map recommendations = {};
   Map<String, dynamic> notifications = {};
 
   AppUser({
@@ -197,6 +198,9 @@ class AppUser {
               ];
             });
           });
+        } else if (doc.id == "Recommendations") {
+          Map w = doc.data() as Map;
+          recommendations = w;
         }
       }
     });
@@ -215,6 +219,15 @@ class AppUser {
             playlists[doc.id] = docData;
           }
         }
+        playlists["recommendations"] = {
+          "AccessCode": "",
+          "CoverPhoto":
+              "https://firebasestorage.googleapis.com/v0/b/actordb-cf981.appspot.com/o/UrActor.png?alt=media&token=0b752722-80da-4b84-b205-15bb7dde5a88",
+          "Movies": recommendations["Movies"],
+          "TV Shows": recommendations["TVShows"],
+          "Name": "You'll like these",
+          "Users": [currentUser.uid,]
+        };
       }
     });
     await FirebaseFirestore.instance
