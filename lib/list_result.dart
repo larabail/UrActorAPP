@@ -435,15 +435,10 @@ class _ListResultState extends State<ListResult> {
     }
   }
 
-  Future<List<String>> getMovieNames(List movieIds) async {
-    List<String> movieNames = [];
-
-    for (var id in movieIds) {
-      String movieName = await fetchMovieName(id.toString());
-      movieNames.add(movieName);
-    }
-
-    return movieNames;
+  Future<List> getMovieNames(List movieIds) async {
+    final responses =
+        await Future.wait(movieIds.map((id) => fetchMovieName(id.toString())));
+    return responses;
   }
 
   Future<int?> fetchMovieId(String movieTitle) async {
@@ -514,13 +509,15 @@ class _ListResultState extends State<ListResult> {
       lovedMovieIds.add(element[1]);
     });
 
-    List<String> seenMovieNames = await getMovieNames(seenMovieIds);
-    List<String> lovedMovieNames = await getMovieNames(lovedMovieIds);
+    List seenMovieNames = await getMovieNames(seenMovieIds);
+    List lovedMovieNames = await getMovieNames(lovedMovieIds);
     String moviesList = seenMovieNames.join(", ");
     String lovedList = lovedMovieNames.join(", ");
     String prompt =
-        "Given these movies I've seen: $moviesList, and the movies I've loved: $lovedList recommend exactly 21 movies I should watch next. "
-        "Please return the list as a semicolon-separated CSV, like this: title1;title2;title3";
+        "Given these movies I've seen: $moviesList, and the movies I've loved: $lovedList, "
+        "recommend 21 movies I should watch next that I haven't seen yet. "
+        "Please return the list as a semicolon-separated CSV, like this: title1;title2;title3.";
+
     final response = await http.post(
       Uri.parse(apiUrl),
       headers: {
@@ -528,7 +525,7 @@ class _ListResultState extends State<ListResult> {
         'Authorization': 'Bearer $apiKey',
       },
       body: jsonEncode({
-        'model': 'gpt-4o',
+        'model': 'gpt-4o-mini',
         'max_tokens': 150,
         'temperature': 0.7,
         'messages': [
@@ -541,8 +538,10 @@ class _ListResultState extends State<ListResult> {
       final data = jsonDecode(response.body);
       List ids = await getMovieIds(
           data['choices'][0]['message']['content'].split(";"));
-      await FirebaseUtils.updateRecommendations(ids, "Movies");
-      print(ids);
+      List unseenRecommendations =
+          ids.where((id) => !seenMovieIds.contains(id)).toList();
+      await FirebaseUtils.updateRecommendations(
+          unseenRecommendations, "Movies");
     } else {
       throw Exception(response.body);
     }
