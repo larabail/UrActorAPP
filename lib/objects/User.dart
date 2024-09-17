@@ -219,17 +219,6 @@ class AppUser {
             playlists[doc.id] = docData;
           }
         }
-        playlists["recommendations"] = {
-          "AccessCode": "",
-          "CoverPhoto":
-              "https://firebasestorage.googleapis.com/v0/b/actordb-cf981.appspot.com/o/madmax5487_a_simple_2d_art_marker_backdrop_for_an_ai_generated__30ab5e32-f385-469f-8fb4-9f751eee34d3.png?alt=media&token=25dac07c-8e15-4beb-9f02-d04327ef8867",
-          "Movies": recommendations["Movies"],
-          "TV Shows": recommendations["TVShows"],
-          "Name": "Handpicked for You",
-          "Users": [
-            currentUser.uid,
-          ]
-        };
       }
     });
     await FirebaseFirestore.instance

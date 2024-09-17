@@ -513,13 +513,14 @@ class _MyHomePageState extends State<MyHomePage> {
         return GestureDetector(
           onTap: () {
             Playlist listResult = Playlist(
-                id: key.toString(),
-                name: value.toString(),
-                backdrop: image.toString(),
-                movies: movies,
-                tvshows: tvshows,
-                accesscode: accessCode.toString(),
-                users: currentUser.playlists[key]["Users"]);
+              id: key.toString(),
+              name: value.toString(),
+              backdrop: image.toString(),
+              movies: movies,
+              tvshows: tvshows,
+              accesscode: accessCode.toString(),
+              users: currentUser.playlists[key]["Users"],
+            );
             Navigator.push(
               context,
               MaterialPageRoute(
