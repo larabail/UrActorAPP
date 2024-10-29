@@ -136,7 +136,7 @@ class _PlaylistsState extends State<Playlists> {
               ],
             ),
             if (currentUser.recommendations["Movies"].isEmpty &&
-                currentUser.recommendations["TV Shows"].isEmpty)
+                currentUser.recommendations["TVShows"].isEmpty)
               GestureDetector(
                 onTap: () {
                   Playlist listResult = Playlist(
@@ -191,7 +191,7 @@ class _PlaylistsState extends State<Playlists> {
                 child: Column(
                   children: [
                     if (currentUser.recommendations["Movies"].isNotEmpty ||
-                        currentUser.recommendations["TV Shows"].isNotEmpty)
+                        currentUser.recommendations["TVShows"].isNotEmpty)
                       GestureDetector(
                         onTap: () {
                           Playlist listResult = Playlist(
