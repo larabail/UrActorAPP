@@ -157,8 +157,8 @@ class SignUp extends StatelessWidget {
                               "TVShows": {}
                             };
                             const Map<String, dynamic> Recommendations = {
-                              "Movies": {},
-                              "TVShows": {}
+                              "Movies": [],
+                              "TVShows": []
                             };
                             const Map<String, dynamic> Settings = {
                               "darkMode": true,
