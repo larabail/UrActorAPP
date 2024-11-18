@@ -10,10 +10,6 @@ import 'package:uractor/common/firebaseutils.dart';
 import 'friends.dart';
 import 'objects/Movie.dart';
 import 'objects/TVShow.dart';
-import 'playlists.dart';
-import 'main.dart';
-import 'profile.dart';
-import 'search.dart';
 import 'movie_result.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -105,24 +101,6 @@ class _FriendCalendarState extends State<FriendCalendar> {
 
   @override
   Widget build(BuildContext context) {
-    int selectedIndex = 0;
-
-    final List<Widget> pages = [
-      const MyApp(),
-      const Playlists(),
-      const Search(),
-      const Friends(),
-      const Profile(),
-      // Add more pages here
-    ];
-
-    void onItemTapped(int index) {
-      selectedIndex = index;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => pages[selectedIndex]),
-      );
-    }
 
     List moviesOnDay = [];
     List movies = [];

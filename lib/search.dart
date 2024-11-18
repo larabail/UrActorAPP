@@ -23,6 +23,26 @@ class Search extends StatefulWidget {
 }
 
 class _SearchResultState extends State<Search> {
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _focusNode = FocusNode(); // Create a FocusNode
+
+  @override
+  void initState() {
+    super.initState();
+    // Request focus when the widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    // Dispose of the controller and focus node to prevent memory leaks
+    _searchController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     String getDefaultImagePath(String? imagePath) {
@@ -37,7 +57,6 @@ class _SearchResultState extends State<Search> {
 
     void handleTap(BuildContext context, Map item) {
       if (item.containsKey("poster_path") && item.containsKey("title")) {
-        // movieResult = [item['id'], item['title'], "Movies"];
         Movie tempMovie = Movie(
             id: item['id'].toString(),
             title: item['title'],
@@ -105,7 +124,7 @@ class _SearchResultState extends State<Search> {
                 child: Text(
                   item['title'] ??
                       (item["name"] ??
-                          'Unkown'), // Replace 'title' with the appropriate key
+                          'Unknown'), // Replace 'title' with the appropriate key
                   style: const TextStyle(
                     fontSize: 14, // Adjust the font size as needed
                   ),
@@ -124,6 +143,8 @@ class _SearchResultState extends State<Search> {
           Padding(
             padding: const EdgeInsets.fromLTRB(30, 0, 30, 0),
             child: TextField(
+              controller: _searchController,
+              focusNode: _focusNode, // Attach the FocusNode to the TextField
               decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.search),
                 hintText: 'Enter name of person/movie/show...',
