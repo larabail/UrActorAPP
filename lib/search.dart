@@ -24,12 +24,11 @@ class Search extends StatefulWidget {
 
 class _SearchResultState extends State<Search> {
   final TextEditingController _searchController = TextEditingController();
-  final FocusNode _focusNode = FocusNode(); // Create a FocusNode
+  final FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    // Request focus when the widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
     });
@@ -37,7 +36,6 @@ class _SearchResultState extends State<Search> {
 
   @override
   void dispose() {
-    // Dispose of the controller and focus node to prevent memory leaks
     _searchController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -122,11 +120,9 @@ class _SearchResultState extends State<Search> {
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Text(
-                  item['title'] ??
-                      (item["name"] ??
-                          'Unknown'), // Replace 'title' with the appropriate key
+                  item['title'] ?? (item["name"] ?? 'Unknown'),
                   style: const TextStyle(
-                    fontSize: 14, // Adjust the font size as needed
+                    fontSize: 14,
                   ),
                 ),
               ),
@@ -144,7 +140,7 @@ class _SearchResultState extends State<Search> {
             padding: const EdgeInsets.fromLTRB(30, 0, 30, 0),
             child: TextField(
               controller: _searchController,
-              focusNode: _focusNode, // Attach the FocusNode to the TextField
+              focusNode: _focusNode,
               decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.search),
                 hintText: 'Enter name of person/movie/show...',
@@ -153,9 +149,8 @@ class _SearchResultState extends State<Search> {
                   borderSide: BorderSide(color: Colors.grey),
                 ),
                 focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(
-                      color: Color.fromARGB(250, 224, 190,
-                          78)), // Color when the TextField is focused
+                  borderSide:
+                      BorderSide(color: Color.fromARGB(250, 224, 190, 78)),
                 ),
               ),
               onChanged: (value) {
