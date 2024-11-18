@@ -64,9 +64,9 @@ class MyApp extends StatelessWidget {
           color: Color(0xFF121212),
         ),
         switchTheme: SwitchThemeData(
-          thumbColor: MaterialStateProperty.all<Color>(
+          thumbColor: WidgetStateProperty.all<Color>(
               const Color.fromARGB(248, 241, 105, 56)),
-          trackColor: MaterialStateProperty.all<Color>(
+          trackColor: WidgetStateProperty.all<Color>(
               const Color.fromARGB(250, 224, 190, 78)),
         ),
         indicatorColor: const Color.fromARGB(250, 224, 190, 78),
@@ -89,13 +89,13 @@ class MyApp extends StatelessWidget {
           ),
         ),
         checkboxTheme: CheckboxThemeData(
-          fillColor: MaterialStateProperty.resolveWith<Color>((states) {
-            if (states.contains(MaterialState.selected)) {
+          fillColor: WidgetStateProperty.resolveWith<Color>((states) {
+            if (states.contains(WidgetState.selected)) {
               return const Color.fromARGB(250, 224, 190, 78);
             }
             return const Color.fromARGB(0, 158, 158, 158);
           }),
-          checkColor: MaterialStateProperty.all<Color>(Colors.white),
+          checkColor: WidgetStateProperty.all<Color>(Colors.white),
         ),
       ),
       home: const MyHomePage(),
