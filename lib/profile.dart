@@ -126,9 +126,6 @@ class _ProfileState extends State<Profile> {
       // Crop the image
       CroppedFile? croppedFile = await ImageCropper().cropImage(
         sourcePath: image.path,
-        aspectRatioPresets: [
-          CropAspectRatioPreset.square,
-        ],
         uiSettings: [
           AndroidUiSettings(
             toolbarTitle: 'Cropper',
@@ -137,7 +134,12 @@ class _ProfileState extends State<Profile> {
             initAspectRatio: CropAspectRatioPreset.original,
             lockAspectRatio: false,
           ),
+          IOSUiSettings(
+            title: 'Cropper',
+          ),
         ],
+        aspectRatio:
+            CropAspectRatio(ratioX: 1, ratioY: 1), // Use this for aspect ratio
       );
 
       if (croppedFile == null) return "";
@@ -209,15 +211,15 @@ class _ProfileState extends State<Profile> {
         x: day,
         barRods: [
           BarChartRodData(
-            y: moviesCount.toDouble(),
-            colors: [Colors.green],
+            toY: moviesCount.toDouble(),
+            color: Colors.green,
             width: 7,
           ),
           BarChartRodData(
-            y: seriesCount.toDouble(),
-            colors: [Colors.red],
+            toY: seriesCount.toDouble(),
+            color: Colors.red,
             width: 7,
-          )
+          ),
         ],
       );
     }).toList();
@@ -504,19 +506,27 @@ class _ProfileState extends State<Profile> {
                                           barGroups: chartData,
                                           borderData: FlBorderData(show: false),
                                           titlesData: FlTitlesData(
-                                            leftTitles: SideTitles(
-                                              showTitles: false,
-                                              getTextStyles: (context, value) =>
-                                                  const TextStyle(
-                                                      color: Colors.red,
-                                                      fontSize: 10),
+                                            leftTitles: AxisTitles(
+                                              sideTitles: SideTitles(
+                                                showTitles: false,
+                                                getTitlesWidget: (value, meta) {
+                                                  return Container();
+                                                },
+                                              ),
                                             ),
-                                            bottomTitles: SideTitles(
-                                              showTitles: true,
-                                              getTextStyles: (context, value) =>
-                                                  const TextStyle(
+                                            bottomTitles: AxisTitles(
+                                              sideTitles: SideTitles(
+                                                showTitles: true,
+                                                getTitlesWidget: (value, meta) {
+                                                  return Text(
+                                                    value.toString(),
+                                                    style: const TextStyle(
                                                       color: Colors.lightBlue,
-                                                      fontSize: 14),
+                                                      fontSize: 14,
+                                                    ),
+                                                  );
+                                                },
+                                              ),
                                             ),
                                           ),
                                         ),
