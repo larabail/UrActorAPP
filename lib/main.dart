@@ -1,5 +1,8 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:uractor/notifications.dart';
 import 'package:uractor/objects/Playlist.dart';
 import 'package:uractor/objects/User.dart';
@@ -117,10 +120,23 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> loadPage() async {
+    HttpClient client = HttpClient()
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
     await currentUser.getFirebaseData();
     setState(() {
       gotData = true;
     });
+    try {
+      var request = await client.getUrl(Uri.parse('https://example.com'));
+      var response = await request.close();
+
+      response.transform(const Utf8Decoder()).listen((data) {
+        print(data);
+      });
+    } catch (e) {
+      print('Error: $e');
+    }
   }
 
   @override
