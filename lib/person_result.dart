@@ -1,11 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/common/item_container.dart';
 import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/Person.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
-import 'common/constants.dart';
 import 'common/utils.dart';
 import 'main.dart';
 import 'movie_result.dart';
@@ -104,26 +103,13 @@ class _PersonResultState extends State<PersonResult> {
                         itemCount: 1,
                         itemBuilder: (BuildContext context, int index) {
                           return GestureDetector(
-                            onTap: () {
-                              //
-                            },
-                            child: Container(
-                              width: MediaQuery.of(context).size.width * 0.1,
-                              height: MediaQuery.of(context).size.height * 0.25,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(27),
-                                image: DecorationImage(
-                                  image: CachedNetworkImageProvider(snapshot
-                                              .data!["profile_path"] !=
-                                          null
-                                      ? IMG_LINK +
-                                          snapshot.data!['profile_path']
-                                      : 'https://cdn-icons-png.flaticon.com/512/3088/3088765.png'),
-                                  fit: BoxFit.fitWidth,
-                                ),
-                              ),
-                            ),
-                          );
+                              onTap: () {
+                                //
+                              },
+                              child: getItemContainer(
+                                  context, snapshot.data, "person",
+                                  widthPercentage: 0.1,
+                                  heightPercentage: 0.25));
                         },
                       ),
                     ),
@@ -520,19 +506,7 @@ class _PersonResultState extends State<PersonResult> {
             currentUser.seenTVShows, [type, movie['id']])) {
       return Stack(
         children: [
-          Container(
-            margin: const EdgeInsets.fromLTRB(10.0, 10.0, 5.0, 0),
-            width: MediaQuery.of(context).size.width * 0.28,
-            height: MediaQuery.of(context).size.height * 0.18,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(27),
-              image: DecorationImage(
-                image:
-                    CachedNetworkImageProvider(IMG_LINK + movie['poster_path']),
-                fit: BoxFit.fitWidth,
-              ),
-            ),
-          ),
+          getItemContainer(context, movie, "media"),
           if (type == "Movies" &&
               oscars.containsKey(movie["title"].toLowerCase()))
             Align(
@@ -591,29 +565,9 @@ class _PersonResultState extends State<PersonResult> {
     } else {
       return Stack(
         children: [
+          getItemContainer(context, movie, "media"),
           Container(
-            margin: const EdgeInsets.fromLTRB(10.0, 10.0, 5.0, 0),
-            width: MediaQuery.of(context).size.width * 0.28,
-            height: MediaQuery.of(context).size.height * 0.18,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(27),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color.fromARGB(255, 255, 255, 255).withOpacity(.5),
-                  const Color.fromARGB(255, 255, 255, 255).withOpacity(.5),
-                ],
-              ),
-              image: DecorationImage(
-                image:
-                    CachedNetworkImageProvider(IMG_LINK + movie['poster_path']),
-                fit: BoxFit.fitWidth,
-              ),
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.fromLTRB(10.0, 10.0, 5.0, 0),
+            margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
             width: MediaQuery.of(context).size.width * 0.28,
             height: MediaQuery.of(context).size.height * 0.18,
             decoration: BoxDecoration(
@@ -703,19 +657,7 @@ class _PersonResultState extends State<PersonResult> {
             currentUser.seenTVShows, [type, movie['id']])) {
       return Stack(
         children: [
-          Container(
-            margin: const EdgeInsets.fromLTRB(10.0, 10.0, 5.0, 0),
-            width: MediaQuery.of(context).size.width * 0.28,
-            height: MediaQuery.of(context).size.height * 0.18,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(27),
-              image: DecorationImage(
-                image:
-                    CachedNetworkImageProvider(IMG_LINK + movie['poster_path']),
-                fit: BoxFit.fitWidth,
-              ),
-            ),
-          ),
+          getItemContainer(context, movie, "media"),
           if (type == "Movies" &&
               oscars.containsKey(movie["title"].toLowerCase()))
             Align(
@@ -774,29 +716,9 @@ class _PersonResultState extends State<PersonResult> {
     } else {
       return Stack(
         children: [
+          getItemContainer(context, movie, "media"),
           Container(
-            margin: const EdgeInsets.fromLTRB(10.0, 10.0, 5.0, 0),
-            width: MediaQuery.of(context).size.width * 0.28,
-            height: MediaQuery.of(context).size.height * 0.18,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(27),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color.fromARGB(255, 255, 255, 255).withOpacity(.5),
-                  const Color.fromARGB(255, 255, 255, 255).withOpacity(.5),
-                ],
-              ),
-              image: DecorationImage(
-                image:
-                    CachedNetworkImageProvider(IMG_LINK + movie['poster_path']),
-                fit: BoxFit.fitWidth,
-              ),
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.fromLTRB(10.0, 10.0, 5.0, 0),
+            margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
             width: MediaQuery.of(context).size.width * 0.28,
             height: MediaQuery.of(context).size.height * 0.18,
             decoration: BoxDecoration(

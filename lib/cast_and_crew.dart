@@ -1,7 +1,7 @@
 // ignore_for_file: use_key_in_widget_constructors, must_be_immutable
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/common/item_container.dart';
 import 'package:uractor/objects/Person.dart';
 import 'package:uractor/person_result.dart';
 import 'common/appbar.dart';
@@ -19,6 +19,24 @@ class CastCrew extends StatefulWidget {
 class _CastCrewState extends State<CastCrew> {
   @override
   Widget build(BuildContext context) {
+    List essentialRoles = ["Director", "Writer"];
+
+    List sortedCrew = List.from(widget.data["crew"]);
+    sortedCrew.sort((a, b) {
+      List rolesA =
+          (a["job"] ?? "").split('/').map((role) => role.trim()).toList();
+      List rolesB =
+          (b["job"] ?? "").split('/').map((role) => role.trim()).toList();
+
+      int indexA = rolesA.indexWhere((role) => essentialRoles.contains(role));
+      int indexB = rolesB.indexWhere((role) => essentialRoles.contains(role));
+
+      if (indexA == -1) indexA = essentialRoles.length;
+      if (indexB == -1) indexB = essentialRoles.length;
+
+      return indexA.compareTo(indexB);
+    });
+
     return Scaffold(
       appBar: const CustomAppBar(),
       body: Column(
@@ -49,8 +67,7 @@ class _CastCrewState extends State<CastCrew> {
                       children: [
                         CastCrewTabView(
                             items: widget.data["cast"].reversed.toList()),
-                        CastCrewTabView(
-                            items: widget.data["crew"].reversed.toList()),
+                        CastCrewTabView(items: sortedCrew.reversed.toList()),
                       ],
                     ),
                   ),
@@ -122,19 +139,7 @@ class ItemCard extends StatelessWidget {
               );
             },
             child: Row(children: [
-              Container(
-                margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                width: MediaQuery.of(context).size.width * 0.28,
-                height: MediaQuery.of(context).size.height * 0.18,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(27),
-                  image: DecorationImage(
-                    image: CachedNetworkImageProvider(
-                        snapshot.data!['profile_path']),
-                    fit: BoxFit.fitWidth,
-                  ),
-                ),
-              ),
+              getItemContainer(context, snapshot.data, "person"),
               Column(
                 children: [
                   SizedBox(

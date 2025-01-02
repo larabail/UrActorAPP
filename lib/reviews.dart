@@ -42,11 +42,7 @@ class _ReviewsState extends State<Reviews> {
       } else {
         data['title'] = json['title'];
       }
-      if (json['poster_path'] == null) {
-        data['poster'] = 'assets/question_mark.png';
-      } else {
-        data['poster'] = IMG_LINK + json['poster_path'];
-      }
+      data['poster_path'] = json['poster_path'];
       data['id'] = json['id'];
       data['type'] = type;
       if (!Utils.containsMap(movies, data)) {
@@ -63,11 +59,7 @@ class _ReviewsState extends State<Reviews> {
         } else {
           data['title'] = json['title'];
         }
-        if (json['poster_path'] == null) {
-          data['poster'] = 'assets/question_mark.png';
-        } else {
-          data['poster'] = IMG_LINK + json['poster_path'];
-        }
+        data['poster_path'] = json['poster_path'];
         data['id'] = json['id'];
         data['type'] = type;
         if (!Utils.containsMap(movies, data)) {

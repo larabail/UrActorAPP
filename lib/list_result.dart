@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
 import 'package:uractor/common/firebaseutils.dart';
+import 'package:uractor/common/item_container.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'package:uractor/popups/grant_access_dialogue.dart';
 import 'common/appbar.dart';
@@ -406,11 +407,7 @@ class _ListResultState extends State<ListResult> {
       } else {
         data['title'] = json['title'];
       }
-      if (json['poster_path'] == null) {
-        data['poster'] = 'assets/question_mark.png';
-      } else {
-        data['poster'] = IMG_LINK + json['poster_path'];
-      }
+      data['poster_path'] = json['poster_path'];
       data['id'] = json['id'];
       data['type'] = type;
       if (!containsMap(moviesList, data)) {
@@ -425,7 +422,8 @@ class _ListResultState extends State<ListResult> {
   final String apiKey =
       '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';
   Future<String> fetchMovieName(String movieId, String type) async {
-    final url = '${type == "Movies" ? MOVIE_LINK : TV_SHOW_LINK}$movieId$API_KEY';
+    final url =
+        '${type == "Movies" ? MOVIE_LINK : TV_SHOW_LINK}$movieId$API_KEY';
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -599,18 +597,7 @@ class _ListResultState extends State<ListResult> {
                 ),
               );
             },
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-              width: MediaQuery.of(context).size.width * 0.28,
-              height: MediaQuery.of(context).size.height * 0.18,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(27),
-                image: DecorationImage(
-                  image: CachedNetworkImageProvider(snapshot.data!['poster']),
-                  fit: BoxFit.fitWidth,
-                ),
-              ),
-            ),
+            child: getItemContainer(context, snapshot.data, "media")
           );
         } else if (snapshot.hasError) {
           return Container(

@@ -1,9 +1,9 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
+import 'package:uractor/common/item_container.dart';
 import 'package:uractor/objects/Media.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'common/appbar.dart';
@@ -59,11 +59,7 @@ class _FriendProfileState extends State<FriendProfile> {
       } else {
         data['title'] = json['title'];
       }
-      if (json['poster_path'] == null) {
-        data['poster'] = 'assets/question_mark.png';
-      } else {
-        data['poster'] = IMG_LINK + json['poster_path'];
-      }
+      data['poster_path'] = json['poster_path'];
       data['id'] = json['id'];
       data['type'] = type;
       if (!Utils.containsMap(movies, data)) {
@@ -467,36 +463,22 @@ class _FriendProfileState extends State<FriendProfile> {
                         (BuildContext context, AsyncSnapshot<Map> snapshot) {
                       if (snapshot.hasData) {
                         return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => type == "Person"
-                                    ? PersonResult(personResult: item as Person)
-                                    : type == "Movie"
-                                        ? MovieResult(movie: item as Movie)
-                                        : TVShowResult(tvshow: item as TVShow),
-                              ),
-                            );
-                          },
-                          child: Container(
-                            margin:
-                                const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                            width: MediaQuery.of(context).size.width * 0.28,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(27),
-                              image: DecorationImage(
-                                image: CachedNetworkImageProvider(
-                                  type == "Person"
-                                      ? snapshot.data!["profile_path"]
-                                      : IMG_LINK +
-                                          snapshot.data!["poster_path"],
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => type == "Person"
+                                      ? PersonResult(
+                                          personResult: item as Person)
+                                      : type == "Movie"
+                                          ? MovieResult(movie: item as Movie)
+                                          : TVShowResult(
+                                              tvshow: item as TVShow),
                                 ),
-                                fit: BoxFit.fitWidth,
-                              ),
-                            ),
-                          ),
-                        );
+                              );
+                            },
+                            child: getItemContainer(context, snapshot.data,
+                                type == "Person" ? "person" : "media"));
                       } else if (snapshot.hasError) {
                         return const Center(
                             child: Text("Failed to load movie details"));
@@ -592,33 +574,20 @@ class _FriendProfileState extends State<FriendProfile> {
                         (BuildContext context, AsyncSnapshot<Map> snapshot) {
                       if (snapshot.hasData) {
                         return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => content.reversed
-                                              .toList()[index][0] ==
-                                          "Movies"
-                                      ? MovieResult(movie: tempMedia as Movie)
-                                      : TVShowResult(
-                                          tvshow: tempMedia as TVShow)),
-                            );
-                          },
-                          child: Container(
-                            margin:
-                                const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                            width: MediaQuery.of(context).size.width * 0.28,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(27),
-                              image: DecorationImage(
-                                image: CachedNetworkImageProvider(
-                                  IMG_LINK + snapshot.data!["poster_path"],
-                                ),
-                                fit: BoxFit.fitWidth,
-                              ),
-                            ),
-                          ),
-                        );
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => content.reversed
+                                                .toList()[index][0] ==
+                                            "Movies"
+                                        ? MovieResult(movie: tempMedia as Movie)
+                                        : TVShowResult(
+                                            tvshow: tempMedia as TVShow)),
+                              );
+                            },
+                            child: getItemContainer(
+                                context, snapshot.data, "media"));
                       } else if (snapshot.hasError) {
                         return const Center(
                             child: Text("Failed to load movie details"));

@@ -100,7 +100,10 @@ Widget getCover(Map data, context, MediaItem mediaItem, String type) {
                         context,
                         MaterialPageRoute(
                             builder: (context) => FriendsThoughts(
-                                friends: snapshot.data!, mediaItem: mediaItem, type: type, data: data)),
+                                friends: snapshot.data!,
+                                mediaItem: mediaItem,
+                                type: type,
+                                data: data)),
                       )
                     },
                     child: SizedBox(
@@ -181,11 +184,15 @@ Widget getCover(Map data, context, MediaItem mediaItem, String type) {
                             ? Movie(
                                 id: mediaItem.id,
                                 title: data["title"],
-                                coverPhoto: IMG_LINK + data["poster_path"])
+                                coverPhoto: data["poster_path"] != null
+                                    ? IMG_LINK + data["poster_path"]
+                                    : UNKOWN_COVER)
                             : TVShow(
                                 id: mediaItem.id,
                                 title: data["name"],
-                                coverPhoto: IMG_LINK + data["poster_path"]);
+                                coverPhoto: data["poster_path"] != null
+                                    ? IMG_LINK + data["poster_path"]
+                                    : UNKOWN_COVER);
                         return Share(
                           item: tempItem,
                           type: type,

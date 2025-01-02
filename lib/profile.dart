@@ -2,18 +2,17 @@
 
 import 'dart:io';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:uractor/common/item_container.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'package:uractor/popups/profile_sections_popup.dart';
 import 'package:uractor/tvshow_result.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
-import 'common/constants.dart';
 import 'objects/Movie.dart';
 import 'main.dart';
 import 'objects/Person.dart';
@@ -709,14 +708,6 @@ class _ProfileState extends State<Profile> {
                       } else if (!snapshot.hasData) {
                         return const Center(child: Text("No data available"));
                       } else {
-                        String imageUrl;
-                        if (type == "Person") {
-                          imageUrl = snapshot.data!["profile_path"] ??
-                              'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
-                        } else {
-                          imageUrl =
-                              IMG_LINK + (snapshot.data!["poster_path"] ?? '');
-                        }
                         return GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -730,18 +721,7 @@ class _ProfileState extends State<Profile> {
                               ),
                             );
                           },
-                          child: Container(
-                            margin:
-                                const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                            width: MediaQuery.of(context).size.width * 0.28,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(27),
-                              image: DecorationImage(
-                                image: CachedNetworkImageProvider(imageUrl),
-                                fit: BoxFit.fitWidth,
-                              ),
-                            ),
-                          ),
+                          child: getItemContainer(context, snapshot.data, (type == "Movie" || type == "TVShow") ? "media" : "person")
                         );
                       }
                     },
