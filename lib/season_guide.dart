@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/cast_and_crew.dart';
 import 'package:uractor/common/constants.dart';
+import 'package:uractor/common/item_container.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
@@ -87,20 +88,7 @@ class ItemCard extends StatelessWidget {
         );
       },
       child: Row(children: [
-        Container(
-          margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-          width: MediaQuery.of(context).size.width * 0.28,
-          height: MediaQuery.of(context).size.height * 0.18,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(27),
-            image: DecorationImage(
-              image: CachedNetworkImageProvider(info['poster_path'] != null
-                  ? IMG_LINK + info['poster_path']
-                  : "https://cdn-icons-png.flaticon.com/512/3088/3088765.png"),
-              fit: BoxFit.fitWidth,
-            ),
-          ),
-        ),
+        getItemContainer(context, info, "media"),
         Column(
           children: [
             SizedBox(
@@ -262,9 +250,10 @@ class EpisodeCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(27),
                   image: DecorationImage(
-                    image: CachedNetworkImageProvider(snapshot.data!["still_path"] != null
-                        ? IMG_LINK + snapshot.data!['still_path']
-                        : "https://cdn-icons-png.flaticon.com/512/3088/3088765.png"),
+                    image: CachedNetworkImageProvider(
+                        snapshot.data!["still_path"] != null
+                            ? IMG_LINK + snapshot.data!['still_path']
+                            : UNKOWN_COVER),
                     fit: BoxFit.fitWidth,
                   ),
                 ),

@@ -1,9 +1,9 @@
 // ignore_for_file: library_private_types_in_public_api
 // ignore_for_file: use_build_context_synchronously, non_constant_identifier_names
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:uractor/common/item_container.dart';
 import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'dart:convert';
@@ -56,24 +56,12 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
     }
   }
 
-  String getDefaultImagePath(String? imagePath) {
-    const defaultPath =
-        'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
-    return imagePath == null ||
-            imagePath ==
-                "https://cdn-icons-png.flaticon.com/512/3088/3088765.png"
-        ? defaultPath
-        : IMG_LINK + imagePath;
-  }
-
   Widget buildItem(BuildContext context, Map item, int index, bool isSelected) {
-    if (item.containsKey("poster_path") && item.containsKey("title")) {
-      // movieResult = [item['id'], item['title'], "Movies"];
-      item['profile_path'] = getDefaultImagePath(item['poster_path']);
-    } else if (item.containsKey("poster_path") && item.containsKey("name")) {
-      item['profile_path'] = getDefaultImagePath(item['poster_path']);
+    if (item.containsKey("poster_path") &&
+        (item.containsKey("title") || item.containsKey("name"))) {
+      item['poster_path'] = item['poster_path'];
     } else {
-      item['profile_path'] = getDefaultImagePath(item['profile_path']);
+      item['poster_path'] = item['profile_path'];
     }
     return GestureDetector(
       onTap: () => {
@@ -84,22 +72,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
       },
       child: Column(
         children: [
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
-            width: MediaQuery.of(context).size.width * 0.28,
-            height: MediaQuery.of(context).size.height * 0.18,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(27),
-              image: DecorationImage(
-                image: CachedNetworkImageProvider(item['profile_path']),
-                fit: BoxFit.fitWidth,
-              ),
-              border: isSelected
-                  ? Border.all(
-                      color: const Color.fromARGB(250, 224, 190, 78), width: 3)
-                  : null,
-            ),
-          ),
+          getItemSelectableContainer(context, item, "media", isSelected),
           SizedBox(
             width: MediaQuery.of(context).size.width * 0.28,
             child: SingleChildScrollView(
@@ -328,7 +301,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                 Padding(
                   padding: const EdgeInsets.all(10.0),
                   child: SizedBox(
-                    height: 125, // Set your desired height here
+                    height: 125,
                     child: ListView.builder(
                       shrinkWrap: true,
                       itemCount: currentUser.friends.length,

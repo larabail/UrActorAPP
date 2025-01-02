@@ -3,13 +3,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:uractor/common/item_container.dart';
 import 'package:uractor/notifications.dart';
 import 'package:uractor/objects/Playlist.dart';
 import 'package:uractor/objects/User.dart';
 import 'package:uractor/tvshow_result.dart';
-// import 'package:uractor/upcoming.dart';
 
-import 'common/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
 import 'common/appbar.dart';
@@ -375,27 +374,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       );
                                     },
                                     child: Column(children: [
-                                      Container(
-                                        margin: const EdgeInsets.fromLTRB(
-                                            5.0, 10.0, 10.0, 0),
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.28,
-                                        height:
-                                            MediaQuery.of(context).size.height *
-                                                0.17,
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(27),
-                                          image: DecorationImage(
-                                            image: CachedNetworkImageProvider(
-                                              IMG_LINK +
-                                                  snapshot.data!["poster_path"],
-                                            ),
-                                            fit: BoxFit.fitWidth,
-                                          ),
-                                        ),
-                                      ),
+                                      getItemContainer(context, snapshot.data, type),
                                       Text(
                                         '${review["Rating"]}/10',
                                         textAlign: TextAlign.center,
@@ -740,20 +719,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                           tvshow: tempMedia as TVShow)),
                             );
                           },
-                          child: Container(
-                            margin:
-                                const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                            width: MediaQuery.of(context).size.width * 0.28,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(27),
-                              image: DecorationImage(
-                                image: CachedNetworkImageProvider(
-                                  IMG_LINK + snapshot.data!["poster_path"],
-                                ),
-                                fit: BoxFit.fitWidth,
-                              ),
-                            ),
-                          ),
+                          child: getItemContainer(context, snapshot.data, "media")
                         );
                       } else if (snapshot.hasError) {
                         return const Center(

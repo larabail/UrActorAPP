@@ -1,7 +1,7 @@
 // ignore_for_file: unnecessary_brace_in_string_interps, no_leading_underscores_for_local_identifiers, avoid_function_literals_in_foreach_calls, use_build_context_synchronously, library_private_types_in_public_api
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/firebaseutils.dart';
+import 'package:uractor/common/item_container.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'package:uractor/tvshow_result.dart';
 import 'common/constants.dart';
@@ -79,7 +79,9 @@ class _CalendarState extends State<Calendar> {
     await userDoc.update(updatedCalendar);
 
     if (currentUser.rewatchedMovies.keys.toList().contains(id)) {
-      currentUser.rewatchedMovies[id] - 1 > 0 ? currentUser.rewatchedMovies[id] -= 1 : 0;
+      currentUser.rewatchedMovies[id] - 1 > 0
+          ? currentUser.rewatchedMovies[id] -= 1
+          : 0;
       if (currentUser.rewatchedMovies[id] == 0) {
         List w;
         await FirebaseFirestore.instance
@@ -225,7 +227,7 @@ class _CalendarState extends State<Calendar> {
                           context: context,
                           initialDate: DateTime.now(),
                           firstDate: DateTime(2000),
-                          lastDate: DateTime(2025),
+                          lastDate: DateTime(3000),
                         );
                         if (selectedDate != null) {
                           bool done = await showDialog(
@@ -432,14 +434,14 @@ class _CalendarState extends State<Calendar> {
                                                       title: event['title'],
                                                       coverPhoto: event[
                                                               "poster_path"] ??
-                                                          "")
+                                                          UNKOWN_COVER)
                                                   : TVShow(
                                                       id: event["id"]
                                                           .toString(),
                                                       title: event['name'],
                                                       coverPhoto: event[
                                                               "poster_path"] ??
-                                                          "");
+                                                          UNKOWN_COVER);
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
@@ -459,32 +461,10 @@ class _CalendarState extends State<Calendar> {
                                                 ClipRRect(
                                                   borderRadius:
                                                       BorderRadius.circular(30),
-                                                  child: Container(
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            0.32,
-                                                    height:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .height *
-                                                            0.2,
-                                                    decoration: BoxDecoration(
-                                                      image: DecorationImage(
-                                                        image:
-                                                            CachedNetworkImageProvider(
-                                                          event['poster_path'] !=
-                                                                  null
-                                                              ? IMG_LINK +
-                                                                  event[
-                                                                      'poster_path']
-                                                              : "https://cringemdb.com/img/movie-poster-placeholder.png",
-                                                        ),
-                                                        fit: BoxFit.cover,
-                                                      ),
-                                                    ),
-                                                  ),
+                                                  child: getItemContainer(
+                                                      context, event, "media",
+                                                      widthPercentage: 0.32,
+                                                      heightPercentage: 0.2),
                                                 ),
                                                 if (event
                                                     .containsKey("friends"))

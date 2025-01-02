@@ -15,8 +15,11 @@ const String SEARCH_BY_NAME_TV_SHOW_LINK =
 const String SEARCH_BY_NAME_MULTI_LINK =
     'https://api.themoviedb.org/3/search/multi$API_KEY&query=';
 const String PERSON_LINK = "https://api.themoviedb.org/3/person/";
-
 const String MOVIE_CREDITS_LINK = '/movie_credits$API_KEY';
 const String TV_SHOW_CREDITS_LINK = '/tv_credits$API_KEY';
 const String GENRES_LINK =
     "https://api.themoviedb.org/3/genre/movie/list$API_KEY";
+const String UNKOWN_COVER =
+    "https://firebasestorage.googleapis.com/v0/b/actordb-cf981.appspot.com/o/unkown_cover.png?alt=media&token=4a9b8c89-67b4-4859-91c1-166383ab1586";
+const String UNKOWN_PERSON =
+    "https://firebasestorage.googleapis.com/v0/b/actordb-cf981.appspot.com/o/unkown_actor.png?alt=media&token=054473a7-ed7a-4bc7-9ff9-7b7f37b5ae84";

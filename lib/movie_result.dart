@@ -1,13 +1,13 @@
 // ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, no_leading_underscores_for_local_identifiers
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:uractor/common/item_container.dart';
 import 'package:uractor/common/mediaitembuilder.dart';
 import 'package:uractor/popups/add_friends_seen_with_popup.dart';
 import 'package:uractor/popups/add_to_calendar_pop_up.dart';
 
 import 'cast_and_crew.dart';
 import 'package:uractor/common/firebaseutils.dart';
-import 'common/constants.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' as intl;
@@ -1122,12 +1122,6 @@ class _MovieResultState extends State<MovieResult> {
             itemCount: data['cast'].length < 10 ? data['cast'].length : 10,
             itemBuilder: (BuildContext context, int index) {
               Map person = data['cast'][index];
-              if (person['profile_path'] == null) {
-                person['profile_path'] =
-                    "https://cdn-icons-png.flaticon.com/512/3088/3088765.png";
-              } else {
-                person['profile_path'] = IMG_LINK + person['profile_path'];
-              }
               return Padding(
                 padding: const EdgeInsets.fromLTRB(5.0, 0.0, 5.0, 0.0),
                 child: GestureDetector(
@@ -1147,18 +1141,7 @@ class _MovieResultState extends State<MovieResult> {
                   },
                   child: Column(
                     children: <Widget>[
-                      Container(
-                        margin: const EdgeInsets.fromLTRB(10.0, 10.0, 5.0, 0),
-                        width: MediaQuery.of(context).size.width * 0.25,
-                        height: MediaQuery.of(context).size.height * 0.18,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(27),
-                          child: Image.network(
-                            person['profile_path'],
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
+                      getItemContainer(context, person, "person"),
                       const SizedBox(height: 10),
                       Text(
                         '${person["name"]}',
@@ -1184,10 +1167,11 @@ class _MovieResultState extends State<MovieResult> {
             itemCount: data['crew'].length < 5 ? data['crew'].length : 5,
             itemBuilder: (BuildContext context, int index) {
               var director = data['crew'].firstWhere(
-                (person) =>
-                    person['job'].contains('Director') &&
-                    !person['job'].contains('Director of') &&
-                    person['job'] != null,
+                (person) {
+                  String? job = person["job"];
+                  return job != null &&
+                      job.split('/').any((role) => role.trim() == "Director");
+                },
                 orElse: () => null,
               );
               var writer = data['crew'].firstWhere(

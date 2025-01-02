@@ -4,11 +4,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/cast_and_crew.dart';
+import 'package:uractor/common/item_container.dart';
 import 'package:uractor/common/mediaitembuilder.dart';
 import 'package:uractor/season_guide.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
-import 'common/constants.dart';
 import 'common/utils.dart';
 import 'package:uractor/common/firebaseutils.dart';
 import 'friends.dart';
@@ -1145,12 +1145,6 @@ class _TVShowResultState extends State<TVShowResult> {
             itemCount: data['cast'].length < 10 ? data['cast'].length : 10,
             itemBuilder: (BuildContext context, int index) {
               Map person = data['cast'][index];
-              if (person['profile_path'] == null) {
-                person['profile_path'] =
-                    "https://cdn-icons-png.flaticon.com/512/3088/3088765.png";
-              } else {
-                person['profile_path'] = IMG_LINK + person['profile_path'];
-              }
               return Padding(
                 padding: const EdgeInsets.fromLTRB(5.0, 0.0, 5.0, 0.0),
                 child: GestureDetector(
@@ -1170,18 +1164,7 @@ class _TVShowResultState extends State<TVShowResult> {
                   },
                   child: Column(
                     children: <Widget>[
-                      Container(
-                        margin: const EdgeInsets.fromLTRB(10.0, 10.0, 5.0, 0),
-                        width: MediaQuery.of(context).size.width * 0.25,
-                        height: MediaQuery.of(context).size.height * 0.18,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(27),
-                          child: Image.network(
-                            person['profile_path'],
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
+                      getItemContainer(context, person, "person"),
                       const SizedBox(height: 10),
                       Text(
                         '${person["name"]}',

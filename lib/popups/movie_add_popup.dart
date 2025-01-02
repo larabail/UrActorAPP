@@ -1,10 +1,9 @@
 // ignore_for_file: use_build_context_synchronously, non_constant_identifier_names
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uractor/common/item_container.dart';
 import '../common/apiutils.dart';
-import '../common/constants.dart';
 import '../main.dart';
 import '../objects/Playlist.dart';
 
@@ -93,7 +92,8 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
                   labelText: 'Name of The Movie You\'d Like to Add',
                   labelStyle: TextStyle(color: Colors.white),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color.fromARGB(250, 224, 190, 78)),
+                    borderSide:
+                        BorderSide(color: Color.fromARGB(250, 224, 190, 78)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Colors.grey),
@@ -137,31 +137,15 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
                         itemCount: snapshot.data?.length,
                         itemBuilder: (context, index) {
                           Map<String, dynamic> item = snapshot.data?[index];
-                          if (item['poster_path'] != null) {
-                            return Container(
-                              width: 100,
-                              margin: const EdgeInsets.symmetric(horizontal: 5),
-                              child: GridTile(
-                                child: GestureDetector(
-                                  onTap: () {
-                                    _movie = item["id"].toString();
-                                    addMovieSubmit();
-                                  },
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      image: DecorationImage(
-                                        image: CachedNetworkImageProvider(
-                                            IMG_LINK + item['poster_path']),
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }
-                          return null;
+                          return GridTile(
+                            child: GestureDetector(
+                              onTap: () {
+                                _movie = item["id"].toString();
+                                addMovieSubmit();
+                              },
+                              child: getItemContainer(context, item, "media")
+                            ),
+                          );
                         },
                       );
                     }
