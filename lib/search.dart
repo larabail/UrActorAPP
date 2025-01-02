@@ -1,14 +1,13 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/common/item_container.dart';
 import '../common/apiutils.dart';
 import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/Person.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
-import 'common/constants.dart';
 import 'person_result.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
@@ -43,18 +42,8 @@ class _SearchResultState extends State<Search> {
 
   @override
   Widget build(BuildContext context) {
-    String getDefaultImagePath(String? imagePath) {
-      const defaultPath =
-          'https://cdn-icons-png.flaticon.com/512/3088/3088765.png';
-      return imagePath == null ||
-              imagePath ==
-                  "https://cdn-icons-png.flaticon.com/512/3088/3088765.png"
-          ? defaultPath
-          : IMG_LINK + imagePath;
-    }
-
-    void handleTap(BuildContext context, Map item) {
-      if (item.containsKey("poster_path") && item.containsKey("title")) {
+    void handleTap(BuildContext context, Map item, String typeContainer) {
+      if (item.containsKey("poster_path") && item.containsKey("title") && typeContainer == "media") {
         Movie tempMovie = Movie(
             id: item['id'].toString(),
             title: item['title'],
@@ -65,7 +54,7 @@ class _SearchResultState extends State<Search> {
                 builder: (context) => MovieResult(
                       movie: tempMovie,
                     )));
-      } else if (item.containsKey("poster_path") && item.containsKey("name")) {
+      } else if (item.containsKey("poster_path") && item.containsKey("name") && typeContainer == "media") {
         TVShow tempTvShow = TVShow(
             id: item['id'].toString(),
             title: item['name'],
@@ -91,30 +80,19 @@ class _SearchResultState extends State<Search> {
     }
 
     Widget buildItem(BuildContext context, Map item) {
-      if (item.containsKey("poster_path") && item.containsKey("title")) {
-        item['profile_path'] = getDefaultImagePath(item['poster_path']);
-      } else if (item.containsKey("poster_path") && item.containsKey("name")) {
-        item['profile_path'] = getDefaultImagePath(item['poster_path']);
+      String typeContainer = "media";
+      if (item.containsKey("poster_path") &&
+          (item.containsKey("title") || item.containsKey("name"))) {
+        item['poster_path'] = item['poster_path'];
       } else {
-        item['profile_path'] = getDefaultImagePath(item['profile_path']);
+        typeContainer = "person";
+        item['poster_path'] = item['profile_path'];
       }
       return GestureDetector(
-        onTap: () => handleTap(context, item),
+        onTap: () => handleTap(context, item, typeContainer),
         child: Column(
           children: [
-            Container(
-              margin:
-                  const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
-              width: MediaQuery.of(context).size.width * 0.28,
-              height: MediaQuery.of(context).size.height * 0.18,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(27),
-                image: DecorationImage(
-                  image: CachedNetworkImageProvider(item['profile_path']),
-                  fit: BoxFit.fitWidth,
-                ),
-              ),
-            ),
+            getItemContainer(context, item, typeContainer),
             SizedBox(
               width: MediaQuery.of(context).size.width * 0.28,
               child: SingleChildScrollView(

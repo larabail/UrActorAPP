@@ -1,8 +1,8 @@
 // ignore_for_file: use_build_context_synchronously, non_constant_identifier_names
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uractor/common/item_container.dart';
 import '../common/constants.dart';
 import '../common/apiutils.dart';
 import '../list_result.dart';
@@ -153,8 +153,7 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
                             itemCount: snapshot.data?.length,
                             itemBuilder: (context, index) {
                               Map<String, dynamic> item = snapshot.data?[index];
-                              if (item['poster_path'] != null &&
-                                  item["backdrop_path"] != null) {
+                              if (item["backdrop_path"] != null) {
                                 bool isSelected = index == _selectedIndex;
                                 if (isSelected) {
                                   cover = IMG_LINK + item["backdrop_path"];
@@ -165,29 +164,18 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
                                       const EdgeInsets.symmetric(horizontal: 5),
                                   child: GridTile(
                                     child: GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          _selectedIndex = index;
-                                          cover =
-                                              IMG_LINK + item["backdrop_path"];
-                                        });
-                                      },
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                          image: DecorationImage(
-                                            image: CachedNetworkImageProvider(
-                                                IMG_LINK + item['poster_path']),
-                                            fit: BoxFit.cover,
-                                          ),
-                                          border: isSelected
-                                              ? Border.all(
-                                                  color: const Color.fromARGB(250, 224, 190, 78), width: 3)
-                                              : null,
-                                        ),
-                                      ),
-                                    ),
+                                        onTap: () {
+                                          setState(() {
+                                            _selectedIndex = index;
+                                            cover = IMG_LINK +
+                                                item["backdrop_path"];
+                                          });
+                                        },
+                                        child: getItemSelectableContainer(
+                                            context,
+                                            item,
+                                            "media",
+                                            isSelected)),
                                   ),
                                 );
                               }

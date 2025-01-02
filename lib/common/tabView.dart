@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
+import 'package:uractor/common/item_container.dart';
 import 'package:uractor/objects/Media.dart';
 import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/TVShow.dart';
@@ -49,46 +49,33 @@ class ItemCard extends StatelessWidget {
       builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
         if (snapshot.hasData) {
           return GestureDetector(
-            onTap: () {
-              // Handle the click event here
-              MediaItem tempMediaItem;
-              if (snapshot.data!['type'] == "Movies") {
-                tempMediaItem = Movie(
-                    id: snapshot.data!['id'].toString(),
-                    title: snapshot.data!['title'],
-                    coverPhoto: snapshot.data!['poster'] ?? "");
-              } else {
-                tempMediaItem = TVShow(
-                    id: snapshot.data!['id'].toString(),
-                    title: snapshot.data!['title'],
-                    coverPhoto: snapshot.data!['poster'] ?? "");
-              }
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => snapshot.data!['type'] == "Movies"
-                      ? MovieResult(
-                          movie: tempMediaItem as Movie,
-                        )
-                      : TVShowResult(
-                          tvshow: tempMediaItem as TVShow,
-                        ),
-                ),
-              );
-            },
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-              width: MediaQuery.of(context).size.width * 0.28,
-              height: MediaQuery.of(context).size.height * 0.18,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(27),
-                image: DecorationImage(
-                  image: CachedNetworkImageProvider(snapshot.data!['poster']),
-                  fit: BoxFit.fitWidth,
-                ),
-              ),
-            ),
-          );
+              onTap: () {
+                MediaItem tempMediaItem;
+                if (snapshot.data!['type'] == "Movies") {
+                  tempMediaItem = Movie(
+                      id: snapshot.data!['id'].toString(),
+                      title: snapshot.data!['title'],
+                      coverPhoto: snapshot.data!['poster'] ?? "");
+                } else {
+                  tempMediaItem = TVShow(
+                      id: snapshot.data!['id'].toString(),
+                      title: snapshot.data!['title'],
+                      coverPhoto: snapshot.data!['poster'] ?? "");
+                }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => snapshot.data!['type'] == "Movies"
+                        ? MovieResult(
+                            movie: tempMediaItem as Movie,
+                          )
+                        : TVShowResult(
+                            tvshow: tempMediaItem as TVShow,
+                          ),
+                  ),
+                );
+              },
+              child: getItemContainer(context, snapshot.data, "media"));
         } else if (snapshot.hasError) {
           return Container(
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
@@ -125,11 +112,7 @@ Future<Map<String, dynamic>> getData(id, type) async {
     } else {
       data['title'] = json['title'];
     }
-    if (json['poster_path'] == null) {
-      data['poster'] = 'assets/question_mark.png';
-    } else {
-      data['poster'] = IMG_LINK + json['poster_path'];
-    }
+    data['poster_path'] = json['poster_path'];
     data['id'] = json['id'];
     data['type'] = type;
     if (!containsMap(movies, data)) {
