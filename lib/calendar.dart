@@ -266,7 +266,7 @@ class _CalendarState extends State<Calendar> {
                             await showDateRangePicker(
                           context: context,
                           firstDate: DateTime(2000),
-                          lastDate: DateTime(2025),
+                          lastDate: DateTime(2035),
                           initialDateRange: DateTimeRange(
                             start: DateTime.now(),
                             end: DateTime.now().add(const Duration(days: 7)),
