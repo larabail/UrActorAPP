@@ -4,13 +4,19 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/cast_and_crew.dart';
+import 'package:uractor/common/firebase/calendar_service.dart';
+import 'package:uractor/common/firebase/favorites_service.dart';
+import 'package:uractor/common/firebase/playlist_service.dart';
+import 'package:uractor/common/firebase/review_service.dart';
+import 'package:uractor/common/firebase/watched_service.dart';
+import 'package:uractor/common/firebase/watchlist_service.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/common/mediaitembuilder.dart';
 import 'package:uractor/season_guide.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'common/utils.dart';
-import 'package:uractor/common/firebaseutils.dart';
+import 'package:uractor/common/firebase/firebaseutils.dart';
 import 'friends.dart';
 import 'friends_profile.dart';
 import 'package:intl/intl.dart' as intl;
@@ -76,27 +82,27 @@ class _TVShowResultState extends State<TVShowResult> {
       case 'seen':
         _isTappedSeen = !_isTappedSeen;
         if (_isTappedSeen) {
-          success = await FirebaseUtils.markWatched(
+          success = await WatchedService.markWatched(
               id, title, runtime, rating, context, "TVShows");
         } else {
-          success = await FirebaseUtils.deleteFromWatchedConfirmation(
+          success = await WatchedService.deleteFromWatchedConfirmation(
               id, context, "TVShows");
         }
         break;
       case 'watchlist':
         _isTappedWatchlist = !_isTappedWatchlist;
         if (_isTappedWatchlist) {
-          success = await FirebaseUtils.bookmark(id, context, "TVShows");
+          success = await WatchlistService.bookmark(id, context, "TVShows");
         } else {
-          success = await FirebaseUtils.unbookmark(id, context, "TVShows");
+          success = await WatchlistService.unbookmark(id, context, "TVShows");
         }
         break;
       case 'fav':
         _isTappedFav = !_isTappedFav;
         if (_isTappedFav) {
-          success = await FirebaseUtils.favorite(id, context, "TVShows");
+          success = await FavoritesService.favorite(id, context, "TVShows");
         } else {
-          success = await FirebaseUtils.unfavorite(id, context, "TVShows");
+          success = await FavoritesService.unfavorite(id, context, "TVShows");
         }
         break;
       case 'list':
@@ -171,7 +177,7 @@ class _TVShowResultState extends State<TVShowResult> {
                       children: [
                         ElevatedButton(
                           onPressed: () async {
-                            bool success = await FirebaseUtils.writeReview(
+                            bool success = await ReviewService.writeReview(
                                 snapshot.data!["id"], "TVShows", context);
                             if (success) {
                               setState(() {});
@@ -439,7 +445,7 @@ class _TVShowResultState extends State<TVShowResult> {
                     children: [
                       GestureDetector(
                         onTap: () async {
-                          bool success = await FirebaseUtils.editReview(
+                          bool success = await ReviewService.editReview(
                               data["id"], "TVShows", context);
                           if (success) {
                             setState(() {});
@@ -470,7 +476,7 @@ class _TVShowResultState extends State<TVShowResult> {
                       const SizedBox(width: 20),
                       GestureDetector(
                         onTap: () async {
-                          bool success = await FirebaseUtils.deleteReview(
+                          bool success = await ReviewService.deleteReview(
                               data["id"], "TVShows", context);
                           if (success) {
                             setState(() {});
@@ -525,7 +531,7 @@ class _TVShowResultState extends State<TVShowResult> {
         ),
         keyboardType: TextInputType.number,
         onChanged: (value) {
-          FirebaseUtils.incrementWatched(currentUser.uid, value.toString(),
+          WatchedService.incrementWatched(currentUser.uid, value.toString(),
               data["id"].toString(), "series");
         },
       ),
@@ -650,7 +656,7 @@ class _TVShowResultState extends State<TVShowResult> {
                       const SizedBox(width: 10),
                       GestureDetector(
                         onTap: () async {
-                          await FirebaseUtils.deleteFromCalendar(
+                          await CalendarService.deleteFromCalendar(
                               currentUser.uid,
                               widget.tvshow.id,
                               widget.tvshow.title,
@@ -1256,7 +1262,7 @@ class _TVShowResultState extends State<TVShowResult> {
               if (keyLeft != null)
                 GestureDetector(
                   onTap: () {
-                    FirebaseUtils.updateList(id, keyLeft, moviesLeft, context,
+                    PlaylistService.updateList(id, keyLeft, moviesLeft, context,
                         "TVShows", !moviesLeft.contains(id));
                   },
                   child: Stack(
@@ -1322,7 +1328,7 @@ class _TVShowResultState extends State<TVShowResult> {
               if (keyRight != null)
                 GestureDetector(
                   onTap: () {
-                    FirebaseUtils.updateList(id, keyRight, moviesRight, context,
+                    PlaylistService.updateList(id, keyRight, moviesRight, context,
                         "TVShows", !moviesRight.contains(id));
                   },
                   child: Stack(
