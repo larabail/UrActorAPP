@@ -690,7 +690,7 @@ class _AddToCalendarState extends State<AddToCalendar> {
     await FirebaseUtils.updateCalendar(
         "", currentUser.uid, newData, widget.dateForMap);
     await FirebaseUtils.deleteFromCalendar(
-        currentUser.uid, id, title, widget.dateForMap);
+        currentUser.uid, id, title, widget.dateForMap, context);
 
     List allFriends = [];
     for (String friend in oldFriends) {
@@ -724,7 +724,7 @@ class _AddToCalendarState extends State<AddToCalendar> {
         'type': type,
       };
       await FirebaseUtils.deleteFromCalendar(
-          friend, id, title, widget.dateForMap);
+          friend, id, title, widget.dateForMap, context);
       await FirebaseUtils.updateCalendar(
           "", friend, friendNewData, widget.dateForMap);
       continue;
