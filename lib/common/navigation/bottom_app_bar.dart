@@ -2,6 +2,7 @@
 // ignore_for_file: must_be_immutable
 
 import 'package:flutter/material.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/playlists.dart';
 import 'package:uractor/profile.dart';
 
@@ -40,20 +41,20 @@ class CommonBottomAppBar extends StatelessWidget {
       unselectedItemColor: Colors.grey,
       type: BottomNavigationBarType.fixed,
       items: [
-        const BottomNavigationBarItem(
+        BottomNavigationBarItem(
           icon: Icon(Icons.home),
-          label: 'Home',
+          label: S.of(context)!.home,
         ),
-        const BottomNavigationBarItem(
+        BottomNavigationBarItem(
           icon: Icon(Icons.library_books_rounded),
-          label: 'Library',
+          label: S.of(context)!.library,
         ),
-        const BottomNavigationBarItem(
-          label: 'Friends',
+        BottomNavigationBarItem(
+          label: S.of(context)!.friends,
           icon: Icon(Icons.contacts),
         ),
         BottomNavigationBarItem(
-          label: 'Profile',
+          label: S.of(context)!.profile,
           icon: currentUser.settings["profile_photo"] != "" &&
                   currentUser.settings["profile_photo"] != null
               ? ClipOval(

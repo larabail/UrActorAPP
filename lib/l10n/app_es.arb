@@ -1,0 +1,104 @@
+{
+  "@@locale": "es",
+  "addTVShowToCalendar": "Agrega un programa de TV a tu calendario",
+  "selectASpecificDate": "Selecciona una fecha específica",
+  "selectADateRange": "Selecciona un rango de fechas",
+  "cancel": "Cancelar",
+  "seenOn": "Visto el {date}",
+  "@seenOn": {
+    "description": "Shown before a selected watch date",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "labelSeen": "# Visto",
+  "labelHoursSpent": "Horas invertidas",
+  "labelAvgRating": "Nota media",
+  "labelCastAndCrew": "Reparto y equipo",
+  "errorFailedToLoadDetails": "Error al cargar los detalles de la película",
+  "errorLoadingImages": "Error al cargar las imágenes",
+  "yourSection": "Tus {section}",
+  "@yourSection": {
+    "description": "Shown as title of a section",
+    "placeholders": {
+      "section": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmation": "Confirmación",
+  "removeFriendConfirmation": "Estás seguro de que quieres quitarte a este amigo?",
+  "yes": "Si",
+  "no": "No",
+  "calendar": "Calendario",
+  "noMoviesTogether": "Aún no habeís visto nada juntos",
+  "friendSections": "Sus {title}",
+  "@friendSections": {
+    "description": "Shown as title of a section in a friends profile",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "emptySection": "Nada todavía",
+  "seeAll": "Ver todo ({number} elementos)",
+  "@seeAll": {
+    "description": "Shown at the end of a title to expand items",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "friendsThoughts": "Las opiniones de tus amigos sobre {item}",
+  "@friendsThoughts": {
+    "description": "Shown when friends have seen the same movie",
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "errorFailedToLoadFavorites": "Ha habido un error",
+  "friendLeftNoReview": "{friendUsername} no ha dejado una reseña",
+  "@friendLeftNoReview": {
+    "description": "Shown when a friend has not reviewed the movie",
+    "placeholders": {
+      "friendUsername": {
+        "type": "String"
+      }
+    }
+  },
+  "addFriend": "Añadir un amigo",
+  "noSuchUser": "No existe ningun usuario con este nombre",
+  "friendRequests": "Solicitudes de amistad",
+  "viewRequests": "Aprobar o rechazar solicitudes",
+  "noData": "No hay solicitudes",
+  "favorites": "Favoritas",
+  "watchlist": "Siguientes",
+  "seen": "Vistas",
+  "notifications": "Notificaciones",
+  "totalContent": "{totalContent} elementos",
+  "@totalContent": {
+    "description": "Shown in the playlist cards",
+    "placeholders": {
+      "totalContent": {
+        "type": "String"
+      }
+    }
+  },
+  "reviews": "Reseñas",
+  "friends": "Amigos",
+  "home": "Casa",
+  "library": "Biblioteca",
+  "profile": "Perfil",
+  "username": "Nombre de usuario",
+  "favActors": "Actores Favoritos",
+  "favDirectors": "Directores Favoritos",
+  "favWriters": "Escritores Favoritos",
+  "favMovies": "Peliculas Más Vistas",
+  "favTVShows": "Series Más Vistas"
+}

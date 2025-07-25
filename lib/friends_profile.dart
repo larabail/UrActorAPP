@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/Media.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'common/navigation/appbar.dart';
@@ -279,18 +280,18 @@ class _FriendProfileState extends State<FriendProfile> {
                         context: context,
                         builder: (BuildContext context) {
                           return AlertDialog(
-                            title: const Text('Confirmation'),
-                            content: const Text(
-                                'Are you sure you want to remove this friend?'),
+                            title: Text((S.of(context)!.confirmation)),
+                            content:
+                                Text(S.of(context)!.removeFriendConfirmation),
                             actions: <Widget>[
                               TextButton(
-                                child: const Text('No'),
+                                child: Text(S.of(context)!.no),
                                 onPressed: () {
                                   Navigator.of(context).pop(false);
                                 },
                               ),
                               TextButton(
-                                child: const Text('Yes'),
+                                child: Text(S.of(context)!.yes),
                                 onPressed: () {
                                   Navigator.of(context).pop(true);
                                 },
@@ -358,13 +359,13 @@ class _FriendProfileState extends State<FriendProfile> {
                       borderRadius: BorderRadius.circular(10),
                       color: Colors.grey[900],
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.calendar_month, color: Colors.white),
-                        SizedBox(width: 5),
+                        const Icon(Icons.calendar_month, color: Colors.white),
+                        const SizedBox(width: 5),
                         Text(
-                          'Calendar',
-                          style: TextStyle(
+                          S.of(context)!.calendar,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -393,10 +394,10 @@ class _FriendProfileState extends State<FriendProfile> {
                   ),
                   margin: const EdgeInsets.all(5.0),
                   padding: const EdgeInsets.all(10),
-                  child: const Column(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Haven't watched any movies together yet"),
+                      Text(S.of(context)!.noMoviesTogether),
                     ],
                   ),
                 ),
@@ -427,7 +428,7 @@ class _FriendProfileState extends State<FriendProfile> {
               Icon(icon),
               const SizedBox(width: 10),
               Text(
-                'Their $title',
+                S.of(context)!.friendSections(title),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -436,7 +437,7 @@ class _FriendProfileState extends State<FriendProfile> {
             ],
           ),
           const SizedBox(height: 10),
-          if (content.isEmpty) const Text("Nothing here yet"),
+          if (content.isEmpty) Text(S.of(context)!.emptySection),
           if (content.isEmpty) const SizedBox(height: 10),
           if (content.isNotEmpty)
             SizedBox(
@@ -480,8 +481,8 @@ class _FriendProfileState extends State<FriendProfile> {
                             child: getItemContainer(context, snapshot.data,
                                 type == "Person" ? "person" : "media"));
                       } else if (snapshot.hasError) {
-                        return const Center(
-                            child: Text("Failed to load movie details"));
+                        return Center(
+                            child: Text(S.of(context)!.errorFailedToLoadDetails));
                       } else {
                         return Container(
                             margin:
@@ -534,8 +535,7 @@ class _FriendProfileState extends State<FriendProfile> {
                 child: Center(
                   child: Padding(
                     padding: const EdgeInsets.all(10.0),
-                    child: Text(
-                      'See All (${content.length} items)',
+                    child: Text(S.of(context)!.seeAll(content.length),
                       style: const TextStyle(
                         color: Colors.grey,
                         fontSize: 12,
@@ -547,7 +547,7 @@ class _FriendProfileState extends State<FriendProfile> {
             ],
           ),
           const SizedBox(height: 10),
-          if (content.isEmpty) const Text("Nothing here yet"),
+          if (content.isEmpty) Text(S.of(context)!.emptySection),
           if (content.isEmpty) const SizedBox(height: 10),
           if (content.isNotEmpty)
             SizedBox(
@@ -589,8 +589,8 @@ class _FriendProfileState extends State<FriendProfile> {
                             child: getItemContainer(
                                 context, snapshot.data, "media"));
                       } else if (snapshot.hasError) {
-                        return const Center(
-                            child: Text("Failed to load movie details"));
+                        return Center(
+                            child: Text(S.of(context)!.errorFailedToLoadDetails));
                       } else {
                         return Container(
                             margin:

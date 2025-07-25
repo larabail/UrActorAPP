@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'common/constants.dart';
@@ -149,7 +150,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
                     child: Column(
                       children: [
                         Text(
-                          "Seen on $_selectedDay",
+                          S.of(context)!.seenOn(_selectedDay),
                           style: const TextStyle(
                               fontSize: 20, fontWeight: FontWeight.bold),
                         ),
@@ -235,11 +236,12 @@ class _FriendCalendarState extends State<FriendCalendar> {
                                                                 );
                                                               } else if (snapshot
                                                                   .hasError) {
-                                                                return const SizedBox(
+                                                                return SizedBox(
                                                                   height: 32.0,
                                                                   child: Center(
-                                                                      child: Text(
-                                                                          'Error loading images')),
+                                                                      child: Text(S
+                                                                          .of(context)!
+                                                                          .errorLoadingImages)),
                                                                 );
                                                               } else if (snapshot
                                                                   .hasData) {
@@ -369,7 +371,8 @@ class _FriendCalendarState extends State<FriendCalendar> {
                         Text('${_monthlyStats[0]}',
                             style: const TextStyle(
                                 fontSize: 20, fontWeight: FontWeight.bold)),
-                        const Text('# Seen', style: TextStyle(fontSize: 15)),
+                        Text(S.of(context)!.labelSeen,
+                            style: TextStyle(fontSize: 15)),
                       ],
                     ),
                     Column(
@@ -378,7 +381,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
                         Text('${(_monthlyStats[2] / 60).toStringAsFixed(2)}',
                             style: const TextStyle(
                                 fontSize: 20, fontWeight: FontWeight.bold)),
-                        const Text('Hours Spent',
+                        Text(S.of(context)!.labelHoursSpent,
                             style: TextStyle(fontSize: 15)),
                       ],
                     ),
@@ -389,7 +392,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
                             '${_monthlyStats[1].toStringAsFixed(2)}', // Round to 2 decimal places
                             style: const TextStyle(
                                 fontSize: 20, fontWeight: FontWeight.bold)),
-                        const Text('Avg. Rating',
+                        Text(S.of(context)!.labelAvgRating,
                             style: TextStyle(fontSize: 15)),
                       ],
                     ),

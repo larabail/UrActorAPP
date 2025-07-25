@@ -2,6 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'friends_profile.dart';
@@ -55,8 +56,8 @@ class _FriendsState extends State<Friends> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
-              title: const Text(
-                'Add Friend',
+              title: Text(
+                S.of(context)!.addFriend,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -67,8 +68,8 @@ class _FriendsState extends State<Friends> {
                   Expanded(
                     child: TextField(
                       controller: _usernameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Username',
+                      decoration: InputDecoration(
+                        labelText: S.of(context)!.username,
                       ),
                     ),
                   ),
@@ -88,8 +89,8 @@ class _FriendsState extends State<Friends> {
                           Navigator.of(context).pop();
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Username does not exist'),
+                            SnackBar(
+                              content: Text(S.of(context)!.noSuchUser),
                             ),
                           );
                         }
@@ -115,8 +116,8 @@ class _FriendsState extends State<Friends> {
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  child: const Text(
-                    'Cancel',
+                  child: Text(
+                    S.of(context)!.cancel,
                     style: TextStyle(
                       color: Colors.red,
                       fontSize: 16,
@@ -147,8 +148,8 @@ class _FriendsState extends State<Friends> {
                     ],
                   ),
                 ),
-                title: const Text('Friend requests'),
-                subtitle: const Text('Approve or reject requests'),
+                title: Text(S.of(context)!.friendRequests),
+                subtitle: Text(S.of(context)!.viewRequests),
                 onTap: () {
                   Navigator.push(
                     context,
@@ -173,7 +174,7 @@ class _FriendsState extends State<Friends> {
                   } else if (snapshot.hasError) {
                     return Text('Error: ${snapshot.error}');
                   } else if (!snapshot.hasData || !snapshot.data!.exists) {
-                    return const Text('No data found');
+                    return Text(S.of(context)!.noData);
                   } else {
                     var data = snapshot.data!.data() as Map<String, dynamic>;
                     String profilePath = data['profile_photo'] ?? '';
