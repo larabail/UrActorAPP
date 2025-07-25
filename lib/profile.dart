@@ -437,10 +437,10 @@ class _ProfileState extends State<Profile> {
                                         ElevatedButton(
                                           style: ButtonStyle(
                                             backgroundColor:
-                                                MaterialStateProperty.all<
+                                                WidgetStateProperty.all<
                                                     Color>(Colors.transparent),
                                             elevation:
-                                                MaterialStateProperty.all(0.0),
+                                                WidgetStateProperty.all(0.0),
                                           ),
                                           onPressed: () {
                                             setState(() {
@@ -457,10 +457,10 @@ class _ProfileState extends State<Profile> {
                                         ElevatedButton(
                                           style: ButtonStyle(
                                             backgroundColor:
-                                                MaterialStateProperty.all<
+                                                WidgetStateProperty.all<
                                                     Color>(Colors.transparent),
                                             elevation:
-                                                MaterialStateProperty.all(0.0),
+                                                WidgetStateProperty.all(0.0),
                                           ),
                                           onPressed: () {
                                             setState(() {
@@ -477,10 +477,10 @@ class _ProfileState extends State<Profile> {
                                         ElevatedButton(
                                           style: ButtonStyle(
                                             backgroundColor:
-                                                MaterialStateProperty.all<
+                                                WidgetStateProperty.all<
                                                     Color>(Colors.transparent),
                                             elevation:
-                                                MaterialStateProperty.all(0.0),
+                                                WidgetStateProperty.all(0.0),
                                           ),
                                           onPressed: () {
                                             setState(() {
