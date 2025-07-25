@@ -68,8 +68,7 @@ class MyApp extends StatelessWidget {
           trackColor: WidgetStateProperty.all<Color>(
               const Color.fromARGB(250, 224, 190, 78)),
         ),
-        indicatorColor: const Color.fromARGB(250, 224, 190, 78),
-        tabBarTheme: const TabBarTheme(
+        tabBarTheme: const TabBarThemeData(
           labelColor: Color.fromARGB(250, 224, 190, 78),
           unselectedLabelColor: Colors.grey,
           indicatorColor: Color.fromARGB(250, 224, 190, 78),
