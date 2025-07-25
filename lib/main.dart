@@ -30,6 +30,9 @@ import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/l10n.dart';
+
 List idsExplorePage = [];
 bool gotData = false;
 Map oscars = {};
@@ -48,12 +51,42 @@ Future<void> main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  // This allows changing the locale from anywhere
+  static void setLocale(BuildContext context, Locale newLocale) {
+    final _MyAppState? state = context.findAncestorStateOfType<_MyAppState>();
+    state?.setLocale(newLocale);
+  }
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  Locale _locale = const Locale('en'); // default fallback
+
+  void setLocale(Locale newLocale) {
+    setState(() {
+      _locale = newLocale;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      locale: _locale,
+      localizationsDelegates: const [
+        S.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: S.supportedLocales,
+      localeResolutionCallback: (locale, supportedLocales) {
+        return supportedLocales.contains(locale) ? locale : const Locale('en');
+      },
       debugShowCheckedModeBanner: false,
       title: 'UrActor',
       theme: ThemeData.dark().copyWith(
@@ -124,6 +157,7 @@ class _MyHomePageState extends State<MyHomePage> {
     await currentUser.getFirebaseData();
     setState(() {
       gotData = true;
+      MyApp.setLocale(context, Locale(currentUser.settings["language"]));
     });
     try {
       var request = await client.getUrl(Uri.parse('https://example.com'));
@@ -183,12 +217,12 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                       margin: const EdgeInsets.all(5.0),
                       padding: const EdgeInsets.all(10),
-                      child: const Row(
+                      child: Row(
                         children: [
                           Icon(Icons.calendar_month),
                           SizedBox(width: 10),
                           Text(
-                            'Your Calendar',
+                            S.of(context)!.yourSection(S.of(context)!.calendar),
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -253,9 +287,9 @@ class _MyHomePageState extends State<MyHomePage> {
                             ],
                           ),
                           const SizedBox(width: 10),
-                          const Text(
-                            'Notifications',
-                            style: TextStyle(
+                          Text(
+                            S.of(context)!.notifications,
+                            style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                             ),
@@ -268,17 +302,17 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               buildPlaylistsSection(),
               buildMainPageContainer(
-                  "Watchlist",
+                  S.of(context)!.watchlist,
                   currentUser.watchlistTVShows + currentUser.watchlist,
                   Icons.bookmark,
                   Watchlist()),
               buildMainPageContainer(
-                  "Favorites",
+                  S.of(context)!.favorites,
                   currentUser.favTVShows + currentUser.favMovies,
                   Icons.favorite,
                   Favorites()),
               buildMainPageContainer(
-                  "Seen",
+                  S.of(context)!.seen,
                   currentUser.seenTVShows + currentUser.seenMovies,
                   Icons.remove_red_eye,
                   Seen()),
@@ -295,8 +329,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       children: [
                         const Icon(Icons.reviews),
                         const SizedBox(width: 10),
-                        const Text(
-                          'Your Reviews',
+                        Text(S.of(context)!.yourSection(S.of(context)!.reviews),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -314,7 +347,9 @@ class _MyHomePageState extends State<MyHomePage> {
                             child: Padding(
                               padding: const EdgeInsets.all(10.0),
                               child: Text(
-                                'See All (${currentUser.allReviews.length} items)',
+                                S
+                                    .of(context)!
+                                    .seeAll(currentUser.allReviews.length),
                                 style: const TextStyle(
                                   color: Colors.grey,
                                   fontSize: 12,
@@ -373,7 +408,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                       );
                                     },
                                     child: Column(children: [
-                                      getItemContainer(context, snapshot.data, type),
+                                      getItemContainer(
+                                          context, snapshot.data, type),
                                       Text(
                                         '${review["Rating"]}/10',
                                         textAlign: TextAlign.center,
@@ -612,7 +648,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                 },
                               ),
                               Text(
-                                '$totalContent items',
+                                S.of(context)!.totalContent(
+                                    totalContent.toString()),
                                 style: const TextStyle(
                                   color: Colors.grey,
                                   fontSize: 12,
@@ -648,7 +685,7 @@ class _MyHomePageState extends State<MyHomePage> {
               Icon(icon),
               const SizedBox(width: 10),
               Text(
-                'Your $title',
+                S.of(context)!.yourSection(title),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -667,7 +704,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: Padding(
                     padding: const EdgeInsets.all(10.0),
                     child: Text(
-                      'See All (${content.length} items)',
+                      S.of(context)!.seeAll(content.length),
                       style: const TextStyle(
                         color: Colors.grey,
                         fontSize: 12,
@@ -706,20 +743,20 @@ class _MyHomePageState extends State<MyHomePage> {
                         (BuildContext context, AsyncSnapshot<Map> snapshot) {
                       if (snapshot.hasData) {
                         return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => content.reversed
-                                              .toList()[index][0] ==
-                                          "Movies"
-                                      ? MovieResult(movie: tempMedia as Movie)
-                                      : TVShowResult(
-                                          tvshow: tempMedia as TVShow)),
-                            );
-                          },
-                          child: getItemContainer(context, snapshot.data, "media")
-                        );
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => content.reversed
+                                                .toList()[index][0] ==
+                                            "Movies"
+                                        ? MovieResult(movie: tempMedia as Movie)
+                                        : TVShowResult(
+                                            tvshow: tempMedia as TVShow)),
+                              );
+                            },
+                            child: getItemContainer(
+                                context, snapshot.data, "media"));
                       } else if (snapshot.hasError) {
                         return const Center(
                             child: Text("Failed to load movie details"));

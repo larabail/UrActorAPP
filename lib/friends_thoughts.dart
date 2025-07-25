@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uractor/common/firebase/review_service.dart';
 import 'package:uractor/common/firebase/social_service.dart';
 import 'package:uractor/friends_profile.dart';
+import 'package:uractor/l10n/l10n.dart';
 
 import 'common/navigation/bottom_app_bar.dart';
 import 'common/navigation/appbar.dart';
@@ -36,7 +37,7 @@ class _FriendsThoughtsState extends State<FriendsThoughts> {
             padding:
                 const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
             child: Text(
-              "Your friends' opinions on ${widget.mediaItem.title}",
+              S.of(context)!.friendsThoughts(widget.mediaItem.title),
               style: const TextStyle(
                 fontSize: 20.0,
                 fontWeight: FontWeight.bold,
@@ -112,9 +113,9 @@ class _FriendsThoughtsState extends State<FriendsThoughts> {
                                           child: CircularProgressIndicator()),
                                     );
                                   } else if (snapshot.hasError) {
-                                    return const SizedBox(
+                                    return SizedBox(
                                       height: 32.0,
-                                      child: Text("There was an error"),
+                                      child: Text(S.of(context)!.errorFailedToLoadFavorites),
                                     );
                                   } else if (snapshot.hasData) {
                                     if (snapshot.data! == true) {
@@ -155,7 +156,7 @@ class _FriendsThoughtsState extends State<FriendsThoughts> {
                               return SizedBox(
                                 height: 32.0,
                                 child: Center(
-                                    child: Text("$friendUsername hasn't left a review")),
+                                    child: Text(S.of(context)!.friendLeftNoReview(friendUsername))),
                               );
                             } else if (snapshot.hasData) {
                               String opinion = snapshot

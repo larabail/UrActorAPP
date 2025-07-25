@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:uractor/l10n/l10n.dart';
 import 'dart:convert';
 
 import '../common/constants.dart';
@@ -63,11 +64,15 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
   String selectedCountry = currentUser.country;
   List<Country> countries = [];
   List<Provider> allProviders = [];
+  Locale _selectedLocale = const Locale('en');
   Country? selectedCountryObject;
   @override
   @override
   void initState() {
     super.initState();
+    _selectedLocale = currentUser.settings["language"] != null
+        ? Locale(currentUser.settings["language"])
+        : const Locale('en');
     fetchCountries();
     fetchProviders();
   }
@@ -142,6 +147,36 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              const Text(
+                'App Language',
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
+              DropdownButton<Locale>(
+                value: _selectedLocale,
+                onChanged: (Locale? newLocale) async {
+                  if (newLocale != null) {
+                    setState(() {
+                      _selectedLocale = newLocale;
+                    });
+                    currentUser.settings["language"] = newLocale.languageCode;
+                    await updateSettings("language", newLocale.languageCode);
+                    MyApp.setLocale(context, newLocale);
+                  }
+                },
+                items: S.supportedLocales.map((locale) {
+                  final label =
+                      locale.languageCode == 'en' ? 'English' : 'Español';
+                  return DropdownMenuItem<Locale>(
+                    value: locale,
+                    child: Text(label),
+                  );
+                }).toList(),
+                isExpanded: true,
+                underline: Container(
+                  height: 2,
+                  color: Colors.white,
+                ),
+              ),
               const Text(
                 "Country You're Viewing in",
                 style: TextStyle(fontSize: 18, color: Colors.white),

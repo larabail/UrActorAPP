@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'package:uractor/popups/profile_sections_popup.dart';
 import 'package:uractor/tvshow_result.dart';
@@ -277,24 +278,24 @@ class _ProfileState extends State<Profile> {
         if (profileSections[key]["show"]) {
           switch (key) {
             case "Actors":
-              sections.add(buildProfileContainer("Favorite Actors", tempActors,
-                  Icons.theater_comedy, "Person"));
+              sections.add(buildProfileContainer(S.of(context)!.favActors,
+                  tempActors, Icons.theater_comedy, "Person"));
               break;
             case "Directors":
-              sections.add(buildProfileContainer(
-                  "Favorite Directors", tempDirectors, Icons.chair, "Person"));
+              sections.add(buildProfileContainer(S.of(context)!.favDirectors,
+                  tempDirectors, Icons.chair, "Person"));
               break;
             case "MostSeenMovies":
               sections.add(buildProfileContainer(
-                  "Most Seen Movies", moviesTemp, Icons.movie, "Movie"));
+                  S.of(context)!.favMovies, moviesTemp, Icons.movie, "Movie"));
               break;
             case "Writers":
-              sections.add(buildProfileContainer(
-                  "Favorite Writers", tempWriters, Icons.edit, "Person"));
+              sections.add(buildProfileContainer(S.of(context)!.favWriters,
+                  tempWriters, Icons.edit, "Person"));
               break;
             case "MostSeenTVShows":
               sections.add(buildProfileContainer(
-                  "Most Seen TV Shows", tvTemp, Icons.tv, "TVShow"));
+                  S.of(context)!.favTVShows, tvTemp, Icons.tv, "TVShow"));
               break;
           }
         }
@@ -365,8 +366,9 @@ class _ProfileState extends State<Profile> {
                                               left: 16.0), // Add margin here
                                           child: TextField(
                                             controller: _usernameController,
-                                            decoration: const InputDecoration(
-                                              labelText: 'Username',
+                                            decoration: InputDecoration(
+                                              labelText:
+                                                  S.of(context)!.username,
                                             ),
                                           ),
                                         ),
@@ -660,7 +662,7 @@ class _ProfileState extends State<Profile> {
               Icon(icon),
               const SizedBox(width: 10),
               Text(
-                'Your $title',
+                S.of(context)!.yourSection(title),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -709,20 +711,26 @@ class _ProfileState extends State<Profile> {
                         return const Center(child: Text("No data available"));
                       } else {
                         return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => type == "Person"
-                                    ? PersonResult(personResult: item as Person)
-                                    : type == "Movie"
-                                        ? MovieResult(movie: item as Movie)
-                                        : TVShowResult(tvshow: item as TVShow),
-                              ),
-                            );
-                          },
-                          child: getItemContainer(context, snapshot.data, (type == "Movie" || type == "TVShow") ? "media" : "person")
-                        );
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => type == "Person"
+                                      ? PersonResult(
+                                          personResult: item as Person)
+                                      : type == "Movie"
+                                          ? MovieResult(movie: item as Movie)
+                                          : TVShowResult(
+                                              tvshow: item as TVShow),
+                                ),
+                              );
+                            },
+                            child: getItemContainer(
+                                context,
+                                snapshot.data,
+                                (type == "Movie" || type == "TVShow")
+                                    ? "media"
+                                    : "person"));
                       }
                     },
                   );

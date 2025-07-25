@@ -1,6 +1,7 @@
 // ignore_for_file: must_be_immutable
 
 import 'package:flutter/material.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'main.dart';
@@ -13,11 +14,11 @@ class Favorites extends StatelessWidget {
     return Scaffold(
       appBar: const CustomAppBar(),
       body: Column(children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 10.0),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10.0),
           child: Text(
-            "Your Favorites",
-            style: TextStyle(
+            S.of(context)!.yourSection("Favorites"),
+            style: const TextStyle(
               fontSize: 24.0,
               fontWeight: FontWeight.bold,
             ),

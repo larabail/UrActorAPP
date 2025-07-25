@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/Person.dart';
 import 'package:uractor/person_result.dart';
 import 'common/navigation/appbar.dart';
@@ -41,11 +42,11 @@ class _CastCrewState extends State<CastCrew> {
       appBar: const CustomAppBar(),
       body: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 10.0),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10.0),
             child: Text(
-              "Cast & Crew",
-              style: TextStyle(
+              S.of(context)!.labelCastAndCrew,
+              style: const TextStyle(
                 fontSize: 24.0,
                 fontWeight: FontWeight.bold,
               ),
@@ -175,7 +176,8 @@ class ItemCard extends StatelessWidget {
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
               width: MediaQuery.of(context).size.width * 0.28,
               height: MediaQuery.of(context).size.height * 0.18,
-              child: const Center(child: Text("Failed to load movie details")));
+              child:
+                  Center(child: Text(S.of(context)!.errorFailedToLoadDetails)));
         } else {
           return Container(
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
