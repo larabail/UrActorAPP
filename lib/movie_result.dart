@@ -1,13 +1,19 @@
 // ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, no_leading_underscores_for_local_identifiers
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:uractor/common/firebase/calendar_service.dart';
+import 'package:uractor/common/firebase/favorites_service.dart';
+import 'package:uractor/common/firebase/playlist_service.dart';
+import 'package:uractor/common/firebase/review_service.dart';
+import 'package:uractor/common/firebase/watched_service.dart';
+import 'package:uractor/common/firebase/watchlist_service.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/common/mediaitembuilder.dart';
 import 'package:uractor/popups/add_friends_seen_with_popup.dart';
 import 'package:uractor/popups/add_to_calendar_pop_up.dart';
 
 import 'cast_and_crew.dart';
-import 'package:uractor/common/firebaseutils.dart';
+import 'package:uractor/common/firebase/firebaseutils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' as intl;
@@ -75,10 +81,10 @@ class _MovieResultState extends State<MovieResult> {
       case 'seen':
         _isTappedSeen = !_isTappedSeen;
         if (_isTappedSeen) {
-          success = await FirebaseUtils.markWatched(
+          success = await WatchedService.markWatched(
               id, title, runtime, rating, context, "Movies");
         } else {
-          success = await FirebaseUtils.deleteFromWatchedConfirmation(
+          success = await WatchedService.deleteFromWatchedConfirmation(
               id, context, "Movies");
         }
         if (success) {
@@ -92,12 +98,12 @@ class _MovieResultState extends State<MovieResult> {
       case 'watchlist':
         _isTappedWatchlist = !_isTappedWatchlist;
         if (_isTappedWatchlist) {
-          success = await FirebaseUtils.bookmark(id, context, "Movies");
+          success = await WatchlistService.bookmark(id, context, "Movies");
           setState(() {
             currentUser.watchlist = currentUser.watchlist;
           });
         } else {
-          success = await FirebaseUtils.unbookmark(id, context, "Movies");
+          success = await WatchlistService.unbookmark(id, context, "Movies");
           setState(() {
             currentUser.watchlist = currentUser.watchlist;
           });
@@ -106,12 +112,12 @@ class _MovieResultState extends State<MovieResult> {
       case 'fav':
         _isTappedFav = !_isTappedFav;
         if (_isTappedFav) {
-          success = await FirebaseUtils.favorite(id, context, "Movies");
+          success = await FavoritesService.favorite(id, context, "Movies");
           setState(() {
             currentUser.favMovies = currentUser.favMovies;
           });
         } else {
-          success = await FirebaseUtils.unfavorite(id, context, "Movies");
+          success = await FavoritesService.unfavorite(id, context, "Movies");
           setState(() {
             currentUser.favMovies = currentUser.favMovies;
           });
@@ -185,7 +191,7 @@ class _MovieResultState extends State<MovieResult> {
                       children: [
                         ElevatedButton(
                           onPressed: () async {
-                            bool success = await FirebaseUtils.writeReview(
+                            bool success = await ReviewService.writeReview(
                                 snapshot.data!["id"], "Movies", context);
                             if (success) {
                               setState(() {
@@ -396,7 +402,7 @@ class _MovieResultState extends State<MovieResult> {
                     children: [
                       GestureDetector(
                         onTap: () async {
-                          bool success = await FirebaseUtils.editReview(
+                          bool success = await ReviewService.editReview(
                               data["id"], "Movies", context);
                           if (success) {
                             setState(() {});
@@ -427,7 +433,7 @@ class _MovieResultState extends State<MovieResult> {
                       const SizedBox(width: 20),
                       GestureDetector(
                         onTap: () async {
-                          bool success = await FirebaseUtils.deleteReview(
+                          bool success = await ReviewService.deleteReview(
                               data["id"], "Movies", context);
                           if (success) {
                             setState(() {});
@@ -501,7 +507,7 @@ class _MovieResultState extends State<MovieResult> {
               if (keyLeft != null)
                 GestureDetector(
                   onTap: () {
-                    FirebaseUtils.updateList(id, keyLeft, moviesLeft, context,
+                    PlaylistService.updateList(id, keyLeft, moviesLeft, context,
                         "Movies", !moviesLeft.contains(id));
                   },
                   child: Stack(
@@ -567,7 +573,7 @@ class _MovieResultState extends State<MovieResult> {
               if (keyRight != null)
                 GestureDetector(
                   onTap: () {
-                    FirebaseUtils.updateList(id, keyRight, moviesRight, context,
+                    PlaylistService.updateList(id, keyRight, moviesRight, context,
                         "Movies", !moviesRight.contains(id));
                   },
                   child: Stack(
@@ -653,7 +659,7 @@ class _MovieResultState extends State<MovieResult> {
         ),
         keyboardType: TextInputType.number,
         onChanged: (value) {
-          FirebaseUtils.incrementWatched(currentUser.uid, value.toString(),
+          WatchedService.incrementWatched(currentUser.uid, value.toString(),
               data["id"].toString(), "movie");
         },
       ),
@@ -778,7 +784,7 @@ class _MovieResultState extends State<MovieResult> {
                       const SizedBox(width: 10),
                       GestureDetector(
                         onTap: () async {
-                          await FirebaseUtils.deleteFromCalendar(
+                          await CalendarService.deleteFromCalendar(
                               currentUser.uid,
                               widget.movie.id,
                               widget.movie.title,
@@ -798,7 +804,7 @@ class _MovieResultState extends State<MovieResult> {
                                   ? currentUser
                                       .rewatchedMovies[widget.movie.id] -= 1
                                   : 0;
-                              FirebaseUtils.setRewatched(
+                              WatchedService.setRewatched(
                                   currentUser.uid,
                                   widget.movie.id,
                                   currentUser.rewatchedMovies[widget.movie.id],

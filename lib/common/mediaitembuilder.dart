@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:uractor/common/firebaseutils.dart';
+import 'package:uractor/common/firebase/social_service.dart';
 import 'package:uractor/friends_thoughts.dart';
 import 'package:uractor/main.dart';
 import 'package:uractor/objects/TVShow.dart';
@@ -78,7 +78,7 @@ Widget getCover(Map data, context, MediaItem mediaItem, String type) {
           child: Align(
             alignment: Alignment.topLeft,
             child: FutureBuilder<Map>(
-              future: FirebaseUtils.friendsWhoHaveSeen(
+              future: SocialService.friendsWhoHaveSeen(
                   currentUser.uid, mediaItem, type),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {

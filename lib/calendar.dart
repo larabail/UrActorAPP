@@ -1,6 +1,7 @@
 // ignore_for_file: unnecessary_brace_in_string_interps, no_leading_underscores_for_local_identifiers, avoid_function_literals_in_foreach_calls, use_build_context_synchronously, library_private_types_in_public_api
 import 'package:flutter/material.dart';
-import 'package:uractor/common/firebaseutils.dart';
+import 'package:uractor/common/firebase/calendar_service.dart';
+import 'package:uractor/common/firebase/firebaseutils.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'package:uractor/tvshow_result.dart';
@@ -45,7 +46,7 @@ class _CalendarState extends State<Calendar> {
   bool areFABsVisible = false;
   void deleteMovieSubmit(String id, String title) async {
     var userDoc = db.collection(currentUser.uid).doc("Calendar");
-    await FirebaseUtils.deleteFromCalendar(
+    await CalendarService.deleteFromCalendar(
       currentUser.uid,
       id,
       title,

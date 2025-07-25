@@ -3,6 +3,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:uractor/common/firebase/calendar_service.dart';
+import 'package:uractor/common/firebase/social_service.dart';
+import 'package:uractor/common/firebase/watched_service.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/TVShow.dart';
@@ -10,7 +13,6 @@ import 'dart:convert';
 
 import '../common/constants.dart';
 import '../common/utils.dart';
-import 'package:uractor/common/firebaseutils.dart';
 import '../main.dart';
 import '../objects/Media.dart';
 
@@ -103,7 +105,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
           .toList(),
       'type': widget.type,
     };
-    FirebaseUtils.updateCurrentUserCalendar(
+    CalendarService.updateCurrentUserCalendar(
         widget.dateRange, myObject, widget.dateForMap);
     for (var friend in friendsWatchedWith.keys) {
       myObject["friends"] = [
@@ -124,32 +126,32 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
           currentUser.seenWith[friend] = {"Movies": [], "TVShows": []};
           currentUser.seenWith[friend][key].add(id.toString());
         }
-        await FirebaseUtils.updateCalendar(
+        await CalendarService.updateCalendar(
             widget.dateRange, friend, myObject, widget.dateForMap);
-        await FirebaseUtils.updateSeen(key, friend, id);
-        await FirebaseUtils.updateSeenWith(friend, friendsWatchedWith, id, key);
+        await WatchedService.updateSeen(key, friend, id);
+        await SocialService.updateSeenWith(friend, friendsWatchedWith, id, key);
         if (widget.type == "movie") {
-          await FirebaseUtils.updateRewatched(friend, id, "movie");
+          await WatchedService.updateRewatched(friend, id, "movie");
         }
       }
     }
     List<dynamic> watchedWithList = friendsWatchedWith.keys
         .where((key) => friendsWatchedWith[key] == true)
         .toList();
-    await FirebaseUtils.updateCurrentUserSeenWith(
+    await SocialService.updateCurrentUserSeenWith(
         currentUser.uid, id, key, friendsWatchedWith, watchedWithList);
     myObject["friends"] = watchedWithList;
-    await FirebaseUtils.updateCurrentUserCalendarDocument();
+    await CalendarService.updateCurrentUserCalendarDocument();
     if (widget.type == "movie") {
       if (currentUser.rewatchedMovies.keys.toList().contains(id)) {
         currentUser.rewatchedMovies[id] += 1;
       } else {
         currentUser.rewatchedMovies[id] = 1;
       }
-      await FirebaseUtils.updateCurrentUserRewatched();
+      await WatchedService.updateCurrentUserRewatched();
       if (!Utils.containsList(currentUser.seenMovies, ["Movies", id])) {
         id = id.toString();
-        await FirebaseUtils.updateSeen(key, currentUser.uid, id);
+        await WatchedService.updateSeen(key, currentUser.uid, id);
         currentUser.seenMovies += [
           ["Movies", id]
         ];
@@ -160,7 +162,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
     } else {
       if (!Utils.containsList(currentUser.seenTVShows, ["TVShows", id])) {
         id = id.toString();
-        await FirebaseUtils.updateSeen(key, currentUser.uid, id);
+        await WatchedService.updateSeen(key, currentUser.uid, id);
         currentUser.seenTVShows += [
           ["TVShows", id]
         ];
@@ -687,9 +689,9 @@ class _AddToCalendarState extends State<AddToCalendar> {
       'friends': watchedWithList,
       'type': type,
     };
-    await FirebaseUtils.updateCalendar(
+    await CalendarService.updateCalendar(
         "", currentUser.uid, newData, widget.dateForMap);
-    await FirebaseUtils.deleteFromCalendar(
+    await CalendarService.deleteFromCalendar(
         currentUser.uid, id, title, widget.dateForMap, context);
 
     List allFriends = [];
@@ -723,9 +725,9 @@ class _AddToCalendarState extends State<AddToCalendar> {
         'friends': finalFriends,
         'type': type,
       };
-      await FirebaseUtils.deleteFromCalendar(
+      await CalendarService.deleteFromCalendar(
           friend, id, title, widget.dateForMap, context);
-      await FirebaseUtils.updateCalendar(
+      await CalendarService.updateCalendar(
           "", friend, friendNewData, widget.dateForMap);
       continue;
     }
@@ -771,30 +773,30 @@ class _AddToCalendarState extends State<AddToCalendar> {
           currentUser.seenWith[friend] = {"Movies": [], "TVShows": []};
           currentUser.seenWith[friend]["Movies"].add(id.toString());
         }
-        await FirebaseUtils.updateCalendar(
+        await CalendarService.updateCalendar(
             "", friend, myObject, widget.dateForMap);
-        await FirebaseUtils.updateSeen("Movies", friend, id);
-        await FirebaseUtils.updateSeenWith(
+        await WatchedService.updateSeen("Movies", friend, id);
+        await SocialService.updateSeenWith(
             friend, friendsWatchedWith, id, "Movies");
-        await FirebaseUtils.updateRewatched(friend, id, "movie");
+        await WatchedService.updateRewatched(friend, id, "movie");
       }
     }
     List<dynamic> watchedWithList = friendsWatchedWith.keys
         .where((key) => friendsWatchedWith[key] == true)
         .toList();
     myObject["friends"] = watchedWithList;
-    await FirebaseUtils.updateCurrentUserSeenWith(
+    await SocialService.updateCurrentUserSeenWith(
         currentUser.uid, id, "Movies", friendsWatchedWith, watchedWithList);
 
-    await FirebaseUtils.updateCurrentUserCalendarDocument();
+    await CalendarService.updateCurrentUserCalendarDocument();
     if (currentUser.rewatchedMovies.keys.toList().contains(id)) {
       currentUser.rewatchedMovies[id] += 1;
     } else {
       currentUser.rewatchedMovies[id] = 1;
     }
-    await FirebaseUtils.updateCurrentUserRewatched();
+    await WatchedService.updateCurrentUserRewatched();
     if (!Utils.containsList(currentUser.seenMovies, ["Movies", id])) {
-      await FirebaseUtils.updateSeen("Movies", currentUser.uid, id);
+      await WatchedService.updateSeen("Movies", currentUser.uid, id);
       currentUser.seenMovies += [
         ["Movies", id]
       ];

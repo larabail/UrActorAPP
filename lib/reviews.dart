@@ -2,6 +2,7 @@
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/common/firebase/review_service.dart';
 import '/common/constants.dart';
 import '/objects/Media.dart';
 import '/objects/Movie.dart';
@@ -9,7 +10,6 @@ import '/objects/TVShow.dart';
 import 'common/appbar.dart';
 import 'common/bottom_app_bar.dart';
 import 'common/utils.dart';
-import 'package:uractor/common/firebaseutils.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
 import 'dart:convert';
@@ -169,7 +169,7 @@ class _ReviewsState extends State<Reviews> {
                           children: [
                             IconButton(
                                 onPressed: () async {
-                                  await FirebaseUtils.editReview(
+                                  await ReviewService.editReview(
                                       snapshot.data!["id"],
                                       snapshot.data!["type"],
                                       context);
@@ -180,7 +180,7 @@ class _ReviewsState extends State<Reviews> {
                                 icon: const Icon(Icons.edit)),
                             IconButton(
                                 onPressed: () async {
-                                  await FirebaseUtils.deleteReview(
+                                  await ReviewService.deleteReview(
                                       snapshot.data!["id"],
                                       snapshot.data!["type"],
                                       context);

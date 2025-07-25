@@ -4,7 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
-import 'package:uractor/common/firebaseutils.dart';
+import 'package:uractor/common/firebase/recommendation_service.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'package:uractor/popups/grant_access_dialogue.dart';
@@ -560,9 +560,9 @@ class _ListResultState extends State<ListResult> {
 
       if (unseenRecommendations.length >= 30) {
         List finalRecommendations = unseenRecommendations.take(30).toList();
-        await FirebaseUtils.updateRecommendations(finalRecommendations, type);
+        await RecommendationService.updateRecommendations(finalRecommendations, type);
       } else {
-        await FirebaseUtils.updateRecommendations(unseenRecommendations, type);
+        await RecommendationService.updateRecommendations(unseenRecommendations, type);
       }
     } else {
       throw Exception(response.body);
