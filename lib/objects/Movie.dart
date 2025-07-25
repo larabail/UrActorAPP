@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../common/constants.dart';
-import '../common/apiutils.dart';
+import '../common/api/apiutils.dart';
 import '../common/utils.dart';
 import '../main.dart';
 import 'Media.dart';

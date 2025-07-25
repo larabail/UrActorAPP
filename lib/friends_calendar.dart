@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:uractor/common/item_container.dart';
-import 'common/appbar.dart';
-import 'common/bottom_app_bar.dart';
+import 'common/navigation/appbar.dart';
+import 'common/navigation/bottom_app_bar.dart';
 import 'common/constants.dart';
 import 'common/utils.dart';
 import 'package:uractor/common/firebase/firebaseutils.dart';
