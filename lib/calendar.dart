@@ -43,40 +43,15 @@ class _CalendarState extends State<Calendar> {
   String _selectedDay = DateTime.now().toIso8601String().split('T')[0];
   List _monthlyStats = [0, 0, 0];
   bool areFABsVisible = false;
-  final Map events = currentUser.calendar;
   void deleteMovieSubmit(String id, String title) async {
     var userDoc = db.collection(currentUser.uid).doc("Calendar");
-    for (String key in currentUser.calendar.keys) {
-      if (key == _selectedDay) {
-        if (currentUser.calendar[key].length == 1) {
-          var movie = currentUser.calendar[key][0];
-          if (movie['id'].toString() == id.toString() &&
-              movie['title'].toString() == title.toString()) {
-            currentUser.calendar[key] = [];
-          }
-        } else {
-          List movies = currentUser.calendar[key];
-
-          int movieIndex = movies.indexWhere((movie) =>
-              movie['id'].toString() == id.toString() &&
-              movie['title'].toString() == title.toString());
-
-          if (movieIndex != -1) {
-            movies.removeAt(movieIndex);
-          }
-          break;
-        }
-      }
-    }
-    Map<Object, Object> updatedCalendar = {};
-    for (String key in currentUser.calendar.keys) {
-      if (currentUser.calendar[key].isNotEmpty) {
-        updatedCalendar[key] = currentUser.calendar[key];
-      } else {
-        updatedCalendar[key] = [];
-      }
-    }
-    await userDoc.update(updatedCalendar);
+    await FirebaseUtils.deleteFromCalendar(
+      currentUser.uid,
+      id,
+      title,
+      _selectedDay,
+      context,
+    );
 
     if (currentUser.rewatchedMovies.keys.toList().contains(id)) {
       currentUser.rewatchedMovies[id] - 1 > 0
@@ -107,9 +82,6 @@ class _CalendarState extends State<Calendar> {
                   ["Movies", element]
                 ];
               }
-              setState(() {
-                currentUser.seenMovies = currentUser.seenMovies;
-              });
             }
           });
         });
@@ -121,10 +93,9 @@ class _CalendarState extends State<Calendar> {
       }
       await userDoc.update(updatedRewatched);
     }
-
-    Navigator.pop(context);
+    Navigator.of(context).pop(true);
     setState(() {
-      currentUser.calendar = currentUser.calendar;
+      currentUser.calendar = Map<String, List>.from(currentUser.calendar);
     });
   }
 
@@ -371,8 +342,8 @@ class _CalendarState extends State<Calendar> {
         day = '0${selectedDay.day}';
       }
       _selectedDay = '${selectedDay.year}-$month-$day';
-      if (events.keys.contains(_selectedDay)) {
-        moviesOnDay = events[_selectedDay];
+      if (currentUser.calendar.keys.contains(_selectedDay)) {
+        moviesOnDay = currentUser.calendar[_selectedDay];
       } else {
         moviesOnDay = [];
       }
@@ -609,11 +580,9 @@ class _CalendarState extends State<Calendar> {
                     titleCentered: true,
                   ),
                   eventLoader: (date) {
-                    final eventsOnDate =
-                        events[date.toString().substring(0, 10)] ?? [];
-                    return eventsOnDate
-                        .map((event) => event['title'] ?? '')
-                        .toList();
+                    final dayKey = date.toIso8601String().split('T')[0];
+                    final items = currentUser.calendar[dayKey] ?? [];
+                    return items.map((item) => item['title'] ?? '').toList();
                   },
                   focusedDay: _focusedDay,
                   selectedDayPredicate: (day) =>

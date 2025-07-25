@@ -654,7 +654,8 @@ class _TVShowResultState extends State<TVShowResult> {
                               currentUser.uid,
                               widget.tvshow.id,
                               widget.tvshow.title,
-                              date[0]);
+                              date[0],
+                              context);
 
                           setState(() {
                             List movies = currentUser.calendar[date[0]];
