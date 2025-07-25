@@ -782,7 +782,7 @@ class _MovieResultState extends State<MovieResult> {
                               currentUser.uid,
                               widget.movie.id,
                               widget.movie.title,
-                              date[0]);
+                              date[0], context);
 
                           setState(() {
                             List movies = currentUser.calendar[date[0]];

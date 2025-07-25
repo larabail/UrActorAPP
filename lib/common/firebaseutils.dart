@@ -483,8 +483,32 @@ class FirebaseUtils {
     }
   }
 
-  static Future<void> deleteFromCalendar(
-      String uid, String id, String title, String date) async {
+  static Future<void> deleteFromCalendar(String uid, String id, String title,
+      String date, BuildContext context) async {
+    bool? deleteForEveryone = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Delete Calendar Entry"),
+          content: Text(
+              "Do you want to delete this from just your calendar or everyone's?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false), // Just me
+              child: Text("Just me"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true), // For everyone
+              child: Text("Everyone"),
+            ),
+          ],
+        );
+      },
+    );
+    if (deleteForEveryone == true) {
+      await deleteFromFriendsCalendar(id, title, date);
+    }
+
     Map calendarDocInfo = await getDocumentData(uid, "Calendar");
     FirebaseFirestore.instance.collection(uid).doc("Calendar");
     Map calendarData = calendarDocInfo["data"];
@@ -518,7 +542,42 @@ class FirebaseUtils {
         updatedCalendar[key] = [];
       }
     }
+    if (uid == currentUser.uid) {
+      currentUser.calendar = Map<String, List>.from(calendarData);
+    }
     await updateDocument(uid, "Calendar", updatedCalendar);
+  }
+
+  static Future<void> deleteFromFriendsCalendar(
+      String id, String title, String date) async {
+    Map friendsDocInfo = await getDocumentData(currentUser.uid, "Friends");
+    List friends = friendsDocInfo["data"]["friends"];
+
+    for (String friendUid in friends) {
+      Map calendarDocInfo = await getDocumentData(friendUid, "Calendar");
+      Map calendarData = calendarDocInfo["data"];
+
+      if (!calendarData.containsKey(date)) continue;
+
+      List movies = List.from(calendarData[date]); // Avoid mutating directly
+      int movieIndex = movies.indexWhere((movie) =>
+          movie['id'].toString() == id.toString() &&
+          movie['title'].toString() == title.toString());
+
+      if (movieIndex != -1) {
+        movies.removeAt(movieIndex);
+
+        // Prepare updated calendar map
+        Map<String, dynamic> updatedCalendar = Map.from(calendarData);
+        if (movies.isEmpty) {
+          updatedCalendar.remove(date); // Optionally remove the date key
+        } else {
+          updatedCalendar[date] = movies;
+        }
+
+        await updateDocument(friendUid, "Calendar", updatedCalendar);
+      }
+    }
   }
 
   static void updateCurrentUserCalendar(
