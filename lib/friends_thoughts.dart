@@ -3,8 +3,8 @@ import 'package:uractor/common/firebase/review_service.dart';
 import 'package:uractor/common/firebase/social_service.dart';
 import 'package:uractor/friends_profile.dart';
 
-import 'common/bottom_app_bar.dart';
-import 'common/appbar.dart';
+import 'common/navigation/bottom_app_bar.dart';
+import 'common/navigation/appbar.dart';
 import 'objects/Media.dart';
 
 class FriendsThoughts extends StatefulWidget {

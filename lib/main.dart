@@ -11,8 +11,8 @@ import 'package:uractor/tvshow_result.dart';
 
 import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
-import 'common/appbar.dart';
-import 'common/bottom_app_bar.dart';
+import 'common/navigation/appbar.dart';
+import 'common/navigation/bottom_app_bar.dart';
 import 'calendar.dart';
 import 'favorites.dart';
 import 'list_result.dart';

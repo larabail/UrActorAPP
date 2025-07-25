@@ -1,8 +1,8 @@
 // custom_app_bar.dart
 import 'package:flutter/material.dart';
 
-import '../popups/settings_pop_up.dart';
-import '../search.dart';
+import '../../popups/settings_pop_up.dart';
+import '../../search.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CustomAppBar({super.key});

@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-import '../main.dart';
-import 'constants.dart';
+import '../../main.dart';
+import '../constants.dart';
 
 class ApiUtils {
   /// Fetches movie data from the OMDB API using the IMDb ID.
