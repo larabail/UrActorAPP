@@ -6,8 +6,8 @@ import 'package:uractor/cast_and_crew.dart';
 import 'package:uractor/common/constants.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/objects/TVShow.dart';
-import 'common/appbar.dart';
-import 'common/bottom_app_bar.dart';
+import 'common/navigation/appbar.dart';
+import 'common/navigation/bottom_app_bar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 

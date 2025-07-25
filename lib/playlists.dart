@@ -3,8 +3,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'common/appbar.dart';
-import 'common/bottom_app_bar.dart';
+import 'common/navigation/appbar.dart';
+import 'common/navigation/bottom_app_bar.dart';
 import 'main.dart';
 import 'list_result.dart';
 import 'objects/Playlist.dart';
