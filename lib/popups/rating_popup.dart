@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:uractor/common/firebaseutils.dart';
+import 'package:uractor/common/firebase/review_service.dart';
 import '../main.dart';
 
 final myController = TextEditingController(text: "");
@@ -21,7 +21,7 @@ class _RatingDialogState extends State<RatingDialog> {
   Future<void> submit() async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     if (reviewInfo.keys.toList().isNotEmpty) {
-      await FirebaseUtils.deleteReview(reviewId, reviewType, context);
+      await ReviewService.deleteReview(reviewId, reviewType, context);
     }
     Map<String, dynamic> information = {
       reviewId: {
@@ -74,37 +74,6 @@ class _RatingDialogState extends State<RatingDialog> {
     reviewInfo = {};
     Navigator.pop(context);
   }
-
-  // Future<void> deleteReview(id, type, context) async {
-  //   if (type == "Movies") {
-  //     currentUser.reviews.remove(id.toString());
-  //   } else {
-  //     currentUser.tvShowReviews.remove(id.toString());
-  //   }
-  //   reviewed = false;
-  //   await FirebaseFirestore.instance
-  //       .collection(currentUser.uid)
-  //       .get()
-  //       .then((QuerySnapshot querySnapshot) async {
-  //     for (var doc in querySnapshot.docs) {
-  //       if (doc.id == "Reviews") {
-  //         Map allreviews = doc.data() as Map;
-  //         List reviewsInList = allreviews[type] as List;
-  //         List tempReviewsInList = [];
-  //         for (var element in reviewsInList) {
-  //           element = element as Map;
-  //           if (element.keys.toList()[0].toString() != id.toString()) {
-  //             tempReviewsInList.add(element);
-  //           }
-  //         }
-  //         final userDoc = FirebaseFirestore.instance
-  //             .collection(currentUser.uid)
-  //             .doc("Reviews");
-  //         await userDoc.update({type: tempReviewsInList});
-  //       }
-  //     }
-  //   });
-  // }
 
   void ratingStarFunction(int rating) {
     setState(() {

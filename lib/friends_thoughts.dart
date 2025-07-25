@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:uractor/common/firebaseutils.dart';
+import 'package:uractor/common/firebase/review_service.dart';
+import 'package:uractor/common/firebase/social_service.dart';
 import 'package:uractor/friends_profile.dart';
 
 import 'common/bottom_app_bar.dart';
@@ -100,7 +101,7 @@ class _FriendsThoughtsState extends State<FriendsThoughts> {
                                 ),
                               ),
                               FutureBuilder(
-                                future: FirebaseUtils.favedBy(widget.mediaItem,
+                                future: SocialService.favedBy(widget.mediaItem,
                                     friendUid, "Favorites", "Movies"),
                                 builder: ((context, snapshot) {
                                   if (snapshot.connectionState ==
@@ -140,7 +141,7 @@ class _FriendsThoughtsState extends State<FriendsThoughts> {
                           ),
                         ),
                         FutureBuilder(
-                          future: FirebaseUtils.getReviewByUser(
+                          future: ReviewService.getReviewByUser(
                               friendUid, widget.mediaItem, widget.type),
                           builder: ((context, snapshot) {
                             if (snapshot.connectionState ==

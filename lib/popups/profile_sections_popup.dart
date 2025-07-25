@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:uractor/common/firebaseutils.dart';
+import 'package:uractor/common/firebase/firebaseutils.dart';
 import 'package:uractor/main.dart';
 
 class ProfileSectionsDialogue extends StatefulWidget {
