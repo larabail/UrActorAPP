@@ -2,13 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-import 'package:intl/intl.dart';
-import 'package:uractor/objects/Movie.dart';
-
 import '../main.dart';
 import 'constants.dart';
 
 class ApiUtils {
+  /// Fetches movie data from the OMDB API using the IMDb ID.
+  /// @param imdbId The IMDb ID of the movie or show.
+  /// @return The decoded JSON response containing OMDB metadata.
   static Future<dynamic> fetchOmdbData(String imdbId) async {
     final response = await http
         .get(Uri.parse('https://www.omdbapi.com/?i=$imdbId&apikey=768d2cf9'));
@@ -18,6 +18,12 @@ class ApiUtils {
     return jsonDecode(response.body);
   }
 
+  /// Fetches watch provider data for a specific movie or TV show.
+  /// @param movieId The TMDb movie/TV ID.
+  /// @param name The slugified title of the movie/TV show.
+  /// @param country The country code for filtering providers.
+  /// @param type Either "movie" or "tv" to determine API path.
+  /// @return A list of provider name and logo URL pairs.
   static Future<List<dynamic>> fetchProviders(
       String movieId, String name, String country, String type) async {
     final response = await http.get(Uri.parse(
@@ -37,6 +43,11 @@ class ApiUtils {
     return providers;
   }
 
+  /// Fetches cast, crew, and trailer data for a specific media item.
+  /// @param movieId The TMDb media ID.
+  /// @param name The slugified title.
+  /// @param type The media type ("movie" or "tv").
+  /// @return A map with cast, formatted crew, and trailer (if any).
   static Future<Map<String, dynamic>> fetchCreditsAndTrailer(
       String movieId, String name, String type) async {
     final creditsResponse = await http.get(Uri.parse(
@@ -81,6 +92,11 @@ class ApiUtils {
     return data;
   }
 
+  /// Fetches the basic metadata for a movie or TV show.
+  /// @param movieId The TMDb ID.
+  /// @param name The slugified name.
+  /// @param type The media type ("movie" or "tv").
+  /// @return A map of the media details.
   static Future<Map<String, dynamic>> fetchMovieDetails(
       String movieId, String name, String type) async {
     final movieResponse = await http.get(Uri.parse(
@@ -91,6 +107,12 @@ class ApiUtils {
     return jsonDecode(movieResponse.body);
   }
 
+  /// Fetches additional metadata including IMDb rating, release year, streaming providers, cast/crew, and trailer.
+  /// @param json The base movie data JSON.
+  /// @param movieId The TMDb ID.
+  /// @param name The slugified name.
+  /// @param type The media type.
+  /// @return A map with additional movie metadata.
   static Future<Map<String, dynamic>> fetchAdditionalMovieData(
       Map json, String movieId, String name, String type) async {
     Map<String, dynamic> additionalData = {};
@@ -120,6 +142,11 @@ class ApiUtils {
     return additionalData;
   }
 
+  /// Processes and returns all calendar dates where a movie or show was marked as watched.
+  /// @param calendar The user calendar map.
+  /// @param movieId The media ID to filter for.
+  /// @param type The type of media ("movie" or "tv").
+  /// @return A sorted list of watch dates and friend data.
   static List<dynamic> processSeenDates(
       Map calendar, String movieId, String type) {
     List<dynamic> seenDates = [];
@@ -140,36 +167,9 @@ class ApiUtils {
     return seenDates;
   }
 
-  static Future<List> getUpcomingMovies() async {
-    DateTime now = DateTime.now();
-    String formattedDate = DateFormat('yyyy-MM-dd').format(now);
-    DateTime oneMonthLater = DateTime(now.year, now.month + 1, now.day);
-    if (now.month == 12) {
-      oneMonthLater = DateTime(now.year + 1, 1, now.day);
-    }
-    while (oneMonthLater.month != ((now.month % 12) + 1)) {
-      oneMonthLater = DateTime(
-          oneMonthLater.year, oneMonthLater.month, oneMonthLater.day - 1);
-    }
-
-    String formattedDateOneMonth =
-        DateFormat('yyyy-MM-dd').format(oneMonthLater);
-    final responseUpcomingMovies = await http.get(Uri.parse(
-        "https://api.themoviedb.org/3/discover/movie$API_KEY&include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc&with_release_type=2|3&release_date.gte=$formattedDate&release_date.lte=$formattedDateOneMonth"));
-    List upcomingMovies = [];
-    if (responseUpcomingMovies.statusCode == 200) {
-      final upcomingMoviesJson = jsonDecode(responseUpcomingMovies.body);
-      for (Map movie in upcomingMoviesJson["results"]) {
-        Movie tempMovie = Movie(
-            id: movie["id"].toString(),
-            title: movie["title"],
-            coverPhoto: movie["poster_path"]);
-        upcomingMovies.add(tempMovie);
-      }
-    }
-    return upcomingMovies;
-  }
-
+  /// Performs a multi-type search (actors, movies, shows) based on a term.
+  /// @param searchTermActor The search term.
+  /// @return A list of result objects matching the query.
   static Future<List> searchData(searchTermActor) async {
     String searchLink = "";
     if (searchTermActor != "") {
@@ -184,6 +184,9 @@ class ApiUtils {
     return [];
   }
 
+  /// Searches for movies based on a term.
+  /// @param searchTerm The user query.
+  /// @return A list of movies matching the query.
   static Future<List> searchMovies(String searchTerm) async {
     if (searchTerm != "") {
       String name = searchTerm
@@ -203,6 +206,9 @@ class ApiUtils {
     }
   }
 
+  /// Searches for TV shows based on a term.
+  /// @param searchTerm The user query.
+  /// @return A list of TV shows matching the query.
   static Future<List> searchTvShows(String searchTerm) async {
     if (searchTerm != "") {
       String name = searchTerm
