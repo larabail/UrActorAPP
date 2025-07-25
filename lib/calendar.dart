@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:uractor/common/firebase/calendar_service.dart';
 import 'package:uractor/common/firebase/firebaseutils.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'package:uractor/tvshow_result.dart';
 import 'common/constants.dart';
@@ -178,20 +179,20 @@ class _CalendarState extends State<Calendar> {
               child: SingleChildScrollView(
                 child: ListBody(
                   children: <Widget>[
-                    const Text(
-                      "Add a TV Shows to Your Calendar",
-                      style: TextStyle(fontSize: 20),
+                    Text(
+                      S.of(context)!.addTVShowToCalendar,
+                      style: const TextStyle(fontSize: 20),
                     ),
                     const SizedBox(height: 20),
                     GestureDetector(
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.today),
                           SizedBox(
                             width: 10,
                           ),
-                          Text('Select a Specific Date')
+                          Text(S.of(context)!.selectASpecificDate)
                         ],
                       ),
                       onTap: () async {
@@ -223,14 +224,14 @@ class _CalendarState extends State<Calendar> {
                     ),
                     const SizedBox(height: 20),
                     GestureDetector(
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.date_range),
-                          SizedBox(
+                          const Icon(Icons.date_range),
+                          const SizedBox(
                             width: 10,
                           ),
-                          Text('Select a Date Range')
+                          Text(S.of(context)!.selectADateRange)
                         ],
                       ),
                       onTap: () async {
@@ -275,14 +276,15 @@ class _CalendarState extends State<Calendar> {
                           color: Colors.grey[900],
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.cancel_outlined, color: Colors.red),
-                            SizedBox(width: 10),
+                            const Icon(Icons.cancel_outlined,
+                                color: Colors.red),
+                            const SizedBox(width: 10),
                             Text(
-                              'Cancel',
-                              style: TextStyle(
+                              S.of(context)!.cancel,
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
@@ -378,7 +380,7 @@ class _CalendarState extends State<Calendar> {
                     child: Column(
                       children: [
                         Text(
-                          "Seen on ${_selectedDay}",
+                          S.of(context)!.seenOn(_selectedDay),
                           style: const TextStyle(
                               fontSize: 20, fontWeight: FontWeight.bold),
                         ),
@@ -467,11 +469,12 @@ class _CalendarState extends State<Calendar> {
                                                                 );
                                                               } else if (snapshot
                                                                   .hasError) {
-                                                                return const SizedBox(
+                                                                return SizedBox(
                                                                   height: 32.0,
                                                                   child: Center(
-                                                                      child: Text(
-                                                                          'Error loading images')),
+                                                                      child: Text(S
+                                                                          .of(context)!
+                                                                          .errorLoadingImages)),
                                                                 );
                                                               } else if (snapshot
                                                                   .hasData) {
@@ -615,7 +618,8 @@ class _CalendarState extends State<Calendar> {
                       Text('${_monthlyStats[0]}',
                           style: const TextStyle(
                               fontSize: 20, fontWeight: FontWeight.bold)),
-                      const Text('# Seen', style: TextStyle(fontSize: 15)),
+                      Text(S.of(context)!.labelSeen,
+                          style: TextStyle(fontSize: 15)),
                     ],
                   ),
                   Column(
@@ -624,7 +628,8 @@ class _CalendarState extends State<Calendar> {
                       Text('${(_monthlyStats[2] / 60).toStringAsFixed(2)}',
                           style: const TextStyle(
                               fontSize: 20, fontWeight: FontWeight.bold)),
-                      const Text('Hours Spent', style: TextStyle(fontSize: 15)),
+                      Text(S.of(context)!.labelHoursSpent,
+                          style: TextStyle(fontSize: 15)),
                     ],
                   ),
                   Column(
@@ -633,7 +638,8 @@ class _CalendarState extends State<Calendar> {
                       Text('${_monthlyStats[1].toStringAsFixed(2)}',
                           style: const TextStyle(
                               fontSize: 20, fontWeight: FontWeight.bold)),
-                      const Text('Avg. Rating', style: TextStyle(fontSize: 15)),
+                      Text(S.of(context)!.labelAvgRating,
+                          style: TextStyle(fontSize: 15)),
                     ],
                   ),
                 ],

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/l10n/l10n.dart';
 
 import 'main.dart';
 
@@ -61,7 +62,7 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Friend Requests'),
+        title: Text(S.of(context)!.friendRequests),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: getFriendRequests(widget.currentUserUID),
@@ -71,7 +72,7 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
           } else if (snapshot.hasError) {
             return Text('Error: ${snapshot.error}');
           } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('No friend requests found'));
+            return Center(child: Text(S.of(context)!.noData));
           } else {
             return ListView.builder(
               itemCount: snapshot.data!.docs.length,
