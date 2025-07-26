@@ -44,6 +44,16 @@
     }
   },
   "emptySection": "Nothing here yet",
+  "simpleSeeAll": "See All",
+  "playlistCount": "{playlistCount} playlists",
+  "@playlistCount": {
+    "description": "Shown under see all to show playlist count",
+    "placeholders": {
+      "playlistCount": {
+        "type": "int"
+      }
+    }
+  },
   "seeAll": "See All ({number} items)",
   "@seeAll": {
     "description": "Shown at the end of a title to expand items",
@@ -172,7 +182,6 @@
   "email": "Email",
   "login": "Login",
   "enterEmail": "Please enter your email",
-  "password": "Password",
   "yourPassword": "Your Password",
   "enterPassword": "Please enter your password",
   "noAccountSignUp": "Don't have an account? Sign up",
@@ -200,5 +209,29 @@
     }
   },
   "viewingHistory": "Viewing History",
-  "noViewingHistory": "No viewing history available"
+  "noViewingHistory": "No viewing history available",
+  "noReviews": "Haven't reviewed any movies yet",
+  "peopleWatchedwith": "People watched with",
+  "failedFriends": "Failed to load friends' profiles",
+  "addFriends": "Add Friends",
+  "addDate": "Add Date",
+  "directedBy": "Directed by {director}",
+  "@directedBy": {
+    "description": "Shows to tell the user the director of a movie ",
+    "placeholders": {
+      "director": {
+        "type": "String"
+      }
+    }
+  },
+  "written": "Written",
+  "screenplay": "Screenplay",
+  "by": "by",
+  "whereToWatch": "Where to Watch?",
+  "nowhere": "Nowhere at the moment",
+  "cast": "Cast",
+  "crew": "Crew",
+  "as": "playing",
+  "errorNotification": "Error marking notifications as read",
+  "notificationMessage": "wants you to check out the"
 }

@@ -77,6 +77,14 @@ class SEs extends S {
   String get emptySection => 'Nada todavía';
 
   @override
+  String get simpleSeeAll => 'Ver Todas';
+
+  @override
+  String playlistCount(int playlistCount) {
+    return '$playlistCount listas';
+  }
+
+  @override
   String seeAll(int number) {
     return 'Ver todo ($number elementos)';
   }
@@ -294,4 +302,56 @@ class SEs extends S {
 
   @override
   String get noViewingHistory => 'No hay historial de visualización';
+
+  @override
+  String get noReviews => 'No has dejado ninguna reseña todavía';
+
+  @override
+  String get peopleWatchedwith => 'Con quien la has visto';
+
+  @override
+  String get failedFriends =>
+      'Ha habido un error cargando los perfiles de tus amigos';
+
+  @override
+  String get addFriends => 'Añadir amigos';
+
+  @override
+  String get addDate => 'Añadir fecha';
+
+  @override
+  String directedBy(String director) {
+    return 'Dirigida por $director';
+  }
+
+  @override
+  String get written => 'Escrita';
+
+  @override
+  String get screenplay => 'Guión';
+
+  @override
+  String get by => 'por';
+
+  @override
+  String get whereToWatch => '¿Dónde ver?';
+
+  @override
+  String get nowhere => 'En ningún sitio por el momento';
+
+  @override
+  String get cast => 'Reparto';
+
+  @override
+  String get crew => 'Equipo';
+
+  @override
+  String get as => 'interpretando a';
+
+  @override
+  String get errorNotification =>
+      'Ha habido un error marcando la notificación como leida';
+
+  @override
+  String get notificationMessage => 'quiere que veas la';
 }

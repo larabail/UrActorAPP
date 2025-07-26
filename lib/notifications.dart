@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/movie_result.dart';
 import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/TVShow.dart';
@@ -60,7 +61,7 @@ class _NotificationsState extends State<Notifications> {
         }
       });
     } catch (e) {
-      print('Error marking notifications as read: $e');
+      print('${S.of(context)!.errorNotification}: $e');
     }
   }
 
@@ -68,7 +69,7 @@ class _NotificationsState extends State<Notifications> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text(S.of(context)!.notifications),
       ),
       body: RefreshIndicator(
         onRefresh: refreshNotifications,
@@ -129,7 +130,7 @@ class _NotificationsState extends State<Notifications> {
                           SizedBox(
                             width: MediaQuery.of(context).size.width * 0.5,
                             child: Text(
-                              '${notification["sender"]["username"]} wants you to check out the ${notification['type']} "${notification['title']}"',
+                              '${notification["sender"]["username"]} ${S.of(context)!.notificationMessage} ${notification['type']} "${notification['title']}"',
                               style: const TextStyle(
                                 fontSize: 14,
                               ),
