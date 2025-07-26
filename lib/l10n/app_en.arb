@@ -18,6 +18,7 @@
   "labelAvgRating": "Avg. Rating",
   "labelCastAndCrew": "Cast & Crew",
   "errorFailedToLoadDetails": "Failed to load movie details",
+  "errorFailedToLoadGeneralDetails": "Failed to load details",
   "errorLoadingImages": "Error loading images",
   "yourSection": "Your {section}",
   "@yourSection": {
@@ -233,5 +234,48 @@
   "crew": "Crew",
   "as": "playing",
   "errorNotification": "Error marking notifications as read",
-  "notificationMessage": "wants you to check out the"
+  "notificationMessage": "wants you to check out the",
+  "movie": "movie",
+  "show": "show",
+  "newNotification": "NEW",
+  "ranking": "ranking",
+  "progress": "progress",
+  "yourStats": "Your Statistics",
+  "asCast": "As Part of the Cast",
+  "asCrew": "As Part of the Crew",
+  "joinList": "Join Existing List",
+  "newList": "Add New List",
+  "generateRecommendation": "Generate Handpicked Recommendations",
+  "handpicked": "Handpicked for You",
+  "noPlaylists": "You don't have any playlists yet!",
+  "usernameTaken": "Username is already taken",
+  "usernameUpdated": "Username updated successfully",
+  "viewingStatistics": "Viewing Statistics",
+  "moviesSeenWeekOf": "Movies seen the week of",
+  "january": "January",
+  "february": "February",
+  "march": "March",
+  "april": "April",
+  "may": "May",
+  "june": "June",
+  "july": "July",
+  "august": "August",
+  "september": "September",
+  "october": "October",
+  "november": "November",
+  "december": "December",
+  "inWord": "in",
+  "thisWeek": "This Week",
+  "currentRecordMovies": "Current Record: {maxMovies} movies in a day",
+  "@currentRecordMovies": {
+    "placeholders": {
+      "maxMovies": {
+        "type": "int"
+      }
+    }
+  },
+  "totalMovies": "Total Movies Ever Seen",
+  "totalTVShows": "Total TV Shows Ever Seen",
+  "modifyProfile": "Modify Profile Sections",
+  "noDataAvailable": "No data available"
 }

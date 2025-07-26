@@ -157,6 +157,12 @@ abstract class S {
   /// **'Failed to load movie details'**
   String get errorFailedToLoadDetails;
 
+  /// No description provided for @errorFailedToLoadGeneralDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load details'**
+  String get errorFailedToLoadGeneralDetails;
+
   /// No description provided for @errorLoadingImages.
   ///
   /// In en, this message translates to:
@@ -714,6 +720,222 @@ abstract class S {
   /// In en, this message translates to:
   /// **'wants you to check out the'**
   String get notificationMessage;
+
+  /// No description provided for @movie.
+  ///
+  /// In en, this message translates to:
+  /// **'movie'**
+  String get movie;
+
+  /// No description provided for @show.
+  ///
+  /// In en, this message translates to:
+  /// **'show'**
+  String get show;
+
+  /// No description provided for @newNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'NEW'**
+  String get newNotification;
+
+  /// No description provided for @ranking.
+  ///
+  /// In en, this message translates to:
+  /// **'ranking'**
+  String get ranking;
+
+  /// No description provided for @progress.
+  ///
+  /// In en, this message translates to:
+  /// **'progress'**
+  String get progress;
+
+  /// No description provided for @yourStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Statistics'**
+  String get yourStats;
+
+  /// No description provided for @asCast.
+  ///
+  /// In en, this message translates to:
+  /// **'As Part of the Cast'**
+  String get asCast;
+
+  /// No description provided for @asCrew.
+  ///
+  /// In en, this message translates to:
+  /// **'As Part of the Crew'**
+  String get asCrew;
+
+  /// No description provided for @joinList.
+  ///
+  /// In en, this message translates to:
+  /// **'Join Existing List'**
+  String get joinList;
+
+  /// No description provided for @newList.
+  ///
+  /// In en, this message translates to:
+  /// **'Add New List'**
+  String get newList;
+
+  /// No description provided for @generateRecommendation.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate Handpicked Recommendations'**
+  String get generateRecommendation;
+
+  /// No description provided for @handpicked.
+  ///
+  /// In en, this message translates to:
+  /// **'Handpicked for You'**
+  String get handpicked;
+
+  /// No description provided for @noPlaylists.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have any playlists yet!'**
+  String get noPlaylists;
+
+  /// No description provided for @usernameTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'Username is already taken'**
+  String get usernameTaken;
+
+  /// No description provided for @usernameUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Username updated successfully'**
+  String get usernameUpdated;
+
+  /// No description provided for @viewingStatistics.
+  ///
+  /// In en, this message translates to:
+  /// **'Viewing Statistics'**
+  String get viewingStatistics;
+
+  /// No description provided for @moviesSeenWeekOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Movies seen the week of'**
+  String get moviesSeenWeekOf;
+
+  /// No description provided for @january.
+  ///
+  /// In en, this message translates to:
+  /// **'January'**
+  String get january;
+
+  /// No description provided for @february.
+  ///
+  /// In en, this message translates to:
+  /// **'February'**
+  String get february;
+
+  /// No description provided for @march.
+  ///
+  /// In en, this message translates to:
+  /// **'March'**
+  String get march;
+
+  /// No description provided for @april.
+  ///
+  /// In en, this message translates to:
+  /// **'April'**
+  String get april;
+
+  /// No description provided for @may.
+  ///
+  /// In en, this message translates to:
+  /// **'May'**
+  String get may;
+
+  /// No description provided for @june.
+  ///
+  /// In en, this message translates to:
+  /// **'June'**
+  String get june;
+
+  /// No description provided for @july.
+  ///
+  /// In en, this message translates to:
+  /// **'July'**
+  String get july;
+
+  /// No description provided for @august.
+  ///
+  /// In en, this message translates to:
+  /// **'August'**
+  String get august;
+
+  /// No description provided for @september.
+  ///
+  /// In en, this message translates to:
+  /// **'September'**
+  String get september;
+
+  /// No description provided for @october.
+  ///
+  /// In en, this message translates to:
+  /// **'October'**
+  String get october;
+
+  /// No description provided for @november.
+  ///
+  /// In en, this message translates to:
+  /// **'November'**
+  String get november;
+
+  /// No description provided for @december.
+  ///
+  /// In en, this message translates to:
+  /// **'December'**
+  String get december;
+
+  /// No description provided for @inWord.
+  ///
+  /// In en, this message translates to:
+  /// **'in'**
+  String get inWord;
+
+  /// No description provided for @thisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This Week'**
+  String get thisWeek;
+
+  /// No description provided for @currentRecordMovies.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Record: {maxMovies} movies in a day'**
+  String currentRecordMovies(int maxMovies);
+
+  /// No description provided for @totalMovies.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Movies Ever Seen'**
+  String get totalMovies;
+
+  /// No description provided for @totalTVShows.
+  ///
+  /// In en, this message translates to:
+  /// **'Total TV Shows Ever Seen'**
+  String get totalTVShows;
+
+  /// No description provided for @modifyProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Modify Profile Sections'**
+  String get modifyProfile;
+
+  /// No description provided for @noDataAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No data available'**
+  String get noDataAvailable;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {
