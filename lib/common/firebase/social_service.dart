@@ -124,6 +124,7 @@ class SocialService {
     Map friends = {};
     Map friendsDocInfo = await FirestoreCore.getDocumentData(uid, "Friends");
     List allFriends = friendsDocInfo["data"]["friends"];
+    print("FRIENDS: $allFriends");
     for (String friendUid in allFriends) {
       Map friendSeenDocInfo =
           await FirestoreCore.getDocumentData(friendUid, type);
