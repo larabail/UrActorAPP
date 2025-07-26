@@ -81,7 +81,12 @@ class _NotificationsState extends State<Notifications> {
                 .reversed
                 .toList()[index];
             var notification = currentUser.notifications[notificationKey];
-
+            String type;
+            if (notification["type"] == "movie") {
+              type = S.of(context)!.movie;
+            } else {
+              type = S.of(context)!.show;
+            }
             return Padding(
               padding: const EdgeInsets.fromLTRB(15, 5, 15, 5),
               child: SizedBox(
@@ -130,7 +135,7 @@ class _NotificationsState extends State<Notifications> {
                           SizedBox(
                             width: MediaQuery.of(context).size.width * 0.5,
                             child: Text(
-                              '${notification["sender"]["username"]} ${S.of(context)!.notificationMessage} ${notification['type']} "${notification['title']}"',
+                              '${notification["sender"]["username"]} ${S.of(context)!.notificationMessage} $type "${notification['title']}"',
                               style: const TextStyle(
                                 fontSize: 14,
                               ),
@@ -149,8 +154,8 @@ class _NotificationsState extends State<Notifications> {
                               color: Colors.red,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Text(
-                              'NEW',
+                            child: Text(
+                              S.of(context)!.newNotification,
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,

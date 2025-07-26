@@ -41,6 +41,9 @@ class SEn extends S {
   String get errorFailedToLoadDetails => 'Failed to load movie details';
 
   @override
+  String get errorFailedToLoadGeneralDetails => 'Failed to load details';
+
+  @override
   String get errorLoadingImages => 'Error loading images';
 
   @override
@@ -350,4 +353,114 @@ class SEn extends S {
 
   @override
   String get notificationMessage => 'wants you to check out the';
+
+  @override
+  String get movie => 'movie';
+
+  @override
+  String get show => 'show';
+
+  @override
+  String get newNotification => 'NEW';
+
+  @override
+  String get ranking => 'ranking';
+
+  @override
+  String get progress => 'progress';
+
+  @override
+  String get yourStats => 'Your Statistics';
+
+  @override
+  String get asCast => 'As Part of the Cast';
+
+  @override
+  String get asCrew => 'As Part of the Crew';
+
+  @override
+  String get joinList => 'Join Existing List';
+
+  @override
+  String get newList => 'Add New List';
+
+  @override
+  String get generateRecommendation => 'Generate Handpicked Recommendations';
+
+  @override
+  String get handpicked => 'Handpicked for You';
+
+  @override
+  String get noPlaylists => 'You don\'t have any playlists yet!';
+
+  @override
+  String get usernameTaken => 'Username is already taken';
+
+  @override
+  String get usernameUpdated => 'Username updated successfully';
+
+  @override
+  String get viewingStatistics => 'Viewing Statistics';
+
+  @override
+  String get moviesSeenWeekOf => 'Movies seen the week of';
+
+  @override
+  String get january => 'January';
+
+  @override
+  String get february => 'February';
+
+  @override
+  String get march => 'March';
+
+  @override
+  String get april => 'April';
+
+  @override
+  String get may => 'May';
+
+  @override
+  String get june => 'June';
+
+  @override
+  String get july => 'July';
+
+  @override
+  String get august => 'August';
+
+  @override
+  String get september => 'September';
+
+  @override
+  String get october => 'October';
+
+  @override
+  String get november => 'November';
+
+  @override
+  String get december => 'December';
+
+  @override
+  String get inWord => 'in';
+
+  @override
+  String get thisWeek => 'This Week';
+
+  @override
+  String currentRecordMovies(int maxMovies) {
+    return 'Current Record: $maxMovies movies in a day';
+  }
+
+  @override
+  String get totalMovies => 'Total Movies Ever Seen';
+
+  @override
+  String get totalTVShows => 'Total TV Shows Ever Seen';
+
+  @override
+  String get modifyProfile => 'Modify Profile Sections';
+
+  @override
+  String get noDataAvailable => 'No data available';
 }

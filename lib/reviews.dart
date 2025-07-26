@@ -3,6 +3,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/firebase/review_service.dart';
+import 'package:uractor/l10n/l10n.dart';
 import '/common/constants.dart';
 import '/objects/Media.dart';
 import '/objects/Movie.dart';
@@ -147,7 +148,7 @@ class _ReviewsState extends State<Reviews> {
                     child: Column(
                       children: [
                         Text(
-                          'Opinion: ${review["Opinion"]}',
+                          S.of(context)!.opinion(review["Opinion"] ?? ""),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 15,
@@ -156,7 +157,7 @@ class _ReviewsState extends State<Reviews> {
                           ),
                         ),
                         Text(
-                          'Rating: ${review["Rating"]}',
+                          S.of(context)!.rating(review["Rating"] ?? ""),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 15,
@@ -164,7 +165,7 @@ class _ReviewsState extends State<Reviews> {
                             height: 1.5,
                           ),
                         ),
-                        ButtonBar(
+                        OverflowBar(
                           alignment: MainAxisAlignment.center,
                           children: [
                             IconButton(
@@ -204,8 +205,8 @@ class _ReviewsState extends State<Reviews> {
                 margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
                 width: MediaQuery.of(context).size.width * 0.28,
                 height: MediaQuery.of(context).size.height * 0.18,
-                child:
-                    const Center(child: Text("Failed to load movie details")));
+                child: Center(
+                    child: Text(S.of(context)!.errorFailedToLoadDetails)));
           } else {
             return Container(
                 margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
@@ -221,10 +222,9 @@ class _ReviewsState extends State<Reviews> {
     return Scaffold(
       appBar: const CustomAppBar(),
       body: Column(children: [
-        const Padding(
+        Padding(
           padding: EdgeInsets.symmetric(vertical: 10.0),
-          child: Text(
-            "Your Reviews",
+          child: Text(S.of(context)!.yourSection(S.of(context)!.reviews),
             style: TextStyle(
               fontSize: 24.0,
               fontWeight: FontWeight.bold,
