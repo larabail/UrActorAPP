@@ -9,6 +9,7 @@ import 'package:uractor/common/firebase/watched_service.dart';
 import 'package:uractor/common/firebase/watchlist_service.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/common/mediaitembuilder.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/popups/add_friends_seen_with_popup.dart';
 import 'package:uractor/popups/add_to_calendar_pop_up.dart';
 
@@ -199,18 +200,18 @@ class _MovieResultState extends State<MovieResult> {
                               });
                             }
                           },
-                          child: const Row(
+                          child: Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.reviews,
                                 color: Colors.white,
                               ),
-                              SizedBox(
+                              const SizedBox(
                                 width: 10,
                               ),
                               Text(
-                                'Write A Review',
-                                style: TextStyle(color: Colors.white),
+                                S.of(context)!.writeAReview,
+                                style: const TextStyle(color: Colors.white),
                               )
                             ],
                           ),
@@ -228,8 +229,8 @@ class _MovieResultState extends State<MovieResult> {
               ),
             );
           } else if (snapshot.hasError) {
-            return const Center(
-              child: Text("Failed to load movie details"),
+            return Center(
+              child: Text(S.of(context)!.errorFailedToLoadDetails),
             );
           } else {
             return const Center(
@@ -271,10 +272,10 @@ class _MovieResultState extends State<MovieResult> {
                   isExpanded = true;
                 });
               },
-              child: const SizedBox(
+              child: SizedBox(
                 width: double.infinity,
                 child: Text(
-                  "Read All",
+                  S.of(context)!.readAll,
                   textAlign: TextAlign.right,
                 ),
               ),
@@ -350,13 +351,13 @@ class _MovieResultState extends State<MovieResult> {
 
   Widget getReview(data) {
     return ExpansionTile(
-      title: const Row(
+      title: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.reviews),
           SizedBox(width: 8),
           Text(
-            "Your Review",
+            S.of(context)!.yourReview,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,
@@ -380,7 +381,7 @@ class _MovieResultState extends State<MovieResult> {
               child: Column(
                 children: [
                   Text(
-                    'Opinion: ${data["review"]["Opinion"]}',
+                    S.of(context)!.opinion(data["review"]["Opinion"]),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 15,
@@ -389,7 +390,7 @@ class _MovieResultState extends State<MovieResult> {
                     ),
                   ),
                   Text(
-                    'Rating: ${data["review"]["Rating"]}',
+                    S.of(context)!.opinion(data["review"]["Rating"]),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 15,
@@ -414,12 +415,12 @@ class _MovieResultState extends State<MovieResult> {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
                               Icon(Icons.edit, color: Colors.blue),
                               SizedBox(width: 10),
                               Text(
-                                'Edit',
+                                S.of(context)!.edit,
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
@@ -445,12 +446,12 @@ class _MovieResultState extends State<MovieResult> {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
                               Icon(Icons.delete, color: Colors.red),
                               SizedBox(width: 10),
                               Text(
-                                'Delete',
+                                S.of(context)!.delete,
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
@@ -573,8 +574,8 @@ class _MovieResultState extends State<MovieResult> {
               if (keyRight != null)
                 GestureDetector(
                   onTap: () {
-                    PlaylistService.updateList(id, keyRight, moviesRight, context,
-                        "Movies", !moviesRight.contains(id));
+                    PlaylistService.updateList(id, keyRight, moviesRight,
+                        context, "Movies", !moviesRight.contains(id));
                   },
                   child: Stack(
                     children: [
@@ -668,13 +669,13 @@ class _MovieResultState extends State<MovieResult> {
 
   Widget getViewingHistory(data, selectedDate) {
     return ExpansionTile(
-      title: const Row(
+      title: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.history),
           SizedBox(width: 8),
           Text(
-            "Viewing History",
+            S.of(context)!.viewingHistory,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,
@@ -721,10 +722,11 @@ class _MovieResultState extends State<MovieResult> {
                                     Center(child: CircularProgressIndicator()),
                               );
                             } else if (snapshot.hasError) {
-                              return const SizedBox(
+                              return SizedBox(
                                 height: 32.0,
-                                child:
-                                    Center(child: Text('Error loading images')),
+                                child: Center(
+                                    child: Text(
+                                        S.of(context)!.errorLoadingImages)),
                               );
                             } else if (snapshot.hasData) {
                               var images = snapshot.data!;
@@ -788,7 +790,8 @@ class _MovieResultState extends State<MovieResult> {
                               currentUser.uid,
                               widget.movie.id,
                               widget.movie.title,
-                              date[0], context);
+                              date[0],
+                              context);
 
                           setState(() {
                             List movies = currentUser.calendar[date[0]];
@@ -822,10 +825,10 @@ class _MovieResultState extends State<MovieResult> {
           ),
         if ((data['seen_dates'] as List).isNotEmpty) const SizedBox(height: 15),
         if ((data['seen_dates'] as List).isEmpty)
-          const Padding(
+          Padding(
             padding: EdgeInsets.all(12.0),
             child: Text(
-              "No viewing history available.",
+              S.of(context)!.noViewingHistory,
               style: TextStyle(
                   fontSize: 16, fontStyle: FontStyle.italic, color: Colors.red),
             ),
