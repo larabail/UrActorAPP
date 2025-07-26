@@ -25,6 +25,7 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace 'com.uractor.uractorapp'
     compileSdk 35
+    buildToolsVersion "36.0"
 
     defaultConfig {
         applicationId "com.uractor.uractorapp"
