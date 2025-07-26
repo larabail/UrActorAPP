@@ -467,4 +467,28 @@ class SEs extends S {
 
   @override
   String get noDataAvailable => 'No hay información';
+
+  @override
+  String get unknown => 'Desconocido';
+
+  @override
+  String get searchBar => 'Escribe el nombre de una persona/película/serie...';
+
+  @override
+  String get episodes => 'episodios';
+
+  @override
+  String get episode => 'Episodio';
+
+  @override
+  String get seemWith => 'Vistas con';
+
+  @override
+  String get seasons => 'temporadas';
+
+  @override
+  String get apply => 'Aplicar';
+
+  @override
+  String get createdBy => 'Creada por';
 }

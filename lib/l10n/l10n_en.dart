@@ -463,4 +463,28 @@ class SEn extends S {
 
   @override
   String get noDataAvailable => 'No data available';
+
+  @override
+  String get unknown => 'Unkown';
+
+  @override
+  String get searchBar => 'Enter name of person/movie/show...';
+
+  @override
+  String get episodes => 'episodes';
+
+  @override
+  String get episode => 'Episode';
+
+  @override
+  String get seemWith => 'Seen with';
+
+  @override
+  String get seasons => 'seasons';
+
+  @override
+  String get apply => 'Apply';
+
+  @override
+  String get createdBy => 'Created by';
 }

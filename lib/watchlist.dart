@@ -1,6 +1,7 @@
 // ignore_for_file: use_key_in_widget_constructors, must_be_immutable
 
 import 'package:flutter/material.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'main.dart';
@@ -15,10 +16,10 @@ class Watchlist extends StatelessWidget {
       appBar: const CustomAppBar(),
       body: Column(
         children: [
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(vertical: 10.0),
             child: Text(
-              "Your Watchlist",
+              S.of(context)!.yourSection(S.of(context)!.watchlist),
               style: TextStyle(
                 fontSize: 24.0,
                 fontWeight: FontWeight.bold,
@@ -30,10 +31,10 @@ class Watchlist extends StatelessWidget {
             child: Expanded(
               child: Column(
                 children: [
-                  const TabBar(
+                  TabBar(
                     tabs: [
-                      Tab(text: 'Movies'),
-                      Tab(text: 'TV Shows'),
+                      Tab(text: S.of(context)!.movies),
+                      Tab(text: S.of(context)!.tvShows),
                     ],
                   ),
                   Expanded(

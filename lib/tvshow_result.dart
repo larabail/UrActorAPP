@@ -12,6 +12,7 @@ import 'package:uractor/common/firebase/watched_service.dart';
 import 'package:uractor/common/firebase/watchlist_service.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/common/mediaitembuilder.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/season_guide.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
@@ -183,7 +184,7 @@ class _TVShowResultState extends State<TVShowResult> {
                               setState(() {});
                             }
                           },
-                          child: const Row(
+                          child: Row(
                             children: [
                               Icon(
                                 Icons.reviews,
@@ -193,7 +194,7 @@ class _TVShowResultState extends State<TVShowResult> {
                                 width: 10,
                               ),
                               Text(
-                                'Write A Review',
+                                S.of(context)!.writeAReview,
                                 style: TextStyle(color: Colors.white),
                               )
                             ],
@@ -213,8 +214,8 @@ class _TVShowResultState extends State<TVShowResult> {
               ),
             );
           } else if (snapshot.hasError) {
-            return const Center(
-              child: Text("Failed to load movie details"),
+            return Center(
+              child: Text(S.of(context)!.errorFailedToLoadGeneralDetails),
             );
           } else {
             return const Center(
@@ -256,10 +257,10 @@ class _TVShowResultState extends State<TVShowResult> {
                   isExpanded = true;
                 });
               },
-              child: const SizedBox(
+              child: SizedBox(
                 width: double.infinity,
                 child: Text(
-                  "Read All",
+                  S.of(context)!.readAll,
                   textAlign: TextAlign.right,
                 ),
               ),
@@ -301,9 +302,9 @@ class _TVShowResultState extends State<TVShowResult> {
                 child: Text(
                   data['number_of_seasons'] > 0
                       ? data['number_of_seasons'] > 1
-                          ? '${data['number_of_seasons']} seasons →'
-                          : '${data['number_of_seasons']} season →'
-                      : '${data['number_of_seasons']} season →',
+                          ? '${data['number_of_seasons']} ${S.of(context)!.seasons} →'
+                          : '${data['number_of_seasons']} ${S.of(context)!.seasons} →'
+                      : '${data['number_of_seasons']} ${S.of(context)!.seasons} →',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -393,13 +394,13 @@ class _TVShowResultState extends State<TVShowResult> {
 
   Widget getReview(data) {
     return ExpansionTile(
-      title: const Row(
+      title: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.reviews),
           SizedBox(width: 8),
           Text(
-            "Your Review",
+            S.of(context)!.yourReview,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,
@@ -423,7 +424,7 @@ class _TVShowResultState extends State<TVShowResult> {
               child: Column(
                 children: [
                   Text(
-                    'Opinion: ${data["review"]["Opinion"]}',
+                    S.of(context)!.opinion(data["review"]["Opinion"]),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 15,
@@ -432,7 +433,7 @@ class _TVShowResultState extends State<TVShowResult> {
                     ),
                   ),
                   Text(
-                    'Rating: ${data["review"]["Rating"]}',
+                    S.of(context)!.rating(data["review"]["Rating"]),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 15,
@@ -457,12 +458,12 @@ class _TVShowResultState extends State<TVShowResult> {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
                               Icon(Icons.edit, color: Colors.blue),
                               SizedBox(width: 10),
                               Text(
-                                'Edit',
+                                S.of(context)!.edit,
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
@@ -488,12 +489,12 @@ class _TVShowResultState extends State<TVShowResult> {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
                               Icon(Icons.delete, color: Colors.red),
                               SizedBox(width: 10),
                               Text(
-                                'Delete',
+                                S.of(context)!.delete,
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
@@ -540,13 +541,13 @@ class _TVShowResultState extends State<TVShowResult> {
 
   Widget getViewingHistory(data) {
     return ExpansionTile(
-      title: const Row(
+      title: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.history),
           SizedBox(width: 8),
           Text(
-            "Viewing History",
+            S.of(context)!.viewingHistory,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,
@@ -593,10 +594,11 @@ class _TVShowResultState extends State<TVShowResult> {
                                     Center(child: CircularProgressIndicator()),
                               );
                             } else if (snapshot.hasError) {
-                              return const SizedBox(
+                              return SizedBox(
                                 height: 32.0,
-                                child:
-                                    Center(child: Text('Error loading images')),
+                                child: Center(
+                                    child: Text(
+                                        S.of(context)!.errorLoadingImages)),
                               );
                             } else if (snapshot.hasData) {
                               var images = snapshot.data!;
@@ -681,10 +683,10 @@ class _TVShowResultState extends State<TVShowResult> {
           ),
         if ((data['seen_dates'] as List).isNotEmpty) const SizedBox(height: 15),
         if ((data['seen_dates'] as List).isEmpty)
-          const Padding(
+          Padding(
             padding: EdgeInsets.all(12.0),
             child: Text(
-              "No viewing history available.",
+              S.of(context)!.noViewingHistory,
               style: TextStyle(
                   fontSize: 16, fontStyle: FontStyle.italic, color: Colors.red),
             ),
@@ -693,7 +695,7 @@ class _TVShowResultState extends State<TVShowResult> {
             .where((entry) =>
                 entry.value["Movies"]?.contains(widget.tvshow.id) ?? false)
             .isNotEmpty)
-          const Text("People watched with",
+          Text(S.of(context)!.peopleWatchedwith,
               style: TextStyle(
                 fontSize: 16,
               )),
@@ -713,10 +715,10 @@ class _TVShowResultState extends State<TVShowResult> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError) {
-              return const Padding(
+              return Padding(
                 padding: EdgeInsets.all(12.0),
                 child: Text(
-                  "Failed to load friends' profiles.",
+                  S.of(context)!.failedFriends,
                   style: TextStyle(
                     fontSize: 16,
                     fontStyle: FontStyle.italic,
@@ -852,7 +854,7 @@ class _TVShowResultState extends State<TVShowResult> {
                 return StatefulBuilder(
                   builder: (context, setState) {
                     return AlertDialog(
-                      title: const Text('Add Friends Who Watched'),
+                      title: Text(S.of(context)!.addFriends),
                       content: SizedBox(
                         height: 250,
                         child: SingleChildScrollView(
@@ -875,7 +877,8 @@ class _TVShowResultState extends State<TVShowResult> {
                                       return Text('Error: ${snapshot.error}');
                                     } else if (!snapshot.hasData ||
                                         !snapshot.data!.exists) {
-                                      return const Text('No data found');
+                                      return Text(
+                                          S.of(context)!.noDataAvailable);
                                     } else {
                                       var data = snapshot.data!.data()
                                           as Map<String, dynamic>;
@@ -934,13 +937,13 @@ class _TVShowResultState extends State<TVShowResult> {
                       ),
                       actions: [
                         TextButton(
-                          child: const Text('Cancel'),
+                          child: Text(S.of(context)!.cancel),
                           onPressed: () {
                             Navigator.of(context).pop();
                           },
                         ),
                         TextButton(
-                          child: const Text('Apply'),
+                          child: Text(S.of(context)!.apply),
                           onPressed: () async {
                             String id = widget.tvshow.id.toString();
                             FirebaseFirestore firestore =
@@ -1097,12 +1100,12 @@ class _TVShowResultState extends State<TVShowResult> {
               color: Colors.grey[900],
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Icon(Icons.person_add, color: Colors.green),
                 SizedBox(width: 10),
                 Text(
-                  'Add Friends',
+                  S.of(context)!.addFriends,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 13,
@@ -1137,8 +1140,8 @@ class _TVShowResultState extends State<TVShowResult> {
                 ),
               );
             },
-            child: const Text(
-              "Cast and Crew: (See All)",
+            child: Text(
+              "${S.of(context)!.labelCastAndCrew}: (${S.of(context)!.simpleSeeAll})",
               style: TextStyle(fontSize: 18),
             ),
           ),
@@ -1178,7 +1181,7 @@ class _TVShowResultState extends State<TVShowResult> {
                         style: const TextStyle(fontSize: 12),
                       ),
                       Text(
-                        'as ${person["character"]}',
+                        '${S.of(context)!.as} ${person["character"]}',
                         style: const TextStyle(fontSize: 10),
                       ),
                     ],
@@ -1215,7 +1218,7 @@ class _TVShowResultState extends State<TVShowResult> {
                       );
                     },
                     child: Text(
-                      "Created by ${data['created_by'][index]['name']}",
+                      "${S.of(context)!.createdBy} ${data['created_by'][index]['name']}",
                       style: const TextStyle(fontSize: 15),
                     ));
               }
@@ -1328,8 +1331,8 @@ class _TVShowResultState extends State<TVShowResult> {
               if (keyRight != null)
                 GestureDetector(
                   onTap: () {
-                    PlaylistService.updateList(id, keyRight, moviesRight, context,
-                        "TVShows", !moviesRight.contains(id));
+                    PlaylistService.updateList(id, keyRight, moviesRight,
+                        context, "TVShows", !moviesRight.contains(id));
                   },
                   child: Stack(
                     children: [

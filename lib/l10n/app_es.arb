@@ -277,5 +277,13 @@
   "totalMovies": "Películas Vistas en Total",
   "totalTVShows": "Series Vistas en Total",
   "modifyProfile": "Modificar Secciones",
-  "noDataAvailable": "No hay información"
+  "noDataAvailable": "No hay información",
+  "unknown": "Desconocido",
+  "searchBar": "Escribe el nombre de una persona/película/serie...",
+  "episodes": "episodios",
+  "episode": "Episodio",
+  "seemWith": "Vistas con",
+  "seasons": "temporadas",
+  "apply": "Aplicar",
+  "createdBy": "Creada por"
 }

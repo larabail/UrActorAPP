@@ -936,6 +936,54 @@ abstract class S {
   /// In en, this message translates to:
   /// **'No data available'**
   String get noDataAvailable;
+
+  /// No description provided for @unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unkown'**
+  String get unknown;
+
+  /// No description provided for @searchBar.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter name of person/movie/show...'**
+  String get searchBar;
+
+  /// No description provided for @episodes.
+  ///
+  /// In en, this message translates to:
+  /// **'episodes'**
+  String get episodes;
+
+  /// No description provided for @episode.
+  ///
+  /// In en, this message translates to:
+  /// **'Episode'**
+  String get episode;
+
+  /// No description provided for @seemWith.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen with'**
+  String get seemWith;
+
+  /// No description provided for @seasons.
+  ///
+  /// In en, this message translates to:
+  /// **'seasons'**
+  String get seasons;
+
+  /// No description provided for @apply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get apply;
+
+  /// No description provided for @createdBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Created by'**
+  String get createdBy;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

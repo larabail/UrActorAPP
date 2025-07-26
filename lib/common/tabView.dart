@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/Media.dart';
 import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/TVShow.dart';
@@ -81,7 +82,8 @@ class ItemCard extends StatelessWidget {
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
               width: MediaQuery.of(context).size.width * 0.28,
               height: MediaQuery.of(context).size.height * 0.18,
-              child: const Center(child: Text("Failed to load movie details")));
+              child:
+                  Center(child: Text(S.of(context)!.errorFailedToLoadDetails)));
         } else {
           return Container(
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
