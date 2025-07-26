@@ -88,25 +88,25 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
                       AsyncSnapshot<DocumentSnapshot> snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return ListTile(
-                        title: const Text('Loading...'),
-                        subtitle: Text('Status: $status'),
+                        title: Text(S.of(context)!.loading),
+                        subtitle: Text(S.of(context)!.status(status)),
                       );
                     } else if (snapshot.hasError) {
                       return ListTile(
                         title: Text('Error: ${snapshot.error}'),
-                        subtitle: Text('Status: $status'),
+                        subtitle: Text(S.of(context)!.status(status)),
                       );
                     } else if (!snapshot.hasData || !snapshot.data!.exists) {
                       return ListTile(
-                        title: const Text('User not found'),
-                        subtitle: Text('Status: $status'),
+                        title: Text(S.of(context)!.noSuchUser),
+                        subtitle: Text(S.of(context)!.status(status)),
                       );
                     } else {
                       String senderUsername =
                           snapshot.data!['username'] ?? 'Unknown User';
                       return ListTile(
-                        title: Text('Request from: $senderUsername'),
-                        subtitle: Text('Status: $status'),
+                        title: Text(S.of(context)!.requestFrom(senderUsername)),
+                        subtitle: Text(S.of(context)!.status(status)),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
