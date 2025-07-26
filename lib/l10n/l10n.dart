@@ -366,6 +366,24 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Most Watched TV Shows'**
   String get favTVShows;
+
+  /// No description provided for @loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loading;
+
+  /// Shown when a friend request is received
+  ///
+  /// In en, this message translates to:
+  /// **'Request from: {senderUsername}'**
+  String requestFrom(String senderUsername);
+
+  /// Shown as a subtitle while loading
+  ///
+  /// In en, this message translates to:
+  /// **'Status: {status}'**
+  String status(String status);
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

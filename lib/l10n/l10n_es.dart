@@ -158,4 +158,17 @@ class SEs extends S {
 
   @override
   String get favTVShows => 'Series Más Vistas';
+
+  @override
+  String get loading => 'Cargando...';
+
+  @override
+  String requestFrom(String senderUsername) {
+    return 'Solicitud de: $senderUsername';
+  }
+
+  @override
+  String status(String status) {
+    return 'Status: $status';
+  }
 }

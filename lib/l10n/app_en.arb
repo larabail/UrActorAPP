@@ -100,5 +100,24 @@
   "favDirectors": "Favorite Directors",
   "favWriters": "Favorite Writers",
   "favMovies": "Most Watched Movies",
-  "favTVShows": "Most Watched TV Shows"
+  "favTVShows": "Most Watched TV Shows",
+  "loading": "Loading...",
+  "requestFrom": "Request from: {senderUsername}",
+  "@requestFrom": {
+    "description": "Shown when a friend request is received",
+    "placeholders": {
+      "senderUsername": {
+        "type": "String"
+      }
+    }
+  },
+  "status": "Status: {status}",
+  "@status": {
+    "description": "Shown as a subtitle while loading",
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  }
 }
