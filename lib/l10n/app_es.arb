@@ -119,5 +119,63 @@
         "type": "String"
       }
     }
-  }
+  },
+  "accessCode": "Codigo de Acceso: '{accessCode}'",
+  "@accessCode": {
+    "description": "Shown when needing access code to share playlist",
+    "placeholders": {
+      "accessCode": {
+        "type": "String"
+      }
+    }
+  },
+  "usersAccess": "Usuarios con acceso",
+  "noUsersAccess": "Ningún usuario tiene acceso",
+  "grantAccess": "Dar Acceso a Usuarios",
+  "edit": "Editar",
+  "delete": "Borrar",
+  "leave": "Quitar",
+  "deleteList": "Borrar Lista",
+  "deleteListConfirmation": "Estás seguro de que quieres borrar esta lista?",
+  "listElements": "Peliculas: {movieCount}, Series: {tvCount}",
+  "@listElements": {
+    "description": "Shown when detailing items in playlist",
+    "placeholders": {
+      "movieCount": {
+        "type": "String"
+      },
+      "tvCount": {
+        "type": "String"
+      }
+    }
+  },
+  "newMovies": "Peliculas Nuevas",
+  "newShows": "Series Nuevas",
+  "addMovie": "Añadir Pelicula",
+  "addShow": "Añadir Serie",
+  "movies": "Peliculas",
+  "tvShows": "Series",
+  "needEmail": "Email es Necesario",
+  "typeEmail": "Por favor indique un email",
+  "password": "Contraseña",
+  "resetEmail": "Se ha enviado un correo electrónico para restablecer la contraseña",
+  "failedResetEmail": "Ha habido un error al restablecer la contraseña: {e}",
+  "@failedResetEmail": {
+    "description": "Show when there's an error to send reset password email",
+    "placeholders": {
+      "e": {
+        "type": "String"
+      }
+    }
+  },
+  "yourEmail": "Tu correo electrónico",
+  "email": "Correo Electrónico",
+  "login": "Iniciar sesión",
+  "enterEmail": "Por favor ingresa tu correo electrónico",
+  "password": "Contraseña",
+  "yourPassword": "Tu contraseña",
+  "enterPassword": "Por favor ingresa tu contraseña",
+  "noAccountSignUp": "¿No tienes una cuenta? Regístrate",
+  "forgotPassword": "¿Olvidaste tu contraseña?",
+  "okay": "Aceptar"
 }

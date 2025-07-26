@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'signup.dart';
 import 'main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -23,8 +24,8 @@ class Login extends StatelessWidget {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: const Text('Email Address Needed'),
-              content: const Text('Please type an email address'),
+              title: Text(S.of(context)!.needEmail),
+              content: Text(S.of(context)!.typeEmail),
               actions: <Widget>[
                 TextButton(
                   child: const Text('Okay'),
@@ -44,8 +45,8 @@ class Login extends StatelessWidget {
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
-                title: const Text('Password'),
-                content: const Text('Reset Password Email has been sent'),
+                title: Text(S.of(context)!.password),
+                content: Text(S.of(context)!.resetEmail),
                 actions: <Widget>[
                   TextButton(
                     child: const Text('Okay'),
@@ -62,8 +63,8 @@ class Login extends StatelessWidget {
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
-                title: const Text('Password'),
-                content: Text("Failed to send password reset email: $e"),
+                title: Text(S.of(context)!.password),
+                content: Text(S.of(context)!.failedResetEmail(e.toString())),
                 actions: <Widget>[
                   TextButton(
                     child: const Text('Okay'),
@@ -93,21 +94,21 @@ class Login extends StatelessWidget {
                 children: <Widget>[
                   TextFormField(
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      hintText: 'Your Email',
+                    decoration: InputDecoration(
+                      labelText: S.of(context)!.email,
+                      hintText: S.of(context)!.yourEmail,
                       hintStyle:
-                          TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
-                      enabledBorder: OutlineInputBorder(
+                          const TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
+                      enabledBorder: const OutlineInputBorder(
                         borderSide: BorderSide(width: 1.0),
                       ),
-                      focusedBorder: OutlineInputBorder(
+                      focusedBorder: const OutlineInputBorder(
                         borderSide: BorderSide(width: 2.0),
                       ),
                     ),
                     validator: (String? value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
+                        return S.of(context)!.enterEmail;
                       }
                       return null;
                     },
@@ -146,8 +147,8 @@ class Login extends StatelessWidget {
                   ),
                   const SizedBox(height: 16.0),
                   GestureDetector(
-                    child: const Text(
-                      'Don\'t have an account? Sign up',
+                    child: Text(
+                      S.of(context)!.noAccountSignUp,
                     ),
                     onTap: () {
                       Navigator.pushReplacement(
@@ -158,8 +159,8 @@ class Login extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   GestureDetector(
-                    child: const Text(
-                      'Forgot Password?',
+                    child: Text(
+                      S.of(context)!.forgotPassword,
                     ),
                     onTap: () {
                       resetPassword(context, email);
@@ -188,8 +189,8 @@ class _PasswordFieldState extends State<PasswordField> {
     return TextFormField(
       obscureText: _obscureText,
       decoration: InputDecoration(
-        labelText: 'Password',
-        hintText: 'Your Password',
+        labelText: S.of(context)!.password,
+        hintText: S.of(context)!.yourPassword,
         hintStyle: const TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
         enabledBorder: const OutlineInputBorder(
           borderSide: BorderSide(width: 1.0),
@@ -210,7 +211,7 @@ class _PasswordFieldState extends State<PasswordField> {
       ),
       validator: (String? value) {
         if (value == null || value.isEmpty) {
-          return 'Please enter your password';
+          return S.of(context)!.enterPassword;
         }
         return null;
       },
