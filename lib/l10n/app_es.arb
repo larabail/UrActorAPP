@@ -177,5 +177,28 @@
   "enterPassword": "Por favor ingresa tu contraseña",
   "noAccountSignUp": "¿No tienes una cuenta? Regístrate",
   "forgotPassword": "¿Olvidaste tu contraseña?",
-  "okay": "Aceptar"
+  "okay": "Aceptar",
+  "writeAReview": "Escribe Una Reseña",
+  "readAll": "Leer Todo",
+  "yourReview": "Tu Reseña",
+  "opinion": "Opinión: {opinion}",
+  "@opinion": {
+    "description": "Shows when a user has entered a review for a movie or show",
+    "placeholders": {
+      "opinion": {
+        "type": "String"
+      }
+    }
+  },
+  "rating": "Nota: {rating}",
+  "@rating": {
+    "description": "Shows when a user has entered a review for a movie or show",
+    "placeholders": {
+      "rating": {
+        "type": "String"
+      }
+    }
+  },
+  "viewingHistory": "Historial de Visualización",
+  "noViewingHistory": "No hay historial de visualización"
 }

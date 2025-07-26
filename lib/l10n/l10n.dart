@@ -564,6 +564,48 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Okay'**
   String get okay;
+
+  /// No description provided for @writeAReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Write A Review'**
+  String get writeAReview;
+
+  /// No description provided for @readAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Read All'**
+  String get readAll;
+
+  /// No description provided for @yourReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Review'**
+  String get yourReview;
+
+  /// Shows when a user has entered a review for a movie or show
+  ///
+  /// In en, this message translates to:
+  /// **'Opinion: {opinion}'**
+  String opinion(String opinion);
+
+  /// Shows when a user has entered a review for a movie or show
+  ///
+  /// In en, this message translates to:
+  /// **'Rating: {rating}'**
+  String rating(String rating);
+
+  /// No description provided for @viewingHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Viewing History'**
+  String get viewingHistory;
+
+  /// No description provided for @noViewingHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No viewing history available'**
+  String get noViewingHistory;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {
