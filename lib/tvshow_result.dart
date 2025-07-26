@@ -201,7 +201,7 @@ class _TVShowResultState extends State<TVShowResult> {
                         ),
                       ],
                     ),
-                  getProviders(snapshot.data!),
+                  getProviders(snapshot.data!, context),
                   getTimesSeen(snapshot.data!),
                   const SizedBox(height: 10),
                   if (Utils.contains_non_type(

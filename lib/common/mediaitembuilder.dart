@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/firebase/social_service.dart';
 import 'package:uractor/friends_thoughts.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/main.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'package:uractor/popups/share.dart';
@@ -302,7 +303,7 @@ Widget getRuntimeRating(data) {
   );
 }
 
-Widget getProviders(data) {
+Widget getProviders(data, context) {
   return Container(
     margin: const EdgeInsets.all(20.0),
     padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
@@ -313,12 +314,11 @@ Widget getProviders(data) {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
             Icon(Icons.play_circle_fill, color: Colors.white),
             SizedBox(width: 10),
-            Text(
-              "Where to Watch?",
+            Text(S.of(context)!.whereToWatch,
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.white,
@@ -361,8 +361,8 @@ Widget getProviders(data) {
               color: Colors.grey[900],
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Text(
-              "Nowhere at the moment",
+            child: Text(
+              S.of(context)!.nowhere,
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.white,

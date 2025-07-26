@@ -218,7 +218,7 @@ class _MovieResultState extends State<MovieResult> {
                         ),
                       ],
                     ),
-                  getProviders(snapshot.data!),
+                  getProviders(snapshot.data!, context),
                   getTimesSeen(snapshot.data!),
                   const SizedBox(height: 10),
                   if (widget.movie.isSeen())
@@ -837,7 +837,7 @@ class _MovieResultState extends State<MovieResult> {
             .where((entry) =>
                 entry.value["Movies"]?.contains(widget.movie.id) ?? false)
             .isNotEmpty)
-          const Text("People watched with",
+          Text(S.of(context)!.peopleWatchedwith,
               style: TextStyle(
                 fontSize: 16,
               )),
@@ -855,10 +855,10 @@ class _MovieResultState extends State<MovieResult> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError) {
-              return const Padding(
+              return Padding(
                 padding: EdgeInsets.all(12.0),
                 child: Text(
-                  "Failed to load friends' profiles.",
+                  S.of(context)!.failedFriends,
                   style: TextStyle(
                     fontSize: 16,
                     fontStyle: FontStyle.italic,
@@ -1008,12 +1008,12 @@ class _MovieResultState extends State<MovieResult> {
                   color: Colors.grey[900],
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
                     Icon(Icons.person_add, color: Colors.green),
                     SizedBox(width: 10),
                     Text(
-                      'Add Friends',
+                      S.of(context)!.addFriends,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 13,
@@ -1074,12 +1074,12 @@ class _MovieResultState extends State<MovieResult> {
                   color: Colors.grey[900],
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
                     Icon(Icons.calendar_month_rounded, color: Colors.green),
                     SizedBox(width: 10),
                     Text(
-                      'Add Date',
+                      S.of(context)!.addDate,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 13,
@@ -1116,8 +1116,8 @@ class _MovieResultState extends State<MovieResult> {
                 ),
               );
             },
-            child: const Text(
-              "Cast and Crew: (See All)",
+            child: Text(
+              "${S.of(context)!.labelCastAndCrew}: (${S.of(context)!.simpleSeeAll})",
               style: TextStyle(fontSize: 18),
             ),
           ),
@@ -1157,7 +1157,7 @@ class _MovieResultState extends State<MovieResult> {
                         style: const TextStyle(fontSize: 12),
                       ),
                       Text(
-                        'as ${person["character"]}',
+                        '${S.of(context)!.as} ${person["character"]}',
                         style: const TextStyle(fontSize: 10),
                       ),
                     ],
@@ -1206,8 +1206,7 @@ class _MovieResultState extends State<MovieResult> {
                                 )),
                       );
                     },
-                    child: Text(
-                      "Directed by ${director['name']}",
+                    child: Text(S.of(context)!.directedBy(director['name']),
                       style: const TextStyle(fontSize: 15),
                     ));
               }
@@ -1229,7 +1228,7 @@ class _MovieResultState extends State<MovieResult> {
                       );
                     },
                     child: Text(
-                      "${writer['job'].contains("Writer") ? "Written" : "Screenplay"} by ${writer['name']}",
+                      "${writer['job'].contains("Writer") ? S.of(context)!.written : S.of(context)!.screenplay} ${S.of(context)!.by} ${writer['name']}",
                       style: const TextStyle(fontSize: 15),
                     ));
               }

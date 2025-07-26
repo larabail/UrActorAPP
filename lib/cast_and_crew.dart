@@ -57,10 +57,10 @@ class _CastCrewState extends State<CastCrew> {
             child: Expanded(
               child: Column(
                 children: [
-                  const TabBar(
+                  TabBar(
                     tabs: [
-                      Tab(text: 'Cast'),
-                      Tab(text: 'Crew'),
+                      Tab(text: S.of(context)!.cast),
+                      Tab(text: S.of(context)!.crew),
                     ],
                   ),
                   Expanded(
@@ -160,7 +160,7 @@ class ItemCard extends StatelessWidget {
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Text(
-                        "as ${person.data["character"] ?? person.data["job"]}",
+                        "${S.of(context)!.as} ${person.data["character"] ?? person.data["job"]}",
                         style: const TextStyle(
                           fontSize: 14,
                         ),

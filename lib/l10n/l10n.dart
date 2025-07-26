@@ -217,6 +217,18 @@ abstract class S {
   /// **'Nothing here yet'**
   String get emptySection;
 
+  /// No description provided for @simpleSeeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'See All'**
+  String get simpleSeeAll;
+
+  /// Shown under see all to show playlist count
+  ///
+  /// In en, this message translates to:
+  /// **'{playlistCount} playlists'**
+  String playlistCount(int playlistCount);
+
   /// Shown at the end of a title to expand items
   ///
   /// In en, this message translates to:
@@ -606,6 +618,102 @@ abstract class S {
   /// In en, this message translates to:
   /// **'No viewing history available'**
   String get noViewingHistory;
+
+  /// No description provided for @noReviews.
+  ///
+  /// In en, this message translates to:
+  /// **'Haven\'t reviewed any movies yet'**
+  String get noReviews;
+
+  /// No description provided for @peopleWatchedwith.
+  ///
+  /// In en, this message translates to:
+  /// **'People watched with'**
+  String get peopleWatchedwith;
+
+  /// No description provided for @failedFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load friends\' profiles'**
+  String get failedFriends;
+
+  /// No description provided for @addFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Friends'**
+  String get addFriends;
+
+  /// No description provided for @addDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Date'**
+  String get addDate;
+
+  /// Shows to tell the user the director of a movie
+  ///
+  /// In en, this message translates to:
+  /// **'Directed by {director}'**
+  String directedBy(String director);
+
+  /// No description provided for @written.
+  ///
+  /// In en, this message translates to:
+  /// **'Written'**
+  String get written;
+
+  /// No description provided for @screenplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Screenplay'**
+  String get screenplay;
+
+  /// No description provided for @by.
+  ///
+  /// In en, this message translates to:
+  /// **'by'**
+  String get by;
+
+  /// No description provided for @whereToWatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Where to Watch?'**
+  String get whereToWatch;
+
+  /// No description provided for @nowhere.
+  ///
+  /// In en, this message translates to:
+  /// **'Nowhere at the moment'**
+  String get nowhere;
+
+  /// No description provided for @cast.
+  ///
+  /// In en, this message translates to:
+  /// **'Cast'**
+  String get cast;
+
+  /// No description provided for @crew.
+  ///
+  /// In en, this message translates to:
+  /// **'Crew'**
+  String get crew;
+
+  /// No description provided for @as.
+  ///
+  /// In en, this message translates to:
+  /// **'playing'**
+  String get as;
+
+  /// No description provided for @errorNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Error marking notifications as read'**
+  String get errorNotification;
+
+  /// No description provided for @notificationMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'wants you to check out the'**
+  String get notificationMessage;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {
