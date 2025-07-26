@@ -28,7 +28,7 @@ class Login extends StatelessWidget {
               content: Text(S.of(context)!.typeEmail),
               actions: <Widget>[
                 TextButton(
-                  child: const Text('Okay'),
+                  child: Text(S.of(context)!.okay),
                   onPressed: () {
                     Navigator.of(context).pop(true);
                   },
@@ -49,7 +49,7 @@ class Login extends StatelessWidget {
                 content: Text(S.of(context)!.resetEmail),
                 actions: <Widget>[
                   TextButton(
-                    child: const Text('Okay'),
+                    child: Text(S.of(context)!.okay),
                     onPressed: () {
                       Navigator.of(context).pop(true);
                     },
@@ -67,7 +67,7 @@ class Login extends StatelessWidget {
                 content: Text(S.of(context)!.failedResetEmail(e.toString())),
                 actions: <Widget>[
                   TextButton(
-                    child: const Text('Okay'),
+                    child: Text(S.of(context)!.okay),
                     onPressed: () {
                       Navigator.of(context).pop(true);
                     },
@@ -120,7 +120,7 @@ class Login extends StatelessWidget {
                   PasswordField(),
                   const SizedBox(height: 16.0),
                   ElevatedButton(
-                    child: const Text('Login'),
+                    child: Text(S.of(context)!.login),
                     onPressed: () async {
                       if (formKey.currentState!.validate()) {
                         formKey.currentState!.save();

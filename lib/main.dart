@@ -329,7 +329,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       children: [
                         const Icon(Icons.reviews),
                         const SizedBox(width: 10),
-                        Text(S.of(context)!.yourSection(S.of(context)!.reviews),
+                        Text(
+                          S.of(context)!.yourSection(S.of(context)!.reviews),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -362,7 +363,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     const SizedBox(height: 10),
                     if (currentUser.allReviews.isEmpty)
-                      const Text("Haven't reviewed any movies yet"),
+                      Text(S.of(context)!.noReviews),
                     if (currentUser.allReviews.isEmpty)
                       const SizedBox(height: 10),
                     if (currentUser.allReviews.isNotEmpty)
@@ -422,9 +423,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                     ]),
                                   );
                                 } else if (snapshot.hasError) {
-                                  return const Center(
+                                  return Center(
                                       child:
-                                          Text("Failed to load movie details"));
+                                          Text(S.of(context)!.errorFailedToLoadDetails));
                                 } else {
                                   return Container(
                                       margin: const EdgeInsets.fromLTRB(
@@ -517,8 +518,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   const SizedBox(width: 10),
                   Column(
                     children: [
-                      const Text(
-                        'See All',
+                      Text(
+                        S.of(context)!.simpleSeeAll,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -526,7 +527,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                       ),
                       Text(
-                        '${currentUser.playlists.length} playlists',
+                        S.of(context)!.playlistCount(currentUser.playlists.length),
                         style: const TextStyle(
                           color: Colors.grey,
                           fontSize: 12,
@@ -648,8 +649,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                 },
                               ),
                               Text(
-                                S.of(context)!.totalContent(
-                                    totalContent.toString()),
+                                S
+                                    .of(context)!
+                                    .totalContent(totalContent.toString()),
                                 style: const TextStyle(
                                   color: Colors.grey,
                                   fontSize: 12,
@@ -716,7 +718,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ],
           ),
           const SizedBox(height: 10),
-          if (content.isEmpty) const Text("Nothing here yet"),
+          if (content.isEmpty) Text(S.of(context)!.emptySection),
           if (content.isEmpty) const SizedBox(height: 10),
           if (content.isNotEmpty)
             SizedBox(
@@ -758,8 +760,8 @@ class _MyHomePageState extends State<MyHomePage> {
                             child: getItemContainer(
                                 context, snapshot.data, "media"));
                       } else if (snapshot.hasError) {
-                        return const Center(
-                            child: Text("Failed to load movie details"));
+                        return Center(
+                            child: Text(S.of(context)!.errorFailedToLoadDetails));
                       } else {
                         return Container(
                           margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),

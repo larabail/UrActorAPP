@@ -76,6 +76,14 @@ class SEn extends S {
   String get emptySection => 'Nothing here yet';
 
   @override
+  String get simpleSeeAll => 'See All';
+
+  @override
+  String playlistCount(int playlistCount) {
+    return '$playlistCount playlists';
+  }
+
+  @override
   String seeAll(int number) {
     return 'See All ($number items)';
   }
@@ -292,4 +300,54 @@ class SEn extends S {
 
   @override
   String get noViewingHistory => 'No viewing history available';
+
+  @override
+  String get noReviews => 'Haven\'t reviewed any movies yet';
+
+  @override
+  String get peopleWatchedwith => 'People watched with';
+
+  @override
+  String get failedFriends => 'Failed to load friends\' profiles';
+
+  @override
+  String get addFriends => 'Add Friends';
+
+  @override
+  String get addDate => 'Add Date';
+
+  @override
+  String directedBy(String director) {
+    return 'Directed by $director';
+  }
+
+  @override
+  String get written => 'Written';
+
+  @override
+  String get screenplay => 'Screenplay';
+
+  @override
+  String get by => 'by';
+
+  @override
+  String get whereToWatch => 'Where to Watch?';
+
+  @override
+  String get nowhere => 'Nowhere at the moment';
+
+  @override
+  String get cast => 'Cast';
+
+  @override
+  String get crew => 'Crew';
+
+  @override
+  String get as => 'playing';
+
+  @override
+  String get errorNotification => 'Error marking notifications as read';
+
+  @override
+  String get notificationMessage => 'wants you to check out the';
 }

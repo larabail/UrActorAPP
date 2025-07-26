@@ -44,6 +44,16 @@
     }
   },
   "emptySection": "Nada todavía",
+  "simpleSeeAll": "Ver Todas",
+  "playlistCount": "{playlistCount} listas",
+  "@playlistCount": {
+    "description": "Shown under see all to show playlist count",
+    "placeholders": {
+      "playlistCount": {
+        "type": "int"
+      }
+    }
+  },
   "seeAll": "Ver todo ({number} elementos)",
   "@seeAll": {
     "description": "Shown at the end of a title to expand items",
@@ -172,7 +182,6 @@
   "email": "Correo Electrónico",
   "login": "Iniciar sesión",
   "enterEmail": "Por favor ingresa tu correo electrónico",
-  "password": "Contraseña",
   "yourPassword": "Tu contraseña",
   "enterPassword": "Por favor ingresa tu contraseña",
   "noAccountSignUp": "¿No tienes una cuenta? Regístrate",
@@ -200,6 +209,29 @@
     }
   },
   "viewingHistory": "Historial de Visualización",
-  "noViewingHistory": "No hay historial de visualización"
+  "noViewingHistory": "No hay historial de visualización",
+  "noReviews": "No has dejado ninguna reseña todavía",
+  "peopleWatchedwith": "Con quien la has visto",
+  "failedFriends": "Ha habido un error cargando los perfiles de tus amigos",
+  "addFriends": "Añadir amigos",
+  "addDate": "Añadir fecha",
+  "directedBy": "Dirigida por {director}",
+  "@directedBy": {
+    "description": "Shows to tell the user the director of a movie ",
+    "placeholders": {
+      "director": {
+        "type": "String"
+      }
+    }
+  },
+  "written": "Escrita",
+  "screenplay": "Guión",
+  "by": "por",
+  "whereToWatch": "¿Dónde ver?",
+  "nowhere": "En ningún sitio por el momento",
+  "cast": "Reparto",
+  "crew": "Equipo",
+  "as": "interpretando a",
+  "errorNotification": "Ha habido un error marcando la notificación como leida",
+  "notificationMessage": "quiere que veas la"
 }
-g
