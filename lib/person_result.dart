@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/Person.dart';
 import 'package:uractor/objects/TVShow.dart';
@@ -21,14 +22,14 @@ class PersonResult extends StatefulWidget {
 class _PersonResultState extends State<PersonResult> {
   Widget ranking(role, ranking, score) {
     return Text(
-      "$role ranking: #$ranking ($score)",
+      "$role ${S.of(context)!.ranking}: #$ranking ($score)",
       style: const TextStyle(fontSize: 16),
     );
   }
 
   Widget statsProgress(role, totalStats, totalCount) {
     return Text(
-      "$role Progress:  $totalStats / $totalCount (${(((totalStats / totalCount) * 100).toStringAsFixed(2))}%)",
+      "$role ${S.of(context)!.progress}: $totalStats / $totalCount (${(((totalStats / totalCount) * 100).toStringAsFixed(2))}%)",
       style: const TextStyle(fontSize: 16),
     );
   }
@@ -121,9 +122,9 @@ class _PersonResultState extends State<PersonResult> {
                     ),
                   ),
                   ExpansionTile(
-                    title: const Padding(
+                    title: Padding(
                       padding: EdgeInsets.all(20),
-                      child: Text("Your Statistics"),
+                      child: Text(S.of(context)!.yourStats),
                     ),
                     children: [
                       Padding(
@@ -227,12 +228,12 @@ class _PersonResultState extends State<PersonResult> {
                       length: 2,
                       child: Column(
                         children: [
-                          const TabBar(
+                          TabBar(
                             labelColor: null,
                             unselectedLabelColor: null,
                             tabs: [
-                              Tab(text: 'As Part of the Cast'),
-                              Tab(text: 'As Part of the Crew'),
+                              Tab(text: S.of(context)!.asCast),
+                              Tab(text: S.of(context)!.asCrew),
                             ],
                           ),
                           SizedBox(
@@ -256,12 +257,12 @@ class _PersonResultState extends State<PersonResult> {
                       length: 2,
                       child: Column(
                         children: [
-                          const TabBar(
+                          TabBar(
                             labelColor: null,
                             unselectedLabelColor: null,
                             tabs: [
-                              Tab(text: 'As Part of the Crew'),
-                              Tab(text: 'As Part of the Cast'),
+                              Tab(text: S.of(context)!.asCrew),
+                              Tab(text: S.of(context)!.asCast),
                             ],
                           ),
                           SizedBox(
@@ -383,7 +384,7 @@ class _PersonResultState extends State<PersonResult> {
         return dateB.compareTo(dateA);
       });
 
-      tabs.add(const Tab(text: 'Movies'));
+      tabs.add(Tab(text: S.of(context)!.movies));
       tabViews.add(ListView.builder(
         scrollDirection: Axis.vertical,
         itemCount: (data['movie_credits_cast'].length / 3).ceil(),
@@ -405,7 +406,7 @@ class _PersonResultState extends State<PersonResult> {
             : "5000-01-01");
         return dateB.compareTo(dateA);
       });
-      tabs.add(const Tab(text: 'TV Shows'));
+      tabs.add(Tab(text: S.of(context)!.tvShows));
       tabViews.add(ListView.builder(
         scrollDirection: Axis.vertical,
         itemCount: (data['tv_credits_cast'].length / 3).ceil(),
@@ -451,7 +452,7 @@ class _PersonResultState extends State<PersonResult> {
             b['release_date'] == "" ? "5000-01-01" : b['release_date']);
         return dateB.compareTo(dateA);
       });
-      tabs.add(const Tab(text: 'Movies'));
+      tabs.add(Tab(text: S.of(context)!.movies));
       tabViews.add(ListView.builder(
         scrollDirection: Axis.vertical,
         itemCount: (data['movie_credits_crew'].length / 3).ceil(),
@@ -473,7 +474,7 @@ class _PersonResultState extends State<PersonResult> {
             : "5000-01-01");
         return dateB.compareTo(dateA);
       });
-      tabs.add(const Tab(text: 'TV Shows'));
+      tabs.add(Tab(text: S.of(context)!.tvShows));
       tabViews.add(ListView.builder(
         scrollDirection: Axis.vertical,
         itemCount: (data['tv_credits_crew'].length / 3).ceil(),
@@ -500,7 +501,7 @@ class _PersonResultState extends State<PersonResult> {
     );
   }
 
-  seen(BuildContext context, movie, type, oscars) {
+  Stack seen(BuildContext context, movie, type, oscars) {
     if (!Utils.contains_non_type(currentUser.seenMovies, [type, movie['id']]) &&
         !Utils.contains_non_type(
             currentUser.seenTVShows, [type, movie['id']])) {
@@ -651,7 +652,7 @@ class _PersonResultState extends State<PersonResult> {
     }
   }
 
-  seenCrew(BuildContext context, movie, type, oscars) {
+  Stack seenCrew(BuildContext context, movie, type, oscars) {
     if (!Utils.contains_non_type(currentUser.seenMovies, [type, movie['id']]) &&
         !Utils.contains_non_type(
             currentUser.seenTVShows, [type, movie['id']])) {

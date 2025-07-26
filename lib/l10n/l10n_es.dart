@@ -42,6 +42,9 @@ class SEs extends S {
       'Error al cargar los detalles de la película';
 
   @override
+  String get errorFailedToLoadGeneralDetails => 'Error al cargar los detalles';
+
+  @override
   String get errorLoadingImages => 'Error al cargar las imágenes';
 
   @override
@@ -228,7 +231,7 @@ class SEs extends S {
   String get addShow => 'Añadir Serie';
 
   @override
-  String get movies => 'Peliculas';
+  String get movies => 'Películas';
 
   @override
   String get tvShows => 'Series';
@@ -354,4 +357,114 @@ class SEs extends S {
 
   @override
   String get notificationMessage => 'quiere que veas la';
+
+  @override
+  String get movie => 'película';
+
+  @override
+  String get show => 'serie';
+
+  @override
+  String get newNotification => 'NUEVA';
+
+  @override
+  String get ranking => 'ranking';
+
+  @override
+  String get progress => 'progreso';
+
+  @override
+  String get yourStats => 'Tus Estadísticas';
+
+  @override
+  String get asCast => 'Parte del Reparto';
+
+  @override
+  String get asCrew => 'Parte del Equipo';
+
+  @override
+  String get joinList => 'Unirse a Lista';
+
+  @override
+  String get newList => 'Añadir Lista';
+
+  @override
+  String get generateRecommendation => 'Generar Recomendaciones';
+
+  @override
+  String get handpicked => 'Recomendaciones Para Ti';
+
+  @override
+  String get noPlaylists => 'Aun no tienes listas de reproducción';
+
+  @override
+  String get usernameTaken => 'Este nombre de usuario ya está cogido';
+
+  @override
+  String get usernameUpdated => 'Nombre de usuario actualizado';
+
+  @override
+  String get viewingStatistics => 'Estadísticas de visualización';
+
+  @override
+  String get moviesSeenWeekOf => 'Películas vistas la semana del';
+
+  @override
+  String get january => 'Enero';
+
+  @override
+  String get february => 'Febrero';
+
+  @override
+  String get march => 'Marzo';
+
+  @override
+  String get april => 'Abril';
+
+  @override
+  String get may => 'Mayo';
+
+  @override
+  String get june => 'Junio';
+
+  @override
+  String get july => 'Julio';
+
+  @override
+  String get august => 'Agosto';
+
+  @override
+  String get september => 'Septiembre';
+
+  @override
+  String get october => 'Octubre';
+
+  @override
+  String get november => 'Noviembre';
+
+  @override
+  String get december => 'Diciembre';
+
+  @override
+  String get inWord => 'en';
+
+  @override
+  String get thisWeek => 'Esta Semana';
+
+  @override
+  String currentRecordMovies(int maxMovies) {
+    return 'Record actual: $maxMovies películas en un día';
+  }
+
+  @override
+  String get totalMovies => 'Películas Vistas en Total';
+
+  @override
+  String get totalTVShows => 'Series Vistas en Total';
+
+  @override
+  String get modifyProfile => 'Modificar Secciones';
+
+  @override
+  String get noDataAvailable => 'No hay información';
 }

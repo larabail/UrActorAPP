@@ -18,6 +18,7 @@
   "labelAvgRating": "Nota media",
   "labelCastAndCrew": "Reparto y equipo",
   "errorFailedToLoadDetails": "Error al cargar los detalles de la película",
+  "errorFailedToLoadGeneralDetails": "Error al cargar los detalles",
   "errorLoadingImages": "Error al cargar las imágenes",
   "yourSection": "Tus {section}",
   "@yourSection": {
@@ -163,7 +164,7 @@
   "newShows": "Series Nuevas",
   "addMovie": "Añadir Pelicula",
   "addShow": "Añadir Serie",
-  "movies": "Peliculas",
+  "movies": "Películas",
   "tvShows": "Series",
   "needEmail": "Email es Necesario",
   "typeEmail": "Por favor indique un email",
@@ -233,5 +234,48 @@
   "crew": "Equipo",
   "as": "interpretando a",
   "errorNotification": "Ha habido un error marcando la notificación como leida",
-  "notificationMessage": "quiere que veas la"
+  "notificationMessage": "quiere que veas la",
+  "movie": "película",
+  "show": "serie",
+  "newNotification": "NUEVA",
+  "ranking": "ranking",
+  "progress": "progreso",
+  "yourStats": "Tus Estadísticas",
+  "asCast": "Parte del Reparto",
+  "asCrew": "Parte del Equipo",
+  "joinList": "Unirse a Lista",
+  "newList": "Añadir Lista",
+  "generateRecommendation": "Generar Recomendaciones",
+  "handpicked": "Recomendaciones Para Ti",
+  "noPlaylists": "Aun no tienes listas de reproducción",
+  "usernameTaken": "Este nombre de usuario ya está cogido",
+  "usernameUpdated": "Nombre de usuario actualizado",
+  "viewingStatistics": "Estadísticas de visualización",
+  "moviesSeenWeekOf": "Películas vistas la semana del",
+  "january": "Enero",
+  "february": "Febrero",
+  "march": "Marzo",
+  "april": "Abril",
+  "may": "Mayo",
+  "june": "Junio",
+  "july": "Julio",
+  "august": "Agosto",
+  "september": "Septiembre",
+  "october": "Octubre",
+  "november": "Noviembre",
+  "december": "Diciembre",
+  "inWord": "en",
+  "thisWeek": "Esta Semana",
+  "currentRecordMovies": "Record actual: {maxMovies} películas en un día",
+  "@currentRecordMovies": {
+    "placeholders": {
+      "maxMovies": {
+        "type": "int"
+      }
+    }
+  },
+  "totalMovies": "Películas Vistas en Total",
+  "totalTVShows": "Series Vistas en Total",
+  "modifyProfile": "Modificar Secciones",
+  "noDataAvailable": "No hay información"
 }

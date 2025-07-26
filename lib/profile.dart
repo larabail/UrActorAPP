@@ -31,21 +31,6 @@ class Profile extends StatefulWidget {
 class _ProfileState extends State<Profile> {
   int weekOffset = 0; // This will be used to go to previous or next weeks
 
-  final months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December"
-  ];
-
   final TextEditingController _usernameController = TextEditingController();
   String? currentUsername;
   @override
@@ -76,8 +61,8 @@ class _ProfileState extends State<Profile> {
 
     if (result.docs.isNotEmpty) {
       // Username is taken
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Username is already taken')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.of(context)!.usernameTaken)));
     } else {
       // Update username in user's Settings document
       await FirebaseFirestore.instance
@@ -106,7 +91,7 @@ class _ProfileState extends State<Profile> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Username updated successfully')));
+          SnackBar(content: Text(S.of(context)!.usernameUpdated)));
     }
   }
 
@@ -304,6 +289,21 @@ class _ProfileState extends State<Profile> {
       return sections;
     }
 
+    var months = [
+      S.of(context)!.january,
+      S.of(context)!.february,
+      S.of(context)!.march,
+      S.of(context)!.april,
+      S.of(context)!.may,
+      S.of(context)!.june,
+      S.of(context)!.july,
+      S.of(context)!.august,
+      S.of(context)!.september,
+      S.of(context)!.october,
+      S.of(context)!.november,
+      S.of(context)!.december,
+    ];
+
     return Scaffold(
       appBar: const CustomAppBar(),
       body: Stack(
@@ -396,9 +396,9 @@ class _ProfileState extends State<Profile> {
                               BorderRadius.circular(10), // border radius
                         ),
                         child: ExpansionTile(
-                            title: const Padding(
+                            title: Padding(
                               padding: EdgeInsets.all(20),
-                              child: Text("Viewing Statistics"),
+                              child: Text(S.of(context)!.viewingStatistics),
                             ),
                             children: <Widget>[
                               Padding(
@@ -410,7 +410,7 @@ class _ProfileState extends State<Profile> {
                                       Padding(
                                         padding: const EdgeInsets.all(10.0),
                                         child: Text(
-                                          "Movies seen the week of ${startOfWeek.toIso8601String().split("-")[2].split("T")[0]}-${endOfWeek.toIso8601String().split("-")[2].split("T")[0]} in ${months[startOfWeek.month - 1]}",
+                                          "${S.of(context)!.moviesSeenWeekOf} ${startOfWeek.toIso8601String().split("-")[2].split("T")[0]}-${endOfWeek.toIso8601String().split("-")[2].split("T")[0]} ${S.of(context)!.inWord} ${months[startOfWeek.month - 1]}",
                                           textAlign: TextAlign.center,
                                           style: const TextStyle(
                                             fontSize: 18,
@@ -422,7 +422,7 @@ class _ProfileState extends State<Profile> {
                                       Padding(
                                         padding: const EdgeInsets.all(10.0),
                                         child: Text(
-                                          "Movies seen the week of ${startOfWeek.toIso8601String().split("-")[2].split("T")[0]}-${endOfWeek.toIso8601String().split("-")[2].split("T")[0]} in ${months[startOfWeek.month - 1]}-${months[endOfWeek.month - 1]}",
+                                          "${S.of(context)!.moviesSeenWeekOf} ${startOfWeek.toIso8601String().split("-")[2].split("T")[0]}-${endOfWeek.toIso8601String().split("-")[2].split("T")[0]} ${S.of(context)!.inWord} ${months[startOfWeek.month - 1]}-${months[endOfWeek.month - 1]}",
                                           textAlign: TextAlign.center,
                                           style: const TextStyle(
                                             fontSize: 18,
@@ -437,8 +437,8 @@ class _ProfileState extends State<Profile> {
                                         ElevatedButton(
                                           style: ButtonStyle(
                                             backgroundColor:
-                                                WidgetStateProperty.all<
-                                                    Color>(Colors.transparent),
+                                                WidgetStateProperty.all<Color>(
+                                                    Colors.transparent),
                                             elevation:
                                                 WidgetStateProperty.all(0.0),
                                           ),
@@ -457,8 +457,8 @@ class _ProfileState extends State<Profile> {
                                         ElevatedButton(
                                           style: ButtonStyle(
                                             backgroundColor:
-                                                WidgetStateProperty.all<
-                                                    Color>(Colors.transparent),
+                                                WidgetStateProperty.all<Color>(
+                                                    Colors.transparent),
                                             elevation:
                                                 WidgetStateProperty.all(0.0),
                                           ),
@@ -468,8 +468,8 @@ class _ProfileState extends State<Profile> {
                                                   0; // Go to the previous week
                                             });
                                           },
-                                          child: const Text(
-                                            'This Week',
+                                          child: Text(
+                                            S.of(context)!.thisWeek,
                                             style:
                                                 TextStyle(color: Colors.white),
                                           ),
@@ -477,8 +477,8 @@ class _ProfileState extends State<Profile> {
                                         ElevatedButton(
                                           style: ButtonStyle(
                                             backgroundColor:
-                                                WidgetStateProperty.all<
-                                                    Color>(Colors.transparent),
+                                                WidgetStateProperty.all<Color>(
+                                                    Colors.transparent),
                                             elevation:
                                                 WidgetStateProperty.all(0.0),
                                           ),
@@ -545,8 +545,7 @@ class _ProfileState extends State<Profile> {
                                                   color: Colors.blue),
                                               const SizedBox(width: 10),
                                               Expanded(
-                                                child: Text(
-                                                  "Current Record: $maxMovies movies in a day",
+                                                child: Text(S.of(context)!.currentRecordMovies(maxMovies),
                                                   style: const TextStyle(
                                                     fontSize: 15,
                                                   ),
@@ -563,7 +562,7 @@ class _ProfileState extends State<Profile> {
                                               const SizedBox(width: 10),
                                               Expanded(
                                                 child: Text(
-                                                  "Total Movies Ever Seen: ${currentUser.seenMovies.length}",
+                                                  "${S.of(context)!.totalMovies}: ${currentUser.seenMovies.length}",
                                                   style: const TextStyle(
                                                       fontSize: 15),
                                                 ),
@@ -578,7 +577,7 @@ class _ProfileState extends State<Profile> {
                                               const SizedBox(width: 10),
                                               Expanded(
                                                 child: Text(
-                                                  "Total TV Shows Ever Seen: ${currentUser.seenTVShows.length}",
+                                                  "${S.of(context)!.totalTVShows}: ${currentUser.seenTVShows.length}",
                                                   style: const TextStyle(
                                                       fontSize: 15),
                                                 ),
@@ -617,12 +616,12 @@ class _ProfileState extends State<Profile> {
                           color: Colors.grey[900],
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
                             Icon(Icons.edit, color: Colors.blue),
                             SizedBox(width: 10),
                             Text(
-                              'Modify Profile Sections',
+                              S.of(context)!.modifyProfile,
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 13,
@@ -671,7 +670,7 @@ class _ProfileState extends State<Profile> {
             ],
           ),
           const SizedBox(height: 10),
-          if (content.isEmpty) const Text("Nothing here yet"),
+          if (content.isEmpty) Text(S.of(context)!.emptySection),
           if (content.isEmpty) const SizedBox(height: 10),
           if (content.isNotEmpty)
             SizedBox(
@@ -705,10 +704,10 @@ class _ProfileState extends State<Profile> {
                               const Center(child: CircularProgressIndicator()),
                         );
                       } else if (snapshot.hasError) {
-                        return const Center(
-                            child: Text("Failed to load details"));
+                        return Center(
+                            child: Text(S.of(context)!.errorFailedToLoadGeneralDetails));
                       } else if (!snapshot.hasData) {
-                        return const Center(child: Text("No data available"));
+                        return Center(child: Text(S.of(context)!.noDataAvailable));
                       } else {
                         return GestureDetector(
                             onTap: () {

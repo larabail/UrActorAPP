@@ -3,6 +3,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'main.dart';
@@ -90,12 +91,12 @@ class _PlaylistsState extends State<Playlists> {
                       color: Colors.grey[900],
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Icon(Icons.playlist_add_check, color: Colors.green),
                         SizedBox(width: 10),
                         Text(
-                          'Join Existing List',
+                          S.of(context)!.joinList,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 13,
@@ -117,12 +118,12 @@ class _PlaylistsState extends State<Playlists> {
                       color: Colors.grey[900],
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Icon(Icons.add, color: Colors.red),
                         SizedBox(width: 10),
                         Text(
-                          'Add New List',
+                          S.of(context)!.newList,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 13,
@@ -167,12 +168,12 @@ class _PlaylistsState extends State<Playlists> {
                     color: Colors.grey[900],
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
                       Icon(Icons.new_releases, color: Colors.white),
                       SizedBox(width: 10),
                       Text(
-                        'Generate Handpicked Recommendations',
+                        S.of(context)!.generateRecommendation,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 13,
@@ -184,7 +185,7 @@ class _PlaylistsState extends State<Playlists> {
                 ),
               ),
             if (currentUser.playlists.isEmpty)
-              const Center(child: Text("You don't have any playlists yet!")),
+              Center(child: Text(S.of(context)!.noPlaylists)),
             if (currentUser.playlists.isNotEmpty)
               RefreshIndicator(
                 onRefresh: _refreshPlaylists,
@@ -196,7 +197,7 @@ class _PlaylistsState extends State<Playlists> {
                         onTap: () {
                           Playlist listResult = Playlist(
                               id: "recommendations",
-                              name: "Handpicked for You",
+                              name: S.of(context)!.handpicked,
                               backdrop:
                                   "https://firebasestorage.googleapis.com/v0/b/actordb-cf981.appspot.com/o/madmax5487_a_simple_2d_art_marker_backdrop_for_an_ai_generated__30ab5e32-f385-469f-8fb4-9f751eee34d3.png?alt=media&token=25dac07c-8e15-4beb-9f02-d04327ef8867",
                               movies: currentUser.recommendations["Movies"],
@@ -253,8 +254,7 @@ class _PlaylistsState extends State<Playlists> {
                                           mainAxisAlignment:
                                               MainAxisAlignment.center,
                                           children: [
-                                            const Text(
-                                              "Handpicked for You",
+                                            Text(S.of(context)!.handpicked,
                                               style: TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 16,
@@ -262,7 +262,7 @@ class _PlaylistsState extends State<Playlists> {
                                               ),
                                             ),
                                             Text(
-                                              'Movies: ${currentUser.recommendations["Movies"].length}, TV Shows: ${currentUser.recommendations["TVShows"].length}',
+                                              '${S.of(context)!.movies}: ${currentUser.recommendations["Movies"].length}, ${S.of(context)!.tvShows}: ${currentUser.recommendations["TVShows"].length}',
                                               style: const TextStyle(
                                                 color: Colors.grey,
                                                 fontSize: 12,
@@ -369,7 +369,7 @@ class _PlaylistsState extends State<Playlists> {
                                           ),
                                         ),
                                         Text(
-                                          'Movies: ${movies.length}, TV Shows: ${tvshows.length}',
+                                          '${S.of(context)!.movies}: ${movies.length}, ${S.of(context)!.tvShows}: ${tvshows.length}',
                                           style: const TextStyle(
                                             fontSize: 15,
                                             color: Colors.grey,
