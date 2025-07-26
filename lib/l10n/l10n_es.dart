@@ -171,4 +171,102 @@ class SEs extends S {
   String status(String status) {
     return 'Status: $status';
   }
+
+  @override
+  String accessCode(String accessCode) {
+    return 'Codigo de Acceso: \'$accessCode\'';
+  }
+
+  @override
+  String get usersAccess => 'Usuarios con acceso';
+
+  @override
+  String get noUsersAccess => 'Ningún usuario tiene acceso';
+
+  @override
+  String get grantAccess => 'Dar Acceso a Usuarios';
+
+  @override
+  String get edit => 'Editar';
+
+  @override
+  String get delete => 'Borrar';
+
+  @override
+  String get leave => 'Quitar';
+
+  @override
+  String get deleteList => 'Borrar Lista';
+
+  @override
+  String get deleteListConfirmation =>
+      'Estás seguro de que quieres borrar esta lista?';
+
+  @override
+  String listElements(String movieCount, String tvCount) {
+    return 'Peliculas: $movieCount, Series: $tvCount';
+  }
+
+  @override
+  String get newMovies => 'Peliculas Nuevas';
+
+  @override
+  String get newShows => 'Series Nuevas';
+
+  @override
+  String get addMovie => 'Añadir Pelicula';
+
+  @override
+  String get addShow => 'Añadir Serie';
+
+  @override
+  String get movies => 'Peliculas';
+
+  @override
+  String get tvShows => 'Series';
+
+  @override
+  String get needEmail => 'Email es Necesario';
+
+  @override
+  String get typeEmail => 'Por favor indique un email';
+
+  @override
+  String get password => 'Contraseña';
+
+  @override
+  String get resetEmail =>
+      'Se ha enviado un correo electrónico para restablecer la contraseña';
+
+  @override
+  String failedResetEmail(String e) {
+    return 'Ha habido un error al restablecer la contraseña: $e';
+  }
+
+  @override
+  String get yourEmail => 'Tu correo electrónico';
+
+  @override
+  String get email => 'Correo Electrónico';
+
+  @override
+  String get login => 'Iniciar sesión';
+
+  @override
+  String get enterEmail => 'Por favor ingresa tu correo electrónico';
+
+  @override
+  String get yourPassword => 'Tu contraseña';
+
+  @override
+  String get enterPassword => 'Por favor ingresa tu contraseña';
+
+  @override
+  String get noAccountSignUp => '¿No tienes una cuenta? Regístrate';
+
+  @override
+  String get forgotPassword => '¿Olvidaste tu contraseña?';
+
+  @override
+  String get okay => 'Aceptar';
 }

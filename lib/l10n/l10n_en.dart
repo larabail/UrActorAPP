@@ -170,4 +170,101 @@ class SEn extends S {
   String status(String status) {
     return 'Status: $status';
   }
+
+  @override
+  String accessCode(String accessCode) {
+    return 'Access Code: \'$accessCode\'';
+  }
+
+  @override
+  String get usersAccess => 'Users with access';
+
+  @override
+  String get noUsersAccess => 'No users have access';
+
+  @override
+  String get grantAccess => 'Grant Access To Users';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get leave => 'Leave';
+
+  @override
+  String get deleteList => 'Delete List';
+
+  @override
+  String get deleteListConfirmation =>
+      'Are you sure you want to delete this list?';
+
+  @override
+  String listElements(String movieCount, String tvCount) {
+    return 'Movies: $movieCount, TV Shows: $tvCount';
+  }
+
+  @override
+  String get newMovies => 'New Movies';
+
+  @override
+  String get newShows => 'New Shows';
+
+  @override
+  String get addMovie => 'Add Movie';
+
+  @override
+  String get addShow => 'Add Show';
+
+  @override
+  String get movies => 'Movies';
+
+  @override
+  String get tvShows => 'TV Shows';
+
+  @override
+  String get needEmail => 'Email Address Needed';
+
+  @override
+  String get typeEmail => 'Please type an email address';
+
+  @override
+  String get password => 'Password';
+
+  @override
+  String get resetEmail => 'Reset Password Email has been sent';
+
+  @override
+  String failedResetEmail(String e) {
+    return 'Failed to send password reset email: $e';
+  }
+
+  @override
+  String get yourEmail => 'Your email';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get login => 'Login';
+
+  @override
+  String get enterEmail => 'Please enter your email';
+
+  @override
+  String get yourPassword => 'Your Password';
+
+  @override
+  String get enterPassword => 'Please enter your password';
+
+  @override
+  String get noAccountSignUp => 'Don\'t have an account? Sign up';
+
+  @override
+  String get forgotPassword => 'Forgot Password?';
+
+  @override
+  String get okay => 'Okay';
 }

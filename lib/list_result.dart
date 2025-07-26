@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
 import 'package:uractor/common/firebase/recommendation_service.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'package:uractor/popups/grant_access_dialogue.dart';
 import 'common/navigation/appbar.dart';
@@ -62,15 +63,15 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              "AccessCode: '${widget.list_result.accesscode}'",
+              S.of(context)!.accessCode(widget.list_result.accesscode),
               style: const TextStyle(
                 fontSize: 18,
                 color: Colors.white,
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Users with access:',
+            Text(
+              S.of(context)!.usersAccess,
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 16,
@@ -87,7 +88,7 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                 } else if (snapshot.hasError) {
                   return Text('Error: ${snapshot.error}');
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Text('No users have access.');
+                  return Text(S.of(context)!.noUsersAccess);
                 } else {
                   return Column(
                     children: snapshot.data!.map((userData) {
@@ -176,12 +177,12 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                     });
                   }
                 },
-                child: const Row(
+                child: Row(
                   children: [
                     Icon(Icons.add, color: Colors.white),
                     SizedBox(width: 10),
                     Text(
-                      "Grant Access To Users",
+                      S.of(context)!.grantAccess,
                       style: TextStyle(color: Colors.white),
                     )
                   ],
@@ -214,12 +215,12 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                         color: Colors.grey[900],
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
                           Icon(Icons.edit, color: Colors.blue),
                           SizedBox(width: 10),
                           Text(
-                            'Edit',
+                            S.of(context)!.edit,
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -287,7 +288,9 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                             color: Colors.red),
                         const SizedBox(width: 10),
                         Text(
-                          role == "Owner" ? 'Delete' : 'Leave',
+                          role == "Owner"
+                              ? S.of(context)!.delete
+                              : S.of(context)!.leave,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -309,14 +312,13 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
 
 class AlertButtonDialogue extends StatelessWidget {
   final Playlist list_result;
-  const AlertButtonDialogue({Key? key, required this.list_result})
-      : super(key: key);
+  const AlertButtonDialogue({super.key, required this.list_result});
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Delete List'),
-      content: const Text(
-        'Are you sure you want to delete this list?',
+      title: Text(S.of(context)!.deleteList),
+      content: Text(
+        S.of(context)!.deleteListConfirmation,
         style: TextStyle(color: Colors.red),
       ),
       actions: [
@@ -350,13 +352,13 @@ class AlertButtonDialogue extends StatelessWidget {
           style: ButtonStyle(
             backgroundColor: MaterialStateProperty.all(Colors.red),
           ),
-          child: const Text('Delete'),
+          child: Text(S.of(context)!.delete),
         ),
         TextButton(
           onPressed: () {
             Navigator.pop(context); // Close the dialog
           },
-          child: const Text('Cancel'),
+          child: Text(S.of(context)!.cancel),
         ),
       ],
     );
@@ -560,9 +562,11 @@ class _ListResultState extends State<ListResult> {
 
       if (unseenRecommendations.length >= 30) {
         List finalRecommendations = unseenRecommendations.take(30).toList();
-        await RecommendationService.updateRecommendations(finalRecommendations, type);
+        await RecommendationService.updateRecommendations(
+            finalRecommendations, type);
       } else {
-        await RecommendationService.updateRecommendations(unseenRecommendations, type);
+        await RecommendationService.updateRecommendations(
+            unseenRecommendations, type);
       }
     } else {
       throw Exception(response.body);
@@ -576,35 +580,35 @@ class _ListResultState extends State<ListResult> {
       builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
         if (snapshot.hasData) {
           return GestureDetector(
-            onTap: () {
-              MediaItem tempItem = mediaType == "Movies"
-                  ? Movie(
-                      id: snapshot.data!['id'].toString(),
-                      title: snapshot.data!['title'].toString(),
-                      coverPhoto: snapshot.data!['poster_path'] ?? "",
-                    )
-                  : TVShow(
-                      id: snapshot.data!['id'].toString(),
-                      title: snapshot.data!['title'].toString(),
-                      coverPhoto: snapshot.data!['poster_path'] ?? "",
-                    );
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => mediaType == "Movies"
-                      ? MovieResult(movie: tempItem as Movie)
-                      : TVShowResult(tvshow: tempItem as TVShow),
-                ),
-              );
-            },
-            child: getItemContainer(context, snapshot.data, "media")
-          );
+              onTap: () {
+                MediaItem tempItem = mediaType == "Movies"
+                    ? Movie(
+                        id: snapshot.data!['id'].toString(),
+                        title: snapshot.data!['title'].toString(),
+                        coverPhoto: snapshot.data!['poster_path'] ?? "",
+                      )
+                    : TVShow(
+                        id: snapshot.data!['id'].toString(),
+                        title: snapshot.data!['title'].toString(),
+                        coverPhoto: snapshot.data!['poster_path'] ?? "",
+                      );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => mediaType == "Movies"
+                        ? MovieResult(movie: tempItem as Movie)
+                        : TVShowResult(tvshow: tempItem as TVShow),
+                  ),
+                );
+              },
+              child: getItemContainer(context, snapshot.data, "media"));
         } else if (snapshot.hasError) {
           return Container(
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
               width: MediaQuery.of(context).size.width * 0.28,
               height: MediaQuery.of(context).size.height * 0.18,
-              child: const Center(child: Text("Failed to load movie details")));
+              child:
+                  Center(child: Text(S.of(context)!.errorFailedToLoadDetails)));
         } else {
           return Container(
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
@@ -699,7 +703,9 @@ class _ListResultState extends State<ListResult> {
                           ),
                         ),
                         Text(
-                          'Movies: ${widget.list_result.movies.length}, TV Shows: ${widget.list_result.tvshows.length}',
+                          S.of(context)!.listElements(
+                              widget.list_result.movies.length.toString(),
+                              widget.list_result.tvshows.length.toString()),
                           style: const TextStyle(
                             fontSize: 15,
                             color: Colors.grey,
@@ -766,12 +772,12 @@ class _ListResultState extends State<ListResult> {
                       color: Colors.grey[900],
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Icon(Icons.refresh, color: Colors.green),
                         SizedBox(width: 10),
                         Text(
-                          'New Movies',
+                          S.of(context)!.newMovies,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 13,
@@ -805,12 +811,12 @@ class _ListResultState extends State<ListResult> {
                       color: Colors.grey[900],
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Icon(Icons.refresh, color: Colors.green),
                         SizedBox(width: 10),
                         Text(
-                          'New Shows',
+                          S.of(context)!.newShows,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 13,
@@ -845,12 +851,12 @@ class _ListResultState extends State<ListResult> {
                       color: Colors.grey[900],
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Icon(Icons.movie, color: Colors.green),
                         SizedBox(width: 10),
                         Text(
-                          'Add Movie',
+                          S.of(context)!.addMovie,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 13,
@@ -880,12 +886,12 @@ class _ListResultState extends State<ListResult> {
                       color: Colors.grey[900],
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Icon(Icons.tv, color: Colors.green),
                         SizedBox(width: 10),
                         Text(
-                          'Add TV Show',
+                          S.of(context)!.addShow,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 13,
@@ -908,10 +914,10 @@ class _ListResultState extends State<ListResult> {
               child: Expanded(
                 child: Column(
                   children: [
-                    const TabBar(
+                    TabBar(
                       tabs: [
-                        Tab(text: 'Movies'),
-                        Tab(text: 'TV Shows'),
+                        Tab(text: S.of(context)!.movies),
+                        Tab(text: S.of(context)!.tvShows),
                       ],
                     ),
                     Expanded(

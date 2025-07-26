@@ -384,6 +384,186 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Status: {status}'**
   String status(String status);
+
+  /// Shown when needing access code to share playlist
+  ///
+  /// In en, this message translates to:
+  /// **'Access Code: \'{accessCode}\''**
+  String accessCode(String accessCode);
+
+  /// No description provided for @usersAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Users with access'**
+  String get usersAccess;
+
+  /// No description provided for @noUsersAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'No users have access'**
+  String get noUsersAccess;
+
+  /// No description provided for @grantAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Grant Access To Users'**
+  String get grantAccess;
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @leave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get leave;
+
+  /// No description provided for @deleteList.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete List'**
+  String get deleteList;
+
+  /// No description provided for @deleteListConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this list?'**
+  String get deleteListConfirmation;
+
+  /// Shown when detailing items in playlist
+  ///
+  /// In en, this message translates to:
+  /// **'Movies: {movieCount}, TV Shows: {tvCount}'**
+  String listElements(String movieCount, String tvCount);
+
+  /// No description provided for @newMovies.
+  ///
+  /// In en, this message translates to:
+  /// **'New Movies'**
+  String get newMovies;
+
+  /// No description provided for @newShows.
+  ///
+  /// In en, this message translates to:
+  /// **'New Shows'**
+  String get newShows;
+
+  /// No description provided for @addMovie.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Movie'**
+  String get addMovie;
+
+  /// No description provided for @addShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Show'**
+  String get addShow;
+
+  /// No description provided for @movies.
+  ///
+  /// In en, this message translates to:
+  /// **'Movies'**
+  String get movies;
+
+  /// No description provided for @tvShows.
+  ///
+  /// In en, this message translates to:
+  /// **'TV Shows'**
+  String get tvShows;
+
+  /// No description provided for @needEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email Address Needed'**
+  String get needEmail;
+
+  /// No description provided for @typeEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Please type an email address'**
+  String get typeEmail;
+
+  /// No description provided for @password.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get password;
+
+  /// No description provided for @resetEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Password Email has been sent'**
+  String get resetEmail;
+
+  /// Show when there's an error to send reset password email
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send password reset email: {e}'**
+  String failedResetEmail(String e);
+
+  /// No description provided for @yourEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Your email'**
+  String get yourEmail;
+
+  /// No description provided for @email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get email;
+
+  /// No description provided for @login.
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get login;
+
+  /// No description provided for @enterEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your email'**
+  String get enterEmail;
+
+  /// No description provided for @yourPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Password'**
+  String get yourPassword;
+
+  /// No description provided for @enterPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your password'**
+  String get enterPassword;
+
+  /// No description provided for @noAccountSignUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t have an account? Sign up'**
+  String get noAccountSignUp;
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot Password?'**
+  String get forgotPassword;
+
+  /// No description provided for @okay.
+  ///
+  /// In en, this message translates to:
+  /// **'Okay'**
+  String get okay;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

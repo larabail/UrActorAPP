@@ -43,17 +43,18 @@ class ApiUtils {
     return providers;
   }
 
-  /// Fetches cast, crew, and trailer data for a specific media item.
+  /// Fetches cast, crew, and trailer data for a specific media item in the current language.
   /// @param movieId The TMDb media ID.
   /// @param name The slugified title.
   /// @param type The media type ("movie" or "tv").
   /// @return A map with cast, formatted crew, and trailer (if any).
   static Future<Map<String, dynamic>> fetchCreditsAndTrailer(
       String movieId, String name, String type) async {
+    final lang = currentUser.settings['language'] ?? 'en';
     final creditsResponse = await http.get(Uri.parse(
-        '${type == "movie" ? MOVIE_LINK : TV_SHOW_LINK}$movieId-$name$CREDITS_LINK'));
+        '${type == "movie" ? MOVIE_LINK : TV_SHOW_LINK}$movieId-$name$CREDITS_LINK&language=$lang'));
     final trailerResponse = await http.get(Uri.parse(
-        '${type == "movie" ? MOVIE_LINK : TV_SHOW_LINK}$movieId-$name$VIDEOS_LINK'));
+        '${type == "movie" ? MOVIE_LINK : TV_SHOW_LINK}$movieId-$name$VIDEOS_LINK&language=$lang'));
 
     if (creditsResponse.statusCode != 200 ||
         trailerResponse.statusCode != 200) {
@@ -65,7 +66,7 @@ class ApiUtils {
       if (countedCrew.contains(crewMember["id"])) {
         for (Map credit in finalCrew) {
           if (credit["id"].toString() == crewMember["id"].toString()) {
-            credit["job"] = "${credit["job"]} / ${crewMember["job"]}";
+            credit["job"] = "\${credit['job']} / \${crewMember['job']}";
           }
         }
       } else {
@@ -92,15 +93,16 @@ class ApiUtils {
     return data;
   }
 
-  /// Fetches the basic metadata for a movie or TV show.
+  /// Fetches the basic metadata for a movie or TV show in the current language.
   /// @param movieId The TMDb ID.
   /// @param name The slugified name.
   /// @param type The media type ("movie" or "tv").
   /// @return A map of the media details.
   static Future<Map<String, dynamic>> fetchMovieDetails(
       String movieId, String name, String type) async {
+    final lang = currentUser.settings['language'] ?? 'en';
     final movieResponse = await http.get(Uri.parse(
-        '${type == "movie" ? MOVIE_LINK : TV_SHOW_LINK}$movieId-$name$API_KEY'));
+        '${type == "movie" ? MOVIE_LINK : TV_SHOW_LINK}$movieId-$name$API_KEY&language=$lang'));
     if (movieResponse.statusCode != 200) {
       throw Exception('Failed to load movie details');
     }
@@ -108,6 +110,7 @@ class ApiUtils {
   }
 
   /// Fetches additional metadata including IMDb rating, release year, streaming providers, cast/crew, and trailer.
+  /// Uses the current language for TMDb calls.
   /// @param json The base movie data JSON.
   /// @param movieId The TMDb ID.
   /// @param name The slugified name.
@@ -116,11 +119,12 @@ class ApiUtils {
   static Future<Map<String, dynamic>> fetchAdditionalMovieData(
       Map json, String movieId, String name, String type) async {
     Map<String, dynamic> additionalData = {};
+    var lang = currentUser.settings['language'] ?? 'en';
 
     var imdbId = json['imdb_id'];
     if (type != "movie") {
-      final response2 = await http
-          .get(Uri.parse('$TV_SHOW_LINK$movieId-$name$EXTERNAL_IDS_LINK'));
+      final response2 = await http.get(Uri.parse(
+          '$TV_SHOW_LINK$movieId-$name$EXTERNAL_IDS_LINK&language=$lang'));
       if (response2.statusCode == 200) {
         imdbId = jsonDecode(response2.body)['imdb_id'];
       }
@@ -184,16 +188,16 @@ class ApiUtils {
     return [];
   }
 
-  /// Searches for movies based on a term.
+  /// Searches for movies based on a term in the current language.
   /// @param searchTerm The user query.
   /// @return A list of movies matching the query.
   static Future<List> searchMovies(String searchTerm) async {
     if (searchTerm != "") {
+      final lang = currentUser.settings['language'] ?? 'en';
       String name = searchTerm
           .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
           .replaceAll(" ", "+");
-      String searchLink = "";
-      searchLink = '$SEARCH_BY_NAME_MOVIE_LINK$name';
+      final searchLink = '$SEARCH_BY_NAME_MOVIE_LINK$name&language=$lang';
       final response = await http.get(Uri.parse(searchLink));
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
@@ -206,20 +210,19 @@ class ApiUtils {
     }
   }
 
-  /// Searches for TV shows based on a term.
+  /// Searches for TV shows based on a term in the current language.
   /// @param searchTerm The user query.
   /// @return A list of TV shows matching the query.
   static Future<List> searchTvShows(String searchTerm) async {
     if (searchTerm != "") {
+      final lang = currentUser.settings['language'] ?? 'en';
       String name = searchTerm
           .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
           .replaceAll(" ", "+");
-      String searchLink = "";
-      searchLink = '$SEARCH_BY_NAME_TV_SHOW_LINK$name';
+      final searchLink = '$SEARCH_BY_NAME_TV_SHOW_LINK$name&language=$lang';
       final response = await http.get(Uri.parse(searchLink));
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
-
         return json['results'];
       } else {
         throw Exception('Failed to load tv show details');
