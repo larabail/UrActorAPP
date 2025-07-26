@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'common/api/apiutils.dart';
 import 'package:uractor/objects/Movie.dart';
 import 'package:uractor/objects/Person.dart';
@@ -98,7 +99,7 @@ class _SearchResultState extends State<Search> {
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Text(
-                  item['title'] ?? (item["name"] ?? 'Unknown'),
+                  item['title'] ?? (item["name"] ?? S.of(context)!.unknown),
                   style: const TextStyle(
                     fontSize: 14,
                   ),
@@ -119,9 +120,9 @@ class _SearchResultState extends State<Search> {
             child: TextField(
               controller: _searchController,
               focusNode: _focusNode,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 prefixIcon: Icon(Icons.search),
-                hintText: 'Enter name of person/movie/show...',
+                hintText: S.of(context)!.searchBar,
                 hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey),
@@ -184,8 +185,8 @@ class _SearchResultState extends State<Search> {
                     ),
                   );
                 } else if (snapshot.hasError) {
-                  return const Center(
-                      child: Text("Failed to load movie details"));
+                  return Center(
+                      child: Text(S.of(context)!.errorFailedToLoadDetails));
                 } else {
                   return const Center(child: CircularProgressIndicator());
                 }

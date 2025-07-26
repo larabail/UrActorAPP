@@ -277,5 +277,13 @@
   "totalMovies": "Total Movies Ever Seen",
   "totalTVShows": "Total TV Shows Ever Seen",
   "modifyProfile": "Modify Profile Sections",
-  "noDataAvailable": "No data available"
+  "noDataAvailable": "No data available",
+  "unknown": "Unkown",
+  "searchBar": "Enter name of person/movie/show...",
+  "episodes": "episodes",
+  "episode": "Episode",
+  "seemWith": "Seen with",
+  "seasons": "seasons",
+  "apply": "Apply",
+  "createdBy": "Created by"
 }

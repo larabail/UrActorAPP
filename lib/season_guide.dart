@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:uractor/cast_and_crew.dart';
 import 'package:uractor/common/constants.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/TVShow.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
@@ -108,7 +109,7 @@ class ItemCard extends StatelessWidget {
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Text(
-                  "${info["episode_count"]} episodes",
+                  "${info["episode_count"]} ${S.of(context)!.episodes}",
                   style: const TextStyle(
                     fontSize: 14,
                   ),
@@ -265,7 +266,7 @@ class EpisodeCard extends StatelessWidget {
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Text(
-                        "Episode ${snapshot.data!["episode_number"]}",
+                        "${S.of(context)!.episode} ${snapshot.data!["episode_number"]}",
                         style: const TextStyle(
                           fontSize: 14,
                         ),
@@ -301,7 +302,7 @@ class EpisodeCard extends StatelessWidget {
             ]),
           );
         } else if (snapshot.hasError) {
-          return const Center(child: Text("Failed to load movie details"));
+          return Center(child: Text(S.of(context)!.errorFailedToLoadDetails));
         } else {
           return Container(
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),

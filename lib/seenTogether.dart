@@ -1,6 +1,7 @@
 // ignore_for_file: must_be_immutable
 import 'package:flutter/material.dart';
 import 'package:uractor/friends.dart';
+import 'package:uractor/l10n/l10n.dart';
 
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
@@ -22,7 +23,7 @@ class SeenTogether extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 10.0),
             child: Text(
-              "Seen with ${friendSettings['username']}",
+              "${S.of(context)!.seemWith} ${friendSettings['username']}",
               style: const TextStyle(
                 fontSize: 24.0,
                 fontWeight: FontWeight.bold,
@@ -34,10 +35,10 @@ class SeenTogether extends StatelessWidget {
             child: Expanded(
               child: Column(
                 children: [
-                  const TabBar(
+                  TabBar(
                     tabs: [
-                      Tab(text: 'Movies'),
-                      Tab(text: 'TV Shows'),
+                      Tab(text: S.of(context)!.movies),
+                      Tab(text: S.of(context)!.tvShows),
                     ],
                   ),
                   Expanded(
