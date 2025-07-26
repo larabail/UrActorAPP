@@ -118,25 +118,32 @@ class SocialService {
   /// @param mediaItem The media item object.
   /// @param type The media type ("movie" or "TVShows").
   /// @return A map of friend usernames and their profile photo URLs.
-  static Future<Map> friendsWhoHaveSeen(
+  static Future<Map<String, String>> friendsWhoHaveSeen(
       String uid, MediaItem mediaItem, String type) async {
     type = type == "movie" ? "Movies" : "TVShows";
-    Map friends = {};
-    Map friendsDocInfo = await FirestoreCore.getDocumentData(uid, "Friends");
-    List allFriends = friendsDocInfo["data"]["friends"];
+    final Map<String, String> friends = {};
+    final Map friendsDocInfo =
+        await FirestoreCore.getDocumentData(uid, "Friends");
+    final List allFriends = friendsDocInfo["data"]["friends"] as List;
     print("FRIENDS: $allFriends");
+
     for (String friendUid in allFriends) {
-      Map friendSeenDocInfo =
+      final Map friendSeenDocInfo =
           await FirestoreCore.getDocumentData(friendUid, type);
-      Map itemsSeen = friendSeenDocInfo["data"];
-      bool seen = itemsSeen.values.toList()[0].contains(mediaItem.id);
-      if (seen) {
-        Map friendsSettingDocInfo =
-            await FirestoreCore.getDocumentData(friendUid, "Settings");
-        String profilePhoto = friendsSettingDocInfo["data"]["profile_photo"];
-        String username = friendsSettingDocInfo["data"]["username"];
-        friends["$friendUid-$username"] = profilePhoto;
-      }
+      final Map<String, dynamic> itemsSeen =
+          Map<String, dynamic>.from(friendSeenDocInfo["data"] ?? {});
+      bool seen = itemsSeen.values.any((value) {
+        return value is List && value.contains(mediaItem.id);
+      });
+      if (!seen) continue; 
+      final Map friendsSettingDocInfo =
+          await FirestoreCore.getDocumentData(friendUid, "Settings");
+      final String profilePhoto =
+          friendsSettingDocInfo["data"]["profile_photo"] as String? ?? "";
+      final String username =
+          friendsSettingDocInfo["data"]["username"] as String? ?? "";
+
+      friends["$friendUid-$username"] = profilePhoto;
     }
     return friends;
   }
