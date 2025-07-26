@@ -157,4 +157,17 @@ class SEn extends S {
 
   @override
   String get favTVShows => 'Most Watched TV Shows';
+
+  @override
+  String get loading => 'Loading...';
+
+  @override
+  String requestFrom(String senderUsername) {
+    return 'Request from: $senderUsername';
+  }
+
+  @override
+  String status(String status) {
+    return 'Status: $status';
+  }
 }
