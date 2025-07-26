@@ -269,4 +269,29 @@ class SEs extends S {
 
   @override
   String get okay => 'Aceptar';
+
+  @override
+  String get writeAReview => 'Escribe Una Reseña';
+
+  @override
+  String get readAll => 'Leer Todo';
+
+  @override
+  String get yourReview => 'Tu Reseña';
+
+  @override
+  String opinion(String opinion) {
+    return 'Opinión: $opinion';
+  }
+
+  @override
+  String rating(String rating) {
+    return 'Nota: $rating';
+  }
+
+  @override
+  String get viewingHistory => 'Historial de Visualización';
+
+  @override
+  String get noViewingHistory => 'No hay historial de visualización';
 }

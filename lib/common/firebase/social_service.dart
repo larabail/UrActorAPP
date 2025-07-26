@@ -125,8 +125,6 @@ class SocialService {
     final Map friendsDocInfo =
         await FirestoreCore.getDocumentData(uid, "Friends");
     final List allFriends = friendsDocInfo["data"]["friends"] as List;
-    print("FRIENDS: $allFriends");
-
     for (String friendUid in allFriends) {
       final Map friendSeenDocInfo =
           await FirestoreCore.getDocumentData(friendUid, type);
@@ -135,7 +133,7 @@ class SocialService {
       bool seen = itemsSeen.values.any((value) {
         return value is List && value.contains(mediaItem.id);
       });
-      if (!seen) continue; 
+      if (!seen) continue;
       final Map friendsSettingDocInfo =
           await FirestoreCore.getDocumentData(friendUid, "Settings");
       final String profilePhoto =

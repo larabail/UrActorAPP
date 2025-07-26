@@ -87,7 +87,6 @@ Widget getCover(Map data, context, MediaItem mediaItem, String type) {
                     child: Center(child: CircularProgressIndicator()),
                   );
                 } else if (snapshot.hasError) {
-                  print("Error loading friends: ${snapshot.error}");
                   return const SizedBox(
                     height: 32.0,
                     child: Center(child: Text('Error loading friends')),

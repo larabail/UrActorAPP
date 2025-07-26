@@ -267,4 +267,29 @@ class SEn extends S {
 
   @override
   String get okay => 'Okay';
+
+  @override
+  String get writeAReview => 'Write A Review';
+
+  @override
+  String get readAll => 'Read All';
+
+  @override
+  String get yourReview => 'Your Review';
+
+  @override
+  String opinion(String opinion) {
+    return 'Opinion: $opinion';
+  }
+
+  @override
+  String rating(String rating) {
+    return 'Rating: $rating';
+  }
+
+  @override
+  String get viewingHistory => 'Viewing History';
+
+  @override
+  String get noViewingHistory => 'No viewing history available';
 }

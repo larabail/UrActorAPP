@@ -177,5 +177,28 @@
   "enterPassword": "Please enter your password",
   "noAccountSignUp": "Don't have an account? Sign up",
   "forgotPassword": "Forgot Password?",
-  "okay": "Okay"
+  "okay": "Okay",
+  "writeAReview": "Write A Review",
+  "readAll": "Read All",
+  "yourReview": "Your Review",
+  "opinion": "Opinion: {opinion}",
+  "@opinion": {
+    "description": "Shows when a user has entered a review for a movie or show",
+    "placeholders": {
+      "opinion": {
+        "type": "String"
+      }
+    }
+  },
+  "rating": "Rating: {rating}",
+  "@rating": {
+    "description": "Shows when a user has entered a review for a movie or show",
+    "placeholders": {
+      "rating": {
+        "type": "String"
+      }
+    }
+  },
+  "viewingHistory": "Viewing History",
+  "noViewingHistory": "No viewing history available"
 }
