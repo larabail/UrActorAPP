@@ -24,13 +24,14 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace 'com.uractor.uractorapp'
-    compileSdk 35
+    compileSdk 36
     buildToolsVersion "36.0"
+    ndkVersion "29.0.14033849"
 
     defaultConfig {
         applicationId "com.uractor.uractorapp"
-        minSdk 23
-        targetSdk 35
+        minSdkVersion flutter.minSdkVersion
+        targetSdk 36
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true
