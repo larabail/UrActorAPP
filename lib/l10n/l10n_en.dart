@@ -47,6 +47,9 @@ class SEn extends S {
   String get errorLoadingImages => 'Error loading images';
 
   @override
+  String get yourCalendarSection => 'Your Calendar';
+
+  @override
   String yourSection(String section) {
     return 'Your $section';
   }

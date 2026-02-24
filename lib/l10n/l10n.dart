@@ -169,6 +169,12 @@ abstract class S {
   /// **'Error loading images'**
   String get errorLoadingImages;
 
+  /// No description provided for @yourCalendarSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Calendar'**
+  String get yourCalendarSection;
+
   /// Shown as title of a section
   ///
   /// In en, this message translates to:
