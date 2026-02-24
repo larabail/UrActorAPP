@@ -20,6 +20,7 @@
   "errorFailedToLoadDetails": "Failed to load movie details",
   "errorFailedToLoadGeneralDetails": "Failed to load details",
   "errorLoadingImages": "Error loading images",
+  "yourCalendarSection": "Your Calendar",
   "yourSection": "Your {section}",
   "@yourSection": {
     "description": "Shown as title of a section",
