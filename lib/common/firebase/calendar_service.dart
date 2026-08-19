@@ -94,13 +94,26 @@ class CalendarService {
         );
       },
     );
-    if (deleteForEveryone == true) {
-      await deleteFromFriendsCalendar(id, title, date);
+    Map calendarDocInfo = await FirestoreCore.getDocumentData(uid, "Calendar");
+    Map calendarData = calendarDocInfo["data"];
+
+    // The entry records who it was watched with. That list is who "everyone"
+    // means -- not the full friend list, which would also wipe the entry from
+    // friends who logged the same title on the same day independently.
+    List watchedWith = [];
+    if (calendarData[date] is List) {
+      for (Map entry in List.from(calendarData[date])) {
+        if (entry['id'].toString() == id.toString() &&
+            entry['title'].toString() == title.toString()) {
+          watchedWith = List.from(entry['friends'] ?? [])..remove(uid);
+          break;
+        }
+      }
     }
 
-    Map calendarDocInfo = await FirestoreCore.getDocumentData(uid, "Calendar");
-    FirebaseFirestore.instance.collection(uid).doc("Calendar");
-    Map calendarData = calendarDocInfo["data"];
+    if (deleteForEveryone == true && watchedWith.isNotEmpty) {
+      await deleteFromFriendsCalendar(id, title, date, watchedWith);
+    }
     Map<Object, Object> updatedCalendar = {};
     for (String key in calendarData.keys) {
       if (key == date) {
@@ -137,17 +150,15 @@ class CalendarService {
     await FirestoreCore.updateDocument(uid, "Calendar", updatedCalendar);
   }
 
-  /// Deletes a calendar entry for a media item from all friends' calendars.
+  /// Deletes a calendar entry from the calendars of the friends it was
+  /// watched with.
   /// @param id The media ID.
   /// @param title The title of the media.
   /// @param date The date of the calendar entry.
+  /// @param friendUids The friends the entry was shared with.
   static Future<void> deleteFromFriendsCalendar(
-      String id, String title, String date) async {
-    Map friendsDocInfo =
-        await FirestoreCore.getDocumentData(currentUser.uid, "Friends");
-    List friends = friendsDocInfo["data"]["friends"];
-
-    for (String friendUid in friends) {
+      String id, String title, String date, List friendUids) async {
+    for (String friendUid in friendUids.cast<String>()) {
       Map calendarDocInfo =
           await FirestoreCore.getDocumentData(friendUid, "Calendar");
       Map calendarData = calendarDocInfo["data"];
@@ -159,20 +170,15 @@ class CalendarService {
           movie['id'].toString() == id.toString() &&
           movie['title'].toString() == title.toString());
 
-      if (movieIndex != -1) {
-        movies.removeAt(movieIndex);
+      if (movieIndex == -1) continue;
 
-        // Prepare updated calendar map
-        Map<String, dynamic> updatedCalendar = Map.from(calendarData);
-        if (movies.isEmpty) {
-          updatedCalendar.remove(date); // Optionally remove the date key
-        } else {
-          updatedCalendar[date] = movies;
-        }
+      movies.removeAt(movieIndex);
 
-        await FirestoreCore.updateDocument(
-            friendUid, "Calendar", updatedCalendar);
-      }
+      // update() only writes the keys it is handed, so dropping the date key
+      // from a copy of the map left the original array untouched on the
+      // server -- which is why removing the last entry of a day silently did
+      // nothing. Write the emptied list for this one date instead.
+      await FirestoreCore.updateDocument(friendUid, "Calendar", {date: movies});
     }
   }
 
