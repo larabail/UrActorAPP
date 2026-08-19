@@ -79,8 +79,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
 
   Future<void> fetchCountries() async {
     try {
-      final response = await http.get(Uri.parse(
-          'https://api.themoviedb.org/3/configuration/countries?api_key=700cd4fab994df56eb41b34d38c4762a'));
+      final response = await http.get(Uri.parse(COUNTRIES_LINK));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
@@ -96,7 +95,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
 
   Future<void> fetchProviders() async {
     final response = await http.get(Uri.parse(
-        "https://api.themoviedb.org/3/watch/providers/movie?api_key=700cd4fab994df56eb41b34d38c4762a&watch_region=${currentUser.country}"));
+        "$WATCH_PROVIDERS_BY_REGION_LINK${currentUser.country}"));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       setState(() {
