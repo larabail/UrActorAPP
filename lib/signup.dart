@@ -2,6 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -26,13 +27,16 @@ class SignUp extends StatelessWidget {
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: formKey,
-              child: Column(
+            child: AutofillGroup(
+              child: Form(
+                key: formKey,
+                child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   TextFormField(
+                    autofillHints: const [AutofillHints.email, AutofillHints.username],
+                    textInputAction: TextInputAction.next,
                     keyboardType: TextInputType.emailAddress,
                     decoration: const InputDecoration(
                       labelText: 'Email',
@@ -58,6 +62,8 @@ class SignUp extends StatelessWidget {
                   ),
                   const SizedBox(height: 16.0),
                   TextFormField(
+                    autofillHints: const [AutofillHints.newPassword],
+                    textInputAction: TextInputAction.next,
                     obscureText: true,
                     decoration: const InputDecoration(
                       labelText: 'Password',
@@ -86,6 +92,8 @@ class SignUp extends StatelessWidget {
                   ),
                   const SizedBox(height: 16.0),
                   TextFormField(
+                    autofillHints: const [AutofillHints.newPassword],
+                    textInputAction: TextInputAction.done,
                     obscureText: true,
                     decoration: const InputDecoration(
                       labelText: 'Repeat Password',
@@ -252,6 +260,7 @@ class SignUp extends StatelessWidget {
                                 .signInWithEmailAndPassword(
                                     email: email, password: password)
                                 .then((_) {
+                              TextInput.finishAutofillContext();
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
@@ -276,6 +285,7 @@ class SignUp extends StatelessWidget {
                     },
                   ),
                 ],
+                ),
               ),
             ),
           ),

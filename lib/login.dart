@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'signup.dart';
 import 'main.dart';
@@ -86,13 +87,16 @@ class Login extends StatelessWidget {
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: formKey,
-              child: Column(
+            child: AutofillGroup(
+              child: Form(
+                key: formKey,
+                child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   TextFormField(
+                    autofillHints: const [AutofillHints.email, AutofillHints.username],
+                    textInputAction: TextInputAction.next,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       labelText: S.of(context)!.email,
@@ -129,6 +133,7 @@ class Login extends StatelessWidget {
                               .signInWithEmailAndPassword(
                                   email: email, password: password)
                               .then((_) {
+                            TextInput.finishAutofillContext();
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
@@ -167,6 +172,7 @@ class Login extends StatelessWidget {
                     },
                   ),
                 ],
+                ),
               ),
             ),
           ),
@@ -187,6 +193,8 @@ class _PasswordFieldState extends State<PasswordField> {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      autofillHints: const [AutofillHints.password],
+      textInputAction: TextInputAction.done,
       obscureText: _obscureText,
       decoration: InputDecoration(
         labelText: S.of(context)!.password,
