@@ -20,6 +20,7 @@
   "errorFailedToLoadDetails": "Error al cargar los detalles de la película",
   "errorFailedToLoadGeneralDetails": "Error al cargar los detalles",
   "errorLoadingImages": "Error al cargar las imágenes",
+  "yourCalendarSection": "Tu Calendario",
   "yourSection": "Tus {section}",
   "@yourSection": {
     "description": "Shown as title of a section",
