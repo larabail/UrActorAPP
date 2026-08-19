@@ -83,8 +83,7 @@ target (see [Platforms](#platforms)).
 | `flutter_localizations` + `intl` | EN/ES localization |
 
 State is handled with plain `StatefulWidget`, `setState`, and
-`FutureBuilder`/`StreamBuilder`. There is no state-management package in use —
-see [Known gaps](#known-gaps) about the unused dependencies.
+`FutureBuilder`/`StreamBuilder`. There is no state-management package.
 
 ## Platforms
 
@@ -112,8 +111,10 @@ Treat them as scaffolding, not as supported platforms.
 ```bash
 flutter pub get
 flutter gen-l10n
-flutter run
+flutter run --dart-define=TMDB_API_KEY=your_key_here
 ```
+
+The `--dart-define` is required — see [Configuration](#configuration).
 
 ### Firebase setup
 
@@ -143,32 +144,34 @@ description of the shape it reads.
 
 ## Configuration
 
-### The TMDB key is hardcoded — known issue
+### TMDB API key
 
-`lib/common/constants.dart` currently embeds the key in a string constant that
-is committed to the repository:
-
-```dart
-// lib/common/constants.dart
-const String API_KEY = "?api_key=<a real 32-char TMDB key is committed here>";
-```
-
-This should not stay that way. A committed key can be pulled from the repo
-history by anyone with read access, and it cannot be rotated without a code
-change and a new build. The fix is to pass it in at build time:
+The key is **not** committed. It is read at build time from a `--dart-define`,
+in `lib/common/constants.dart`:
 
 ```dart
 // lib/common/constants.dart
-const String API_KEY = "?api_key=${String.fromEnvironment('TMDB_API_KEY')}";
+const String TMDB_API_KEY = String.fromEnvironment('TMDB_API_KEY');
+const String API_KEY = "?api_key=$TMDB_API_KEY";
 ```
+
+Pass it on every run or build:
 
 ```bash
-flutter run --dart-define=TMDB_API_KEY=your_key_here
+flutter run   --dart-define=TMDB_API_KEY=your_key_here
+flutter build apk --dart-define=TMDB_API_KEY=your_key_here
 ```
 
-An untracked config file read at startup works too. Either way, the existing
-key should be revoked at TMDB once it is no longer referenced — removing it
-from the current commit does not remove it from history.
+If the define is missing, `assertTmdbApiKey()` throws at startup with a message
+naming the flag. That is deliberate — without it, every TMDB request comes back
+401 and the app just looks empty.
+
+`test/constants_test.dart` asserts that no endpoint hardcodes a key, so a
+regression fails the test suite rather than reaching a release.
+
+> **A key was previously committed to this repository and is still reachable in
+> git history.** Removing it from the working tree does not remove it from
+> history, so it should be revoked and reissued at TMDB.
 
 ## Project structure
 
@@ -193,7 +196,7 @@ lib/
 
   objects/                   Media, Movie, TVShow, Person, Playlist, User
   common/
-    constants.dart           TMDB endpoints and the API key
+    constants.dart           TMDB endpoints; API key read from --dart-define
     utils.dart
     item_container.dart  mediaitembuilder.dart  tabView.dart
     api/apiutils.dart        All TMDB HTTP calls
@@ -273,11 +276,17 @@ To add a language:
 flutter test
 ```
 
-Coverage is effectively zero. `test/widget_test.dart` is the unmodified counter
-template that `flutter create` generates — it pumps `MyApp` and then asserts on
-a `+` button and the text `0`, none of which exist anywhere in this app, so it
-cannot pass as written. Treat it as a leftover placeholder to be replaced, not
-as a baseline.
+Two suites, both pure Dart — they import no Flutter bindings and no Firebase,
+so they run without any emulator or credentials:
+
+- `test/utils_test.dart` — the `Utils` list/map membership helpers, including
+  two tests that pin down surprising current behaviour (`containsMap` is
+  sensitive to key order, and `containsList` only ever matches `"Movies"`).
+- `test/constants_test.dart` — the TMDB key guard and endpoint construction,
+  including a regression test that fails if a key is ever hardcoded again.
+
+This is deliberately narrow. The screens and Firebase services have no tests at
+all, so treat this as a floor to build on rather than as real coverage.
 
 ## Repo tooling
 
@@ -292,10 +301,10 @@ Things that are true today and worth knowing before you start:
 
 | Gap | Detail |
 |---|---|
-| TMDB key is committed | `lib/common/constants.dart`. See [Configuration](#configuration). |
-| Push notifications are wired only halfway | The Cloud Function reads `fcmToken` from `Settings`, but the app has no `firebase_messaging` dependency and never writes that field. |
-| Unused dependencies | `provider`, `carousel_slider`, `flutter_svg`, and `firebase_database` are declared in `pubspec.yaml` but imported nowhere in `lib/`. |
-| Test suite is a template | See [Tests](#tests). |
-| `firebase_options.dart` is committed | Points at `actordb-cf981`. Re-run `flutterfire configure` for your own project. |
-| iOS Firebase config is incomplete | No `ios/Runner/GoogleService-Info.plist`, and `firebase_options.dart` declares `iosBundleId: 'com.example.uractor'` while Xcode builds `com.uractor.uractorios`. |
+| The old TMDB key is still in git history | The working tree no longer contains it, but history does. Revoke and reissue the key at TMDB. |
+| Push notifications are wired only halfway | The Cloud Function reads `fcmToken` from `Settings`, but the app has no `firebase_messaging` dependency and never writes that field, so the function has nothing to send to. Fixing it needs APNs setup and a device to test on. |
+| `firebase_options.dart` is committed | Points at `actordb-cf981`. Re-run `flutterfire configure` for your own project. This is normal for FlutterFire — the values are identifiers, not secrets. |
+| iOS Firebase config is incomplete | No `ios/Runner/GoogleService-Info.plist`, and `firebase_options.dart` declares `iosBundleId: 'com.example.uractor'` while Xcode builds `com.uractor.uractorios`. Correcting it requires the real values from the Firebase console. |
+| Coverage is thin | Two pure-Dart suites only. See [Tests](#tests). |
+| Non-mobile platforms are untested | See [Platforms](#platforms). |
 | Non-mobile platforms are untested | See [Platforms](#platforms). |
