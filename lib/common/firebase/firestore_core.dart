@@ -32,6 +32,6 @@ class FirestoreCore {
   /// @param data The data to update in the document.
   static Future<void> updateDocument(String uid, String docName, data) async {
     DocumentReference doc = await getDocument(uid, docName);
-    doc.update(data);
+    await doc.update(data);
   }
 }
