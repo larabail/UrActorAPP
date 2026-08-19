@@ -11,6 +11,7 @@ import 'package:uractor/tvshow_result.dart';
 
 import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
+import 'common/constants.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'calendar.dart';
@@ -45,6 +46,7 @@ Map reviewInfo = {};
 bool reviewed = false;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  assertTmdbApiKey();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
