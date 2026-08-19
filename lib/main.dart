@@ -174,19 +174,22 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      currentUser = AppUser(uid: "");
-      Future.delayed(Duration.zero, () {
+    // Use authStateChanges() stream instead of synchronous currentUser check.
+    // This properly waits for Firebase Auth to restore the session from storage,
+    // preventing false logouts on cold starts.
+    FirebaseAuth.instance.authStateChanges().first.then((user) {
+      if (!mounted) return;
+      if (user == null) {
+        currentUser = AppUser(uid: "");
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const Login()),
         );
-      });
-    } else {
-      currentUser = AppUser(uid: user.uid);
-      loadPage();
-    }
+      } else {
+        currentUser = AppUser(uid: user.uid);
+        loadPage();
+      }
+    });
   }
 
   @override
@@ -222,7 +225,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           Icon(Icons.calendar_month),
                           SizedBox(width: 10),
                           Text(
-                            S.of(context)!.yourSection(S.of(context)!.calendar),
+                            S.of(context)!.yourCalendarSection,
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
