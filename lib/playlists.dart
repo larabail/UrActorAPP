@@ -1,11 +1,11 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers, library_private_types_in_public_api
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
+import 'common/firebase/playlist_service.dart';
 import 'common/firebase/settings_service.dart';
 import 'common/playlist_order.dart';
 import 'common/reorder_toggle.dart';
@@ -14,7 +14,6 @@ import 'list_result.dart';
 import 'objects/playlist.dart';
 import 'popups/list_add_popup.dart';
 import 'popups/list_join_popup.dart';
-import 'common/firebase/firestore_core.dart';
 
 class Playlists extends StatefulWidget {
   const Playlists({super.key});
@@ -48,24 +47,7 @@ class _PlaylistsState extends State<Playlists> {
   }
 
   Future<void> _refreshPlaylists() async {
-    currentUser.playlists = {};
-    await FirestoreCore.db
-        .collection("Watchlists")
-        .get()
-        .then((QuerySnapshot querySnapshot) {
-      for (var doc in querySnapshot.docs) {
-        Map keysOfDoc = doc.data() as Map;
-        List users = keysOfDoc['Users'] as List;
-        for (var element in users) {
-          Map el = element as Map;
-          if (el.keys.contains(currentUser.uid)) {
-            Map docData = doc.data() as Map;
-            docData["id"] = doc.id;
-            currentUser.playlists[doc.id] = docData;
-          }
-        }
-      }
-    });
+    await PlaylistService.refreshCurrentUserPlaylists();
     setState(() {});
   }
 
