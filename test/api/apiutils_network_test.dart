@@ -226,11 +226,251 @@ void main() {
         throwsA(isA<Exception>()),
       );
     });
+
+    // A show's cast and crew used to come back a fraction of their real size.
+    // `/tv/{id}/credits` answers with the newest season's regulars only, so a
+    // long running show lost everyone who had ever left it. These cover the
+    // move to `/aggregate_credits`, which spans every season but reports a
+    // person once with a `roles`/`jobs` array instead of a flat credit.
+    group('for a tv show', () {
+      /// A show several seasons deep: someone whose character was renamed,
+      /// someone credited in two departments, and a one-episode guest billed
+      /// above the leads.
+      void stubAggregateCredits() {
+        http.on('aggregate_credits', json: {
+          'cast': [
+            {
+              'id': 1,
+              'name': 'Nell Grady',
+              'order': 12,
+              'roles': [
+                {
+                  'credit_id': 'c-nell-cadet',
+                  'character': 'Cadet Vance',
+                  'episode_count': 22
+                },
+                {
+                  'credit_id': 'c-nell-captain',
+                  'character': 'Captain Vance',
+                  'episode_count': 40
+                },
+              ],
+              'total_episode_count': 62,
+            },
+            {
+              'id': 2,
+              'name': 'Owen Frost',
+              'order': 0,
+              'roles': [
+                {
+                  'credit_id': 'c-owen',
+                  'character': 'Admiral Frost',
+                  'episode_count': 62
+                }
+              ],
+              'total_episode_count': 62,
+            },
+            {
+              'id': 3,
+              'name': 'Priya Raman',
+              'order': 3,
+              'roles': [
+                {
+                  'credit_id': 'c-priya',
+                  'character': 'Doctor Raman',
+                  'episode_count': 58
+                }
+              ],
+              'total_episode_count': 58,
+            },
+            {
+              'id': 4,
+              'name': 'Sam Okoro',
+              'order': 1,
+              'roles': [
+                {
+                  'credit_id': 'c-sam',
+                  'character': 'Barman',
+                  'episode_count': 1
+                }
+              ],
+              'total_episode_count': 1,
+            },
+          ],
+          'crew': [
+            {
+              'id': 10,
+              'name': 'Rae Lindqvist',
+              'department': 'Directing',
+              'jobs': [
+                {
+                  'credit_id': 'j-rae-co-producer',
+                  'job': 'Co-Producer',
+                  'episode_count': 4
+                },
+                {
+                  'credit_id': 'j-rae-director',
+                  'job': 'Director',
+                  'episode_count': 9
+                },
+              ],
+              'total_episode_count': 13,
+            },
+            {
+              'id': 10,
+              'name': 'Rae Lindqvist',
+              'department': 'Production',
+              'jobs': [
+                {
+                  'credit_id': 'j-rae-exec',
+                  'job': 'Executive Producer',
+                  'episode_count': 62
+                }
+              ],
+              'total_episode_count': 62,
+            },
+            {
+              'id': 11,
+              'name': 'Ida Sorensen',
+              'department': 'Writing',
+              'jobs': [
+                {
+                  'credit_id': 'j-ida',
+                  'job': 'Writer',
+                  'episode_count': 30
+                }
+              ],
+              'total_episode_count': 30,
+            },
+          ],
+        });
+        http.on('/videos', json: {'results': []});
+      }
+
+      test('asks for aggregate credits rather than the newest season alone',
+          () async {
+        stubAggregateCredits();
+
+        await ApiUtils.fetchCreditsAndTrailer('1399', 'Thrones', 'tv');
+
+        expect(http.countFor('/aggregate_credits'), 1);
+        expect(http.countFor('/tv/1399-Thrones/credits'), 0);
+      });
+
+      test('gives every cast member a flat character, as /credits does',
+          () async {
+        stubAggregateCredits();
+
+        final data = await ApiUtils.fetchCreditsAndTrailer('1399', 'Thrones',
+            'tv');
+
+        expect(data['cast'], hasLength(4));
+        for (final person in data['cast']) {
+          expect(person['character'], isA<String>());
+          expect(person.containsKey('roles'), isFalse);
+        }
+      });
+
+      test('joins the characters of a renamed role, biggest part first',
+          () async {
+        stubAggregateCredits();
+
+        final data = await ApiUtils.fetchCreditsAndTrailer('1399', 'Thrones',
+            'tv');
+        final Map nell =
+            data['cast'].firstWhere((person) => person['id'] == 1);
+
+        expect(nell['character'], 'Captain Vance / Cadet Vance');
+        expect(nell['credit_id'], 'c-nell-captain');
+      });
+
+      test('ranks the cast by episodes, so a guest cannot outrank a lead',
+          () async {
+        // Sam Okoro is billed second but appears once. Under billing order he
+        // came ahead of a doctor in fifty-eight episodes.
+        stubAggregateCredits();
+
+        final data = await ApiUtils.fetchCreditsAndTrailer('1399', 'Thrones',
+            'tv');
+
+        expect(data['cast'].map((person) => person['name']).toList(), [
+          'Owen Frost',
+          'Nell Grady',
+          'Priya Raman',
+          'Sam Okoro',
+        ]);
+      });
+
+      test('merges a crew member credited across two departments', () async {
+        stubAggregateCredits();
+
+        final data = await ApiUtils.fetchCreditsAndTrailer('1399', 'Thrones',
+            'tv');
+
+        expect(data['crew'], hasLength(2));
+        expect(data['crew'][0]['name'], 'Rae Lindqvist');
+        expect(data['crew'][0]['job'],
+            'Executive Producer / Director / Co-Producer');
+        expect(data['crew'][1]['job'], 'Writer');
+      });
+
+      test('leaves the merged job readable by findCrewMember', () async {
+        // The movie screen looks a director up by splitting the job string,
+        // and a `jobs` array would have made every lookup miss.
+        stubAggregateCredits();
+
+        final data = await ApiUtils.fetchCreditsAndTrailer('1399', 'Thrones',
+            'tv');
+        final Map? director = ApiUtils.findCrewMember(data['crew'],
+            (job) => job.split('/').any((role) => role.trim() == 'Director'));
+
+        expect(director, isNotNull);
+        expect(director!['name'], 'Rae Lindqvist');
+      });
+    });
+
+    test('still asks a film for its plain credits', () async {
+      stubCreditsAndVideos();
+
+      await ApiUtils.fetchCreditsAndTrailer('27205', 'Inception', 'movie');
+
+      expect(http.countFor('/movie/27205-Inception/credits'), 1);
+      expect(http.countFor('aggregate_credits'), 0);
+    });
+
+    test('leaves a film\'s cast and crew in the order tmdb billed them',
+        () async {
+      // Films have no episode counts to rank by, so nothing about the show
+      // fix may disturb the billing order TMDB already sent.
+      http.on('/credits', json: {
+        'cast': [
+          {'id': 1, 'name': 'Cobb', 'character': 'Cobb', 'order': 0},
+          {'id': 2, 'name': 'Arthur', 'character': 'Arthur', 'order': 1},
+          {'id': 3, 'name': 'Ariadne', 'character': 'Ariadne', 'order': 2},
+        ],
+        'crew': [
+          {'id': 10, 'name': 'Nolan', 'job': 'Director'},
+          {'id': 11, 'name': 'Zimmer', 'job': 'Original Music Composer'},
+        ],
+      });
+      http.on('/videos', json: {'results': []});
+
+      final data = await ApiUtils.fetchCreditsAndTrailer('27205', 'Inception',
+          'movie');
+
+      expect(data['cast'].map((person) => person['name']).toList(),
+          ['Cobb', 'Arthur', 'Ariadne']);
+      expect(data['cast'].map((person) => person['character']).toList(),
+          ['Cobb', 'Arthur', 'Ariadne']);
+      expect(data['crew'].map((person) => person['job']).toList(),
+          ['Director', 'Original Music Composer']);
+    });
   });
 
   group('fetchAdditionalMovieData', () {
     setUp(() {
       http.on('/credits', json: {'cast': [], 'crew': []});
+      http.on('aggregate_credits', json: {'cast': [], 'crew': []});
       http.on('/videos', json: {'results': []});
       http.on('watch/providers', json: {'results': {}});
     });

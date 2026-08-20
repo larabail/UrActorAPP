@@ -29,8 +29,28 @@ upload is abandoned and never assigned to a track**. A committed build number
 therefore drifts out of date and collides — which is exactly what happened to
 build 45. The workflow asks Play for the highest code ever used and adds one.
 
-The `version:` line in `pubspec.yaml` still supplies the user-facing name
-(`3.5.4`); only the `+build` half is ignored in CI.
+The `version:` line in `pubspec.yaml` supplies the user-facing name (`3.5.4`);
+the `+build` half is not read when building a release. It is written, though:
+after a successful upload the workflow commits the code it just shipped back
+onto `master`, so the file records the last build testers received rather than
+drifting for months. Nobody edits it by hand.
+
+That write-back is a separate job in `release-internal.yml`, and the only place
+in either release workflow that a token can write to the repository:
+
+- **It pushes with the built-in `GITHUB_TOKEN`.** GitHub does not start new
+  workflow runs from pushes made with that token, and that is the only reason
+  a workflow triggered by `master` can commit to `master` without releasing
+  forever. A personal access token, a deploy key or a GitHub App token would
+  all remove that protection. The `[skip ci]` in the commit subject is a
+  second guard, not the mechanism.
+- **A rejected push is retried.** An ordinary merge can land between the
+  checkout and the push. The job fetches `master` again, re-applies the number
+  and retries, three times, then gives up.
+- **It never fails the run.** The bundle is already on Play before this job
+  starts. A write-back that cannot be made is reported loudly in the run
+  summary and left for a person, rather than turning a release that shipped
+  into a red run.
 
 ## Restricting production to you
 

@@ -140,7 +140,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Test the check itself
+      - name: Test the version tooling
         run: python -m unittest discover -s tool -p "test_*.py"
 
       - name: Check the version bump

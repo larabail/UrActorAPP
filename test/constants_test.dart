@@ -5,6 +5,7 @@ import 'package:uractor/common/constants.dart';
 const List<String> keyedEndpoints = [
   API_KEY,
   CREDITS_LINK,
+  AGGREGATE_CREDITS_LINK,
   VIDEOS_LINK,
   EXTERNAL_IDS_LINK,
   WATCH_PROVIDERS_LINK,

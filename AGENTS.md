@@ -100,9 +100,18 @@ requested". Do not mention the agent, the model, or the conversation.
 ## Versioning
 
 `version:` in `pubspec.yaml` is `MAJOR.MINOR.PATCH+BUILD`, for example
-`3.5.4+47`. Bump the **name**; leave the `+BUILD` suffix alone. The release
-workflow overwrites it with a code derived from Play, which refuses any code it
-has seen before, so editing it here achieves nothing.
+`3.5.4+47`. Bump the **name**; leave the `+BUILD` suffix to CI.
+
+The build number is not yours to choose. Play refuses any code it has already
+seen, so the release workflow asks Play for the next free one, builds with it,
+and — once the upload to internal testing has succeeded — commits it back to
+`master`. The suffix in the file is therefore a record of the last build that
+reached testers, not an input to the next one. Editing it changes nothing about
+what gets released and will be overwritten by the next release.
+
+One consequence: a branch that lives a long time can conflict on the `version:`
+line when `master` is merged into it, because CI has been moving it. Resolve it
+by keeping your own name and `master`'s build number.
 
 How far to bump follows directly from the commit kind:
 
