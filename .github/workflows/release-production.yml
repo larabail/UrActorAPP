@@ -10,6 +10,10 @@ on:
         description: 'Version code to promote (blank = latest on internal)'
         required: false
         type: string
+      commit:
+        description: 'Commit that built it (blank = fall back, see workflow)'
+        required: false
+        type: string
       rollout:
         description: 'Share of users to release to'
         required: true
@@ -78,21 +82,42 @@ jobs:
       - name: Install Play API client
         run: pip install --quiet google-auth requests
 
-      # Production notes cover everything since the last production release,
-      # not since the last internal build, so a user who skipped several test
-      # builds still sees what changed for them. The range ends at the tag for
-      # the promoted build rather than at HEAD, so notes never describe commits
-      # that are not in the artifact being shipped.
-      - name: Generate release notes
+      # Internal builds are no longer tagged: tags mark production releases
+      # only. The internal run's summary prints the commit it built, and that
+      # commit is passed in here. Builds made before that change still have
+      # their build-* tag, so those are honoured too and historic promotions
+      # stay traceable.
+      - name: Resolve the commit that produced the build
+        id: source
         env:
           VERSION_CODE: ${{ inputs.version_code }}
+          COMMIT: ${{ inputs.commit }}
+        run: |
+          if [ -n "$COMMIT" ]; then
+            REF=$(git rev-parse -q --verify "$COMMIT^{commit}") || {
+              echo "::error::commit '$COMMIT' is not in this repository"
+              exit 1
+            }
+          elif [ -n "$VERSION_CODE" ] && git rev-parse -q --verify "build-$VERSION_CODE^{commit}" >/dev/null; then
+            REF=$(git rev-parse "build-$VERSION_CODE^{commit}")
+          else
+            REF=$(git rev-parse HEAD)
+            echo "::warning::No commit was given and there is no build tag for version code '${VERSION_CODE:-latest}', so HEAD ($REF) is assumed. Release notes and the release tag may cover commits the promoted artifact does not contain."
+          fi
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "promoting the build produced by $REF"
+
+      # Production notes cover everything since the last production release,
+      # not since the last internal build, so a user who skipped several test
+      # builds still sees what changed for them. The range ends at the commit
+      # that produced the promoted build rather than at HEAD, so notes never
+      # describe commits that are not in the artifact being shipped.
+      - name: Generate release notes
+        env:
+          END: ${{ steps.source.outputs.ref }}
         run: |
           mkdir -p build
           LAST=$(git tag --list 'released-*' --sort=-v:refname | head -n1)
-          END="HEAD"
-          if [ -n "$VERSION_CODE" ] && git rev-parse -q --verify "build-$VERSION_CODE" >/dev/null; then
-            END="build-$VERSION_CODE"
-          fi
           echo "notes range: ${LAST:-full history}..$END"
           if [ -n "$LAST" ]; then
             python tool/release_notes.py --since "$LAST" --until "$END" --output build/release_notes.json
@@ -118,14 +143,14 @@ jobs:
           python tool/play.py "${ARGS[@]}"
 
       # Marks where production reached, so the next promotion's notes start
-      # from here rather than repeating changes users have already seen.
+      # from here rather than repeating changes users have already seen. This
+      # is the only workflow that tags: internal builds leave no tags behind.
       - name: Tag the production release
+        env:
+          TARGET: ${{ steps.source.outputs.ref }}
         run: |
           CODE="${{ steps.promote.outputs.version-code }}"
           TAG="released-$CODE"
-          # Point at the commit that produced the build, not at whatever HEAD
-          # happens to be, since promotion can ship an older build.
-          TARGET=$(git rev-parse -q --verify "build-$CODE" || git rev-parse HEAD)
           git tag -f "$TAG" "$TARGET"
           git push -f origin "$TAG"
           echo "tagged $TAG at $TARGET"
