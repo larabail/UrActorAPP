@@ -123,7 +123,7 @@ jobs:
           set -o pipefail
           echo '### Coverage' >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-          python tool/coverage_summary.py --min 25 | tee -a "$GITHUB_STEP_SUMMARY"
+          python tool/coverage_summary.py --min 68 | tee -a "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Keep the coverage report

@@ -381,7 +381,7 @@ npm install
 npm test
 ```
 
-`flutter test` currently runs 379 tests with no emulator, credentials or
+`flutter test` currently runs 550 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
 `FirestoreCore.db` and `AppHttp.client` — which default to the real
 implementations and are pointed at fakes by the tests.
@@ -389,8 +389,9 @@ implementations and are pointed at fakes by the tests.
 The Flutter suite covers pure logic, TMDB/OMDB request parsing with a stubbed
 HTTP client, auth/session helpers, search and playlist ordering, playlist join
 handling, settings, inbox, calendar/list services, calendar episode detail,
-in-memory Firestore service behaviour, watch-progress rules and controls, and
-the reviews and Continue watching screens.
+in-memory Firestore service behaviour, watch-progress rules and controls, the
+media and person data objects, every popup under `lib/popups` except the
+profile section editor, and the reviews and Continue watching screens.
 
 `npm test` in `functions/` runs the Node 22 unit tests for the playlist
 membership and join-throttle helpers. It currently reports 21 passing tests.
@@ -408,10 +409,12 @@ flutter test --coverage
 python tool/coverage_summary.py
 ```
 
-Coverage of `lib/common` and `lib/objects` is enforced at a floor in CI. The
-floor deliberately covers the tested layers rather than every screen in `lib/`,
-so a useful regression signal is not diluted by UI code that still lacks widget
-tests.
+Coverage of `lib/common` and `lib/objects` is enforced at a floor of 68% in CI,
+set in both `.github/workflows/pr.yml` and
+`.github/workflows/release-internal.yml`. Move the two together, or a pull
+request and a release will disagree about what passes. The floor deliberately
+covers the tested layers rather than every screen in `lib/`, so a useful
+regression signal is not diluted by UI code that still lacks widget tests.
 
 ## CI and releases
 
@@ -469,4 +472,4 @@ Things that are true today and worth knowing before you start:
 |---|---|
 | Push notifications are not implemented | The old notification function was removed because the app never registered FCM tokens and its legacy FCM API would no longer send. A future implementation needs `firebase_messaging`, token persistence, current FCM sends, APNs setup, and device testing. |
 | iOS Firebase config is incomplete | No `ios/Runner/GoogleService-Info.plist`, and `firebase_options.dart` declares `iosBundleId: 'com.example.uractor'` while Xcode builds `com.uractor.uractorios`. Correcting it requires the real values from the Firebase console. |
-| Coverage is thin | The API layer and the list/user Firebase code are covered; the screens and popups have no widget tests at all. See [Tests](#tests). |
+| Coverage is uneven | The API layer, the data objects and the popups are covered; the full screens under `lib/` still have very few widget tests. See [Tests](#tests). |
