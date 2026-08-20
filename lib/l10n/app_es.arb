@@ -145,6 +145,7 @@
   "noDataAvailable": "No hay información",
   "unknown": "Desconocido",
   "searchBar": "Escribe el nombre de una persona/película/serie...",
+  "noSearchResults": "No se encontraron resultados",
   "episodes": "episodios",
   "episode": "Episodio",
   "seemWith": "Vistas con",

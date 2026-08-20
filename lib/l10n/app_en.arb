@@ -283,6 +283,7 @@
   "noDataAvailable": "No data available",
   "unknown": "Unknown",
   "searchBar": "Enter name of person/movie/show...",
+  "noSearchResults": "No results found",
   "episodes": "episodes",
   "episode": "Episode",
   "seemWith": "Seen with",
