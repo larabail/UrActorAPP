@@ -5,13 +5,13 @@ import 'sorted_media_grid.dart';
 class MyTabView extends StatelessWidget {
   final List<dynamic> favItems;
   final bool showFavoriteBadge;
-  final List<dynamic> Function()? favoriteItemsProvider;
+  final bool showWatchlistBadge;
 
   const MyTabView({
     super.key,
     required this.favItems,
-    this.showFavoriteBadge = false,
-    this.favoriteItemsProvider,
+    this.showFavoriteBadge = true,
+    this.showWatchlistBadge = true,
   });
 
   @override
@@ -19,7 +19,7 @@ class MyTabView extends StatelessWidget {
     return SortedMediaGrid(
       items: favItems,
       showFavoriteBadge: showFavoriteBadge,
-      favoriteItemsProvider: favoriteItemsProvider,
+      showWatchlistBadge: showWatchlistBadge,
     );
   }
 }

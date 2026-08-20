@@ -636,6 +636,9 @@ class SEn extends S {
   String get favoriteBadge => 'In your favorites';
 
   @override
+  String get watchlistBadge => 'In your watchlist';
+
+  @override
   String get friendRequestActionFailedError =>
       'Something went wrong. Please try again.';
 }

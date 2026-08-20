@@ -16,6 +16,12 @@ target (see [Platforms](#platforms)).
   `lib/common/firebase/watched_service.dart`).
 - Keep a watchlist of things you mean to get to (`lib/watchlist.dart`).
 - Keep favorites separately from the watchlist (`lib/favorites.dart`).
+- Every media tile carries badges for the lists it is already on — a heart for
+  a favorite, a bookmark for the watchlist — so search results, filmographies,
+  playlists, the calendar and friends' profiles all say what you have already
+  saved. The Favorites page drops the heart and the Watchlist page drops the
+  bookmark, since there every tile would carry one
+  (`lib/common/item_container.dart`, `lib/common/media_pair_membership.dart`).
 - Rate a title and write a review. Movie and TV reviews are stored separately
   (`lib/reviews.dart`, `lib/popups/rating_popup.dart`).
 - Log what you watched on a calendar — a single date or a date range

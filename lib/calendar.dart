@@ -5,6 +5,7 @@ import 'package:uractor/common/firebase/calendar_service.dart';
 import 'package:uractor/common/firebase/firebaseutils.dart';
 import 'package:uractor/common/firebase/firestore_core.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/common/media_pair_membership.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/tv_show.dart';
 import 'package:uractor/tvshow_result.dart';
@@ -411,7 +412,10 @@ class _CalendarState extends State<Calendar> {
                                                   child: getItemContainer(
                                                       context, event, "media",
                                                       widthPercentage: 0.32,
-                                                      heightPercentage: 0.2),
+                                                      heightPercentage: 0.2,
+                                                      mediaPair:
+                                                          mediaPairForData(
+                                                              event)),
                                                 ),
                                                 if (event
                                                     .containsKey("friends"))

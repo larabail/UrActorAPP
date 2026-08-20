@@ -42,13 +42,9 @@ class Seen extends StatelessWidget {
                       children: [
                         MyTabView(
                           favItems: currentUser.seenMovies,
-                          showFavoriteBadge: true,
-                          favoriteItemsProvider: () => currentUser.favMovies,
                         ),
                         MyTabView(
                           favItems: currentUser.seenTVShows,
-                          showFavoriteBadge: true,
-                          favoriteItemsProvider: () => currentUser.favTVShows,
                         ),
                       ],
                     ),

@@ -644,6 +644,9 @@ class SEs extends S {
   String get favoriteBadge => 'En tus favoritas';
 
   @override
+  String get watchlistBadge => 'En tu lista de pendientes';
+
+  @override
   String get friendRequestActionFailedError =>
       'Algo salió mal. Por favor, inténtalo de nuevo.';
 }
