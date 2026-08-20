@@ -27,7 +27,7 @@ class FirestoreCore {
   /// @param docName The name of the document.
   /// @return A map containing the document's reference, snapshot, and data.
   static Future<Map> getDocumentData(String uid, String docName) async {
-    var snapshot = FirebaseFirestore.instance.collection(uid).doc(docName);
+    var snapshot = db.collection(uid).doc(docName);
     DocumentSnapshot doc = await snapshot.get();
     Map data = {};
     if (doc.exists) {
@@ -42,8 +42,7 @@ class FirestoreCore {
   /// @return The Firestore document reference.
   static Future<DocumentReference> getDocument(
       String uid, String docName) async {
-    DocumentReference userDoc =
-        FirebaseFirestore.instance.collection(uid).doc(docName);
+    DocumentReference userDoc = db.collection(uid).doc(docName);
     return userDoc;
   }
 
