@@ -3,6 +3,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/firebase/review_service.dart';
+import 'package:uractor/common/constants.dart';
 import 'package:uractor/l10n/l10n.dart';
 import '/objects/media.dart';
 import '/objects/movie.dart';
@@ -23,25 +24,77 @@ class Reviews extends StatefulWidget {
 
 class _ReviewsState extends State<Reviews> {
   List<Map<String, dynamic>> movies = [];
+  final Map<String, Future<Map<String, dynamic>>> _mediaFutures = {};
 
-  Future<Map<String, dynamic>> getData(dynamic id, String type) async {
-    try {
-      return await Utils.fetchMediaData(id, type, movies);
-    } catch (_) {
-      return await Utils.fetchMediaData(id, "TVShows", movies);
-    }
+  Future<Map<String, dynamic>> getData(dynamic id, String type) {
+    final key = '$type:$id';
+    return _mediaFutures.putIfAbsent(key, () async {
+      try {
+        return await Utils.fetchMediaData(id, type, movies);
+      } catch (_) {
+        return {
+          'id': id,
+          'type': type,
+          'title': null,
+          'poster_path': null,
+          'missing': true,
+        };
+      }
+    });
   }
 
-  Widget buildReviewTile(BuildContext context, Map review, String type, String id) {
+  String _posterUrl(Map data) {
+    final posterPath = data['poster_path'];
+    if (posterPath is String && posterPath.isNotEmpty) {
+      return IMG_LINK + posterPath;
+    }
+    return UNKNOWN_COVER;
+  }
+
+  Widget buildReviewTile(
+      BuildContext context, Map review, String type, String id) {
     return FutureBuilder<Map<String, dynamic>>(
         future: getData(id, type),
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
           if (snapshot.hasData) {
+            final data = snapshot.data!;
+            final mediaType = data['type']?.toString() ?? type;
+            final mediaId = data['id']?.toString() ?? id;
+            final title = data['title']?.toString() ?? S.of(context)!.unknown;
+            final canOpenDetails = data['missing'] != true;
+
             return ExpansionTile(
               title: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     GestureDetector(
+                      onTap: canOpenDetails
+                          ? () {
+                              MediaItem tempItem;
+                              if (mediaType == "Movies") {
+                                tempItem = Movie(
+                                    id: mediaId,
+                                    title: title,
+                                    coverPhoto: data['poster_path'] ?? "");
+                              } else {
+                                tempItem = TVShow(
+                                    id: mediaId,
+                                    title: title,
+                                    coverPhoto: data['poster_path'] ?? "");
+                              }
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => mediaType == "Movies"
+                                        ? MovieResult(
+                                            movie: tempItem as Movie,
+                                          )
+                                        : TVShowResult(
+                                            tvshow: tempItem as TVShow,
+                                          )),
+                              );
+                            }
+                          : null,
                       child: Container(
                         margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
                         width: MediaQuery.of(context).size.width * 0.28,
@@ -49,42 +102,14 @@ class _ReviewsState extends State<Reviews> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(27),
                           image: DecorationImage(
-                            image: CachedNetworkImageProvider(
-                              snapshot.data!['poster'],
-                            ),
+                            image: CachedNetworkImageProvider(_posterUrl(data)),
                             fit: BoxFit.fitWidth,
                           ),
                         ),
                       ),
-                      onTap: () {
-                        MediaItem tempItem;
-                        if (snapshot.data!['type'] == "Movies") {
-                          tempItem = Movie(
-                              id: snapshot.data!['id'].toString(),
-                              title: snapshot.data!['title'],
-                              coverPhoto: snapshot.data!['poster_path'] ?? "");
-                        } else {
-                          tempItem = TVShow(
-                              id: snapshot.data!['id'].toString(),
-                              title: snapshot.data!['title'],
-                              coverPhoto: snapshot.data!['poster_path'] ?? "");
-                        }
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  snapshot.data!['type'] == "Movies"
-                                      ? MovieResult(
-                                          movie: tempItem as Movie,
-                                        )
-                                      : TVShowResult(
-                                          tvshow: tempItem as TVShow,
-                                        )),
-                        );
-                      },
                     ),
                     Text(
-                      snapshot.data!["title"],
+                      title,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 15,
@@ -99,11 +124,10 @@ class _ReviewsState extends State<Reviews> {
                   child: Container(
                     width: MediaQuery.of(context).size.width * 0.45,
                     decoration: BoxDecoration(
-                      color: const Color.fromARGB(
-                          255, 26, 25, 25), // dark grey background
-                      borderRadius: BorderRadius.circular(27), // border radius
+                      color: const Color.fromARGB(255, 26, 25, 25),
+                      borderRadius: BorderRadius.circular(27),
                     ),
-                    padding: const EdgeInsets.all(15), // optional padding
+                    padding: const EdgeInsets.all(15),
                     child: Column(
                       children: [
                         Text(
@@ -130,9 +154,7 @@ class _ReviewsState extends State<Reviews> {
                             IconButton(
                                 onPressed: () async {
                                   await ReviewService.editReview(
-                                      snapshot.data!["id"],
-                                      snapshot.data!["type"],
-                                      context);
+                                      mediaId, mediaType, context);
                                   setState(() {
                                     currentUser.reviews = currentUser.reviews;
                                   });
@@ -141,9 +163,7 @@ class _ReviewsState extends State<Reviews> {
                             IconButton(
                                 onPressed: () async {
                                   await ReviewService.deleteReview(
-                                      snapshot.data!["id"],
-                                      snapshot.data!["type"],
-                                      context);
+                                      mediaId, mediaType, context);
 
                                   setState(() {
                                     currentUser.allReviews =
@@ -159,13 +179,6 @@ class _ReviewsState extends State<Reviews> {
                 ),
               ],
             );
-          } else if (snapshot.hasError) {
-            return Container(
-                margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                width: MediaQuery.of(context).size.width * 0.28,
-                height: MediaQuery.of(context).size.height * 0.18,
-                child: Center(
-                    child: Text(S.of(context)!.errorFailedToLoadDetails)));
           } else {
             return Container(
                 margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
@@ -183,7 +196,8 @@ class _ReviewsState extends State<Reviews> {
       body: Column(children: [
         Padding(
           padding: EdgeInsets.symmetric(vertical: 10.0),
-          child: Text(S.of(context)!.yourSection(S.of(context)!.reviews),
+          child: Text(
+            S.of(context)!.yourSection(S.of(context)!.reviews),
             style: TextStyle(
               fontSize: 24.0,
               fontWeight: FontWeight.bold,
