@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../common/constants.dart';
 import '../common/utils.dart';
 import '../common/api/apiutils.dart';
+import '../common/firebase/firestore_core.dart';
 import '../main.dart';
 import 'media.dart';
 import 'package:http/http.dart' as http;
@@ -86,10 +87,8 @@ class TVShow extends MediaItem {
     List<dynamic> friendsList = movieMap[id]["friends"];
     friendsList.remove(friendUid);
     movieMap[id]["friends"] = friendsList;
-    await FirebaseFirestore.instance
-        .collection(currentUser.uid)
-        .doc("SeenWith")
-        .update({"TVShows": movieMap});
+    await FirestoreCore.updateDocument(
+        currentUser.uid, "SeenWith", {"TVShows": movieMap});
     currentUser.seenWith[friendUid]["TVShows"].remove(id);
 
     var friendsDoc = await FirebaseFirestore.instance
@@ -101,9 +100,7 @@ class TVShow extends MediaItem {
     friendsList = movieMap[id]["friends"];
     friendsList.remove(currentUser.uid);
     movieMap[id]["friends"] = friendsList;
-    await FirebaseFirestore.instance
-        .collection(friendUid)
-        .doc("SeenWith")
-        .update({"TVShows": movieMap});
+    await FirestoreCore.updateDocument(
+        friendUid, "SeenWith", {"TVShows": movieMap});
   }
 }

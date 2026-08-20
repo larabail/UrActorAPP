@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../main.dart';
+import '../common/firebase/firestore_core.dart';
 import '../objects/playlist.dart';
 
 class GrantAccessDialog extends StatefulWidget {
@@ -159,10 +160,11 @@ class _GrantAccessDialogState extends State<GrantAccessDialog> {
                     for (String friendUid in selectedFriends.keys.toList()) {
                       itemToAdd.add({friendUid: "Approved"});
                     }
-                    await FirebaseFirestore.instance
-                        .collection('Watchlists')
-                        .doc(widget.listResult.id)
-                        .update({'Users': FieldValue.arrayUnion(itemToAdd)});
+                    await FirestoreCore.mergeInto(
+                        FirebaseFirestore.instance
+                            .collection('Watchlists')
+                            .doc(widget.listResult.id),
+                        {'Users': FieldValue.arrayUnion(itemToAdd)});
                     widget.listResult.users += itemToAdd;
                     if (!context.mounted) return;
                     Navigator.pop(context, widget.listResult);

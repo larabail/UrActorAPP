@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/common/item_container.dart';
+import '../common/firebase/firestore_core.dart';
 import '../common/api/apiutils.dart';
 import 'dart:math';
 import '../common/constants.dart';
@@ -42,13 +43,13 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
 
     var userDoc = db.collection("Watchlists").doc(docIDString);
     await userDoc.set({"AccessCode": _accessCode});
-    await userDoc.update({"CoverPhoto": cover});
-    await userDoc.update({"Movies": []});
-    await userDoc.update({"TV Shows": []});
-    await userDoc.update({"Name": _listName});
+    await FirestoreCore.mergeInto(userDoc, {"CoverPhoto": cover});
+    await FirestoreCore.mergeInto(userDoc, {"Movies": []});
+    await FirestoreCore.mergeInto(userDoc, {"TV Shows": []});
+    await FirestoreCore.mergeInto(userDoc, {"Name": _listName});
 
     Map<String, dynamic> users = {currentUser.uid: "Owner"};
-    await userDoc.update({
+    await FirestoreCore.mergeInto(userDoc, {
       "Users": FieldValue.arrayUnion([users])
     });
 
