@@ -1,29 +1,27 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/cast_and_crew.dart';
 import 'package:uractor/common/firebase/calendar_service.dart';
 import 'package:uractor/common/firebase/favorites_service.dart';
-import 'package:uractor/common/firebase/playlist_service.dart';
 import 'package:uractor/common/firebase/review_service.dart';
 import 'package:uractor/common/firebase/watched_service.dart';
 import 'package:uractor/common/firebase/watchlist_service.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/common/media_result_widgets.dart';
 import 'package:uractor/common/mediaitembuilder.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/season_guide.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'common/utils.dart';
-import 'package:uractor/common/firebase/firebaseutils.dart';
 import 'friends.dart';
 import 'friends_profile.dart';
 import 'package:intl/intl.dart' as intl;
 import 'main.dart';
-import 'objects/Person.dart';
-import 'objects/TVShow.dart';
+import 'objects/person.dart';
+import 'objects/tv_show.dart';
 import 'person_result.dart';
 
 import 'popups/add_to_calendar_pop_up.dart';
@@ -39,15 +37,14 @@ bool _isTappedList = false;
 
 class TVShowResult extends StatefulWidget {
   final TVShow tvshow;
-  const TVShowResult({Key? key, required this.tvshow}) : super(key: key);
+  const TVShowResult({super.key, required this.tvshow});
 
   @override
-  _TVShowResultState createState() => _TVShowResultState();
+  State<TVShowResult> createState() => _TVShowResultState();
 }
 
 class _TVShowResultState extends State<TVShowResult> {
   final myController = TextEditingController(text: "");
-  bool isExpanded = false;
 
   void check() {
     if (widget.tvshow.isSeen()) {
@@ -164,7 +161,7 @@ class _TVShowResultState extends State<TVShowResult> {
                   getCover(snapshot.data!, context, widget.tvshow, "tvshow"),
                   if (snapshot.data!['overview'] != null &&
                       snapshot.data!['overview'] != "")
-                    getOverview(snapshot.data!),
+                    OverviewSection(overview: snapshot.data!['overview']),
                   getGenres(snapshot.data!),
                   getSeasonsAndRating(snapshot.data!),
                   getStatus(snapshot.data!),
@@ -205,7 +202,7 @@ class _TVShowResultState extends State<TVShowResult> {
                   getProviders(snapshot.data!, context),
                   getTimesSeen(snapshot.data!),
                   const SizedBox(height: 10),
-                  if (Utils.contains_non_type(
+                  if (Utils.containsNonType(
                       currentUser.seenTVShows, ['TVShows', widget.tvshow.id]))
                     getViewingHistory(snapshot.data!),
                   getCastandCrew(snapshot.data!),
@@ -228,49 +225,7 @@ class _TVShowResultState extends State<TVShowResult> {
     );
   }
 
-  Widget getOverview(data) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            constraints: BoxConstraints(
-              maxHeight: isExpanded ? double.infinity : 85,
-            ),
-            child: Text(
-              data['overview'],
-              textAlign: TextAlign.justify,
-              overflow: TextOverflow.fade,
-              style: const TextStyle(
-                fontSize: 15,
-                wordSpacing: 2,
-                height: 1.5,
-              ),
-            ),
-          ),
-          if (!isExpanded && data['overview'].length > 100)
-            InkWell(
-              onTap: () {
-                setState(() {
-                  isExpanded = true;
-                });
-              },
-              child: SizedBox(
-                width: double.infinity,
-                child: Text(
-                  S.of(context)!.readAll,
-                  textAlign: TextAlign.right,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget getSeasonsAndRating(data) {
+  Widget getSeasonsAndRating(Map data) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -343,180 +298,30 @@ class _TVShowResultState extends State<TVShowResult> {
     );
   }
 
-  Widget getStatus(data) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        GestureDetector(
-          onTap: () => onTap('seen', data["id"].toString(), data["name"], 0, 0),
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
-            child: Image.asset(
-              _imageProviderSeen,
-              height: 40,
-            ),
-          ),
-        ),
-        GestureDetector(
-          onTap: () =>
-              onTap('watchlist', data["id"].toString(), data["name"], 0, 0),
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
-            child: Image.asset(
-              _imageProviderWatchlist,
-              height: 40,
-            ),
-          ),
-        ),
-        GestureDetector(
-          onTap: () => onTap('fav', data["id"].toString(), data["name"], 0, 0),
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
-            child: Image.asset(
-              _imageProviderFav,
-              height: 40,
-            ),
-          ),
-        ),
-        GestureDetector(
-          onTap: () => onTap('list', data["id"].toString(), data["name"], 0, 0),
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(0.0, 10.0, 10.0, 10.0),
-            child: Image.asset(
-              _imageProviderList,
-              height: 40,
-            ),
-          ),
-        ),
-      ],
+  Widget getStatus(Map data) {
+    return MediaStatusIconsRow(
+      seenImage: _imageProviderSeen,
+      watchlistImage: _imageProviderWatchlist,
+      favImage: _imageProviderFav,
+      listImage: _imageProviderList,
+      onIconTap: (type) =>
+          onTap(type, data["id"].toString(), data["name"], 0, 0),
     );
   }
 
-  Widget getReview(data) {
-    return ExpansionTile(
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.reviews),
-          SizedBox(width: 8),
-          Text(
-            S.of(context)!.yourReview,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 15,
-              wordSpacing: 2,
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: Align(
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.8,
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 26, 25, 25),
-                borderRadius: BorderRadius.circular(27),
-              ),
-              padding: const EdgeInsets.all(15),
-              child: Column(
-                children: [
-                  Text(
-                    S.of(context)!.opinion(data["review"]["Opinion"]),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      wordSpacing: 2,
-                      height: 1.5,
-                    ),
-                  ),
-                  Text(
-                    S.of(context)!.rating(data["review"]["Rating"]),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      wordSpacing: 2,
-                      height: 1.5,
-                    ),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      GestureDetector(
-                        onTap: () async {
-                          bool success = await ReviewService.editReview(
-                              data["id"], "TVShows", context);
-                          if (success) {
-                            setState(() {});
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 10),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.edit, color: Colors.blue),
-                              SizedBox(width: 10),
-                              Text(
-                                S.of(context)!.edit,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                      GestureDetector(
-                        onTap: () async {
-                          bool success = await ReviewService.deleteReview(
-                              data["id"], "TVShows", context);
-                          if (success) {
-                            setState(() {});
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 10),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete, color: Colors.red),
-                              SizedBox(width: 10),
-                              Text(
-                                S.of(context)!.delete,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
+  Widget getReview(Map data) {
+    return MediaReviewSection(
+      data: data,
+      reviewMediaType: "TVShows",
+      opinionText: S.of(context)!.opinion(data["review"]["Opinion"]),
+      ratingText: S.of(context)!.rating(data["review"]["Rating"]),
+      onChanged: () {
+        setState(() {});
+      },
     );
   }
 
-  Widget getTimesSeen(data) {
+  Widget getTimesSeen(Map data) {
     return SizedBox(
       width: 200,
       child: TextField(
@@ -539,7 +344,57 @@ class _TVShowResultState extends State<TVShowResult> {
     );
   }
 
-  Widget getViewingHistory(data) {
+  /// Updates a `SeenWith` document's `TVShows` map for [id], merging
+  /// [watchedWithList] into any existing list of friends who watched it
+  /// together. Used both when recording the current user's own
+  /// "seen with" friends and when writing the corresponding entry into
+  /// each selected friend's own `SeenWith` document.
+  Future<void> _updateSeenWithTransaction(
+      FirebaseFirestore firestore,
+      DocumentReference userDoc2,
+      String id,
+      List<dynamic> watchedWithList) {
+    return firestore.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(userDoc2);
+
+      if (!snapshot.exists) {
+        throw Exception("Document does not exist!");
+      }
+
+      Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+
+      if (data.containsKey('TVShows') &&
+          data['TVShows'] is Map<String, dynamic>) {
+        Map<String, dynamic> moviesMap = data['TVShows'];
+
+        if (moviesMap.containsKey(id)) {
+          List existingList = moviesMap[id]["friends"];
+          for (String person in watchedWithList) {
+            if (!existingList.contains(person)) {
+              existingList.add(person);
+            }
+          }
+          moviesMap[id] = {"friends": existingList};
+        } else {
+          moviesMap[id] = {"friends": watchedWithList};
+        }
+        transaction.update(userDoc2, {'TVShows': moviesMap});
+      } else {
+        transaction.set(
+            userDoc2,
+            {
+              'TVShows': {
+                id: {"friends": watchedWithList}
+              }
+            },
+            SetOptions(merge: true));
+      }
+    }).catchError((error) {
+      debugPrint("Failed to update document: $error");
+    });
+  }
+
+  Widget getViewingHistory(Map data) {
     return ExpansionTile(
       title: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -582,57 +437,8 @@ class _TVShowResultState extends State<TVShowResult> {
                         width: 5,
                       ),
                       Expanded(
-                        child: FutureBuilder<List<String>>(
-                          future:
-                              FirebaseUtils.getProfilePhotos(friendsWhoWatched),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const SizedBox(
-                                height: 32.0,
-                                child:
-                                    Center(child: CircularProgressIndicator()),
-                              );
-                            } else if (snapshot.hasError) {
-                              return SizedBox(
-                                height: 32.0,
-                                child: Center(
-                                    child: Text(
-                                        S.of(context)!.errorLoadingImages)),
-                              );
-                            } else if (snapshot.hasData) {
-                              var images = snapshot.data!;
-                              return SizedBox(
-                                height: 32.0,
-                                child: Stack(
-                                  children:
-                                      List.generate(images.length, (index) {
-                                    double offset = index * 10.0;
-                                    return Positioned(
-                                      left: offset,
-                                      child: ClipOval(
-                                        child: images[index] != ""
-                                            ? Image.network(
-                                                images[index],
-                                                height: 25,
-                                                width: 25,
-                                                fit: BoxFit.cover,
-                                              )
-                                            : Image.asset(
-                                                'assets/main_profile.png',
-                                                height: 25,
-                                                width: 25,
-                                                fit: BoxFit.cover,
-                                              ),
-                                      ),
-                                    );
-                                  }),
-                                ),
-                              );
-                            } else {
-                              return const SizedBox.shrink();
-                            }
-                          },
+                        child: WatchedFriendsStack(
+                          friendsWhoWatched: friendsWhoWatched,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -770,21 +576,7 @@ class _TVShowResultState extends State<TVShowResult> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              ClipOval(
-                                child: profilePhoto != ""
-                                    ? Image.network(
-                                        profilePhoto,
-                                        height: 25,
-                                        width: 25,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Image.asset(
-                                        'assets/main_profile.png',
-                                        height: 25,
-                                        width: 25,
-                                        fit: BoxFit.cover,
-                                      ),
-                              ),
+                              ProfileAvatar(photoUrl: profilePhoto),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Column(
@@ -888,21 +680,8 @@ class _TVShowResultState extends State<TVShowResult> {
                                       return CheckboxListTile(
                                         title: Row(
                                           children: [
-                                            ClipOval(
-                                              child: profilePath != ""
-                                                  ? Image.network(
-                                                      profilePath,
-                                                      height: 25,
-                                                      width: 25,
-                                                      fit: BoxFit.cover,
-                                                    )
-                                                  : Image.asset(
-                                                      'assets/main_profile.png',
-                                                      height: 25,
-                                                      width: 25,
-                                                      fit: BoxFit.cover,
-                                                    ),
-                                            ),
+                                            ProfileAvatar(
+                                                photoUrl: profilePath),
                                             const SizedBox(width: 16.0),
                                             Expanded(
                                               child: Text(
@@ -981,54 +760,8 @@ class _TVShowResultState extends State<TVShowResult> {
                               Map<String, dynamic> item = {};
                               List<dynamic> watchedWithList = [currentUser.uid];
                               item[id] = watchedWithList;
-                              await firestore
-                                  .runTransaction((transaction) async {
-                                DocumentSnapshot snapshot =
-                                    await transaction.get(userDoc2);
-
-                                if (!snapshot.exists) {
-                                  throw Exception("Document does not exist!");
-                                }
-
-                                Map<String, dynamic> data =
-                                    snapshot.data() as Map<String, dynamic>;
-
-                                if (data.containsKey('TVShows') &&
-                                    data['TVShows'] is Map<String, dynamic>) {
-                                  Map<String, dynamic> moviesMap =
-                                      data['TVShows'];
-
-                                  if (moviesMap.containsKey(id)) {
-                                    List existingList =
-                                        moviesMap[id]["friends"];
-                                    for (String person in watchedWithList) {
-                                      if (!existingList.contains(person)) {
-                                        existingList.add(person);
-                                      }
-                                    }
-                                    moviesMap[id] = {"friends": existingList};
-                                    transaction.update(
-                                        userDoc2, {"TVShows": moviesMap});
-                                  } else {
-                                    moviesMap[id] = {
-                                      "friends": watchedWithList
-                                    };
-                                    transaction.update(
-                                        userDoc2, {"TVShows": moviesMap});
-                                  }
-                                } else {
-                                  transaction.set(
-                                      userDoc2,
-                                      {
-                                        'TVShows': {
-                                          id: {"friends": watchedWithList}
-                                        }
-                                      },
-                                      SetOptions(merge: true));
-                                }
-                              }).catchError((error) {
-                                print("Failed to update document: $error");
-                              });
+                              await _updateSeenWithTransaction(
+                                  firestore, userDoc2, id, watchedWithList);
                             }
                             DocumentReference userDoc2 = firestore
                                 .collection(currentUser.uid)
@@ -1039,48 +772,8 @@ class _TVShowResultState extends State<TVShowResult> {
                                 .where((key) => selectedFriends[key] == true)
                                 .toList();
                             item[id] = watchedWithList;
-                            firestore.runTransaction((transaction) async {
-                              DocumentSnapshot snapshot =
-                                  await transaction.get(userDoc2);
-
-                              if (!snapshot.exists) {
-                                throw Exception("Document does not exist!");
-                              }
-
-                              Map<String, dynamic> data =
-                                  snapshot.data() as Map<String, dynamic>;
-
-                              if (data.containsKey('TVShows') &&
-                                  data['TVShows'] is Map<String, dynamic>) {
-                                Map<String, dynamic> moviesMap =
-                                    data['TVShows'];
-
-                                if (moviesMap.containsKey(id)) {
-                                  List existingList = moviesMap[id]["friends"];
-                                  for (String person in watchedWithList) {
-                                    if (!existingList.contains(person)) {
-                                      existingList.add(person);
-                                    }
-                                  }
-                                  moviesMap[id] = {"friends": existingList};
-                                } else {
-                                  moviesMap[id] = {"friends": watchedWithList};
-                                }
-                                transaction
-                                    .update(userDoc2, {'TVShows': moviesMap});
-                              } else {
-                                transaction.set(
-                                    userDoc2,
-                                    {
-                                      'TVShows': {
-                                        id: {"friends": watchedWithList}
-                                      }
-                                    },
-                                    SetOptions(merge: true));
-                              }
-                            }).catchError((error) {
-                              print("Failed to update document: $error");
-                            });
+                            _updateSeenWithTransaction(
+                                firestore, userDoc2, id, watchedWithList);
                             Navigator.of(context).pop();
                           },
                         ),
@@ -1123,7 +816,7 @@ class _TVShowResultState extends State<TVShowResult> {
     );
   }
 
-  Widget getCastandCrew(data) {
+  Widget getCastandCrew(Map data) {
     return Column(
       children: [
         Container(
@@ -1231,173 +924,10 @@ class _TVShowResultState extends State<TVShowResult> {
   }
 
   Widget watchlistsModal(String id) {
-    return SizedBox(
-      height: 300,
-      child: ListView.builder(
-        itemCount: (currentUser.playlists.length / 2).ceil(),
-        itemBuilder: (context, index) {
-          final leftMovieIndex = index * 2;
-          final rightMovieIndex = index * 2 + 1;
-          final keyLeft = (leftMovieIndex < currentUser.playlists.length)
-              ? currentUser.playlists.keys.elementAt(leftMovieIndex)
-              : null;
-          final keyRight = (rightMovieIndex < currentUser.playlists.length)
-              ? currentUser.playlists.keys.elementAt(rightMovieIndex)
-              : null;
-          dynamic valueLeft,
-              imageLeft,
-              moviesLeft,
-              valueRight,
-              imageRight,
-              moviesRight;
-          if (keyLeft != null) {
-            valueLeft = currentUser.playlists[keyLeft]['Name'];
-            imageLeft = currentUser.playlists[keyLeft]['CoverPhoto'];
-            moviesLeft = currentUser.playlists[keyLeft]['TV Shows'];
-          }
-          if (keyRight != null) {
-            valueRight = currentUser.playlists[keyRight]['Name'];
-            imageRight = currentUser.playlists[keyRight]['CoverPhoto'];
-            moviesRight = currentUser.playlists[keyRight]['TV Shows'];
-          }
-          return Row(
-            children: [
-              if (keyLeft != null)
-                GestureDetector(
-                  onTap: () {
-                    PlaylistService.updateList(id, keyLeft, moviesLeft, context,
-                        "TVShows", !moviesLeft.contains(id));
-                  },
-                  child: Stack(
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.fromLTRB(10.0, 10.0, 5.0, 0),
-                        width: MediaQuery.of(context).size.width * 0.45,
-                        height: MediaQuery.of(context).size.height * 0.18,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(27),
-                          image: DecorationImage(
-                            image: CachedNetworkImageProvider(imageLeft),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(27),
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withOpacity(1),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Container(
-                        margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                        width: MediaQuery.of(context).size.width * 0.45,
-                        height: MediaQuery.of(context).size.height * 0.18,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Align(
-                            alignment: Alignment.bottomRight,
-                            child: Text(
-                              valueLeft,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.25,
-                                wordSpacing: 1.75,
-                                height: 1.5,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (moviesLeft.contains(id))
-                        const Positioned(
-                          top: 10,
-                          right: 10,
-                          child: Icon(Icons.check_circle, color: Colors.green),
-                        ),
-                    ],
-                  ),
-                ),
-              if (keyRight != null)
-                GestureDetector(
-                  onTap: () {
-                    PlaylistService.updateList(id, keyRight, moviesRight,
-                        context, "TVShows", !moviesRight.contains(id));
-                  },
-                  child: Stack(
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                        width: MediaQuery.of(context).size.width * 0.45,
-                        height: MediaQuery.of(context).size.height * 0.18,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(27),
-                          image: DecorationImage(
-                            image: CachedNetworkImageProvider(imageRight),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(27),
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withOpacity(1),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Container(
-                        margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                        width: MediaQuery.of(context).size.width * 0.45,
-                        height: MediaQuery.of(context).size.height * 0.18,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Align(
-                            alignment: Alignment.bottomRight,
-                            child: Text(
-                              valueRight,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.25,
-                                wordSpacing: 1.75,
-                                height: 1.5,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (moviesRight.contains(id))
-                        const Positioned(
-                          top: 10,
-                          right: 10,
-                          child: Icon(Icons.check_circle, color: Colors.green),
-                        ),
-                    ],
-                  ),
-                ),
-            ],
-          );
-        },
-      ),
+    return PlaylistPickerModal(
+      id: id,
+      playlistMediaKey: "TV Shows",
+      serviceMediaType: "TVShows",
     );
   }
 }

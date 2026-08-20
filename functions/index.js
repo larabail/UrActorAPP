@@ -2,28 +2,13 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
-exports.sendFriendRequestNotification = functions.firestore
-  .document('{userId}/Friends/FriendRequests/{requestId}')
-  .onCreate(async (snapshot, context) => {
-    const recipientUID = context.params.userId;
-    const senderUID = snapshot.data().senderUID;
-
-    // Fetch the recipient's FCM token from Firestore
-    const recipientDoc = await admin.firestore().collection(recipientUID).doc("Settings").get();
-    const fcmToken = recipientDoc.data().fcmToken;
-
-    // Fetch the sender's username or any other details if needed
-    const senderDoc = await admin.firestore().collection(senderUID).doc("Settings").get();
-    const senderName = senderDoc.data().username;
-
-    // Send the notification
-    if (fcmToken) {
-      await admin.messaging().sendToDevice(fcmToken, {
-        notification: {
-          title: 'New Friend Request',
-          body: `${senderName} has sent you a friend request.`,
-          clickAction: 'FLUTTER_NOTIFICATION_CLICK',
-        },
-      });
-    }
-  });
+// Push notifications were removed: the Flutter client never registers an
+// `fcmToken` (no `firebase_messaging` dependency anywhere in lib/), so the
+// previous `sendFriendRequestNotification` trigger always read an undefined
+// token and never sent anything. It also called `admin.messaging()
+// .sendToDevice(...)`, which used the legacy FCM API decommissioned by
+// Google in June 2024, so it would have thrown even if a token existed.
+//
+// A future implementation must first add `firebase_messaging` on the
+// client, persist a real token to Firestore, and then use
+// `admin.messaging().send(...)` (the current FCM API) here.

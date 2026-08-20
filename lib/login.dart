@@ -7,8 +7,6 @@ import 'signup.dart';
 import 'main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-String password = "";
-
 class Login extends StatelessWidget {
   const Login({super.key});
 
@@ -17,6 +15,8 @@ class Login extends StatelessWidget {
     currentUser.clearUser();
     currentUser.clearUserData();
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+    final GlobalKey<_PasswordFieldState> passwordFieldKey =
+        GlobalKey<_PasswordFieldState>();
     String email = "";
 
     void resetPassword(BuildContext context, String emailAddress) async {
@@ -121,13 +121,15 @@ class Login extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 16.0),
-                  PasswordField(),
+                  PasswordField(key: passwordFieldKey),
                   const SizedBox(height: 16.0),
                   ElevatedButton(
                     child: Text(S.of(context)!.login),
                     onPressed: () async {
                       if (formKey.currentState!.validate()) {
                         formKey.currentState!.save();
+                        final String password =
+                            passwordFieldKey.currentState!.password;
                         try {
                           await FirebaseAuth.instance
                               .signInWithEmailAndPassword(
@@ -141,11 +143,24 @@ class Login extends StatelessWidget {
                             );
                           });
                         } on FirebaseAuthException catch (e) {
+                          if (!context.mounted) return;
                           if (e.code == 'user-not-found') {
-                            print('No user found for that email.');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content:
+                                    Text(S.of(context)!.noUserFoundError),
+                              ),
+                            );
                           } else if (e.code == 'wrong-password') {
-                            print('Wrong password provided for that user.');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    S.of(context)!.wrongPasswordError),
+                              ),
+                            );
                           }
+                        } finally {
+                          passwordFieldKey.currentState?.clear();
                         }
                       }
                     },
@@ -183,16 +198,35 @@ class Login extends StatelessWidget {
 }
 
 class PasswordField extends StatefulWidget {
+  const PasswordField({super.key});
+
   @override
-  _PasswordFieldState createState() => _PasswordFieldState();
+  State<PasswordField> createState() => _PasswordFieldState();
 }
 
 class _PasswordFieldState extends State<PasswordField> {
   bool _obscureText = true;
+  String _password = "";
+  final TextEditingController _controller = TextEditingController();
+
+  String get password => _password;
+
+  /// Clears the stored plaintext password and the visible field contents.
+  void clear() {
+    _password = "";
+    _controller.clear();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      controller: _controller,
       autofillHints: const [AutofillHints.password],
       textInputAction: TextInputAction.done,
       obscureText: _obscureText,
@@ -224,7 +258,7 @@ class _PasswordFieldState extends State<PasswordField> {
         return null;
       },
       onSaved: (String? value) {
-        password = value!;
+        _password = value!;
       },
     );
   }

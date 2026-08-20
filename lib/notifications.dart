@@ -3,18 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/movie_result.dart';
-import 'package:uractor/objects/Movie.dart';
-import 'package:uractor/objects/TVShow.dart';
+import 'package:uractor/objects/movie.dart';
+import 'package:uractor/objects/tv_show.dart';
 import 'package:uractor/tvshow_result.dart';
 
 import 'main.dart';
-import 'objects/Media.dart';
+import 'objects/media.dart';
 
 class Notifications extends StatefulWidget {
   const Notifications({super.key});
 
   @override
-  _NotificationsState createState() => _NotificationsState();
+  State<Notifications> createState() => _NotificationsState();
 }
 
 class _NotificationsState extends State<Notifications> {
@@ -25,11 +25,11 @@ class _NotificationsState extends State<Notifications> {
   }
 
   Future<void> refreshNotifications() async {
-    var NotificationDoc = await FirebaseFirestore.instance
+    var notificationDoc = await FirebaseFirestore.instance
         .collection(currentUser.uid)
         .doc("Notifications")
         .get();
-    Map<String, dynamic> data = NotificationDoc.data() as Map<String, dynamic>;
+    Map<String, dynamic> data = notificationDoc.data() as Map<String, dynamic>;
     currentUser.notifications = data;
     setState(() {
       currentUser.notifications = currentUser.notifications;
@@ -61,7 +61,10 @@ class _NotificationsState extends State<Notifications> {
         }
       });
     } catch (e) {
-      print('${S.of(context)!.errorNotification}: $e');
+      if (!mounted) return;
+      final message = '${S.of(context)!.errorNotification}: $e';
+      debugPrint(message);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 

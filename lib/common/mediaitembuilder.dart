@@ -4,12 +4,12 @@ import 'package:uractor/common/firebase/social_service.dart';
 import 'package:uractor/friends_thoughts.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/main.dart';
-import 'package:uractor/objects/TVShow.dart';
+import 'package:uractor/objects/tv_show.dart';
 import 'package:uractor/popups/share.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
-import '../objects/Media.dart';
-import '../objects/Movie.dart';
+import '../objects/media.dart';
+import '../objects/movie.dart';
 import 'constants.dart';
 
 Widget getCover(Map data, context, MediaItem mediaItem, String type) {
@@ -53,7 +53,7 @@ Widget getCover(Map data, context, MediaItem mediaItem, String type) {
               end: Alignment.bottomCenter,
               colors: [
                 Colors.transparent,
-                Colors.black.withOpacity(1),
+                Colors.black.withValues(alpha: 1),
               ],
             ),
           ),
@@ -171,7 +171,7 @@ Widget getCover(Map data, context, MediaItem mediaItem, String type) {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(100),
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -187,13 +187,13 @@ Widget getCover(Map data, context, MediaItem mediaItem, String type) {
                                 title: data["title"],
                                 coverPhoto: data["poster_path"] != null
                                     ? IMG_LINK + data["poster_path"]
-                                    : UNKOWN_COVER)
+                                    : UNKNOWN_COVER)
                             : TVShow(
                                 id: mediaItem.id,
                                 title: data["name"],
                                 coverPhoto: data["poster_path"] != null
                                     ? IMG_LINK + data["poster_path"]
-                                    : UNKOWN_COVER);
+                                    : UNKNOWN_COVER);
                         return Share(
                           item: tempItem,
                           type: type,
@@ -215,7 +215,7 @@ Widget getCover(Map data, context, MediaItem mediaItem, String type) {
   );
 }
 
-Widget getGenres(data) {
+Widget getGenres(Map data) {
   return Container(
     height: 30,
     margin: const EdgeInsets.fromLTRB(20.0, 5.0, 0, 5.0),
@@ -228,7 +228,7 @@ Widget getGenres(data) {
           padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            color: Colors.white.withOpacity(0.3),
+            color: Colors.white.withValues(alpha: 0.3),
           ),
           child: Text(
             data['genres'][index]['name'],
@@ -243,7 +243,7 @@ Widget getGenres(data) {
   );
 }
 
-Widget getRuntimeRating(data) {
+Widget getRuntimeRating(Map data) {
   return Container(
     height: 45,
     padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
@@ -303,7 +303,7 @@ Widget getRuntimeRating(data) {
   );
 }
 
-Widget getProviders(data, context) {
+Widget getProviders(Map data, BuildContext context) {
   return Container(
     margin: const EdgeInsets.all(20.0),
     padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
@@ -374,7 +374,7 @@ Widget getProviders(data, context) {
   );
 }
 
-Widget getTrailer(data) {
+Widget getTrailer(Map data) {
   return Builder(
     builder: (BuildContext context) {
       try {

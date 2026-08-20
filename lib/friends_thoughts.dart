@@ -6,7 +6,7 @@ import 'package:uractor/l10n/l10n.dart';
 
 import 'common/navigation/bottom_app_bar.dart';
 import 'common/navigation/appbar.dart';
-import 'objects/Media.dart';
+import 'objects/media.dart';
 
 class FriendsThoughts extends StatefulWidget {
   final Map friends;
@@ -15,15 +15,14 @@ class FriendsThoughts extends StatefulWidget {
   final Map data;
 
   const FriendsThoughts(
-      {Key? key,
+      {super.key,
       required this.friends,
       required this.mediaItem,
       required this.type,
-      required this.data})
-      : super(key: key);
+      required this.data});
 
   @override
-  _FriendsThoughtsState createState() => _FriendsThoughtsState();
+  State<FriendsThoughts> createState() => _FriendsThoughtsState();
 }
 
 class _FriendsThoughtsState extends State<FriendsThoughts> {

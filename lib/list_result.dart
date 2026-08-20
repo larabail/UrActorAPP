@@ -7,13 +7,14 @@ import 'package:uractor/common/constants.dart';
 import 'package:uractor/common/firebase/recommendation_service.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/l10n/l10n.dart';
-import 'package:uractor/objects/TVShow.dart';
+import 'package:uractor/objects/tv_show.dart';
 import 'package:uractor/popups/grant_access_dialogue.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
-import 'objects/Media.dart';
-import 'objects/Movie.dart';
-import 'objects/Playlist.dart';
+import 'common/utils.dart';
+import 'objects/media.dart';
+import 'objects/movie.dart';
+import 'objects/playlist.dart';
 import 'playlists.dart';
 import 'main.dart';
 import 'movie_result.dart';
@@ -26,10 +27,10 @@ import 'popups/movie_add_popup.dart';
 import 'popups/tv_add_popup.dart';
 
 class ListInfoDialog extends StatefulWidget {
-  final Playlist list_result;
-  const ListInfoDialog({Key? key, required this.list_result}) : super(key: key);
+  final Playlist listResult;
+  const ListInfoDialog({super.key, required this.listResult});
   @override
-  _ListInfoDialogState createState() => _ListInfoDialogState();
+  State<ListInfoDialog> createState() => _ListInfoDialogState();
 }
 
 class _ListInfoDialogState extends State<ListInfoDialog> {
@@ -45,7 +46,7 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
 
   @override
   Widget build(BuildContext context) {
-    Map userCurrent = widget.list_result.users.firstWhere(
+    Map userCurrent = widget.listResult.users.firstWhere(
         (item) => item.containsKey(currentUser.uid) as bool,
         orElse: () => null);
     String role = userCurrent[currentUser.uid];
@@ -63,7 +64,7 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              S.of(context)!.accessCode(widget.list_result.accesscode),
+              S.of(context)!.accessCode(widget.listResult.accesscode),
               style: const TextStyle(
                 fontSize: 18,
                 color: Colors.white,
@@ -79,7 +80,7 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
             ),
             const SizedBox(height: 10),
             FutureBuilder(
-              future: Future.wait((widget.list_result.users)
+              future: Future.wait((widget.listResult.users)
                   .map((user) => getUserData(user.keys.toList()[0]))),
               builder: (context,
                   AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
@@ -119,7 +120,7 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                               icon: const Icon(Icons.remove_circle,
                                   color: Colors.red),
                               onPressed: () async {
-                                Map itemToRemove = widget.list_result.users
+                                Map itemToRemove = widget.listResult.users
                                     .firstWhere(
                                         (item) =>
                                             item.containsKey(userData["uid"])
@@ -127,7 +128,7 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                                         orElse: () => null);
                                 FirebaseFirestore.instance
                                     .collection('Watchlists')
-                                    .doc(widget.list_result.id)
+                                    .doc(widget.listResult.id)
                                     .update({
                                   'Users':
                                       FieldValue.arrayRemove([itemToRemove])
@@ -150,8 +151,8 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                                   }
                                 });
                                 setState(() {
-                                  widget.list_result.users = currentUser
-                                          .playlists[widget.list_result.id]
+                                  widget.listResult.users = currentUser
+                                          .playlists[widget.listResult.id]
                                       ["Users"];
                                 });
                               },
@@ -169,11 +170,11 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                   final result = await showDialog<Playlist>(
                     context: context,
                     builder: (context) =>
-                        GrantAccessDialog(list_result: widget.list_result),
+                        GrantAccessDialog(listResult: widget.listResult),
                   );
                   if (result != null) {
                     setState(() {
-                      widget.list_result.users = result.users;
+                      widget.listResult.users = result.users;
                     });
                   }
                 },
@@ -194,15 +195,15 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                 if (role == "Owner")
                   GestureDetector(
                     onTap: () {
-                      cover = widget.list_result.backdrop;
-                      originalListName = widget.list_result.name;
-                      originalAccessCode = widget.list_result.accesscode;
-                      listName = widget.list_result.name;
-                      accessCode = widget.list_result.accesscode;
+                      cover = widget.listResult.backdrop;
+                      originalListName = widget.listResult.name;
+                      originalAccessCode = widget.listResult.accesscode;
+                      listName = widget.listResult.name;
+                      accessCode = widget.listResult.accesscode;
                       showDialog(
                         context: context,
                         builder: (context) => ListEditDialogue(
-                          list_result: widget.list_result,
+                          list_result: widget.listResult,
                         ),
                       ).then((_) {
                         Navigator.pop(context);
@@ -238,16 +239,16 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                       showDialog(
                         context: context,
                         builder: (context) => AlertButtonDialogue(
-                          list_result: widget.list_result,
+                          listResult: widget.listResult,
                         ),
                       );
                     } else {
-                      Map itemToRemove = widget.list_result.users.firstWhere(
+                      Map itemToRemove = widget.listResult.users.firstWhere(
                           (item) => item.containsKey(currentUser.uid) as bool,
                           orElse: () => null);
                       FirebaseFirestore.instance
                           .collection('Watchlists')
-                          .doc(widget.list_result.id)
+                          .doc(widget.listResult.id)
                           .update({
                         'Users': FieldValue.arrayRemove([itemToRemove])
                       });
@@ -311,8 +312,8 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
 }
 
 class AlertButtonDialogue extends StatelessWidget {
-  final Playlist list_result;
-  const AlertButtonDialogue({super.key, required this.list_result});
+  final Playlist listResult;
+  const AlertButtonDialogue({super.key, required this.listResult});
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -328,7 +329,7 @@ class AlertButtonDialogue extends StatelessWidget {
             currentUser.playlists = {};
             await FirebaseFirestore.instance
                 .collection("Watchlists")
-                .doc(list_result.id)
+                .doc(listResult.id)
                 .delete();
             await FirebaseFirestore.instance
                 .collection("Watchlists")
@@ -350,7 +351,7 @@ class AlertButtonDialogue extends StatelessWidget {
                 MaterialPageRoute(builder: (context) => const Playlists()));
           },
           style: ButtonStyle(
-            backgroundColor: MaterialStateProperty.all(Colors.red),
+            backgroundColor: WidgetStateProperty.all(Colors.red),
           ),
           child: Text(S.of(context)!.delete),
         ),
@@ -365,16 +366,6 @@ class AlertButtonDialogue extends StatelessWidget {
   }
 }
 
-bool containsMap(List<Map<String, dynamic>> list, Map<String, dynamic> map) {
-  String jsonString = json.encode(map);
-  for (int i = 0; i < list.length; i++) {
-    if (json.encode(list[i]) == jsonString) {
-      return true;
-    }
-  }
-  return false;
-}
-
 String cover = "";
 String listName = "";
 String accessCode = "";
@@ -382,47 +373,24 @@ String originalListName = "";
 String originalAccessCode = "";
 
 class ListResult extends StatefulWidget {
-  final Playlist list_result;
-  const ListResult({Key? key, required this.list_result}) : super(key: key);
+  final Playlist listResult;
+  const ListResult({super.key, required this.listResult});
 
   @override
-  _ListResultState createState() => _ListResultState();
+  State<ListResult> createState() => _ListResultState();
 }
 
 class _ListResultState extends State<ListResult> {
-  // Map list = list_result;
   List<Map<String, dynamic>> moviesList = [];
 
-  Future<Map<String, dynamic>> getData(id, type) async {
-    Map<String, dynamic> data = {};
-    String link;
-    if (type == "TVShows") {
-      link = TV_SHOW_LINK;
-    } else {
-      link = MOVIE_LINK;
-    }
-    final response = await http.get(Uri.parse('$link$id$API_KEY'));
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      if (type == "TVShows") {
-        data['title'] = json['name'];
-      } else {
-        data['title'] = json['title'];
-      }
-      data['poster_path'] = json['poster_path'];
-      data['id'] = json['id'];
-      data['type'] = type;
-      if (!containsMap(moviesList, data)) {
-        moviesList.add(data);
-      }
-    } else {
-      throw Exception('Failed to load movie details');
-    }
-    return data;
+  Future<Map<String, dynamic>> getData(dynamic id, String type) async {
+    return Utils.fetchMediaData(id, type, moviesList);
   }
 
-  final String apiKey =
-      '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';
+  // Shipping an OpenAI key inside a client binary is inherently extractable
+  // (it can be pulled from the compiled app or intercepted in network traffic);
+  // this call should ultimately be proxied through a backend service instead.
+  static const String _openAiApiKey = String.fromEnvironment('OPENAI_API_KEY');
   Future<String> fetchMovieName(String movieId, String type) async {
     final url =
         '${type == "Movies" ? MOVIE_LINK : TV_SHOW_LINK}$movieId$API_KEY';
@@ -490,12 +458,12 @@ class _ListResultState extends State<ListResult> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return const AlertDialog(
+        return AlertDialog(
           content: Row(
             children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 20),
-              Text("Fetching recommendations..."),
+              const CircularProgressIndicator(),
+              const SizedBox(width: 20),
+              Text(S.of(context)!.fetchingRecommendations),
             ],
           ),
         );
@@ -507,7 +475,46 @@ class _ListResultState extends State<ListResult> {
     Navigator.of(context).pop();
   }
 
+  /// Regenerates recommendations for [type], keeping the loading dialog and
+  /// the failure path together.
+  ///
+  /// [sendMessage] throws on any non-200 response, so without the `finally`
+  /// the dialog is never dismissed and the app looks frozen behind a spinner
+  /// that cannot be tapped away. That is reachable in normal use: an expired
+  /// OpenAI quota answers 429, not 200.
+  Future<void> _regenerateRecommendations(String type) async {
+    showLoadingDialog(context);
+    var succeeded = false;
+    try {
+      await sendMessage(type);
+      succeeded = true;
+    } catch (e) {
+      debugPrint('Failed to generate $type recommendations: $e');
+    } finally {
+      if (mounted) hideLoadingDialog(context);
+    }
+
+    if (!mounted) return;
+    if (!succeeded) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.of(context)!.recommendationsFailed)),
+      );
+      return;
+    }
+
+    setState(() {
+      widget.listResult.movies = currentUser.recommendations["Movies"];
+      widget.listResult.tvshows = currentUser.recommendations["TVShows"];
+    });
+  }
+
   Future<void> sendMessage(String type) async {
+    if (_openAiApiKey.isEmpty) {
+      // Recommendations are unavailable without a configured OpenAI key;
+      // degrade gracefully instead of firing a request that would fail.
+      await RecommendationService.updateRecommendations([], type);
+      return;
+    }
     const apiUrl = 'https://api.openai.com/v1/chat/completions';
     List seenIds = [];
     List seenNames = [];
@@ -532,7 +539,7 @@ class _ListResultState extends State<ListResult> {
       Uri.parse(apiUrl),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $apiKey',
+        'Authorization': 'Bearer $_openAiApiKey',
       },
       body: jsonEncode({
         'model': 'gpt-4o-mini',
@@ -665,7 +672,7 @@ class _ListResultState extends State<ListResult> {
                     borderRadius: BorderRadius.circular(10),
                     image: DecorationImage(
                       image: CachedNetworkImageProvider(
-                        widget.list_result.backdrop,
+                        widget.listResult.backdrop,
                       ),
                       fit: BoxFit.cover,
                     ),
@@ -679,7 +686,7 @@ class _ListResultState extends State<ListResult> {
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.black.withOpacity(1),
+                        Colors.black.withValues(alpha: 1),
                       ],
                     ),
                   ),
@@ -693,7 +700,7 @@ class _ListResultState extends State<ListResult> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          widget.list_result.name,
+                          widget.listResult.name,
                           style: const TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.bold,
@@ -704,8 +711,8 @@ class _ListResultState extends State<ListResult> {
                         ),
                         Text(
                           S.of(context)!.listElements(
-                              widget.list_result.movies.length.toString(),
-                              widget.list_result.tvshows.length.toString()),
+                              widget.listResult.movies.length.toString(),
+                              widget.listResult.tvshows.length.toString()),
                           style: const TextStyle(
                             fontSize: 15,
                             color: Colors.grey,
@@ -720,16 +727,16 @@ class _ListResultState extends State<ListResult> {
                   child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(100),
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withValues(alpha: 0.5),
                       ),
                       child: Column(mainAxisSize: MainAxisSize.min, children: [
-                        if (widget.list_result.id != "recommendations")
+                        if (widget.listResult.id != "recommendations")
                           IconButton(
                             onPressed: () {
                               showDialog(
                                 context: context,
                                 builder: (context) => ListInfoDialog(
-                                  list_result: widget.list_result,
+                                  listResult: widget.listResult,
                                 ),
                               ).then((_) {
                                 setState(() {});
@@ -748,23 +755,12 @@ class _ListResultState extends State<ListResult> {
           const SizedBox(
             height: 10,
           ),
-          if (widget.list_result.id == "recommendations")
+          if (widget.listResult.id == "recommendations")
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 GestureDetector(
-                  onTap: () async {
-                    showLoadingDialog(context);
-                    await sendMessage("Movies");
-                    hideLoadingDialog(context);
-                    setState(() {
-                      currentUser.recommendations = currentUser.recommendations;
-                      widget.list_result.movies =
-                          currentUser.recommendations["Movies"];
-                      widget.list_result.tvshows =
-                          currentUser.recommendations["TVShows"];
-                    });
-                  },
+                  onTap: () => _regenerateRecommendations("Movies"),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 10),
@@ -792,18 +788,7 @@ class _ListResultState extends State<ListResult> {
                   width: 10,
                 ),
                 GestureDetector(
-                  onTap: () async {
-                    showLoadingDialog(context);
-                    await sendMessage("TVShows");
-                    hideLoadingDialog(context);
-                    setState(() {
-                      currentUser.recommendations = currentUser.recommendations;
-                      widget.list_result.movies =
-                          currentUser.recommendations["Movies"];
-                      widget.list_result.tvshows =
-                          currentUser.recommendations["TVShows"];
-                    });
-                  },
+                  onTap: () => _regenerateRecommendations("TVShows"),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 10),
@@ -829,7 +814,7 @@ class _ListResultState extends State<ListResult> {
                 ),
               ],
             ),
-          if (widget.list_result.id != "recommendations")
+          if (widget.listResult.id != "recommendations")
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -839,7 +824,7 @@ class _ListResultState extends State<ListResult> {
                       context: context,
                       builder: (BuildContext context) {
                         return MovieAddDialogue(
-                          list_result: widget.list_result,
+                          list_result: widget.listResult,
                         );
                       },
                     ).then((value) => setState(() {}));
@@ -874,7 +859,7 @@ class _ListResultState extends State<ListResult> {
                       context: context,
                       builder: (BuildContext context) {
                         return TvAddDialogue(
-                          list_result: widget.list_result,
+                          list_result: widget.listResult,
                         );
                       },
                     ).then((value) => setState(() {}));
@@ -907,8 +892,8 @@ class _ListResultState extends State<ListResult> {
           const SizedBox(
             height: 10,
           ),
-          if (widget.list_result.movies.isNotEmpty &&
-              widget.list_result.tvshows.isNotEmpty)
+          if (widget.listResult.movies.isNotEmpty &&
+              widget.listResult.tvshows.isNotEmpty)
             DefaultTabController(
               length: 2,
               child: Expanded(
@@ -924,9 +909,9 @@ class _ListResultState extends State<ListResult> {
                       child: TabBarView(
                         children: [
                           buildMediaList(
-                              widget.list_result.movies, "Movies", context),
+                              widget.listResult.movies, "Movies", context),
                           buildMediaList(
-                              widget.list_result.tvshows, "TVShows", context),
+                              widget.listResult.tvshows, "TVShows", context),
                         ],
                       ),
                     ),
@@ -934,17 +919,17 @@ class _ListResultState extends State<ListResult> {
                 ),
               ),
             ),
-          if (widget.list_result.movies.isNotEmpty &&
-              widget.list_result.tvshows.isEmpty)
+          if (widget.listResult.movies.isNotEmpty &&
+              widget.listResult.tvshows.isEmpty)
             Expanded(
               child:
-                  buildMediaList(widget.list_result.movies, "Movies", context),
+                  buildMediaList(widget.listResult.movies, "Movies", context),
             ),
-          if (widget.list_result.tvshows.isNotEmpty &&
-              widget.list_result.movies.isEmpty)
+          if (widget.listResult.tvshows.isNotEmpty &&
+              widget.listResult.movies.isEmpty)
             Expanded(
               child: buildMediaList(
-                  widget.list_result.tvshows, "TVShows", context),
+                  widget.listResult.tvshows, "TVShows", context),
             ),
         ],
       ),
