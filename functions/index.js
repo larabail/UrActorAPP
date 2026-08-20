@@ -3,6 +3,7 @@ const {onDocumentWritten} = require('firebase-functions/v2/firestore');
 const {onSchedule} = require('firebase-functions/v2/scheduler');
 const logger = require('firebase-functions/logger');
 const admin = require('firebase-admin');
+const {FieldValue} = require('firebase-admin/firestore');
 
 const {
   memberUidsFrom,
@@ -89,8 +90,8 @@ exports.joinPlaylist = onCall({region: REGION}, async (request) => {
     .collection('Watchlists')
     .doc(playlist.id)
     .update({
-      Users: admin.firestore.FieldValue.arrayUnion({[uid]: 'Approved'}),
-      memberUids: admin.firestore.FieldValue.arrayUnion(uid),
+      Users: FieldValue.arrayUnion({[uid]: 'Approved'}),
+      memberUids: FieldValue.arrayUnion(uid),
     });
 
   logger.info('User joined playlist', {uid, playlistId: playlist.id});
