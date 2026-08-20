@@ -2,8 +2,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
 
-Widget getItemContainer(BuildContext context, dynamic item, String type,
-    {double widthPercentage = 0.28, double heightPercentage = 0.18}) {
+Widget getItemContainer(
+  BuildContext context,
+  dynamic item,
+  String type, {
+  double widthPercentage = 0.28,
+  double heightPercentage = 0.18,
+  String? favoriteBadgeSemanticLabel,
+}) {
   String imagePath = "";
   if (item!["poster_path"] != null) {
     imagePath = IMG_LINK + item!["poster_path"];
@@ -51,6 +57,36 @@ Widget getItemContainer(BuildContext context, dynamic item, String type,
                 ],
               ),
               textAlign: TextAlign.center,
+            ),
+          ),
+        if (favoriteBadgeSemanticLabel != null)
+          Positioned(
+            left: 10,
+            bottom: 10,
+            child: IgnorePointer(
+              child: Semantics(
+                label: favoriteBadgeSemanticLabel,
+                child: Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.black.withValues(alpha: 0.35),
+                  ),
+                  child: Icon(
+                    Icons.favorite,
+                    key: const ValueKey('favoriteBadge'),
+                    color: const Color.fromARGB(248, 241, 105, 56),
+                    size: 18,
+                    shadows: [
+                      Shadow(
+                        offset: const Offset(0, 1),
+                        blurRadius: 3,
+                        color: Colors.black.withValues(alpha: 0.8),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
       ],

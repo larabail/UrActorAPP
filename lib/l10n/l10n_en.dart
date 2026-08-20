@@ -633,6 +633,9 @@ class SEn extends S {
       'We couldn\'t set up your profile or undo the account. Please try again later.';
 
   @override
+  String get favoriteBadge => 'In your favorites';
+
+  @override
   String get friendRequestActionFailedError =>
       'Something went wrong. Please try again.';
 }
