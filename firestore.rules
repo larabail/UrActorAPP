@@ -96,6 +96,49 @@ service cloud.firestore {
         && changed.removedKeys().size() == 0;
     }
 
+    // A calendar is keyed by day, and a day holds the array of entries watched
+    // that day. A show entry may now also record which season and episode it
+    // was, both optional: an entry that records neither is exactly what every
+    // installed client writes, and has to keep being accepted unchanged.
+    //
+    // Only the fields are checked, never their presence: requiring a season
+    // would reject every build in the wild, and requiring a fixed field list
+    // would reject any field an older build wrote that this one no longer
+    // does. An episode without a season is refused because the client cannot
+    // display one and never writes one.
+    function validCalendarEntry(entry) {
+      return entry is map
+        && (!('season' in entry) || entry.season is int && entry.season > 0)
+        && (!('episode' in entry)
+            || entry.episode is int && entry.episode > 0 && 'season' in entry);
+    }
+
+    // Rules cannot iterate a list, so only the first entry of the day can be
+    // reached. That is enough on create: a friend's first write to a calendar
+    // is an arrayUnion of the single entry being shared, so the first element
+    // IS the entry they wrote.
+    function validCalendarDay(day) {
+      return request.resource.data[day] is list
+        && (request.resource.data[day].size() == 0
+            || validCalendarEntry(request.resource.data[day][0]));
+    }
+
+    function createsOneCalendarDayOnly() {
+      return request.resource.data.keys().size() == 1
+        && validCalendarDay(request.resource.data.keys()[0]);
+    }
+
+    // The update path cannot make the same check. diff() hands back the
+    // affected key as a Set, which rules can measure but not index, so the day
+    // that changed cannot be named and what landed on it cannot be read. This
+    // stays where PR #29 left it -- one day touched, none removed -- and the
+    // per-entry hole is recorded in KNOWN GAPS.
+    function updatesOneCalendarDayOnly() {
+      let changed = request.resource.data.diff(resource.data);
+      return changed.affectedKeys().size() <= 1
+        && changed.removedKeys().size() == 0;
+    }
+
     function createsSeenWithTypeOnly(type) {
       return request.resource.data.keys().hasOnly([type])
         && request.resource.data[type] is map;
@@ -146,7 +189,7 @@ service cloud.firestore {
         || docId == 'TVShows' && createsListFieldOnly('Seen')
         || docId == 'Seen' && createsSeenDocOnly()
         || docId == 'SeenWith' && createsSeenWithDocOnly()
-        || docId == 'Calendar' && createsOneDynamicFieldOnly()
+        || docId == 'Calendar' && createsOneCalendarDayOnly()
         || docId == 'Rewatched' && createsOneDynamicFieldOnly()
         || docId == 'RewatchedTV' && createsOneDynamicFieldOnly();
     }
@@ -156,7 +199,7 @@ service cloud.firestore {
         || docId == 'TVShows' && updatesListFieldOnly('Seen')
         || docId == 'Seen' && updatesSeenDocOnly()
         || docId == 'SeenWith' && updatesSeenWithDocOnly()
-        || docId == 'Calendar' && updatesOneDynamicFieldOnly()
+        || docId == 'Calendar' && updatesOneCalendarDayOnly()
         || docId == 'Rewatched' && updatesOneDynamicFieldOnly()
         || docId == 'RewatchedTV' && updatesOneDynamicFieldOnly()
         || docId == 'Notifications' && appendsOneNotificationOnly();
@@ -374,4 +417,15 @@ service cloud.firestore {
 //    notification was agreed to, or that a rewatch/media id is meaningful,
 //    without either changing the client to write narrower verifiable fields or
 //    moving those writes behind a function.
+//
+//    Calendar goes one step further than the rest on CREATE only. A friend's
+//    first write to a calendar is an arrayUnion of the single entry being
+//    shared, so the day's first element is the entry they wrote and its
+//    optional season/episode can be type-checked there. On UPDATE the same
+//    check is not expressible: diff() returns the affected key as a Set, rules
+//    cannot index a Set, and so the day that changed cannot be named. A friend
+//    updating an existing calendar can still put anything inside the entry,
+//    including a nonsense season. Closing that needs the entry to move behind
+//    a function, or the day to be written as a subcollection document whose id
+//    the rule can see.
 // ---------------------------------------------------------------------------

@@ -2,6 +2,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/async_action.dart';
+import 'package:uractor/common/calendar_episode.dart';
 import 'package:uractor/common/firebase/calendar_service.dart';
 import 'package:uractor/common/firebase/social_service.dart';
 import 'package:uractor/common/firebase/watched_service.dart';
@@ -35,6 +36,24 @@ class CalendarAddDialogue extends StatefulWidget {
 class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
   FirebaseFirestore db = FirestoreCore.db;
   final myController = TextEditingController(text: "");
+  final _seasonController = TextEditingController();
+  final _episodeController = TextEditingController();
+
+  /// What the season/episode boxes currently amount to, or null when they are
+  /// empty or hold something that is not a part number. Both boxes are
+  /// optional, so null is an ordinary answer and not an error.
+  CalendarEpisode? get _episode => CalendarEpisode.from(
+        season: _seasonController.text,
+        episode: _episodeController.text,
+      );
+
+  @override
+  void dispose() {
+    myController.dispose();
+    _seasonController.dispose();
+    _episodeController.dispose();
+    super.dispose();
+  }
 
   String _searchTermMovie = '';
   Map _movie = {};
@@ -94,7 +113,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
   }
 
   Future<void> addMovieSubmit(String id, String title, int runtime, double rating,
-      Map friendsWatchedWith) async {
+      Map friendsWatchedWith, CalendarEpisode? episode) async {
     String key = widget.type == "movie" ? "Movies" : "TVShows";
     Map myObject = {
       'id': id,
@@ -105,6 +124,9 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
           .where((key) => friendsWatchedWith[key] == true)
           .toList(),
       'type': widget.type,
+      // Absent unless the user filled the boxes in, which is what keeps an
+      // untagged entry identical to what every installed client writes.
+      ...CalendarEpisode.fieldsFor(episode),
     };
     CalendarService.updateCurrentUserCalendar(
         widget.dateRange, myObject, widget.dateForMap);
@@ -288,6 +310,12 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                   ),
                 ),
               ),
+              if (!isMovie)
+                _EpisodeFields(
+                  seasonController: _seasonController,
+                  episodeController: _episodeController,
+                  onChanged: () => setState(() {}),
+                ),
               if (currentUser.friends.isNotEmpty)
                 const Padding(
                   padding: EdgeInsets.fromLTRB(20, 0, 20, 5),
@@ -429,7 +457,8 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                               tempMovie.title,
                               movieData["runtime"] ?? 0,
                               double.parse(movieData["imdb_rating"]),
-                              selectedFriends);
+                              selectedFriends,
+                              _episode);
                         },
                         S.of(context)!.genericAuthError,
                       );
@@ -490,6 +519,13 @@ class AddToCalendar extends StatefulWidget {
 class _AddToCalendarState extends State<AddToCalendar> {
   FirebaseFirestore db = FirestoreCore.db;
   Map<String, bool> selectedFriends = {};
+  final _seasonController = TextEditingController();
+  final _episodeController = TextEditingController();
+
+  CalendarEpisode? get _episode => CalendarEpisode.from(
+        season: _seasonController.text,
+        episode: _episodeController.text,
+      );
 
   @override
   void initState() {
@@ -498,6 +534,32 @@ class _AddToCalendarState extends State<AddToCalendar> {
       selectedFriends[friendUid] =
           widget.modifying && widget.friends.contains(friendUid);
     }
+    _prefillEpisode();
+  }
+
+  /// Editing an existing entry has to start from what that entry already
+  /// records, or reopening the dialogue to change who you watched with would
+  /// silently drop the season and episode.
+  void _prefillEpisode() {
+    if (!widget.modifying) return;
+    final day = currentUser.calendar[widget.dateForMap];
+    if (day is! List) return;
+    for (final entry in day) {
+      if (entry is Map && entry['id'].toString() == widget.media.id) {
+        final episode = CalendarEpisode.fromEntry(entry);
+        if (episode == null) return;
+        _seasonController.text = episode.season.toString();
+        _episodeController.text = episode.episode?.toString() ?? '';
+        return;
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _seasonController.dispose();
+    _episodeController.dispose();
+    super.dispose();
   }
 
   @override
@@ -520,6 +582,12 @@ class _AddToCalendarState extends State<AddToCalendar> {
               "Did you watch it with anyone?",
               style: TextStyle(fontSize: 20),
             ),
+            if (widget.type != "movie")
+              _EpisodeFields(
+                seasonController: _seasonController,
+                episodeController: _episodeController,
+                onChanged: () => setState(() {}),
+              ),
             if (currentUser.friends.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.all(10.0),
@@ -704,6 +772,7 @@ class _AddToCalendarState extends State<AddToCalendar> {
       'rating': rating,
       'friends': watchedWithList,
       'type': type,
+      ...CalendarEpisode.fieldsFor(_episode),
     };
     await CalendarService.updateCalendar(
         "", currentUser.uid, newData, widget.dateForMap);
@@ -740,6 +809,7 @@ class _AddToCalendarState extends State<AddToCalendar> {
         'rating': rating,
         'friends': finalFriends,
         'type': type,
+        ...CalendarEpisode.fieldsFor(_episode),
       };
       await CalendarService.deleteFromCalendar(
           friend, id, title, widget.dateForMap, context);
@@ -821,5 +891,86 @@ class _AddToCalendarState extends State<AddToCalendar> {
       ];
     }
     return true;
+  }
+}
+
+/// The optional season and episode boxes shown when the entry being recorded
+/// is a show.
+///
+/// Deliberately two loose numbers rather than a picker over TMDB's season
+/// list: the calendar is a log of what you watched, entries for shows whose
+/// metadata TMDB does not have still have to be recordable, and leaving both
+/// boxes empty has to keep producing exactly the entry earlier clients wrote.
+class _EpisodeFields extends StatelessWidget {
+  const _EpisodeFields({
+    required this.seasonController,
+    required this.episodeController,
+    required this.onChanged,
+  });
+
+  final TextEditingController seasonController;
+  final TextEditingController episodeController;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    // An episode with no season cannot be stored, so say so rather than
+    // dropping what was typed on save without explanation.
+    final bool needsSeason =
+        CalendarEpisode.parsePositiveInt(episodeController.text) != null &&
+            CalendarEpisode.parsePositiveInt(seasonController.text) == null;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            S.of(context)!.calendarEpisodeSectionTitle,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: seasonController,
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: S.of(context)!.calendarSeasonFieldLabel,
+                    labelStyle: const TextStyle(color: Colors.white),
+                  ),
+                  onChanged: (_) => onChanged(),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  controller: episodeController,
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: S.of(context)!.calendarEpisodeFieldLabel,
+                    labelStyle: const TextStyle(color: Colors.white),
+                  ),
+                  onChanged: (_) => onChanged(),
+                ),
+              ),
+            ],
+          ),
+          if (needsSeason)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                S.of(context)!.calendarEpisodeNeedsSeason,
+                style: const TextStyle(color: Colors.orange, fontSize: 12),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }

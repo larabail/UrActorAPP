@@ -697,4 +697,27 @@ class SEn extends S {
   String watchProgressEpisodesWatched(int watched, int total) {
     return '$watched of $total watched';
   }
+
+  @override
+  String get calendarEpisodeSectionTitle => 'Which part did you watch?';
+
+  @override
+  String get calendarSeasonFieldLabel => 'Season (optional)';
+
+  @override
+  String get calendarEpisodeFieldLabel => 'Episode (optional)';
+
+  @override
+  String get calendarEpisodeNeedsSeason =>
+      'Add a season number to record an episode.';
+
+  @override
+  String calendarSeasonEpisodeBadge(int season, int episode) {
+    return 'S$season E$episode';
+  }
+
+  @override
+  String calendarSeasonBadge(int season) {
+    return 'S$season';
+  }
 }
