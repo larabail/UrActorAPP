@@ -152,6 +152,7 @@ Future<void> seedCompleteUser(
     'Friends': {'friends': []},
     'Notifications': <String, dynamic>{},
     'Recommendations': {'Movies': [], 'TVShows': []},
+    'Progress': {'Movies': <String, dynamic>{}, 'TVShows': <String, dynamic>{}},
   };
   if (overrides != null) {
     overrides.forEach((key, value) {
