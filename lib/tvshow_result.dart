@@ -6,12 +6,14 @@ import 'package:uractor/cast_and_crew.dart';
 import 'package:uractor/common/firebase/calendar_service.dart';
 import 'package:uractor/common/firebase/favorites_service.dart';
 import 'package:uractor/common/firebase/firestore_core.dart';
+import 'package:uractor/common/firebase/progress_service.dart';
 import 'package:uractor/common/firebase/review_service.dart';
 import 'package:uractor/common/firebase/watched_service.dart';
 import 'package:uractor/common/firebase/watchlist_service.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/common/media_result_widgets.dart';
 import 'package:uractor/common/mediaitembuilder.dart';
+import 'package:uractor/common/watch_progress_widgets.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/season_guide.dart';
 import 'common/navigation/appbar.dart';
@@ -46,6 +48,11 @@ class TVShowResult extends StatefulWidget {
 
 class _TVShowResultState extends State<TVShowResult> {
   final myController = TextEditingController(text: "");
+
+  /// Bumped whenever something outside the progress control could have changed
+  /// the show's state: marking it seen, or ticking episodes off in the season
+  /// guide, which finishes the show once the last one goes in.
+  int _progressToken = 0;
 
   void check() {
     if (widget.tvshow.isSeen()) {
@@ -244,8 +251,8 @@ class _TVShowResultState extends State<TVShowResult> {
               const Icon(Icons.access_time, color: Colors.white),
               const SizedBox(width: 5),
               GestureDetector(
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => SeasonGuide(
@@ -254,6 +261,12 @@ class _TVShowResultState extends State<TVShowResult> {
                       ),
                     ),
                   );
+                  // Ticking the last episode finishes the show, so the state
+                  // shown here can be stale by the time the guide pops.
+                  if (!mounted) return;
+                  setState(() {
+                    _progressToken++;
+                  });
                 },
                 child: Text(
                   data['number_of_seasons'] > 0
@@ -305,8 +318,21 @@ class _TVShowResultState extends State<TVShowResult> {
       watchlistImage: _imageProviderWatchlist,
       favImage: _imageProviderFav,
       listImage: _imageProviderList,
-      onIconTap: (type) =>
-          onTap(type, data["id"].toString(), data["name"], 0, 0),
+      onIconTap: (type) async {
+        await onTap(type, data["id"].toString(), data["name"], 0, 0);
+        if (!mounted) return;
+        setState(() {
+          _progressToken++;
+        });
+      },
+      trailing: MediaProgressControl(
+        id: data["id"].toString(),
+        type: progressTVShowsKey,
+        refreshToken: _progressToken,
+        onChanged: () {
+          if (mounted) setState(() {});
+        },
+      ),
     );
   }
 

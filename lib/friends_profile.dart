@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/firebase/firestore_core.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/common/media_pair_membership.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/media.dart';
 import 'package:uractor/objects/tv_show.dart';
@@ -445,7 +446,10 @@ class _FriendProfileState extends State<FriendProfile> {
                               );
                             },
                             child: getItemContainer(context, snapshot.data,
-                                type == "Person" ? "person" : "media"));
+                                type == "Person" ? "person" : "media",
+                                mediaPair: type == "Person"
+                                    ? null
+                                    : mediaPairForData(snapshot.data)));
                       } else if (snapshot.hasError) {
                         return Center(
                             child: Text(S.of(context)!.errorFailedToLoadDetails));
@@ -553,7 +557,8 @@ class _FriendProfileState extends State<FriendProfile> {
                               );
                             },
                             child: getItemContainer(
-                                context, snapshot.data, "media"));
+                                context, snapshot.data, "media",
+                                mediaPair: mediaPairForData(snapshot.data)));
                       } else if (snapshot.hasError) {
                         return Center(
                             child: Text(S.of(context)!.errorFailedToLoadDetails));

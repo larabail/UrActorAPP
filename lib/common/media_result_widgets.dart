@@ -192,12 +192,17 @@ class MediaStatusIconsRow extends StatelessWidget {
   final String listImage;
   final void Function(String type) onIconTap;
 
+  /// An extra control appended to the row. The watch-progress control rides
+  /// here so it costs no vertical space of its own.
+  final Widget? trailing;
+
   const MediaStatusIconsRow({
     required this.seenImage,
     required this.watchlistImage,
     required this.favImage,
     required this.listImage,
     required this.onIconTap,
+    this.trailing,
     super.key,
   });
 
@@ -223,6 +228,7 @@ class MediaStatusIconsRow extends StatelessWidget {
         icon('watchlist', watchlistImage),
         icon('fav', favImage),
         icon('list', listImage),
+        if (trailing != null) trailing!,
       ],
     );
   }

@@ -8,6 +8,7 @@ import 'package:uractor/common/firebase/firestore_core.dart';
 import 'package:uractor/common/firebase/playlist_service.dart';
 import 'package:uractor/common/firebase/recommendation_service.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/common/media_pair_membership.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/tv_show.dart';
 import 'package:uractor/popups/grant_access_dialogue.dart';
@@ -572,7 +573,15 @@ class _ListResultState extends State<ListResult> {
                   ),
                 );
               },
-              child: getItemContainer(context, snapshot.data, "media"));
+              child: getItemContainer(
+                context,
+                snapshot.data,
+                "media",
+                mediaPair: mediaPairForData(
+                  snapshot.data,
+                  containerType: mediaType,
+                ),
+              ));
         } else if (snapshot.hasError) {
           return Container(
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),

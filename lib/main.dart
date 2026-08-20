@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/common/media_pair_membership.dart';
 import 'package:uractor/notifications.dart';
 import 'package:uractor/objects/playlist.dart';
 import 'package:uractor/objects/user.dart';
@@ -17,6 +18,7 @@ import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'common/playlist_order.dart';
 import 'calendar.dart';
+import 'continue_watching_section.dart';
 import 'favorites.dart';
 import 'list_result.dart';
 import 'login.dart';
@@ -145,12 +147,19 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  /// Bumped on every pull to refresh so the Continue watching section is
+  /// rebuilt from scratch. It caches a lookup per title, and a plain
+  /// `setState` would leave that cache — and the progress it was built from —
+  /// in place, which is exactly what the user pulled down to get rid of.
+  int _refreshCount = 0;
+
   Future<void> _refreshMain() async {
     User? user = FirebaseAuth.instance.currentUser;
     currentUser = AppUser(uid: user!.uid);
     await currentUser.getFirebaseData();
     setState(() {
       gotData = true;
+      _refreshCount++;
     });
   }
 
@@ -308,6 +317,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 ],
               ),
               buildPlaylistsSection(),
+              ContinueWatchingSection(
+                key: ValueKey('continueWatching-$_refreshCount'),
+              ),
               buildMainPageContainer(
                   S.of(context)!.watchlist,
                   currentUser.watchlistTVShows + currentUser.watchlist,
@@ -417,7 +429,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                     },
                                     child: Column(children: [
                                       getItemContainer(
-                                          context, snapshot.data, type),
+                                          context, snapshot.data, type,
+                                          mediaPair: mediaPairForData(
+                                              snapshot.data,
+                                              containerType: type)),
                                       Text(
                                         '${review["Rating"]}/10',
                                         textAlign: TextAlign.center,
@@ -768,7 +783,8 @@ class _MyHomePageState extends State<MyHomePage> {
                               );
                             },
                             child: getItemContainer(
-                                context, snapshot.data, "media"));
+                                context, snapshot.data, "media",
+                                mediaPair: mediaPairForData(snapshot.data)));
                       } else if (snapshot.hasError) {
                         return Center(
                             child: Text(S.of(context)!.errorFailedToLoadDetails));

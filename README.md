@@ -16,6 +16,12 @@ target (see [Platforms](#platforms)).
   `lib/common/firebase/watched_service.dart`).
 - Keep a watchlist of things you mean to get to (`lib/watchlist.dart`).
 - Keep favorites separately from the watchlist (`lib/favorites.dart`).
+- Every media tile carries badges for the lists it is already on — a heart for
+  a favorite, a bookmark for the watchlist — so search results, filmographies,
+  playlists, the calendar and friends' profiles all say what you have already
+  saved. The Favorites page drops the heart and the Watchlist page drops the
+  bookmark, since there every tile would carry one
+  (`lib/common/item_container.dart`, `lib/common/media_pair_membership.dart`).
 - Rate a title and write a review. Movie and TV reviews are stored separately
   (`lib/reviews.dart`, `lib/popups/rating_popup.dart`).
 - Log what you watched on a calendar — a single date or a date range. A show
@@ -23,6 +29,21 @@ target (see [Platforms](#platforms)).
   shown on both your own calendar and a friend's (`lib/calendar.dart`,
   `lib/friends_calendar.dart`, `lib/popups/add_to_calendar_pop_up.dart`,
   `lib/common/calendar_episode.dart`).
+- Track what you are part way through. A movie or show is not started, being
+  watched, or finished, and the control for moving between those states sits in
+  the icon row on each detail page (`lib/common/watch_progress_widgets.dart`,
+  `lib/common/firebase/progress_service.dart`). A finished show can be picked
+  up again; a finished movie cannot, since rewatches are counted separately.
+- Tick episodes and whole seasons off in the season guide. Watching the last
+  episode finishes the show on its own (`lib/season_guide.dart`,
+  `lib/common/watch_progress_controller.dart`). Specials (season 0) are not
+  counted towards completion and offer no tick.
+- Pick up where you left off. The home page carries a Continue watching row of
+  everything started but not finished, most recent activity first, naming the
+  next unwatched episode under each show. It is absent rather than empty when
+  there is nothing to resume (`lib/continue_watching_section.dart`,
+  `lib/common/continue_watching.dart`,
+  `lib/common/firebase/progress_service.dart`).
 
 ### Lists
 
@@ -53,7 +74,8 @@ target (see [Platforms](#platforms)).
 - Detail pages for movies, TV shows, and people (`lib/movie_result.dart`,
   `lib/tvshow_result.dart`, `lib/person_result.dart`).
 - Full cast and crew (`lib/cast_and_crew.dart`).
-- Season and episode guide for TV shows (`lib/season_guide.dart`).
+- Season and episode guide for TV shows, with per-episode and per-season watch
+  ticks (`lib/season_guide.dart`).
 - Trailers play inline (`lib/common/mediaitembuilder.dart`).
 - Streaming availability, via TMDB's watch providers endpoint.
 - Oscar badges on person pages — a win count for the person and a marker on
@@ -244,10 +266,11 @@ lib/
   movie_result.dart          Movie detail
   tvshow_result.dart         TV detail
   person_result.dart         Person detail, Oscar badges
-  season_guide.dart          Seasons and episodes
+  season_guide.dart          Seasons and episodes, with watch ticks
   cast_and_crew.dart         Full credits
   list_result.dart           A single list
   seen.dart  watchlist.dart  favorites.dart  playlists.dart  reviews.dart
+  continue_watching_section.dart  Home page "Continue watching" row
   calendar.dart              Watch calendar
   seenTogether.dart          Titles watched with a given friend
   friends.dart  friends_profile.dart  friends_calendar.dart  friends_thoughts.dart
@@ -258,13 +281,17 @@ lib/
   common/
     constants.dart           TMDB endpoints; API key read from --dart-define
     utils.dart
+    continue_watching.dart   Continue watching ordering and TMDB derivations
     item_container.dart  mediaitembuilder.dart  tabView.dart
+    watch_progress_view.dart        Pure watch-progress rules
+    watch_progress_controller.dart  Per-show episode tick state
+    watch_progress_widgets.dart     The season, episode and detail controls
     api/apiutils.dart        All TMDB HTTP calls
     navigation/              appbar.dart, bottom_app_bar.dart
     firebase/                One service per domain: calendar, favorites,
-                             playlist, recommendation, review, social,
-                             watched, watchlist, plus firestore_core and
-                             firebaseutils
+                             playlist, progress, recommendation, review,
+                             social, watched, watchlist, plus firestore_core
+                             and firebaseutils
   popups/                    Dialogs: add to calendar, add friends seen with,
                              rating, share, settings, list add/edit/join,
                              grant access, movie add, tv add, profile sections
@@ -354,21 +381,22 @@ npm install
 npm test
 ```
 
-`flutter test` currently runs 209 tests with no emulator, credentials or
+`flutter test` currently runs 379 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
 `FirestoreCore.db` and `AppHttp.client` — which default to the real
 implementations and are pointed at fakes by the tests.
 `test/support/harness.dart` installs those fakes and restores them afterwards.
 The Flutter suite covers pure logic, TMDB/OMDB request parsing with a stubbed
 HTTP client, auth/session helpers, search and playlist ordering, playlist join
-handling, settings, inbox, calendar/list services, and in-memory Firestore
-service behaviour.
+handling, settings, inbox, calendar/list services, calendar episode detail,
+in-memory Firestore service behaviour, watch-progress rules and controls, and
+the reviews and Continue watching screens.
 
 `npm test` in `functions/` runs the Node 22 unit tests for the playlist
 membership and join-throttle helpers. It currently reports 21 passing tests.
 
 `npm test` in `firestore-tests/` starts the Firestore emulator with
-`firebase emulators:exec` and runs the rules suite. It currently reports 61
+`firebase emulators:exec` and runs the rules suite. It currently reports 76
 passing tests. If port 8080 is already held by an emulator you started
 separately, run `npx mocha rules.test.js --timeout 20000` from
 `firestore-tests/` instead.

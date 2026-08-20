@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/common/async_action.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/common/media_pair_membership.dart';
 import '../common/firebase/firestore_core.dart';
 import '../common/api/apiutils.dart';
 import '../common/firebase/playlist_service.dart';
@@ -137,7 +138,9 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
                                   S.of(context)!.genericAuthError,
                                 );
                               },
-                              child: getItemContainer(context, item, "media")
+                              child: getItemContainer(context, item, "media",
+                                  mediaPair: mediaPairForData(item,
+                                      containerType: "Movies"))
                             ),
                           );
                         },

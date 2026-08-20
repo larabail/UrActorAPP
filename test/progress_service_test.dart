@@ -334,4 +334,53 @@ void main() {
       ]);
     });
   });
+
+  group('reading progress back', () {
+    test('returns every season in one read', () async {
+      await ProgressService.markEpisodeWatched('s1', 1, 2, seasons);
+      await ProgressService.markEpisodeWatched('s1', 2, 1, seasons);
+
+      expect(await ProgressService.watchedEpisodesBySeason('s1'), {
+        '1': [2],
+        '2': [1],
+      }.map((season, episodes) => MapEntry(int.parse(season), episodes)));
+    });
+
+    test('returns nothing for a show with no record', () async {
+      expect(await ProgressService.watchedEpisodesBySeason('unknown'), isEmpty);
+    });
+
+    test('agrees with the single-season read', () async {
+      await ProgressService.markSeasonWatched('s1', 1, 2, seasons);
+
+      final bySeason = await ProgressService.watchedEpisodesBySeason('s1');
+      expect(bySeason[1], await ProgressService.watchedEpisodes('s1', 1));
+    });
+
+    test('reports the recorded dates for an item in progress', () async {
+      await ProgressService.startMovie('m1', date: DateTime(2026, 2, 3));
+
+      final dates = await ProgressService.datesFor(progressMoviesKey, 'm1');
+
+      expect(dates.started, '2026-02-03');
+      expect(dates.finished, isNull);
+    });
+
+    test('reports both dates once an item is finished', () async {
+      await ProgressService.startMovie('m1', date: DateTime(2026, 2, 3));
+      await ProgressService.finishMovie('m1', date: DateTime(2026, 2, 5));
+
+      final dates = await ProgressService.datesFor(progressMoviesKey, 'm1');
+
+      expect(dates.started, '2026-02-03');
+      expect(dates.finished, '2026-02-05');
+    });
+
+    test('reports no dates for an item with no record', () async {
+      final dates = await ProgressService.datesFor(progressMoviesKey, 'nope');
+
+      expect(dates.started, isNull);
+      expect(dates.finished, isNull);
+    });
+  });
 }

@@ -145,6 +145,14 @@ class SEs extends S {
   String get seen => 'Vistas';
 
   @override
+  String get continueWatching => 'Seguir viendo';
+
+  @override
+  String nextEpisode(int season, int episode) {
+    return 'Siguiente: T$season E$episode';
+  }
+
+  @override
   String get notifications => 'Notificaciones';
 
   @override
@@ -644,8 +652,59 @@ class SEs extends S {
   String get favoriteBadge => 'En tus favoritas';
 
   @override
+  String get watchlistBadge => 'En tu lista de pendientes';
+
+  @override
   String get friendRequestActionFailedError =>
       'Algo salió mal. Por favor, inténtalo de nuevo.';
+
+  @override
+  String get watchProgress => 'Progreso';
+
+  @override
+  String get watchProgressNotStarted => 'Sin empezar';
+
+  @override
+  String get watchProgressInProgress => 'Viendo';
+
+  @override
+  String get watchProgressFinished => 'Terminada';
+
+  @override
+  String watchProgressStartedOn(String date) {
+    return 'Viéndola desde el $date';
+  }
+
+  @override
+  String watchProgressFinishedOn(String date) {
+    return 'Terminada el $date';
+  }
+
+  @override
+  String get watchProgressStart => 'Empezar a ver';
+
+  @override
+  String get watchProgressFinish => 'Marcar como terminada';
+
+  @override
+  String get watchProgressReopen => 'Volver a verla';
+
+  @override
+  String get watchProgressMarkSeason => 'Marcar la temporada como vista';
+
+  @override
+  String get watchProgressUnmarkSeason => 'Borrar esta temporada';
+
+  @override
+  String get watchProgressMarkEpisode => 'Marcar el episodio como visto';
+
+  @override
+  String get watchProgressUnmarkEpisode => 'Desmarcar el episodio';
+
+  @override
+  String watchProgressEpisodesWatched(int watched, int total) {
+    return '$watched de $total vistos';
+  }
 
   @override
   String get calendarEpisodeSectionTitle => '¿Qué parte viste?';
