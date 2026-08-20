@@ -34,21 +34,27 @@ The `version:` line in `pubspec.yaml` still supplies the user-facing name
 
 ## Restricting production to you
 
-The `production` job targets a GitHub Environment named `production`. Set it up
-once:
+Deployment protection rules — the **Required reviewers** setting — are not
+available for private repositories on the Free plan, so that section does not
+appear under **Settings → Environments → production**.
 
-1. Repository **Settings → Environments → New environment**, named
-   `production`.
-2. Tick **Required reviewers** and add yourself, alone.
-3. Optionally limit deployment branches to `master`.
+Authorisation is enforced in the workflow instead. A first job checks the login
+that started the run against the `RELEASE_MANAGERS` repository variable,
+defaulting to `larabail`, and fails before anything reaches Play. Set the
+variable under **Settings → Secrets and variables → Actions → Variables** to
+change who may release.
 
-The job then pauses for your approval before it touches Play. This is stronger
-than checking who started the run: even someone with write access who triggers
-the workflow cannot proceed without you approving it.
+Be clear about how strong this is: anyone with write access could edit the
+workflow to remove the check. It stops mistakes and casual runs, not someone
+determined who already has write access. The controls that actually matter are
+keeping write access limited and protecting `master`.
 
-> Repository secrets are readable by any workflow that runs. Environment
-> protection controls *deployment*, not secret access, so treat write access to
-> this repo as equivalent to holding the signing key.
+The job still targets a `production` environment, so deployments are recorded
+and required reviewers apply automatically if this repository ever moves to a
+plan that offers them, with no change to the workflow.
+
+> Repository secrets are readable by any workflow that runs. Treat write access
+> to this repo as equivalent to holding the signing key.
 
 ## Secrets
 
@@ -99,13 +105,52 @@ from; the fix is to build a newer version rather than to promote an older one.
 
 ## Release notes
 
-`release_notes.json` maps a language to its text. Notes for a language with no
-store listing are dropped with a warning rather than failing the release, since
-Play rejects them outright. Only `en-US` exists today; the Spanish text is
-already written and will start being used as soon as an `es-ES` listing is
-added.
+Notes are generated from commit subjects, so there is nothing to write by hand.
 
-Play limits notes to 500 characters per language.
+Only user-facing types are used. `feat` becomes **New**, `fix` becomes
+**Fixed**, `perf` becomes **Improved** and `security` becomes **Security**.
+Everything else — `chore`, `ci`, `refactor`, `test`, `docs`, `build`, `style` —
+is dropped, along with any subject that is not a conventional commit, since a
+dependency bump means nothing to someone reading a store listing.
+
+Internal builds cover commits since the previous `build-*` tag. Production
+covers commits since the last `released-*` tag, so a user who skipped several
+test builds still sees everything that changed for them, and the range ends at
+the promoted build's tag rather than at `HEAD`, so the notes never describe
+code that is not in the artifact being shipped.
+
+### Overriding a note
+
+A commit subject is written for other developers and sometimes describes
+internals that should not be advertised. Any commit can override its own entry:
+
+```
+fix(auth): stop storing the password in a global
+
+Release-Note: Fixed a rare sign-in failure.
+```
+
+Use `Release-Note: skip` to leave a commit out entirely.
+
+Without the trailer, that example would have published *"stop storing the
+password in a global"* to the store, which is both confusing and an
+advertisement of a weakness.
+
+### Length
+
+Play rejects notes over 500 characters per language. The generator drops
+whole entries from the least important section until the note fits, rather
+than truncating mid-sentence. If nothing user-facing is found it falls back to
+"Bug fixes and performance improvements."
+
+Preview what would be published:
+
+```bash
+python tool/release_notes.py --stdout
+python tool/release_notes.py --since released-47 --until build-52 --stdout
+```
+
+Only `en-US` is generated, because that is the only store listing that exists.
 
 ## Running it by hand
 
@@ -115,7 +160,8 @@ Play limits notes to 500 characters per language.
 export PLAY_SERVICE_ACCOUNT_JSON="$(cat service-account.json)"
 
 python tool/play.py next-code
-python tool/play.py upload --aab build/app/outputs/bundle/release/app-release.aab --track internal
+python tool/release_notes.py --output build/release_notes.json
+python tool/play.py upload --aab build/app/outputs/bundle/release/app-release.aab --track internal --notes build/release_notes.json
 python tool/play.py promote --source internal --target production --rollout 0.1
 ```
 
