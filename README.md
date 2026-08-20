@@ -369,6 +369,17 @@ too low to catch a regression.
   script (no npm dependencies) that populates the Firestore `Oscars`
   collection from the UrActor API, resolving winners to TMDB ids. It has its
   own README covering name resolution, overrides, and known gaps.
+- [`firestore.rules`](firestore.rules) — the Firestore security rules, with
+  their own test suite in [`firestore-tests/`](firestore-tests/README.md) that
+  runs against the local emulator.
+- [`.githooks/pre-commit`](.githooks/pre-commit) — runs analyze and the tests
+  before a commit. Enable it with `git config core.hooksPath .githooks`.
+
+## Contributing
+
+[AGENTS.md](AGENTS.md) is the working agreement: no commits on `master`, tests
+with new code, both `.arb` files when strings change, and the commit and pull
+request conventions. Read it before opening a pull request.
 
 ## Known gaps
 

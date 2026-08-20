@@ -216,62 +216,198 @@ class ApiUtils {
 
   /// Performs a multi-type search (actors, movies, shows) based on a term.
   /// @param searchTermActor The search term.
+  /// @param page The 1-based result page to fetch.
   /// @return A list of result objects matching the query.
-  static Future<List> searchData(String searchTermActor) async {
-    String searchLink = "";
-    if (searchTermActor != "") {
-      searchLink =
-          '$SEARCH_BY_NAME_MULTI_LINK${searchTermActor.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "+")}';
-      final response = await AppHttp.client.get(Uri.parse(searchLink));
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        return json['results'];
+  static Future<List> searchData(String searchTermActor, {int page = 1}) async {
+    return (await searchMulti(searchTermActor, page: page)).results;
+  }
+
+  /// Performs a multi-type search and returns the page metadata alongside the
+  /// results, so callers can keep loading further pages.
+  /// @param searchTerm The search term.
+  /// @param page The 1-based result page to fetch.
+  /// @return The decoded page of results.
+  static Future<SearchResultPage> searchMulti(String searchTerm,
+      {int page = 1}) async {
+    final String query = searchTerm.trim();
+    if (query.isEmpty) {
+      return const SearchResultPage(results: [], page: 1, totalPages: 0);
+    }
+    final searchLink =
+        '$SEARCH_BY_NAME_MULTI_LINK${Uri.encodeQueryComponent(query)}&page=$page';
+    final response = await AppHttp.client.get(Uri.parse(searchLink));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load search results');
+    }
+    final json = jsonDecode(response.body);
+    return SearchResultPage(
+      results: (json['results'] as List?) ?? const [],
+      page: (json['page'] as int?) ?? page,
+      totalPages: (json['total_pages'] as int?) ?? 1,
+    );
+  }
+
+  /// Scores how well a search result matches [query], highest first.
+  ///
+  /// TMDB orders multi-search results by popularity alone, which buries an
+  /// exactly matching title under better known but less relevant entries.
+  /// Matching the title is worth more than any popularity difference, so the
+  /// match tiers are spaced far enough apart that popularity only breaks ties
+  /// within a tier.
+  /// @param item A single search result.
+  /// @param query The raw search term.
+  /// @return The relevance score, where a larger value sorts earlier.
+  static double relevanceScore(Map item, String query) {
+    final String needle = _normalizeForMatch(query);
+    final String title =
+        _normalizeForMatch((item['title'] ?? item['name'] ?? '').toString());
+
+    double score;
+    if (needle.isEmpty || title.isEmpty) {
+      score = 0;
+    } else if (title == needle) {
+      score = 4000;
+    } else if (title.startsWith(needle)) {
+      score = 3000;
+    } else if (_containsWholeWord(title, needle)) {
+      score = 2000;
+    } else if (title.contains(needle)) {
+      score = 1000;
+    } else {
+      score = 0;
+    }
+
+    // Popularity is unbounded, so it is compressed into the gap between tiers
+    // rather than being added raw, which would let a very popular loose match
+    // outrank an exact one.
+    final double popularity =
+        double.tryParse((item['popularity'] ?? 0).toString()) ?? 0;
+    return score + (popularity / (popularity + 100)) * 500;
+  }
+
+  /// Sorts [results] by [relevanceScore], leaving the original order intact
+  /// for entries that score identically.
+  /// @param results The raw result list.
+  /// @param query The raw search term.
+  /// @return A new list ordered by descending relevance.
+  static List<dynamic> sortByRelevance(List<dynamic> results, String query) {
+    final List<dynamic> sorted = List<dynamic>.from(results);
+    final Map<int, double> scores = {
+      for (final item in sorted)
+        identityHashCode(item):
+            item is Map ? relevanceScore(item, query) : 0.0,
+    };
+    mergeSortByScore(sorted, scores);
+    return sorted;
+  }
+
+  /// Stable descending sort used by [sortByRelevance]. Dart's [List.sort] is
+  /// not stable, which would shuffle equally scored results between rebuilds.
+  /// @param items The list to sort in place.
+  /// @param scores Score per item, keyed by identity.
+  static void mergeSortByScore(List<dynamic> items, Map<int, double> scores) {
+    if (items.length < 2) return;
+    final int middle = items.length ~/ 2;
+    final List<dynamic> left = items.sublist(0, middle);
+    final List<dynamic> right = items.sublist(middle);
+    mergeSortByScore(left, scores);
+    mergeSortByScore(right, scores);
+
+    int l = 0, r = 0, i = 0;
+    while (l < left.length && r < right.length) {
+      final double leftScore = scores[identityHashCode(left[l])] ?? 0;
+      final double rightScore = scores[identityHashCode(right[r])] ?? 0;
+      items[i++] = leftScore >= rightScore ? left[l++] : right[r++];
+    }
+    while (l < left.length) {
+      items[i++] = left[l++];
+    }
+    while (r < right.length) {
+      items[i++] = right[r++];
+    }
+  }
+
+  /// Lowercases and strips accents and punctuation so that "Amelie" matches
+  /// "Amélie" and "wall e" matches "WALL·E".
+  static String _normalizeForMatch(String value) {
+    final String lower = value.toLowerCase();
+    final StringBuffer buffer = StringBuffer();
+    for (final int rune in lower.runes) {
+      final String char = String.fromCharCode(rune);
+      final String folded = _accents[char] ?? char;
+      if (RegExp(r'[a-z0-9]').hasMatch(folded)) {
+        buffer.write(folded);
+      } else if (folded.length > 1) {
+        buffer.write(folded);
+      } else {
+        buffer.write(' ');
       }
     }
-    return [];
+    return buffer.toString().trim().replaceAll(RegExp(r'\s+'), ' ');
   }
+
+  static bool _containsWholeWord(String haystack, String needle) {
+    return haystack.split(' ').contains(needle) ||
+        haystack.contains(' $needle ') ||
+        haystack.startsWith('$needle ') ||
+        haystack.endsWith(' $needle');
+  }
+
+  static const Map<String, String> _accents = {
+    'á': 'a', 'à': 'a', 'â': 'a', 'ä': 'a', 'ã': 'a', 'å': 'a',
+    'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
+    'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i',
+    'ó': 'o', 'ò': 'o', 'ô': 'o', 'ö': 'o', 'õ': 'o', 'ø': 'o',
+    'ú': 'u', 'ù': 'u', 'û': 'u', 'ü': 'u',
+    'ñ': 'n', 'ç': 'c', 'ß': 'ss', 'æ': 'ae', 'œ': 'oe',
+  };
 
   /// Searches for movies based on a term in the current language.
   /// @param searchTerm The user query.
   /// @return A list of movies matching the query.
   static Future<List> searchMovies(String searchTerm) async {
-    if (searchTerm != "") {
-      final lang = currentUser.settings['language'] ?? 'en';
-      String name = searchTerm
-          .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
-          .replaceAll(" ", "+");
-      final searchLink = '$SEARCH_BY_NAME_MOVIE_LINK$name&language=$lang';
-      final response = await AppHttp.client.get(Uri.parse(searchLink));
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        return json['results'];
-      } else {
-        throw Exception('Failed to load movie details');
-      }
-    } else {
-      return [];
+    final String query = searchTerm.trim();
+    if (query.isEmpty) return [];
+    final lang = currentUser.settings['language'] ?? 'en';
+    final searchLink =
+        '$SEARCH_BY_NAME_MOVIE_LINK${Uri.encodeQueryComponent(query)}&language=$lang';
+    final response = await AppHttp.client.get(Uri.parse(searchLink));
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return json['results'];
     }
+    throw Exception('Failed to load movie details');
   }
 
   /// Searches for TV shows based on a term in the current language.
   /// @param searchTerm The user query.
   /// @return A list of TV shows matching the query.
   static Future<List> searchTvShows(String searchTerm) async {
-    if (searchTerm != "") {
-      final lang = currentUser.settings['language'] ?? 'en';
-      String name = searchTerm
-          .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
-          .replaceAll(" ", "+");
-      final searchLink = '$SEARCH_BY_NAME_TV_SHOW_LINK$name&language=$lang';
-      final response = await AppHttp.client.get(Uri.parse(searchLink));
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        return json['results'];
-      } else {
-        throw Exception('Failed to load tv show details');
-      }
-    } else {
-      return [];
+    final String query = searchTerm.trim();
+    if (query.isEmpty) return [];
+    final lang = currentUser.settings['language'] ?? 'en';
+    final searchLink =
+        '$SEARCH_BY_NAME_TV_SHOW_LINK${Uri.encodeQueryComponent(query)}&language=$lang';
+    final response = await AppHttp.client.get(Uri.parse(searchLink));
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return json['results'];
     }
+    throw Exception('Failed to load tv show details');
   }
+}
+
+/// One page of search results, with enough metadata to fetch the next.
+class SearchResultPage {
+  final List<dynamic> results;
+  final int page;
+  final int totalPages;
+
+  const SearchResultPage({
+    required this.results,
+    required this.page,
+    required this.totalPages,
+  });
+
+  bool get hasMore => page < totalPages;
 }

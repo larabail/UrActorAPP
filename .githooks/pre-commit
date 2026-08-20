@@ -1,0 +1,38 @@
+#!/bin/sh
+#
+# Refuses a commit that does not analyze cleanly or does not pass the tests.
+#
+# This is not enabled by cloning. Turn it on once per checkout with:
+#
+#     git config core.hooksPath .githooks
+#
+# It is also the gate `bl close` runs before delivering a task, which is what
+# makes "new code comes with tests" enforce itself rather than rely on review.
+#
+# Skip it deliberately with `git commit --no-verify` when you are committing
+# something that genuinely cannot build — a partial rebase, a docs fixup in the
+# middle of a conflict. Do not make a habit of it.
+
+set -e
+
+if ! command -v flutter >/dev/null 2>&1; then
+  echo "pre-commit: flutter is not on PATH, skipping analyze and tests." >&2
+  exit 0
+fi
+
+changed=$(git diff --cached --name-only --diff-filter=ACMR)
+if [ -z "$changed" ]; then
+  exit 0
+fi
+
+# A commit touching only prose cannot break the build, and paying a full test
+# run for a typo fix is how hooks end up disabled permanently.
+if ! printf '%s\n' "$changed" | grep -qvE '\.(md|txt)$|^docs/'; then
+  exit 0
+fi
+
+echo "pre-commit: flutter analyze"
+flutter analyze
+
+echo "pre-commit: flutter test"
+flutter test

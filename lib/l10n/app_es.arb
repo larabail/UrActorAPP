@@ -145,6 +145,18 @@
   "noDataAvailable": "No hay información",
   "unknown": "Desconocido",
   "searchBar": "Escribe el nombre de una persona/película/serie...",
+  "noSearchResults": "No se encontraron resultados",
+  "sortByAdded": "Fecha de adición",
+  "sortByTitle": "Título",
+  "sortByReleaseDate": "Fecha de estreno",
+  "sortByMyRating": "Mi valoración",
+  "sortByImdbRating": "Valoración de IMDb",
+  "sortAscending": "Ascendente",
+  "sortDescending": "Descendente",
+  "reorderFriends": "Reordenar",
+  "reorderPlaylists": "Reordenar",
+  "finishReordering": "Listo",
+  "noFriendsYet": "¡Todavía no has añadido ningún amigo!",
   "episodes": "episodios",
   "episode": "Episodio",
   "seemWith": "Vistas con",
@@ -169,5 +181,7 @@
   "deleteCalendarEntry": "Eliminar Entrada del Calendario",
   "deleteCalendarEntryQuestion": "¿Quieres eliminar esto solo de tu calendario o del de todos?",
   "justMe": "Solo yo",
-  "everyone": "Todos"
+  "everyone": "Todos",
+  "profileSetupFailedError": "Tu cuenta fue creada, pero no pudimos configurar tu perfil. Por favor, inicia sesión de nuevo.",
+  "friendRequestActionFailedError": "Algo salió mal. Por favor, inténtalo de nuevo."
 }

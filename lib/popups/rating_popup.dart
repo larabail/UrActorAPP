@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/common/firebase/review_service.dart';
+import 'package:uractor/common/firebase/firestore_core.dart';
 import '../main.dart';
-import '../common/firebase/firestore_core.dart';
 
 final myController = TextEditingController(text: "");
 
@@ -20,7 +20,6 @@ class _RatingDialogState extends State<RatingDialog> {
   int rating = 0;
   String opinion = "";
   Future<void> submit() async {
-    FirebaseFirestore firestore = FirestoreCore.db;
     if (reviewInfo.keys.toList().isNotEmpty) {
       await ReviewService.deleteReview(reviewId, reviewType, context);
     }
@@ -31,8 +30,7 @@ class _RatingDialogState extends State<RatingDialog> {
       },
     };
     reviewInfo = information;
-    var userDoc = firestore.collection(currentUser.uid).doc('Reviews');
-    await userDoc.update({
+    await FirestoreCore.updateDocument(currentUser.uid, 'Reviews', {
       reviewType: FieldValue.arrayUnion([information])
     });
     if (reviewType == "Movies") {
