@@ -408,14 +408,14 @@ class _CalendarState extends State<Calendar> {
                                                       title: event['title'],
                                                       coverPhoto: event[
                                                               "poster_path"] ??
-                                                          UNKOWN_COVER)
+                                                          UNKNOWN_COVER)
                                                   : TVShow(
                                                       id: event["id"]
                                                           .toString(),
                                                       title: event['name'],
                                                       coverPhoto: event[
                                                               "poster_path"] ??
-                                                          UNKOWN_COVER);
+                                                          UNKNOWN_COVER);
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(

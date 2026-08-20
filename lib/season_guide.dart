@@ -254,7 +254,7 @@ class EpisodeCard extends StatelessWidget {
                     image: CachedNetworkImageProvider(
                         snapshot.data!["still_path"] != null
                             ? IMG_LINK + snapshot.data!['still_path']
-                            : UNKOWN_COVER),
+                            : UNKNOWN_COVER),
                     fit: BoxFit.fitWidth,
                   ),
                 ),

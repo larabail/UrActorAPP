@@ -10,9 +10,9 @@ Widget getItemContainer(context, item, type, {widthPercentage = 0.28, heightPerc
     imagePath = IMG_LINK + item!["profile_path"];
   } else {
     if (type == "media") {
-      imagePath = UNKOWN_COVER;
+      imagePath = UNKNOWN_COVER;
     } else {
-      imagePath = UNKOWN_PERSON;
+      imagePath = UNKNOWN_PERSON;
     }
   }
 
@@ -32,7 +32,7 @@ Widget getItemContainer(context, item, type, {widthPercentage = 0.28, heightPerc
             ),
           ),
         ),
-        if (imagePath == UNKOWN_COVER || imagePath == UNKOWN_PERSON)
+        if (imagePath == UNKNOWN_COVER || imagePath == UNKNOWN_PERSON)
           Container(
             alignment: Alignment.center,
             child: Text(
@@ -73,8 +73,8 @@ Widget getItemSelectableContainer(context, item, type, isSelected) {
                 item!["poster_path"] != null
                     ? IMG_LINK + item!["poster_path"]
                     : type == "media"
-                        ? UNKOWN_COVER
-                        : UNKOWN_PERSON,
+                        ? UNKNOWN_COVER
+                        : UNKNOWN_PERSON,
               ),
               fit: BoxFit.fitWidth,
             ),
