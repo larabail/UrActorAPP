@@ -2,9 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uractor/common/async_action.dart';
 import 'package:uractor/common/item_container.dart';
 import '../common/api/apiutils.dart';
 import '../common/firebase/playlist_service.dart';
+import '../l10n/l10n.dart';
 import '../common/constants.dart';
 import '../main.dart';
 import '../common/firebase/firestore_core.dart';
@@ -26,7 +28,7 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
   FirebaseFirestore db = FirestoreCore.db;
   int _selectedIndex = 0;
 
-  void addListSubmit() async {
+  Future<void> addListSubmit() async {
     // The id used to be a random 7-digit number checked for collisions by
     // downloading every document in the collection. A Firestore-generated id
     // is unique by construction, and reads nothing. Playlist.id has always
@@ -230,8 +232,12 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () {
-                          addListSubmit();
+                        onTap: () async {
+                          await runVisibleAsyncAction(
+                            context,
+                            addListSubmit,
+                            S.of(context)!.genericAuthError,
+                          );
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
