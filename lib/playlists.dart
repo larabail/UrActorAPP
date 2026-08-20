@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
+import 'common/firebase/settings_service.dart';
+import 'common/playlist_order.dart';
 import 'main.dart';
 import 'list_result.dart';
 import 'objects/playlist.dart';
@@ -22,6 +24,26 @@ class Playlists extends StatefulWidget {
 class _PlaylistsState extends State<Playlists> {
   bool isJoinListPanelOpen = false;
   bool isAddListPanelOpen = false;
+
+  /// Reordering is a mode rather than always-on, so that dragging a playlist
+  /// does not compete with tapping one to open it.
+  bool _isReordering = false;
+
+  List<String> get _orderedIds => orderPlaylistIds(
+        currentUser.playlists.keys.map((key) => key.toString()),
+        SettingsService.read<dynamic>(kPlaylistOrderSettingsKey, null),
+      );
+
+  Future<void> _onReorder(int oldIndex, int newIndex) async {
+    final List<String> next =
+        reorderPlaylistIds(_orderedIds, oldIndex, newIndex);
+    // Applied in memory first so the list settles under the finger straight
+    // away, rather than waiting for the write to Firestore to come back.
+    setState(() {
+      currentUser.settings[kPlaylistOrderSettingsKey] = next;
+    });
+    await SettingsService.update(kPlaylistOrderSettingsKey, next);
+  }
 
   Future<void> _refreshPlaylists() async {
     currentUser.playlists = {};
@@ -136,6 +158,25 @@ class _PlaylistsState extends State<Playlists> {
                 ),
               ],
             ),
+            if (_orderedIds.length > 1)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () =>
+                          setState(() => _isReordering = !_isReordering),
+                      icon: Icon(
+                          _isReordering ? Icons.check : Icons.swap_vert,
+                          size: 18),
+                      label: Text(_isReordering
+                          ? S.of(context)!.finishReordering
+                          : S.of(context)!.reorderPlaylists),
+                    ),
+                  ],
+                ),
+              ),
             if (currentUser.recommendations["Movies"].isEmpty &&
                 currentUser.recommendations["TVShows"].isEmpty)
               GestureDetector(
@@ -279,15 +320,17 @@ class _PlaylistsState extends State<Playlists> {
                           ),
                         ),
                       ),
-                    ListView.builder(
-                      shrinkWrap:
-                          true,
-                      physics:
-                          const NeverScrollableScrollPhysics(),
-                      itemCount: currentUser.playlists.length,
+                    ReorderableListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      // Handles only appear in reorder mode, so an ordinary
+                      // drag still scrolls the page rather than picking a
+                      // playlist up.
+                      buildDefaultDragHandles: false,
+                      onReorder: _onReorder,
+                      itemCount: _orderedIds.length,
                       itemBuilder: (context, index) {
-                        String key =
-                            currentUser.playlists.keys.elementAt(index);
+                        String key = _orderedIds[index];
                         dynamic value = currentUser.playlists[key]['Name'];
                         dynamic image =
                             currentUser.playlists[key]['CoverPhoto'];
@@ -297,7 +340,9 @@ class _PlaylistsState extends State<Playlists> {
                         dynamic accessCode =
                             currentUser.playlists[key]['AccessCode'];
                         return GestureDetector(
+                          key: ValueKey(key),
                           onTap: () {
+                            if (_isReordering) return;
                             Playlist listResult = Playlist(
                                 id: key.toString(),
                                 name: value.toString(),
@@ -379,6 +424,24 @@ class _PlaylistsState extends State<Playlists> {
                                     ),
                                   ),
                                 ),
+                                if (_isReordering)
+                                  Positioned(
+                                    top: 12,
+                                    left: 12,
+                                    child: ReorderableDragStartListener(
+                                      index: index,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black54,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: const Icon(Icons.drag_handle,
+                                            color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
