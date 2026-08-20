@@ -3,7 +3,9 @@
    <application
         android:label="UrActor"
         android:name="${applicationName}"
-        android:icon="@mipmap/round_logo">
+        android:icon="@mipmap/round_logo"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules">
         <activity
             android:name=".MainActivity"
             android:exported="true"
