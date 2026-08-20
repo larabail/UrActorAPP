@@ -187,5 +187,6 @@
   "everyone": "Todos",
   "profileSetupFailedError": "No pudimos configurar tu perfil, así que deshicimos la cuenta. Por favor, regístrate de nuevo.",
   "profileSetupRollbackFailedError": "No pudimos configurar tu perfil ni deshacer la cuenta. Por favor, inténtalo de nuevo más tarde.",
+  "favoriteBadge": "En tus favoritas",
   "friendRequestActionFailedError": "Algo salió mal. Por favor, inténtalo de nuevo."
 }

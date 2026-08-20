@@ -1219,6 +1219,12 @@ abstract class S {
   /// **'We couldn\'t set up your profile or undo the account. Please try again later.'**
   String get profileSetupRollbackFailedError;
 
+  /// No description provided for @favoriteBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'In your favorites'**
+  String get favoriteBadge;
+
   /// No description provided for @friendRequestActionFailedError.
   ///
   /// In en, this message translates to:

@@ -8,6 +8,7 @@ import 'package:uractor/objects/tv_show.dart';
 import '../movie_result.dart';
 import '../tvshow_result.dart';
 import 'firebase/settings_service.dart';
+import 'media_pair_membership.dart';
 import 'media_sort.dart';
 import 'media_sort_loader.dart';
 import 'utils.dart';
@@ -27,8 +28,15 @@ List<dynamic> mediaItemsForType(List<dynamic> ids, String type) {
 
 class SortedMediaGrid extends StatefulWidget {
   final List<dynamic> items;
+  final bool showFavoriteBadge;
+  final List<dynamic> Function()? favoriteItemsProvider;
 
-  const SortedMediaGrid({super.key, required this.items});
+  const SortedMediaGrid({
+    super.key,
+    required this.items,
+    this.showFavoriteBadge = false,
+    this.favoriteItemsProvider,
+  });
 
   @override
   State<SortedMediaGrid> createState() => _SortedMediaGridState();
@@ -160,7 +168,11 @@ class _SortedMediaGridState extends State<SortedMediaGrid> {
                 children: List.generate(3, (i) {
                   final itemIndex = index * 3 + i;
                   if (itemIndex < items.length) {
-                    return ItemCard(item: items[itemIndex]);
+                    return ItemCard(
+                      item: items[itemIndex],
+                      showFavoriteBadge: widget.showFavoriteBadge,
+                      favoriteItemsProvider: widget.favoriteItemsProvider,
+                    );
                   }
                   return const SizedBox.shrink();
                 }),
@@ -173,19 +185,37 @@ class _SortedMediaGridState extends State<SortedMediaGrid> {
   }
 }
 
-class ItemCard extends StatelessWidget {
+class ItemCard extends StatefulWidget {
   final List<dynamic> item;
+  final bool showFavoriteBadge;
+  final List<dynamic> Function()? favoriteItemsProvider;
 
-  const ItemCard({super.key, required this.item});
+  const ItemCard({
+    super.key,
+    required this.item,
+    this.showFavoriteBadge = false,
+    this.favoriteItemsProvider,
+  });
 
+  @override
+  State<ItemCard> createState() => _ItemCardState();
+}
+
+class _ItemCardState extends State<ItemCard> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>>(
-      future: getData(item[1], item[0]),
+      future: getData(widget.item[1], widget.item[0]),
       builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
         if (snapshot.hasData) {
+          final showFavoriteBadge = shouldShowFavoriteBadge(
+            showFavoriteBadge: widget.showFavoriteBadge,
+            favoriteItems: widget.favoriteItemsProvider?.call() ?? const [],
+            item: widget.item,
+          );
+
           return GestureDetector(
-            onTap: () {
+            onTap: () async {
               MediaItem tempMediaItem;
               if (snapshot.data!['type'] == 'Movies') {
                 tempMediaItem = Movie(
@@ -200,7 +230,7 @@ class ItemCard extends StatelessWidget {
                   coverPhoto: snapshot.data!['poster_path'] ?? '',
                 );
               }
-              Navigator.push(
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => snapshot.data!['type'] == 'Movies'
@@ -208,8 +238,17 @@ class ItemCard extends StatelessWidget {
                       : TVShowResult(tvshow: tempMediaItem as TVShow),
                 ),
               );
+              if (mounted) {
+                setState(() {});
+              }
             },
-            child: getItemContainer(context, snapshot.data, 'media'),
+            child: getItemContainer(
+              context,
+              snapshot.data,
+              'media',
+              favoriteBadgeSemanticLabel:
+                  showFavoriteBadge ? S.of(context)!.favoriteBadge : null,
+            ),
           );
         } else if (snapshot.hasError) {
           return Container(
