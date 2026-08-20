@@ -52,9 +52,15 @@ if (!USING_EMULATOR) {
     assert.equal(response.status, 200);
     assert.deepEqual(response.body.result, {id: 'valid', alreadyMember: false});
 
+    // Users is written by the callable itself, so it is settled the moment the
+    // call returns. memberUids is not: joinPlaylist adds the uid with
+    // arrayUnion, and syncPlaylistMembers separately rewrites the whole array
+    // from the Users in its own snapshot. A trigger still working through an
+    // earlier write can therefore clobber the new uid and be corrected on the
+    // retrigger, so the array is only reliable once it has settled.
     const data = (await playlist('valid').get()).data();
     assert.deepEqual(data.Users, [{owner: 'Owner'}, {guest: 'Approved'}]);
-    assert.deepEqual(new Set(data.memberUids), new Set(['owner', 'guest']));
+    await waitForMemberUids('valid', ['guest', 'owner']);
   });
 
   test('joinPlaylist rejects a wrong code and records the failure', async () => {
@@ -107,7 +113,10 @@ if (!USING_EMULATOR) {
 
     const data = (await playlist('twice').get()).data();
     assert.equal(data.Users.filter((entry) => entry.guest === 'Approved').length, 1);
-    assert.equal(data.memberUids.filter((uid) => uid === 'guest').length, 1);
+    // Settled rather than immediate, for the reason given above. Comparing the
+    // whole sorted array still proves the point of this test: a second join
+    // that duplicated the uid would leave ['guest', 'guest', 'owner'].
+    await waitForMemberUids('twice', ['guest', 'owner']);
   });
 
   test('joinPlaylist rate limits repeated wrong codes', async () => {
