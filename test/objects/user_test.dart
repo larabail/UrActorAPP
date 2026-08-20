@@ -193,12 +193,14 @@ void main() {
         'Users': [
           {user.uid: 'owner'}
         ],
+        'memberUids': [user.uid],
       });
       await firestore.collection('Watchlists').doc('someone-elses').set({
         'Name': 'Theirs',
         'Users': [
           {'other-uid': 'owner'}
         ],
+        'memberUids': ['other-uid'],
       });
 
       await user.getFirebaseData();
@@ -206,6 +208,31 @@ void main() {
       expect(user.playlists.keys, ['mine']);
       expect(user.playlists['mine']['id'], 'mine',
           reason: 'the document id is needed to write back to the playlist');
+    });
+
+    test('cannot see a playlist that has no memberUids yet', () async {
+      // The reason tool/backfill_playlist_members.py exists, pinned so the
+      // consequence of skipping it is visible here rather than as a user
+      // reporting that their lists vanished.
+      //
+      // Membership lives in `Users`, a list of {uid: role} maps, which
+      // Firestore cannot query: arrayContains matches a whole element and the
+      // role is part of it. `memberUids` is the flat projection that makes the
+      // query possible, so a document without it is invisible to this query no
+      // matter who is in `Users`. syncPlaylistMembers fills it in on every
+      // write; documents nobody has written since it was deployed need the
+      // backfill.
+      await seedCompleteUser(firestore, user.uid);
+      await firestore.collection('Watchlists').doc('legacy').set({
+        'Name': 'Written before memberUids existed',
+        'Users': [
+          {user.uid: 'owner'}
+        ],
+      });
+
+      await user.getFirebaseData();
+
+      expect(user.playlists.keys, isEmpty);
     });
 
     test('loads oscars keyed by tmdb id', () async {

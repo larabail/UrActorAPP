@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
 import 'package:uractor/common/firebase/firestore_core.dart';
+import 'package:uractor/common/firebase/playlist_service.dart';
 import 'package:uractor/common/firebase/recommendation_service.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/l10n/l10n.dart';
@@ -133,26 +134,13 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                                         .collection('Watchlists')
                                         .doc(widget.listResult.id),
                                     {
-                                      'Users':
-                                          FieldValue.arrayRemove([itemToRemove])
-                                    });
-                                await FirestoreCore.db
-                                    .collection("Watchlists")
-                                    .get()
-                                    .then((QuerySnapshot querySnapshot) {
-                                  for (var doc in querySnapshot.docs) {
-                                    Map keysOfDoc = doc.data() as Map;
-                                    List users = keysOfDoc['Users'] as List;
-                                    for (var element in users) {
-                                      Map el = element as Map;
-                                      if (el.keys.contains(currentUser.uid)) {
-                                        Map docData = doc.data() as Map;
-                                        docData["id"] = doc.id;
-                                        currentUser.playlists[doc.id] = docData;
-                                      }
-                                    }
-                                  }
+                                  'Users':
+                                      FieldValue.arrayRemove([itemToRemove]),
+                                  'memberUids':
+                                      FieldValue.arrayRemove([userData["uid"]])
                                 });
+                                await PlaylistService
+                                    .refreshCurrentUserPlaylists();
                                 setState(() {
                                   widget.listResult.users = currentUser
                                           .playlists[widget.listResult.id]
@@ -254,26 +242,11 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                               .collection('Watchlists')
                               .doc(widget.listResult.id),
                           {
-                            'Users': FieldValue.arrayRemove([itemToRemove])
+                            'Users': FieldValue.arrayRemove([itemToRemove]),
+                            'memberUids':
+                                FieldValue.arrayRemove([currentUser.uid])
                           });
-                      currentUser.playlists = {};
-                      await FirestoreCore.db
-                          .collection("Watchlists")
-                          .get()
-                          .then((QuerySnapshot querySnapshot) {
-                        for (var doc in querySnapshot.docs) {
-                          Map keysOfDoc = doc.data() as Map;
-                          List users = keysOfDoc['Users'] as List;
-                          for (var element in users) {
-                            Map el = element as Map;
-                            if (el.keys.contains(currentUser.uid)) {
-                              Map docData = doc.data() as Map;
-                              docData["id"] = doc.id;
-                              currentUser.playlists[doc.id] = docData;
-                            }
-                          }
-                        }
-                      });
+                      await PlaylistService.refreshCurrentUserPlaylists();
                       Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
@@ -335,21 +308,7 @@ class AlertButtonDialogue extends StatelessWidget {
                 .collection("Watchlists")
                 .doc(listResult.id)
                 .delete();
-            await FirestoreCore.db
-                .collection("Watchlists")
-                .get()
-                .then((QuerySnapshot querySnapshot) {
-              for (var doc in querySnapshot.docs) {
-                Map keysOfDoc = doc.data() as Map;
-                List users = keysOfDoc['Users'] as List;
-                for (var element in users) {
-                  Map el = element as Map;
-                  if (el.keys.contains(currentUser.uid)) {
-                    currentUser.playlists[doc.id] = doc.data();
-                  }
-                }
-              }
-            });
+            await PlaylistService.refreshCurrentUserPlaylists();
             Navigator.pop(context);
             Navigator.pushReplacement(context,
                 MaterialPageRoute(builder: (context) => const Playlists()));
