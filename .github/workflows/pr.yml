@@ -66,3 +66,38 @@ jobs:
             echo "Signing material must never be present on a pull request build" >&2
             exit 1
           fi
+
+  # The functions are deployed straight from this directory, so a syntax error
+  # or a failing helper would only show up at release time otherwise. Kept as a
+  # separate job because it shares nothing with the Flutter build and finishes
+  # in a fraction of the time.
+  functions:
+    name: Functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Matches the "engines" field in functions/package.json, which is also
+      # the runtime Cloud Functions gives the deployed code.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install
+        working-directory: functions
+        run: npm ci
+
+      - name: Test
+        working-directory: functions
+        run: npm test
+
+      # JavaScript has no compile step, so this stands in for one: the deployer
+      # loads index.js to discover the exported functions, and anything that
+      # throws on load fails the deploy after the app has already been built.
+      - name: Confirm the entrypoint loads
+        working-directory: functions
+        run: node -e "require('./index.js')"
