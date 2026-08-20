@@ -138,6 +138,10 @@ flutterfire configure
 That regenerates `lib/firebase_options.dart` and the native config files. Also
 update `.firebaserc` if you plan to deploy functions.
 
+Committing this file is normal for FlutterFire: the values are project and app
+identifiers, not secrets. Access is controlled by `firestore.rules`, not by
+keeping them private.
+
 The committed native config is incomplete. `android/app/google-services.json`
 is present, but there is no `ios/Runner/GoogleService-Info.plist` — you will
 need to add one for an iOS build. The iOS entry in `firebase_options.dart` is
@@ -176,9 +180,10 @@ naming the flag. That is deliberate — without it, every TMDB request comes bac
 `test/constants_test.dart` asserts that no endpoint hardcodes a key, so a
 regression fails the test suite rather than reaching a release.
 
-> **A key was previously committed to this repository and is still reachable in
-> git history.** Removing it from the working tree does not remove it from
-> history, so it should be revoked and reissued at TMDB.
+> A key was previously committed to this repository and is still reachable in
+> git history. **That key has since been revoked and reissued at TMDB**, so the
+> one in history is dead. Keep passing the live key by define — never commit
+> it, because removing it from the working tree does not remove it from history.
 
 ### OpenAI API key
 
@@ -196,8 +201,9 @@ Unlike the TMDB key this one is optional: with no define, the recommendation
 call is skipped rather than failing startup, since the rest of the app does not
 depend on it.
 
-> **A live OpenAI key was also committed and remains in git history.** Revoke it
-> at <https://platform.openai.com/api-keys> and issue a new one.
+> An OpenAI key was also committed and remains in git history. **It has since
+> been revoked at <https://platform.openai.com/api-keys>**, so the one in
+> history no longer works. Supply the current key by define only.
 
 ### Storing the keys locally
 
@@ -430,9 +436,6 @@ Things that are true today and worth knowing before you start:
 
 | Gap | Detail |
 |---|---|
-| The old TMDB key is still in git history | The working tree no longer contains it, but history does. Revoke and reissue the key at TMDB. |
-| A live OpenAI key is still in git history | Same situation. Revoke it at <https://platform.openai.com/api-keys>. |
 | Push notifications are not implemented | The old notification function was removed because the app never registered FCM tokens and its legacy FCM API would no longer send. A future implementation needs `firebase_messaging`, token persistence, current FCM sends, APNs setup, and device testing. |
-| `firebase_options.dart` is committed | Points at `actordb-cf981`. Re-run `flutterfire configure` for your own project. This is normal for FlutterFire — the values are identifiers, not secrets. |
 | iOS Firebase config is incomplete | No `ios/Runner/GoogleService-Info.plist`, and `firebase_options.dart` declares `iosBundleId: 'com.example.uractor'` while Xcode builds `com.uractor.uractorios`. Correcting it requires the real values from the Firebase console. |
 | Coverage is thin | The API layer and the list/user Firebase code are covered; the screens and popups have no widget tests at all. See [Tests](#tests). |
