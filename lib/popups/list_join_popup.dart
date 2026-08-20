@@ -23,7 +23,7 @@ class ListJoinDialogue extends StatefulWidget {
 class _ListJoinDialogueState extends State<ListJoinDialogue> {
   void joinList() async {
     bool joined = false;
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection("Watchlists")
         .get()
         .then((QuerySnapshot querySnapshot) async {
@@ -32,7 +32,7 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
         if (_listName == (docData["Name"])) {
           if (docData["AccessCode"] == _accessCode) {
             var userDoc =
-                FirebaseFirestore.instance.collection("Watchlists").doc(doc.id);
+                FirestoreCore.db.collection("Watchlists").doc(doc.id);
             Map newUser = {};
             newUser[currentUser.uid] = "Approved";
             await FirestoreCore.mergeInto(userDoc, {

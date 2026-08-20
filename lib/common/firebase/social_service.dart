@@ -18,7 +18,7 @@ class SocialService {
         .where((key) => friendsWatchedWith[key] == true)
         .toList();
     item[id] = watchedWithList;
-    await FirebaseFirestore.instance.runTransaction((transaction) async {
+    await FirestoreCore.db.runTransaction((transaction) async {
       DocumentSnapshot snapshot = await transaction.get(seenWithDoc);
       if (!snapshot.exists) {
         throw Exception("Document does not exist!");
@@ -72,7 +72,7 @@ class SocialService {
   /// @param watchedWithList A list of user IDs who watched together.
   static Future<void> updateCurrentUserSeenWith(String uid, String id,
       String type, Map friendsWatchedWith, List watchedWithList) async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    FirebaseFirestore firestore = FirestoreCore.db;
     DocumentReference seenWithDoc =
         await FirestoreCore.getDocument(currentUser.uid, "SeenWith");
     Map<String, dynamic> item = {};

@@ -47,7 +47,7 @@ class _FriendProfileState extends State<FriendProfile> {
   }
 
   Future<void> getFirebaseData() async {
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection(widget.friendUid)
         .get()
         .then((QuerySnapshot querySnapshot) {

@@ -10,7 +10,7 @@ class PlaylistService {
     await FirestoreCore.updateDocument("Watchlists", listId.toString(),
         {type == "TVShows" ? "TV Shows" : type: moviesinList});
     currentUser.playlists = {};
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection("Watchlists")
         .get()
         .then((QuerySnapshot querySnapshot) {

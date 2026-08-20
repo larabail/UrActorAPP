@@ -513,7 +513,7 @@ class _TVShowResultState extends State<TVShowResult> {
                     entry.value["TVShows"]
                         ?.contains(widget.tvshow.id.toString()) ??
                     false)
-                .map((entry) => FirebaseFirestore.instance
+                .map((entry) => FirestoreCore.db
                     .collection(entry.key)
                     .doc("Settings")
                     .get()),
@@ -550,7 +550,7 @@ class _TVShowResultState extends State<TVShowResult> {
 
                   return GestureDetector(
                       onTap: () async {
-                        var querySnapshot = await FirebaseFirestore.instance
+                        var querySnapshot = await FirestoreCore.db
                             .collection('usernames')
                             .where('username', isEqualTo: username)
                             .limit(1)
@@ -656,7 +656,7 @@ class _TVShowResultState extends State<TVShowResult> {
                               currentUser.friends.length,
                               (friendIndex) {
                                 return FutureBuilder<DocumentSnapshot>(
-                                  future: FirebaseFirestore.instance
+                                  future: FirestoreCore.db
                                       .collection(
                                           currentUser.friends[friendIndex])
                                       .doc('Settings')
@@ -727,7 +727,7 @@ class _TVShowResultState extends State<TVShowResult> {
                           onPressed: () async {
                             String id = widget.tvshow.id.toString();
                             FirebaseFirestore firestore =
-                                FirebaseFirestore.instance;
+                                FirestoreCore.db;
                             for (String friend
                                 in selectedFriends.keys.toList()) {
                               await FirestoreCore.updateDocument(

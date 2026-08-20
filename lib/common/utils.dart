@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'constants.dart';
+import 'api/http_client.dart';
 
 class Utils {
   static bool containsMap(List list, Map map) {
@@ -55,7 +55,7 @@ class Utils {
   ) async {
     Map<String, dynamic> data = {};
     String link = type == "TVShows" ? TV_SHOW_LINK : MOVIE_LINK;
-    final response = await http.get(Uri.parse('$link$id$API_KEY'));
+    final response = await AppHttp.client.get(Uri.parse('$link$id$API_KEY'));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       if (type == "TVShows") {
@@ -98,7 +98,7 @@ class Utils {
     final String link = element.containsKey("type")
         ? (element["type"] == "movie" ? MOVIE_LINK : TV_SHOW_LINK)
         : MOVIE_LINK;
-    final response = await http.get(Uri.parse('$link$id-$name$API_KEY'));
+    final response = await AppHttp.client.get(Uri.parse('$link$id-$name$API_KEY'));
     if (response.statusCode == 200) {
       dynamic json = jsonDecode(response.body);
       if (!dedupe || !containsMap(targetList, json)) {

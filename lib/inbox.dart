@@ -93,7 +93,7 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
   }
 
   Stream<QuerySnapshot> getFriendRequests(String recipientUID) {
-    return FirebaseFirestore.instance
+    return FirestoreCore.db
         .collection(recipientUID)
         .doc('Friends')
         .collection('FriendRequests')
@@ -123,7 +123,7 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
                 var request = snapshot.data!.docs[index];
                 String status = request['status'];
                 return FutureBuilder<DocumentSnapshot>(
-                  future: FirebaseFirestore.instance
+                  future: FirestoreCore.db
                       .collection(request.id)
                       .doc("Settings")
                       .get(),

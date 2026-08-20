@@ -21,7 +21,7 @@ import 'package:table_calendar/table_calendar.dart';
 DateTime selectedDate = DateTime.now();
 
 String dateForMap = '';
-FirebaseFirestore db = FirebaseFirestore.instance;
+FirebaseFirestore db = FirestoreCore.db;
 
 class Calendar extends StatefulWidget {
   const Calendar({super.key});
@@ -50,7 +50,7 @@ class _CalendarState extends State<Calendar> {
           : 0;
       if (currentUser.rewatchedMovies[id] == 0) {
         List w;
-        await FirebaseFirestore.instance
+        await FirestoreCore.db
             .collection(currentUser.uid)
             .get()
             .then((QuerySnapshot querySnapshot) {

@@ -59,7 +59,7 @@ class ReviewService {
   static Future<bool> deleteReview(dynamic id, String type, BuildContext context) async {
     reviewInfo = {};
     reviewed = false;
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) async {
