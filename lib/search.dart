@@ -1,5 +1,7 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/l10n/l10n.dart';
@@ -13,8 +15,6 @@ import 'person_result.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
 
-String _searchTermActor = '';
-
 class Search extends StatefulWidget {
   const Search({super.key});
 
@@ -23,8 +23,32 @@ class Search extends StatefulWidget {
 }
 
 class _SearchResultState extends State<Search> {
+  /// Long enough to swallow the middle of a typed word, short enough that the
+  /// results still feel like they follow the keystrokes.
+  static const Duration _debounceDelay = Duration(milliseconds: 350);
+
+  /// How close to the bottom the list gets before the next page is requested.
+  static const double _loadMoreThreshold = 400;
+
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
+
+  Timer? _debounce;
+
+  /// Incremented for every new query. A response whose id no longer matches is
+  /// from a query the user has already moved on from, and is discarded:
+  /// without this a slow early request can land after a fast later one and
+  /// replace the newer results with stale ones.
+  int _requestId = 0;
+
+  String _query = '';
+  List<dynamic> _results = [];
+  int _page = 1;
+  int _totalPages = 0;
+  bool _isLoading = false;
+  bool _isLoadingMore = false;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -32,85 +56,220 @@ class _SearchResultState extends State<Search> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
     });
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _searchController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    void handleTap(BuildContext context, Map item, String typeContainer) {
-      if (item.containsKey("poster_path") && item.containsKey("title") && typeContainer == "media") {
-        Movie tempMovie = Movie(
-            id: item['id'].toString(),
-            title: item['title'],
-            coverPhoto: item['poster_path'] ?? "");
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => MovieResult(
-                      movie: tempMovie,
-                    )));
-      } else if (item.containsKey("poster_path") && item.containsKey("name") && typeContainer == "media") {
-        TVShow tempTvShow = TVShow(
-            id: item['id'].toString(),
-            title: item['name'],
-            coverPhoto: item['poster_path'] ?? "");
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => TVShowResult(
-                      tvshow: tempTvShow,
-                    )));
-      } else {
-        Person personResult = Person(
-            id: item["id"].toString(),
-            name: item["name"].toString(),
-            data: item);
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => PersonResult(
-                      personResult: personResult,
-                    )));
-      }
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - _loadMoreThreshold) {
+      _loadMore();
+    }
+  }
+
+  void _onQueryChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(_debounceDelay, () => _search(value));
+  }
+
+  /// Runs a fresh search, replacing any results already on screen.
+  Future<void> _search(String value) async {
+    final String query = value.trim();
+    final int id = ++_requestId;
+
+    if (query.isEmpty) {
+      setState(() {
+        _query = '';
+        _results = [];
+        _page = 1;
+        _totalPages = 0;
+        _isLoading = false;
+        _hasError = false;
+      });
+      return;
     }
 
-    Widget buildItem(BuildContext context, Map item) {
-      String typeContainer = "media";
-      if (item.containsKey("poster_path") &&
-          (item.containsKey("title") || item.containsKey("name"))) {
-        item['poster_path'] = item['poster_path'];
-      } else {
-        typeContainer = "person";
-        item['poster_path'] = item['profile_path'];
+    setState(() {
+      _query = query;
+      _isLoading = true;
+      _hasError = false;
+    });
+
+    try {
+      final SearchResultPage result = await ApiUtils.searchMulti(query);
+      if (!mounted || id != _requestId) return;
+      setState(() {
+        _results = ApiUtils.sortByRelevance(result.results, query);
+        _page = result.page;
+        _totalPages = result.totalPages;
+        _isLoading = false;
+      });
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0);
       }
-      return GestureDetector(
-        onTap: () => handleTap(context, item, typeContainer),
-        child: Column(
-          children: [
-            getItemContainer(context, item, typeContainer),
-            SizedBox(
-              width: MediaQuery.of(context).size.width * 0.28,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Text(
-                  item['title'] ?? (item["name"] ?? S.of(context)!.unknown),
-                  style: const TextStyle(
-                    fontSize: 14,
-                  ),
+    } catch (_) {
+      if (!mounted || id != _requestId) return;
+      setState(() {
+        _isLoading = false;
+        _hasError = true;
+      });
+    }
+  }
+
+  /// Appends the next page of results. Each page is ranked on its own and then
+  /// appended, rather than re-ranking everything, so that results already on
+  /// screen do not jump around while the user is scrolling through them.
+  Future<void> _loadMore() async {
+    if (_isLoading || _isLoadingMore || _query.isEmpty) return;
+    if (_page >= _totalPages) return;
+
+    final int id = _requestId;
+    setState(() => _isLoadingMore = true);
+
+    try {
+      final SearchResultPage result =
+          await ApiUtils.searchMulti(_query, page: _page + 1);
+      if (!mounted || id != _requestId) return;
+      setState(() {
+        _results = [
+          ..._results,
+          ...ApiUtils.sortByRelevance(result.results, _query),
+        ];
+        _page = result.page;
+        _totalPages = result.totalPages;
+        _isLoadingMore = false;
+      });
+    } catch (_) {
+      if (!mounted || id != _requestId) return;
+      setState(() => _isLoadingMore = false);
+    }
+  }
+
+  void _handleTap(BuildContext context, Map item, String typeContainer) {
+    if (item.containsKey("poster_path") &&
+        item.containsKey("title") &&
+        typeContainer == "media") {
+      Movie tempMovie = Movie(
+          id: item['id'].toString(),
+          title: item['title'],
+          coverPhoto: item['poster_path'] ?? "");
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => MovieResult(
+                    movie: tempMovie,
+                  )));
+    } else if (item.containsKey("poster_path") &&
+        item.containsKey("name") &&
+        typeContainer == "media") {
+      TVShow tempTvShow = TVShow(
+          id: item['id'].toString(),
+          title: item['name'],
+          coverPhoto: item['poster_path'] ?? "");
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => TVShowResult(
+                    tvshow: tempTvShow,
+                  )));
+    } else {
+      Person personResult = Person(
+          id: item["id"].toString(),
+          name: item["name"].toString(),
+          data: item);
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => PersonResult(
+                    personResult: personResult,
+                  )));
+    }
+  }
+
+  Widget _buildItem(BuildContext context, Map item) {
+    String typeContainer = "media";
+    if (item.containsKey("poster_path") &&
+        (item.containsKey("title") || item.containsKey("name"))) {
+      item['poster_path'] = item['poster_path'];
+    } else {
+      typeContainer = "person";
+      item['poster_path'] = item['profile_path'];
+    }
+    return GestureDetector(
+      onTap: () => _handleTap(context, item, typeContainer),
+      child: Column(
+        children: [
+          getItemContainer(context, item, typeContainer),
+          SizedBox(
+            width: MediaQuery.of(context).size.width * 0.28,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Text(
+                item['title'] ?? (item["name"] ?? S.of(context)!.unknown),
+                style: const TextStyle(
+                  fontSize: 14,
                 ),
               ),
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResults(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_hasError) {
+      return Center(child: Text(S.of(context)!.errorFailedToLoadDetails));
+    }
+    if (_query.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    if (_results.isEmpty) {
+      return Center(child: Text(S.of(context)!.noSearchResults));
     }
 
+    final int rowCount = (_results.length / 3).ceil();
+    final bool showFooter = _page < _totalPages;
+
+    return ListView.builder(
+      controller: _scrollController,
+      itemCount: rowCount + (showFooter ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index >= rowCount) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: List.generate(3, (column) {
+            final int itemIndex = index * 3 + column;
+            if (itemIndex >= _results.length) {
+              return SizedBox(width: MediaQuery.of(context).size.width * 0.28);
+            }
+            return _buildItem(context, _results[itemIndex] as Map);
+          }),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomAppBar(),
       body: Column(
@@ -121,78 +280,25 @@ class _SearchResultState extends State<Search> {
               controller: _searchController,
               focusNode: _focusNode,
               decoration: InputDecoration(
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search),
                 hintText: S.of(context)!.searchBar,
-                hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-                enabledBorder: UnderlineInputBorder(
+                hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+                enabledBorder: const UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey),
                 ),
-                focusedBorder: UnderlineInputBorder(
+                focusedBorder: const UnderlineInputBorder(
                   borderSide:
                       BorderSide(color: Color.fromARGB(250, 224, 190, 78)),
                 ),
               ),
-              onChanged: (value) {
-                setState(() {
-                  _searchTermActor = value;
-                });
-              },
+              onChanged: _onQueryChanged,
               onSubmitted: (value) {
-                setState(() {
-                  _searchTermActor = value;
-                });
+                _debounce?.cancel();
+                _search(value);
               },
             ),
           ),
-          Expanded(
-            child: FutureBuilder<List>(
-              future: ApiUtils.searchData(_searchTermActor),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  final people = snapshot.data!;
-                  return SizedBox(
-                    width: MediaQuery.of(context).size.width,
-                    height: MediaQuery.of(context).size.height,
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: (people.length / 3).ceil(),
-                      itemBuilder: (context, index) {
-                        final leftPersonIndex = index * 3;
-                        final middlePersonIndex = index * 3 + 1;
-                        final rightPersonIndex = index * 3 + 2;
-                        final leftPerson = (leftPersonIndex < people.length)
-                            ? people[leftPersonIndex]
-                            : null;
-                        final middlePerson = (middlePersonIndex < people.length)
-                            ? people[middlePersonIndex]
-                            : null;
-                        final rightPerson = (rightPersonIndex < people.length)
-                            ? people[rightPersonIndex]
-                            : null;
-
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            if (leftPerson != null)
-                              buildItem(context, leftPerson),
-                            if (middlePerson != null)
-                              buildItem(context, middlePerson),
-                            if (rightPerson != null)
-                              buildItem(context, rightPerson),
-                          ],
-                        );
-                      },
-                    ),
-                  );
-                } else if (snapshot.hasError) {
-                  return Center(
-                      child: Text(S.of(context)!.errorFailedToLoadDetails));
-                } else {
-                  return const Center(child: CircularProgressIndicator());
-                }
-              },
-            ),
-          ),
+          Expanded(child: _buildResults(context)),
         ],
       ),
       bottomNavigationBar: CommonBottomAppBar(-1),
