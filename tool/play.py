@@ -221,6 +221,9 @@ def cmd_promote(args) -> None:
 
     detail = f" at {args.rollout:.0%}" if args.status == "inProgress" else ""
     print(f"promoted {code} to '{args.target}' ({args.status}{detail})")
+    if out := os.environ.get("GITHUB_OUTPUT"):
+        with open(out, "a", encoding="utf-8") as fh:
+            fh.write(f"version-code={code}\n")
 
 
 def main() -> None:
