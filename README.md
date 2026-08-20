@@ -138,6 +138,9 @@ hand-edited, so re-running the tool does not produce a spurious diff.
 - A **Firebase project** with Authentication, Firestore, and Storage enabled.
 - A **TMDB API key** ([get one here](https://www.themoviedb.org/settings/api)).
 - **Node 22** if you intend to deploy the Cloud Functions.
+- For an iOS build, **Xcode 16 or newer** and **CocoaPods**. Firebase 12
+  requires both that and an iOS 15 deployment target. See
+  [Building for iOS](#building-for-ios).
 
 ### Run it
 
@@ -167,16 +170,56 @@ Committing this file is normal for FlutterFire: the values are project and app
 identifiers, not secrets. Access is controlled by `firestore.rules`, not by
 keeping them private.
 
-The committed native config is incomplete. `android/app/google-services.json`
-is present, but there is no `ios/Runner/GoogleService-Info.plist` — you will
-need to add one for an iOS build. The iOS entry in `firebase_options.dart` is
-also stale: it declares `iosBundleId: 'com.example.uractor'`, while the Xcode
-project builds `com.uractor.uractorios`. Re-running `flutterfire configure`
-against your own project fixes both.
+The committed native config is partial. `android/app/google-services.json` is
+present; there is no `ios/Runner/GoogleService-Info.plist`. That file is not
+required to build or run the app today, because `main.dart` passes
+`DefaultFirebaseOptions.currentPlatform` to `Firebase.initializeApp`, so iOS
+configures itself from Dart rather than from a bundled plist. Anything that
+reads the native config directly — APNs, `firebase_messaging`, App Check —
+would need it added.
+
+The iOS entry in `firebase_options.dart` is stale in one respect: it declares
+`iosBundleId: 'com.example.uractor'` while the Xcode project builds
+`com.uractor.uractorios`. Auth, Firestore and Storage key off the API key and
+the app id, so the mismatch stops neither a build nor a sign in, but re-running
+`flutterfire configure` against your own project corrects it along with the
+rest.
 
 The app expects each user to have a document tree keyed by their Firebase Auth
 UID, including a `Settings` document. `lib/objects/User.dart` is the clearest
 description of the shape it reads.
+
+### Building for iOS
+
+iOS dependencies are managed with **CocoaPods**; `ios/Podfile` and
+`ios/Podfile.lock` are committed. Flutter 3.47 reaches for Swift Package
+Manager first, which this project is not set up for and which fails while
+resolving, so turn it off once per machine:
+
+```bash
+flutter config --no-enable-swift-package-manager
+```
+
+Then build as usual:
+
+```bash
+flutter build ios --simulator --debug --dart-define-from-file=dart_defines.json
+```
+
+The first build resolves Firebase 12 and compiles gRPC and Firestore from
+source. Budget around ten minutes and several gigabytes of free disk. A full
+disk surfaces late and misleadingly here, as an rsync failure copying
+`grpc.framework` into `Runner.app` rather than as an out-of-space message from
+the compiler. If CocoaPods cannot find a pod version the plugins ask for, its
+local index is behind: refresh it with `pod repo update`.
+
+A simulator build needs no code signing. A device or release build does: the
+project sets `DEVELOPMENT_TEAM = Q8XY8276AC`, so that Apple Developer account
+has to be signed in to Xcode.
+
+Nothing in CI covers any of this. Every workflow runs on `ubuntu-latest` and
+builds Android only, so an iOS break is found on a developer's machine or not
+at all.
 
 ## Configuration
 
@@ -483,5 +526,6 @@ Things that are true today and worth knowing before you start:
 | Gap | Detail |
 |---|---|
 | Push notifications are not implemented | The old notification function was removed because the app never registered FCM tokens and its legacy FCM API would no longer send. A future implementation needs `firebase_messaging`, token persistence, current FCM sends, APNs setup, and device testing. |
-| iOS Firebase config is incomplete | No `ios/Runner/GoogleService-Info.plist`, and `firebase_options.dart` declares `iosBundleId: 'com.example.uractor'` while Xcode builds `com.uractor.uractorios`. Correcting it requires the real values from the Firebase console. |
+| iOS Firebase config is partial | There is no `ios/Runner/GoogleService-Info.plist`, and `firebase_options.dart` declares `iosBundleId: 'com.example.uractor'` while Xcode builds `com.uractor.uractorios`. Neither stops an iOS build or a sign in, because Firebase is configured from Dart, but APNs, `firebase_messaging` and App Check would all need the plist. |
+| iOS is never built by CI | Every workflow runs on `ubuntu-latest` and builds Android only, so an iOS regression reaches `master` unnoticed. See [Building for iOS](#building-for-ios). |
 | Coverage is uneven | The API layer, the data objects and the popups are covered; the full screens under `lib/` still have very few widget tests. See [Tests](#tests). |
