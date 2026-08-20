@@ -634,7 +634,11 @@ class SEs extends S {
 
   @override
   String get profileSetupFailedError =>
-      'Tu cuenta fue creada, pero no pudimos configurar tu perfil. Por favor, inicia sesión de nuevo.';
+      'No pudimos configurar tu perfil, así que deshicimos la cuenta. Por favor, regístrate de nuevo.';
+
+  @override
+  String get profileSetupRollbackFailedError =>
+      'No pudimos configurar tu perfil ni deshacer la cuenta. Por favor, inténtalo de nuevo más tarde.';
 
   @override
   String get friendRequestActionFailedError =>
