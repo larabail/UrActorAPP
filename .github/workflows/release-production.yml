@@ -1,0 +1,82 @@
+name: Release to production
+
+# Manual only, and deliberately never triggered by a push. Promotion reuses the
+# bundle that testers already installed instead of rebuilding, so the artifact
+# that reaches production is byte-for-byte the one that was verified.
+on:
+  workflow_dispatch:
+    inputs:
+      version_code:
+        description: 'Version code to promote (blank = latest on internal)'
+        required: false
+        type: string
+      rollout:
+        description: 'Share of users to release to'
+        required: true
+        default: '20%'
+        type: choice
+        options: ['5%', '10%', '20%', '50%', '100%']
+      status:
+        description: 'draft = staged in Play for manual review, inProgress = live'
+        required: true
+        default: 'inProgress'
+        type: choice
+        options: ['inProgress', 'draft']
+
+concurrency:
+  group: play-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  promote:
+    name: Promote to production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Access control lives here. Add yourself as the sole required reviewer on
+    # the 'production' environment in repository settings; the job then blocks
+    # until you approve, even if someone else with write access starts it.
+    environment:
+      name: production
+      url: https://play.google.com/store/apps/details?id=com.uractor.uractorapp
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Play API client
+        run: pip install --quiet google-auth requests
+
+      - name: Promote
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          VERSION_CODE: ${{ inputs.version_code }}
+          ROLLOUT: ${{ inputs.rollout }}
+          STATUS: ${{ inputs.status }}
+        run: |
+          FRACTION=$(echo "$ROLLOUT" | tr -d '%' | awk '{print $1 / 100}')
+          ARGS=(promote --source internal --target production
+                --status "$STATUS" --rollout "$FRACTION"
+                --notes release_notes.json)
+          if [ -n "$VERSION_CODE" ]; then
+            ARGS+=(--version-code "$VERSION_CODE")
+          fi
+          python tool/play.py "${ARGS[@]}"
+
+      - name: Summary
+        run: |
+          echo "### Promoted to production" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Version code: ${VERSION_CODE:-latest on internal}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Rollout: ${{ inputs.rollout }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Status: ${{ inputs.status }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Increase the rollout or halt it from the Play Console." >> "$GITHUB_STEP_SUMMARY"
+        env:
+          VERSION_CODE: ${{ inputs.version_code }}
