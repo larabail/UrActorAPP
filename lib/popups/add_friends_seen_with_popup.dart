@@ -103,14 +103,10 @@ class _AddFriendsPopUpState extends State<AddFriendsPopUp> {
             String id = widget.movie.id;
             FirebaseFirestore firestore = FirestoreCore.db;
             for (String friend in selectedFriends.keys.toList()) {
-              var userDoc =
-                  FirestoreCore.db.collection(friend).doc("Movies");
-              await userDoc.update({
+              await FirestoreCore.updateDocument(friend, "Movies", {
                 'Seen': FieldValue.arrayUnion([id])
               });
-              userDoc =
-                  FirestoreCore.db.collection(friend).doc("Seen");
-              await userDoc.update({
+              await FirestoreCore.updateDocument(friend, "Seen", {
                 'Movies': FieldValue.arrayUnion([id])
               });
               if (currentUser.seenWith.containsKey(friend) &&
@@ -132,6 +128,7 @@ class _AddFriendsPopUpState extends State<AddFriendsPopUp> {
                 if (!snapshot.exists) {
                   throw Exception("Document does not exist!");
                 }
+                // Guarded above, so transaction.update below is safe.
 
                 Map<String, dynamic> data =
                     snapshot.data() as Map<String, dynamic>;
@@ -181,6 +178,7 @@ class _AddFriendsPopUpState extends State<AddFriendsPopUp> {
               if (!snapshot.exists) {
                 throw Exception("Document does not exist!");
               }
+              // Guarded above, so transaction.update below is safe.
 
               Map<String, dynamic> data =
                   snapshot.data() as Map<String, dynamic>;

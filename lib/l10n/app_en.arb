@@ -283,6 +283,18 @@
   "noDataAvailable": "No data available",
   "unknown": "Unknown",
   "searchBar": "Enter name of person/movie/show...",
+  "noSearchResults": "No results found",
+  "sortByAdded": "Date added",
+  "sortByTitle": "Title",
+  "sortByReleaseDate": "Release date",
+  "sortByMyRating": "My rating",
+  "sortByImdbRating": "IMDb rating",
+  "sortAscending": "Ascending",
+  "sortDescending": "Descending",
+  "reorderFriends": "Reorder",
+  "reorderPlaylists": "Reorder",
+  "finishReordering": "Done",
+  "noFriendsYet": "You haven't added any friends yet!",
   "episodes": "episodes",
   "episode": "Episode",
   "seemWith": "Seen with",
@@ -307,5 +319,7 @@
   "deleteCalendarEntry": "Delete Calendar Entry",
   "deleteCalendarEntryQuestion": "Do you want to delete this from just your calendar or everyone's?",
   "justMe": "Just me",
-  "everyone": "Everyone"
+  "everyone": "Everyone",
+  "profileSetupFailedError": "Your account was created, but we couldn't set up your profile. Please try signing in again.",
+  "friendRequestActionFailedError": "Something went wrong. Please try again."
 }

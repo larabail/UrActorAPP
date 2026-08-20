@@ -499,6 +499,42 @@ class SEn extends S {
   String get searchBar => 'Enter name of person/movie/show...';
 
   @override
+  String get noSearchResults => 'No results found';
+
+  @override
+  String get sortByAdded => 'Date added';
+
+  @override
+  String get sortByTitle => 'Title';
+
+  @override
+  String get sortByReleaseDate => 'Release date';
+
+  @override
+  String get sortByMyRating => 'My rating';
+
+  @override
+  String get sortByImdbRating => 'IMDb rating';
+
+  @override
+  String get sortAscending => 'Ascending';
+
+  @override
+  String get sortDescending => 'Descending';
+
+  @override
+  String get reorderFriends => 'Reorder';
+
+  @override
+  String get reorderPlaylists => 'Reorder';
+
+  @override
+  String get finishReordering => 'Done';
+
+  @override
+  String get noFriendsYet => 'You haven\'t added any friends yet!';
+
+  @override
   String get episodes => 'episodes';
 
   @override
@@ -575,4 +611,12 @@ class SEn extends S {
 
   @override
   String get everyone => 'Everyone';
+
+  @override
+  String get profileSetupFailedError =>
+      'Your account was created, but we couldn\'t set up your profile. Please try signing in again.';
+
+  @override
+  String get friendRequestActionFailedError =>
+      'Something went wrong. Please try again.';
 }

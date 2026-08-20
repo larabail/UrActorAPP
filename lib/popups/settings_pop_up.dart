@@ -7,9 +7,9 @@ import 'package:uractor/l10n/l10n.dart';
 import 'dart:convert';
 
 import '../common/constants.dart';
+import '../common/firebase/firestore_core.dart';
 import '../login.dart';
 import '../main.dart';
-import '../common/firebase/firestore_core.dart';
 import '../common/api/http_client.dart';
 
 class Country {
@@ -117,9 +117,8 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
   }
 
   Future<void> updateCountry(Country element) async {
-    var userDoc =
-        FirestoreCore.db.collection(currentUser.uid).doc("Country");
-    await userDoc.update({'Country': element.isoCode});
+    await FirestoreCore.updateDocument(
+        currentUser.uid, "Country", {'Country': element.isoCode});
     currentUser.country = element.isoCode;
   }
 

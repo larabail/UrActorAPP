@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/common/firebase/firestore_core.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/tv_show.dart';
 import 'package:uractor/popups/profile_sections_popup.dart';
@@ -20,7 +21,6 @@ import 'objects/person.dart';
 import 'person_result.dart';
 import 'movie_result.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'common/firebase/firestore_core.dart';
 
 class Profile extends StatefulWidget {
   const Profile();
@@ -66,10 +66,8 @@ class _ProfileState extends State<Profile> {
           .showSnackBar(SnackBar(content: Text(S.of(context)!.usernameTaken)));
     } else {
       // Update username in user's Settings document
-      await FirestoreCore.db
-          .collection(currentUser.uid)
-          .doc('Settings')
-          .update({'username': newUsername});
+      await FirestoreCore.updateDocument(
+          currentUser.uid, 'Settings', {'username': newUsername});
 
       // Add username to usernames collection
       await FirestoreCore.db
@@ -139,10 +137,8 @@ class _ProfileState extends State<Profile> {
       await uploadTask.whenComplete(() => null);
       String downloadUrl = await ref.getDownloadURL();
 
-      var userDoc = FirestoreCore.db
-          .collection(currentUser.uid)
-          .doc("Settings");
-      await userDoc.update({'profile_photo': downloadUrl});
+      await FirestoreCore.updateDocument(
+          currentUser.uid, "Settings", {'profile_photo': downloadUrl});
       currentUser.settings["profile_photo"] = downloadUrl;
 
       setState(() {

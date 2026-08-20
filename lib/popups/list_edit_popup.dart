@@ -3,11 +3,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/common/item_container.dart';
+import '../common/firebase/firestore_core.dart';
 import '../common/constants.dart';
 import '../common/api/apiutils.dart';
 import '../list_result.dart';
 import '../objects/playlist.dart';
-import '../common/firebase/firestore_core.dart';
 
 class ListEditDialogue extends StatefulWidget {
   final Playlist list_result;
@@ -41,9 +41,9 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
           if (docData["AccessCode"] == originalAccessCode) {
             var userDoc =
                 FirestoreCore.db.collection("Watchlists").doc(doc.id);
-            await userDoc.update({"Name": listName});
-            await userDoc.update({"CoverPhoto": cover});
-            await userDoc.update({"AccessCode": accessCode});
+            await FirestoreCore.mergeInto(userDoc, {"Name": listName});
+            await FirestoreCore.mergeInto(userDoc, {"CoverPhoto": cover});
+            await FirestoreCore.mergeInto(userDoc, {"AccessCode": accessCode});
             widget.list_result.accesscode = accessCode;
             widget.list_result.name = listName;
             widget.list_result.backdrop = cover;

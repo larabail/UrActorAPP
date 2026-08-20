@@ -319,13 +319,15 @@ void main() {
       expect(http.requests, isEmpty);
     });
 
-    test('returns nothing rather than throwing when the request fails',
+    test('throws when the request fails, so the screen can show an error',
         () async {
-      // Multi-search backs the search-as-you-type screen, where a thrown error
-      // would surface as a crash on a keystroke.
+      // This used to swallow the failure and return an empty list, which is
+      // indistinguishable from "nothing matched" and left the user staring at
+      // a blank screen. SearchPage now catches this and renders a retry state,
+      // so the failure has to reach it.
       http.on('search/multi', status: 500, body: '');
 
-      expect(await ApiUtils.searchData('inception'), isEmpty);
+      expect(ApiUtils.searchMulti('inception'), throwsException);
     });
   });
 

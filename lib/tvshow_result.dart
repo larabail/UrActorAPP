@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/cast_and_crew.dart';
 import 'package:uractor/common/firebase/calendar_service.dart';
 import 'package:uractor/common/firebase/favorites_service.dart';
+import 'package:uractor/common/firebase/firestore_core.dart';
 import 'package:uractor/common/firebase/review_service.dart';
 import 'package:uractor/common/firebase/watched_service.dart';
 import 'package:uractor/common/firebase/watchlist_service.dart';
@@ -25,7 +26,6 @@ import 'objects/tv_show.dart';
 import 'person_result.dart';
 
 import 'popups/add_to_calendar_pop_up.dart';
-import 'common/firebase/firestore_core.dart';
 
 String _imageProviderSeen = 'assets/seen_before.png';
 String _imageProviderWatchlist = 'assets/watchlist_before.png';
@@ -361,7 +361,7 @@ class _TVShowResultState extends State<TVShowResult> {
       if (!snapshot.exists) {
         throw Exception("Document does not exist!");
       }
-
+      // Guarded above, so the transaction.update below is safe.
       Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
 
       if (data.containsKey('TVShows') &&
@@ -730,16 +730,11 @@ class _TVShowResultState extends State<TVShowResult> {
                                 FirestoreCore.db;
                             for (String friend
                                 in selectedFriends.keys.toList()) {
-                              var userDoc = FirestoreCore.db
-                                  .collection(friend)
-                                  .doc("TVShows");
-                              await userDoc.update({
+                              await FirestoreCore.updateDocument(
+                                  friend, "TVShows", {
                                 'Seen': FieldValue.arrayUnion([id])
                               });
-                              userDoc = FirestoreCore.db
-                                  .collection(friend)
-                                  .doc("Seen");
-                              await userDoc.update({
+                              await FirestoreCore.updateDocument(friend, "Seen", {
                                 'TVShows': FieldValue.arrayUnion([id])
                               });
                               if (currentUser.seenWith.containsKey(friend) &&

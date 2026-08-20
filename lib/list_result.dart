@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
+import 'package:uractor/common/firebase/firestore_core.dart';
 import 'package:uractor/common/firebase/recommendation_service.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/l10n/l10n.dart';
@@ -19,12 +20,12 @@ import 'playlists.dart';
 import 'main.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
+import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'popups/list_edit_popup.dart';
 import 'popups/movie_add_popup.dart';
 import 'popups/tv_add_popup.dart';
-import 'common/firebase/firestore_core.dart';
 import 'common/api/http_client.dart';
 
 class ListInfoDialog extends StatefulWidget {
@@ -127,13 +128,14 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                                             item.containsKey(userData["uid"])
                                                 as bool,
                                         orElse: () => null);
-                                FirestoreCore.db
-                                    .collection('Watchlists')
-                                    .doc(widget.listResult.id)
-                                    .update({
-                                  'Users':
-                                      FieldValue.arrayRemove([itemToRemove])
-                                });
+                                await FirestoreCore.mergeInto(
+                                    FirestoreCore.db
+                                        .collection('Watchlists')
+                                        .doc(widget.listResult.id),
+                                    {
+                                      'Users':
+                                          FieldValue.arrayRemove([itemToRemove])
+                                    });
                                 await FirestoreCore.db
                                     .collection("Watchlists")
                                     .get()
@@ -247,12 +249,13 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                       Map itemToRemove = widget.listResult.users.firstWhere(
                           (item) => item.containsKey(currentUser.uid) as bool,
                           orElse: () => null);
-                      FirestoreCore.db
-                          .collection('Watchlists')
-                          .doc(widget.listResult.id)
-                          .update({
-                        'Users': FieldValue.arrayRemove([itemToRemove])
-                      });
+                      await FirestoreCore.mergeInto(
+                          FirestoreCore.db
+                              .collection('Watchlists')
+                              .doc(widget.listResult.id),
+                          {
+                            'Users': FieldValue.arrayRemove([itemToRemove])
+                          });
                       currentUser.playlists = {};
                       await FirestoreCore.db
                           .collection("Watchlists")
@@ -536,7 +539,7 @@ class _ListResultState extends State<ListResult> {
           "Please return the list as a semicolon-separated CSV, like this: title1;title2;title3.";
     }
 
-    final response = await AppHttp.client.post(
+    final response = await http.post(
       Uri.parse(apiUrl),
       headers: {
         'Content-Type': 'application/json',
