@@ -7,10 +7,11 @@ When it does not move, two different builds carry the same name and a bug report
 cannot be tied to a revision.
 
 The version to bump is the NAME, `MAJOR.MINOR.PATCH`, not the `+BUILD` suffix.
-The release workflow overwrites the build number with a value derived from Play,
-because Play rejects a code it has seen before, so editing it here achieves
-nothing. It still has to be present and well formed: Flutter uses it for the
-Android versionCode in local builds.
+The build number belongs to CI: the release workflow builds with a code derived
+from Play, because Play rejects a code it has seen before, and commits that code
+back to master once the upload succeeds, so anything written here is replaced.
+It still has to be present and well formed: Flutter uses it for the Android
+versionCode in local builds.
 
 How much to bump is decided by what the change IS, which the repository already
 states in the conventional commit kind:
@@ -232,7 +233,7 @@ def main(argv=None):
         print(f"  - {problem}", file=sys.stderr)
     print(
         "\nBump `version:` in pubspec.yaml. Leave the +BUILD suffix alone; the\n"
-        "release workflow replaces it with a code derived from Play.\n"
+        "release workflow builds with a code from Play and commits it back.\n"
         "The rules are in AGENTS.md under Versioning.",
         file=sys.stderr,
     )
