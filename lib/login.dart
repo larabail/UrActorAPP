@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:uractor/common/async_action.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'signup.dart';
 import 'main.dart';
@@ -19,7 +20,7 @@ class Login extends StatelessWidget {
         GlobalKey<_PasswordFieldState>();
     String email = "";
 
-    void resetPassword(BuildContext context, String emailAddress) async {
+    Future<void> resetPassword(BuildContext context, String emailAddress) async {
       if (emailAddress == "") {
         await showDialog(
           context: context,
@@ -42,6 +43,7 @@ class Login extends StatelessWidget {
         try {
           await FirebaseAuth.instance
               .sendPasswordResetEmail(email: emailAddress);
+          if (!context.mounted) return;
           await showDialog(
             context: context,
             builder: (BuildContext context) {
@@ -60,6 +62,7 @@ class Login extends StatelessWidget {
             },
           );
         } catch (e) {
+          if (!context.mounted) return;
           await showDialog(
             context: context,
             builder: (BuildContext context) {
@@ -182,8 +185,12 @@ class Login extends StatelessWidget {
                     child: Text(
                       S.of(context)!.forgotPassword,
                     ),
-                    onTap: () {
-                      resetPassword(context, email);
+                    onTap: () async {
+                      await runVisibleAsyncAction(
+                        context,
+                        () => resetPassword(context, email),
+                        S.of(context)!.genericAuthError,
+                      );
                     },
                   ),
                 ],

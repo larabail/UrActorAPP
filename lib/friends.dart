@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/l10n/l10n.dart';
+import 'common/async_action.dart';
 import 'common/firebase/friends_service.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
@@ -192,7 +193,7 @@ class _FriendsState extends State<Friends> {
   Widget build(BuildContext context) {
     friendUid = "";
 
-    void sendFriendRequest(String recipientUID) async {
+    Future<void> sendFriendRequest(String recipientUID) async {
       await FirestoreCore.db
           .collection(recipientUID)
           .doc('Friends')
@@ -241,7 +242,12 @@ class _FriendsState extends State<Friends> {
                         if (query.docs.isNotEmpty) {
                           String friendUid = query.docs[0].get("uid");
 
-                          sendFriendRequest(friendUid);
+                          final sent = await runVisibleAsyncAction(
+                            context,
+                            () => sendFriendRequest(friendUid),
+                            S.of(context)!.friendRequestActionFailedError,
+                          );
+                          if (!sent || !context.mounted) return;
                           Navigator.of(context).pop();
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
