@@ -3,9 +3,71 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:uractor/common/firebase/firestore_core.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
+/// Writes the eighteen documents that make up a brand-new user's profile in
+/// a single atomic [WriteBatch]. A batch is all-or-nothing: either every
+/// document is created, or (if the commit throws) none of them are, so an
+/// account can no longer end up half set up the way it could when each
+/// document was written with its own unawaited `.set()` call.
+///
+/// The document names and initial values must stay exactly as they are.
+/// `Friends` in particular must keep its `{"friends": []}` shape, because
+/// `AppUser` reads `f["friends"]` and calls `.add()` on the result -- an
+/// empty map there would leave that null and crash at runtime.
+///
+/// Not private (despite only being called from within this file) so tests
+/// can exercise it directly against a `FakeFirebaseFirestore` installed
+/// through `FirestoreCore.db`.
+@visibleForTesting
+Future<void> writeInitialProfile(String uid) async {
+  final firestore = FirestoreCore.db;
+  final users = firestore.collection(uid);
+  final batch = firestore.batch();
+
+  batch.set(users.doc("Movies"), const <String, dynamic>{"Seen": []});
+  batch.set(users.doc("TVShows"), const <String, dynamic>{"Seen": []});
+  batch.set(users.doc("Seen"),
+      const <String, dynamic>{"Movies": [], "TVShows": []});
+  batch.set(users.doc("SeenWith"),
+      const <String, dynamic>{"Movies": {}, "TVShows": {}});
+  batch.set(users.doc("Reviews"),
+      const <String, dynamic>{"Movies": [], "TVShows": []});
+  batch.set(users.doc("Favorites"),
+      const <String, dynamic>{"Movies": [], "TVShows": []});
+  batch.set(users.doc("Watchlist"),
+      const <String, dynamic>{"Movies": [], "TVShows": []});
+  batch.set(users.doc("Country"), const <String, dynamic>{"Country": "US"});
+  batch.set(users.doc("Calendar"), const <String, dynamic>{});
+  batch.set(users.doc("FavDirectors"), const <String, dynamic>{});
+  batch.set(users.doc("FavWriters"), const <String, dynamic>{});
+  batch.set(users.doc("FavActors"), const <String, dynamic>{});
+  batch.set(users.doc("Rewatched"), const <String, dynamic>{});
+  batch.set(users.doc("RewatchedTV"), const <String, dynamic>{});
+  batch.set(users.doc("Settings"), const <String, dynamic>{
+    "darkMode": true,
+    "dontAskCalendar": false,
+    "providers": [],
+    "profile_photo": "",
+    "username": "",
+    "profileSections": {
+      "Actors": {"show": true, "weight": 1},
+      "Directors": {"show": true, "weight": 3},
+      "MostSeenMovies": {"show": true, "weight": 0},
+      "Writers": {"show": false, "weight": 4},
+      "MostSeenTVShows": {"show": false, "weight": 2}
+    },
+  });
+  batch.set(users.doc("Friends"), const <String, dynamic>{"friends": []});
+  batch.set(users.doc("Notifications"), const <String, dynamic>{});
+  batch.set(users.doc("Recommendations"),
+      const <String, dynamic>{"Movies": [], "TVShows": []});
+
+  await batch.commit();
+}
 
 class SignUp extends StatelessWidget {
   const SignUp({super.key});
@@ -126,148 +188,42 @@ class SignUp extends StatelessWidget {
                       if (formKey.currentState!.validate()) {
                         formKey.currentState!.save();
                         try {
-                          await FirebaseAuth.instance
+                          final credential = await FirebaseAuth.instance
                               .createUserWithEmailAndPassword(
-                                  email: email, password: password)
-                              .then((credential) {
-                            const Map<String, dynamic> data = {"Seen": []};
-                            const Map<String, dynamic> tvshows = {"Seen": []};
-                            const Map<String, dynamic> seenDoc = {
-                              "Movies": [],
-                              "TVShows": []
-                            };
-                            const Map<String, dynamic> review = {
-                              "Movies": [],
-                              "TVShows": []
-                            };
-                            const Map<String, dynamic> favorites = {
-                              "Movies": [],
-                              "TVShows": []
-                            };
-                            const Map<String, dynamic> watchlist = {
-                              "Movies": [],
-                              "TVShows": []
-                            };
-                            const Map<String, dynamic> country = {
-                              "Country": "US"
-                            };
-                            const Map<String, dynamic> favDirectors = {};
-                            const Map<String, dynamic> favWriters = {};
-                            const Map<String, dynamic> favActors = {};
-                            const Map<String, dynamic> calendar = {};
-                            const Map<String, dynamic> rewatched = {};
-                            const Map<String, dynamic> rewatchedTV = {};
-                            const Map<String, dynamic> notifications = {};
-                            const Map<String, dynamic> friends = {
-                              "friends": []
-                            };
-                            const Map<String, dynamic> seenWith = {
-                              "Movies": {},
-                              "TVShows": {}
-                            };
-                            const Map<String, dynamic> recommendations = {
-                              "Movies": [],
-                              "TVShows": []
-                            };
-                            const Map<String, dynamic> settings = {
-                              "darkMode": true,
-                              "dontAskCalendar": false,
-                              "providers": [],
-                              "profile_photo": "",
-                              "username": "",
-                              "profileSections": {
-                                "Actors": {"show": true, "weight": 1},
-                                "Directors": {"show": true, "weight": 3},
-                                "MostSeenMovies": {"show": true, "weight": 0},
-                                "Writers": {"show": false, "weight": 4},
-                                "MostSeenTVShows": {"show": false, "weight": 2}
-                              },
-                            };
-                            FirebaseFirestore.instance
-                                .collection(credential.user!.uid)
-                                .doc("Movies")
-                                .set(data);
-                            FirebaseFirestore.instance
-                                .collection(credential.user!.uid)
-                                .doc("TVShows")
-                                .set(tvshows);
-                            FirebaseFirestore.instance
-                                .collection(credential.user!.uid)
-                                .doc("Seen")
-                                .set(seenDoc);
-                            FirebaseFirestore.instance
-                                .collection(credential.user!.uid)
-                                .doc("SeenWith")
-                                .set(seenWith);
-                            FirebaseFirestore.instance
-                                .collection(credential.user!.uid)
-                                .doc("Reviews")
-                                .set(review);
-                            FirebaseFirestore.instance
-                                .collection(credential.user!.uid)
-                                .doc("Favorites")
-                                .set(favorites);
-                            FirebaseFirestore.instance
-                                .collection(credential.user!.uid)
-                                .doc("Watchlist")
-                                .set(watchlist);
-                            FirebaseFirestore.instance
-                                .collection(credential.user!.uid)
-                                .doc("Country")
-                                .set(country);
-                            FirebaseFirestore.instance
-                                .collection(credential.user!.uid)
-                                .doc("Calendar")
-                                .set(calendar);
-                            FirebaseFirestore.instance
-                                .collection(credential.user!.uid)
-                                .doc("FavDirectors")
-                                .set(favDirectors);
-                            FirebaseFirestore.instance
-                                .collection(credential.user!.uid)
-                                .doc("FavWriters")
-                                .set(favWriters);
-                            FirebaseFirestore.instance
-                                .collection(credential.user!.uid)
-                                .doc("FavActors")
-                                .set(favActors);
-                            FirebaseFirestore.instance
-                                .collection(credential.user!.uid)
-                                .doc("Rewatched")
-                                .set(rewatched);
-                            FirebaseFirestore.instance
-                                .collection(credential.user!.uid)
-                                .doc("RewatchedTV")
-                                .set(rewatchedTV);
-                            FirebaseFirestore.instance
-                                .collection(credential.user!.uid)
-                                .doc("Settings")
-                                .set(settings);
-                            FirebaseFirestore.instance
-                                .collection(credential.user!.uid)
-                                .doc("Friends")
-                                .set(friends);
-                            FirebaseFirestore.instance
-                                .collection(credential.user!.uid)
-                                .doc("Notifications")
-                                .set(notifications);
-                            FirebaseFirestore.instance
-                                .collection(credential.user!.uid)
-                                .doc("Recommendations")
-                                .set(recommendations);
-                          });
+                                  email: email, password: password);
+
+                          try {
+                            await writeInitialProfile(credential.user!.uid);
+                          } catch (e) {
+                            // The auth account now exists but the profile
+                            // batch failed to commit. Since the batch is
+                            // all-or-nothing, no partial profile was written,
+                            // so we do not sign the user in or navigate --
+                            // that would leave them on a broken account with
+                            // no visible error. They can retry signing up
+                            // (or, if desired later, sign in and see the
+                            // missing-profile error path elsewhere).
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    S.of(context)!.profileSetupFailedError),
+                              ),
+                            );
+                            return;
+                          }
+
                           try {
                             await FirebaseAuth.instance
                                 .signInWithEmailAndPassword(
-                                    email: email, password: password)
-                                .then((_) {
-                              TextInput.finishAutofillContext();
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const MyApp()),
-                              );
-                            });
+                                    email: email, password: password);
+                            if (!context.mounted) return;
+                            TextInput.finishAutofillContext();
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const MyApp()),
+                            );
                           } on FirebaseAuthException catch (e) {
                             if (!context.mounted) return;
                             if (e.code == 'user-not-found') {

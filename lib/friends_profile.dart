@@ -2,6 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/common/firebase/firestore_core.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/media.dart';
@@ -275,23 +276,15 @@ class _FriendProfileState extends State<FriendProfile> {
                       );
 
                       if (confirmed) {
-                        // Reference to the Firestore instance
-                        FirebaseFirestore firestore =
-                            FirebaseFirestore.instance;
-
                         // Remove friend from current user's friend list
-                        await firestore
-                            .collection(friendUid)
-                            .doc("Friends")
-                            .update({
+                        await FirestoreCore.updateDocument(
+                            friendUid, "Friends", {
                           'friends': FieldValue.arrayRemove([currentUser.uid])
                         });
 
                         // Remove current user from friend's friend list
-                        await firestore
-                            .collection(currentUser.uid)
-                            .doc("Friends")
-                            .update({
+                        await FirestoreCore.updateDocument(
+                            currentUser.uid, "Friends", {
                           'friends': FieldValue.arrayRemove([friendUid])
                         });
                         currentUser.friends.remove(friendUid);

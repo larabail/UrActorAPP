@@ -9,9 +9,7 @@ class FavoritesService {
   /// @param type The media type (Movies or TVShows).
   /// @return True if the operation succeeded.
   static Future<bool> favorite(String id, context, String type) async {
-    final favoritesDoc =
-        await FirestoreCore.getDocument(currentUser.uid, "Favorites");
-    await favoritesDoc.update({
+    await FirestoreCore.updateDocument(currentUser.uid, "Favorites", {
       type: FieldValue.arrayUnion([id])
     });
     if (type == "Movies") {
@@ -61,10 +59,8 @@ class FavoritesService {
           if (index > -1) {
             movieInFavs.removeAt(index);
           }
-          final userDoc = FirebaseFirestore.instance
-              .collection(currentUser.uid)
-              .doc("Favorites");
-          await userDoc.update({type: movieInFavs});
+          await FirestoreCore.updateDocument(
+              currentUser.uid, "Favorites", {type: movieInFavs});
           if (type == "Movies") {
             currentUser.favMovies = [];
           } else {
