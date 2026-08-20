@@ -375,28 +375,52 @@ Widget getProviders(Map data, BuildContext context) {
 }
 
 Widget getTrailer(Map data) {
-  return Builder(
-    builder: (BuildContext context) {
-      try {
-        return Container(
-          margin: const EdgeInsets.fromLTRB(20.0, 5.0, 20.0, 20.0),
-          child: YoutubePlayer(
-            controller: YoutubePlayerController(
-              initialVideoId: data["trailer"]["key"],
-              flags: const YoutubePlayerFlags(
-                autoPlay: false,
-                mute: false,
-                hideControls: false,
-              ),
-            ),
-            showVideoProgressIndicator: true,
-          ),
-        );
-      } catch (e) {
-        return const Center(
-          child: Text(''),
-        );
-      }
-    },
-  );
+  final trailer = data["trailer"];
+  final key = trailer is Map ? trailer["key"]?.toString() : null;
+  if (key == null || key.isEmpty) return const SizedBox.shrink();
+  return _Trailer(videoId: key);
+}
+
+// A StatefulWidget rather than an inline controller, because youtube_player_flutter
+// 10 is backed by a real webview: a controller built in a build method would spin
+// up a new one on every rebuild and never close any of them.
+class _Trailer extends StatefulWidget {
+  const _Trailer({required this.videoId});
+
+  final String videoId;
+
+  @override
+  State<_Trailer> createState() => _TrailerState();
+}
+
+class _TrailerState extends State<_Trailer> {
+  late final YoutubePlayerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = YoutubePlayerController.fromVideoId(
+      videoId: widget.videoId,
+      autoPlay: false,
+      params: const YoutubePlayerParams(
+        mute: false,
+        showControls: true,
+        showFullscreenButton: true,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20.0, 5.0, 20.0, 20.0),
+      child: YoutubePlayer(controller: _controller),
+    );
+  }
 }

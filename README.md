@@ -129,10 +129,10 @@ hand-edited, so re-running the tool does not produce a spurious diff.
 
 ### Prerequisites
 
-- **Flutter 3.35.3**. CI installs that exact SDK in
-  `.github/actions/setup-flutter-android/action.yml`; using a newer local SDK
-  can surface a misleading Android Gradle Plugin error before the app code is
-  reached. `pubspec.yaml` still declares the wider Dart constraint
+- **Flutter 3.47.1**. CI installs that exact SDK in
+  `.github/actions/setup-flutter-android/action.yml`, so match it locally:
+  verifying against a different SDK is not verifying what CI builds.
+  `pubspec.yaml` still declares the wider Dart constraint
   `sdk: ">=3.5.4 <4.0.0"`, but the checked-in toolchain pin is the one to
   match for local verification.
 - A **Firebase project** with Authentication, Firestore, and Storage enabled.
@@ -381,7 +381,7 @@ npm install
 npm test
 ```
 
-`flutter test` currently runs 559 tests with no emulator, credentials or
+`flutter test` currently runs 564 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
 `FirestoreCore.db` and `AppHttp.client` — which default to the real
 implementations and are pointed at fakes by the tests.
@@ -421,7 +421,7 @@ regression signal is not diluted by UI code that still lacks widget tests.
 Pull requests to `master` run `.github/workflows/pr.yml` unless the change is
 only Markdown, docs, or `.gitignore`. The workflow has three jobs:
 
-- **Analyze, test and build** installs Flutter 3.35.3 plus the pinned Android
+- **Analyze, test and build** installs Flutter 3.47.1 plus the pinned Android
   NDK through `.github/actions/setup-flutter-android`, then runs
   `flutter analyze`, `flutter test --coverage`, the coverage floor, and a
   release app bundle build using `TMDB_API_KEY` and `OPENAI_API_KEY` from
