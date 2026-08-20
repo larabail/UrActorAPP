@@ -71,20 +71,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
-    - assets/round_logo.png
-    - assets/main_profile.png
-    - assets/logo_character.png
-    - assets/watchlist_after.png
-    - assets/watchlist_before.png
-    - assets/seen_before.png
-    - assets/seen_after.png
-    - assets/playlists_before.png
-    - assets/playlists_after.png
-    - assets/fav_after.png
-    - assets/fav_before.png
-    - assets/oscar2.png
-    - assets/oscars_api.json
-    - assets/temp_cover.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
