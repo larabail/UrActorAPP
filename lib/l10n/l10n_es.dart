@@ -590,6 +590,18 @@ class SEs extends S {
   String get joinListFailed => 'Código de acceso o nombre de lista incorrecto';
 
   @override
+  String get joinListTooManyAttempts =>
+      'Demasiados intentos incorrectos. Inténtalo de nuevo más tarde.';
+
+  @override
+  String get joinListMissingDetails =>
+      'Introduce el nombre de la lista y el código de acceso.';
+
+  @override
+  String get joinListUnavailable =>
+      'No se ha podido unir a la lista. Inténtalo de nuevo.';
+
+  @override
   String get joinListTitle => 'Unirse a Lista';
 
   @override

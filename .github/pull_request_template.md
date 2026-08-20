@@ -25,6 +25,9 @@ The tests you added, and anything you checked by hand that a test cannot cover
 ## Checklist
 
 - [ ] Branched off `master`; no commits made directly on `master`
+- [ ] `version:` in `pubspec.yaml` bumped to match what this changes — MINOR for
+      a `feat`, PATCH for a `fix`, MAJOR for a breaking change, none for
+      docs/ci/chore. See [Versioning](../AGENTS.md#versioning)
 - [ ] `flutter analyze` is clean
 - [ ] `flutter test` passes, and new behaviour has tests covering it
 - [ ] Any new user-visible string was added to **both** `app_en.arb` and
