@@ -35,16 +35,7 @@ jobs:
           # tag, which needs full history and tags rather than a shallow clone.
           fetch-depth: 0
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: 3.35.3
-          channel: stable
-          cache: true
+      - uses: ./.github/actions/setup-flutter-android
 
       - uses: actions/setup-python@v5
         with:
@@ -52,11 +43,6 @@ jobs:
 
       - name: Install Play API client
         run: pip install --quiet google-auth requests
-
-      - name: Resolve dependencies
-        run: |
-          flutter pub get
-          flutter gen-l10n
 
       # A failing build must not reach testers, so verification gates the upload.
       - name: Analyze
