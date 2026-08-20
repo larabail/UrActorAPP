@@ -1,5 +1,6 @@
 // ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, no_leading_underscores_for_local_identifiers
 
+import 'package:uractor/common/api/apiutils.dart';
 import 'package:uractor/common/firebase/calendar_service.dart';
 import 'package:uractor/common/firebase/favorites_service.dart';
 import 'package:uractor/common/firebase/review_service.dart';
@@ -738,74 +739,59 @@ class _MovieResultState extends State<MovieResult> {
           width: MediaQuery.of(context).size.width * 1,
           height: 50,
           margin: const EdgeInsets.fromLTRB(30.0, 5.0, 0, 5.0),
-          child: ListView.builder(
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: data['crew'].length < 5 ? data['crew'].length : 5,
-            itemBuilder: (BuildContext context, int index) {
-              var director = data['crew'].firstWhere(
-                (person) {
-                  String? job = person["job"];
-                  return job != null &&
-                      job.split('/').any((role) => role.trim() == "Director");
-                },
-                orElse: () => null,
-              );
-              var writer = data['crew'].firstWhere(
-                (person) {
-                  String? job = person["job"];
-                  return job != null &&
-                      (job.contains('Writer') || job.contains('Screenplay'));
-                },
-                orElse: () => null,
-              );
+          child: Builder(
+            builder: (BuildContext context) {
+              final Map? director = ApiUtils.findCrewMember(
+                  data['crew'],
+                  (job) =>
+                      job.split('/').any((role) => role.trim() == "Director"));
+              final Map? writer = ApiUtils.findCrewMember(data['crew'],
+                  (job) => job.contains('Writer') || job.contains('Screenplay'));
 
-              if (index == 0 && director != null) {
-                return GestureDetector(
-                    onTap: () {
-                      Person personResult = Person(
-                          id: director["id"].toString(),
-                          name: director["name"].toString(),
-                          data: director);
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => PersonResult(
-                                  personResult: personResult,
-                                )),
-                      );
-                    },
-                    child: Text(S.of(context)!.directedBy(director['name']),
-                      style: const TextStyle(fontSize: 15),
-                    ));
-              }
-
-              if (index == 1 && writer != null) {
-                return GestureDetector(
-                    onTap: () {
-                      Person personResult = Person(
-                          id: writer["id"].toString(),
-                          name: writer["name"].toString(),
-                          data: writer);
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => PersonResult(
-                                  personResult: personResult,
-                                )),
-                      );
-                    },
-                    child: Text(
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (director != null)
+                    _buildCrewCredit(context, director,
+                        S.of(context)!.directedBy(director['name'])),
+                  if (writer != null)
+                    _buildCrewCredit(
+                      context,
+                      writer,
                       "${(writer['job'] as String?)?.contains("Writer") == true ? S.of(context)!.written : S.of(context)!.screenplay} ${S.of(context)!.by} ${writer['name']}",
-                      style: const TextStyle(fontSize: 15),
-                    ));
-              }
-              return Container();
+                    ),
+                ],
+              );
             },
           ),
         ),
       ],
+    );
+  }
+
+  /// Builds a tappable credit line linking to the crew member's page.
+  static Widget _buildCrewCredit(
+      BuildContext context, Map person, String label) {
+    return GestureDetector(
+      onTap: () {
+        Person personResult = Person(
+            id: person["id"].toString(),
+            name: person["name"].toString(),
+            data: person);
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => PersonResult(
+                    personResult: personResult,
+                  )),
+        );
+      },
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 15),
+      ),
     );
   }
 }

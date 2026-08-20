@@ -84,4 +84,53 @@ void main() {
       }
     });
   });
+
+  group('ApiUtils.findCrewMember', () {
+    // mergeCrewJobs returns a typed List<Map>. Calling firstWhere on that with
+    // `orElse: () => null` throws a TypeError on every lookup, which is what
+    // previously replaced the whole Director/Writer block with an error box.
+    test('finds a director on the typed list mergeCrewJobs returns', () {
+      final crew = ApiUtils.mergeCrewJobs([
+        {'id': 1, 'name': 'Alice', 'job': 'Director'},
+        {'id': 2, 'name': 'Bob', 'job': 'Screenplay'},
+      ]);
+      final director = ApiUtils.findCrewMember(
+          crew, (job) => job.split('/').any((role) => role.trim() == 'Director'));
+      expect(director, isNotNull);
+      expect(director!['name'], 'Alice');
+    });
+
+    test('returns null instead of throwing when no crew member matches', () {
+      final crew = ApiUtils.mergeCrewJobs([
+        {'id': 1, 'name': 'Alice', 'job': 'Producer'},
+      ]);
+      expect(ApiUtils.findCrewMember(crew, (job) => job == 'Director'), isNull);
+    });
+
+    test('matches a role inside a merged multi-role job string', () {
+      final crew = ApiUtils.mergeCrewJobs([
+        {'id': 1, 'name': 'Alice', 'job': 'Screenplay'},
+        {'id': 1, 'name': 'Alice', 'job': 'Director'},
+      ]);
+      final director = ApiUtils.findCrewMember(
+          crew, (job) => job.split('/').any((role) => role.trim() == 'Director'));
+      expect(director, isNotNull);
+      expect(director!['name'], 'Alice');
+    });
+
+    test('skips crew members with a missing job', () {
+      final crew = [
+        {'id': 1, 'name': 'Alice'},
+        {'id': 2, 'name': 'Bob', 'job': 'Director'},
+      ];
+      final director =
+          ApiUtils.findCrewMember(crew, (job) => job == 'Director');
+      expect(director, isNotNull);
+      expect(director!['name'], 'Bob');
+    });
+
+    test('returns null for a non-list input', () {
+      expect(ApiUtils.findCrewMember(null, (job) => true), isNull);
+    });
+  });
 }
