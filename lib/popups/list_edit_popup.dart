@@ -2,10 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uractor/common/async_action.dart';
 import 'package:uractor/common/item_container.dart';
 import '../common/firebase/firestore_core.dart';
 import '../common/constants.dart';
 import '../common/api/apiutils.dart';
+import '../l10n/l10n.dart';
 import '../list_result.dart';
 import '../objects/playlist.dart';
 
@@ -30,7 +32,7 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
 
   int _selectedIndex = 0;
 
-  void editListSubmit() async {
+  Future<void> editListSubmit() async {
     await FirestoreCore.db
         .collection("Watchlists")
         .get()
@@ -47,6 +49,7 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
             widget.list_result.accesscode = accessCode;
             widget.list_result.name = listName;
             widget.list_result.backdrop = cover;
+            if (!mounted) return;
             Navigator.pop(context);
           }
         }
@@ -232,8 +235,12 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () {
-                          editListSubmit();
+                        onTap: () async {
+                          await runVisibleAsyncAction(
+                            context,
+                            editListSubmit,
+                            S.of(context)!.genericAuthError,
+                          );
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
