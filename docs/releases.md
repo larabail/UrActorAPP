@@ -1,13 +1,21 @@
 # Releasing
 
-Two workflows, split by risk. Internal testing is automatic; production is not.
+Three workflows, split by risk and by store. Internal testing is automatic;
+production is not.
 
-| | Internal testing | Production |
-|---|---|---|
-| Trigger | every merge to `master` | manual only |
-| Builds? | yes | no, promotes an existing build |
-| Who can run it | anyone merging | you, via environment approval |
-| Rollout | all testers | your choice, 5–100% |
+| | Internal testing | TestFlight | Production |
+|---|---|---|---|
+| Store | Play | App Store | Play |
+| Trigger | every merge to `master` | every merge to `master` | manual only |
+| Builds? | yes | yes | no, promotes an existing build |
+| Who can run it | anyone merging | anyone merging | you, via environment approval |
+| Rollout | all testers | all testers | your choice, 5–100% |
+
+The iOS half runs on macOS runners, which are billed at ten times the Linux
+rate and are the one part of this worth a deliberate decision. See
+[Releasing to TestFlight](#releasing-to-testflight). There is no iOS
+equivalent of the production workflow yet: App Store review is a manual step
+in App Store Connect, and nothing here automates submitting for it.
 
 ## How the split works
 
@@ -102,6 +110,120 @@ base64 -w0 android/app/upload-keystore.jks        # Linux
 
 The workflow writes both the keystore and `key.properties` at build time and
 deletes them in an `always()` step, so they never persist on the runner.
+
+## Releasing to TestFlight
+
+The iOS side is **Release to TestFlight**, and it mirrors the internal testing
+workflow: every merge to `master` builds a signed IPA and uploads it, and
+Apple's TestFlight stands in for Play's internal track. Nothing about it needs
+a Mac or an iOS device; the macOS runner is the Mac.
+
+The workflow is committed but starts inert. Until every secret below is set,
+the `preflight` job records what is missing in the run summary and the
+expensive job never starts, so merging this does not turn every merge red
+while you are still gathering credentials.
+
+### What it costs
+
+This is the one real difference from Android, and it is worth deciding
+deliberately. macOS runners bill at **ten times** the Linux rate on a private
+repository, and most of the job is spent compiling gRPC and Firestore from
+source. Expect roughly 150–250 billed minutes per release, against a 2,000
+minute monthly allowance — so about one free release a month, then on the
+order of a dollar each.
+
+If that is not worth paying on every merge, delete the `push` trigger from
+`.github/workflows/release-testflight.yml` and run it by hand. Nothing else in
+the workflow depends on how it was started.
+
+### Secrets
+
+| Secret | What it is |
+|---|---|
+| `APP_STORE_CONNECT_KEY_ID` | The key's ten character id |
+| `APP_STORE_CONNECT_ISSUER_ID` | The issuer UUID, shared by all your keys |
+| `APP_STORE_CONNECT_PRIVATE_KEY` | Contents of the `.p8`, pasted whole |
+| `IOS_DIST_CERT_P12_BASE64` | Apple Distribution certificate and private key, as base64 `.p12` |
+| `IOS_DIST_CERT_PASSWORD` | The password set when exporting that `.p12` |
+| `IOS_PROVISIONING_PROFILE_BASE64` | App Store provisioning profile, base64 encoded |
+
+The API key is created in **App Store Connect → Users and Access →
+Integrations → App Store Connect API**, with the **App Manager** role. Apple
+lets you download the `.p8` exactly once. It replaces signing in with an Apple
+ID, which is what makes the whole thing work unattended: there is no
+two-factor prompt and no trusted device in the loop.
+
+Encode the two binary files with:
+
+```bash
+base64 -i dist.p12 | pbcopy
+base64 -i profile.mobileprovision | pbcopy
+```
+
+### Build numbers
+
+Asked of Apple, for the same reason Android asks Play, and by the same shape
+of code — `tool/appstore.py` is the counterpart to `tool/play.py`.
+
+One difference: **the iOS build number is not written back to `pubspec.yaml`.**
+The `+BUILD` suffix there is Play's version code. The two stores count
+independently, and having each overwrite the other's record would leave the
+file describing neither. The iOS build number lives in the run summary and in
+App Store Connect.
+
+`tool/appstore.py` compares build numbers numerically rather than as text. The
+API returns them as strings, and sorted as strings build 9 outranks build 10,
+which would hand back a number Apple has already burned.
+
+### Signing on the runner
+
+The certificate is imported into a keychain created for the one job and
+deleted in an `always()` step, alongside the provisioning profile and the API
+key. A failed build leaves the same material behind as a successful one, which
+is why the cleanup is unconditional rather than on success.
+
+Two details that cost an afternoon each if you meet them without warning:
+
+- `security set-key-partition-list` has to be run after the import. Without
+  it, `codesign` finds the key and then waits on a GUI prompt no one is there
+  to answer, so the job hangs until it times out instead of failing.
+- The new keychain is *added* to the search list rather than replacing it.
+  Dropping the login keychain takes Apple's intermediate certificates with it
+  and the signature then fails to chain.
+
+The workflow also appends manual signing settings to `ios/Flutter/Release.xcconfig`
+before building, and this is load-bearing rather than belt-and-braces.
+`ExportOptions.plist` governs only the export half of `flutter build ipa`; the
+archive before it uses the project's own settings, and the Runner target sets
+no `CODE_SIGN_STYLE`, so Xcode falls back to `Automatic`. Automatic signing
+resolves profiles by asking the developer portal through an Apple account
+signed into Xcode, which a hosted runner does not have, so the archive fails
+before the export options are read at all. The project additionally pins
+`CODE_SIGN_IDENTITY` to `iPhone Developer`, which no distribution certificate
+matches.
+
+Those settings are written at build time rather than committed, because
+automatic signing is the right default for someone building in Xcode locally.
+The exact identity name is read back out of the keychain rather than assumed:
+certificates issued before 2019 are named `iPhone Distribution` and current
+ones `Apple Distribution`, and naming the wrong one fails with an error that
+does not say which name it wanted.
+
+### Uploading
+
+`xcrun altool --upload-package`, not the App Store Connect API: the API has no
+endpoint that accepts a binary. `--upload-app` still exists but Xcode 16 marks
+it deprecated, and the replacement wants the identifiers stated explicitly
+rather than read back out of the archive — which is why the workflow resolves
+the numeric app id first.
+
+`--apiKey` takes the key *id*, not a path, and altool then looks for
+`AuthKey_<id>.p8` itself in a fixed set of directories. The workflow writes it
+to `~/.appstoreconnect/private_keys`, which is one of them.
+
+Apple processes the build after the upload returns, on its own schedule. A
+green run means Apple accepted the binary, not that testers can install it
+yet.
 
 ## Releasing to production
 
