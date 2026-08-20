@@ -367,6 +367,140 @@ describe('D2. Friend writes lazily create missing per-user documents', () => {
   });
 });
 
+describe('D2b. Calendar entries may record a season and an episode', () => {
+  // The entry shape every installed client already sends. A rules deploy
+  // reaches every phone at once with no staged rollout, so this shape has to
+  // keep being accepted for as long as those builds are out there -- which is
+  // what most of this block exists to prove.
+  const oldShapeEntry = {
+    id: 't1', title: 'Show', runtime: 50, rating: 8.1, friends: [BOB], type: 'series',
+  };
+  // The same entry once the user records which part of the show it was. Both
+  // fields are optional and only a show entry ever carries them.
+  const newShapeEntry = { ...oldShapeEntry, season: 2, episode: 9 };
+  // Watching a whole season in a sitting records the season and nothing else.
+  const seasonOnlyEntry = { ...oldShapeEntry, season: 2 };
+
+  beforeEach(async () => {
+    await seed(async (db) => {
+      await setDoc(doc(db, `${ALICE}/Friends`), { friends: [BOB] });
+    });
+  });
+
+  async function seedCalendar() {
+    await seed(async (db) => {
+      await setDoc(doc(db, `${ALICE}/Calendar`), { '2026-01-01': [oldShapeEntry] });
+    });
+  }
+
+  it('lets a friend create a calendar with the entry shape installed clients send', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [oldShapeEntry],
+    }, { merge: true }));
+  });
+
+  it('lets a friend add the installed-client entry shape to an existing calendar', async () => {
+    await seedCalendar();
+    const bob = ctxFor(BOB).firestore();
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [oldShapeEntry],
+    }, { merge: true }));
+  });
+
+  it('lets a friend create a calendar with an entry recording a season and episode', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [newShapeEntry],
+    }, { merge: true }));
+  });
+
+  it('lets a friend add an entry recording a season and episode to an existing calendar', async () => {
+    await seedCalendar();
+    const bob = ctxFor(BOB).firestore();
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [newShapeEntry],
+    }, { merge: true }));
+  });
+
+  it('lets a friend record a season with no episode', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [seasonOnlyEntry],
+    }, { merge: true }));
+  });
+
+  it('does not let a friend create an entry whose season is not a part number', async () => {
+    const bob = ctxFor(BOB).firestore();
+    // Season 0 is TMDB's specials bucket, which nothing in the app tracks.
+    await assertFails(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [{ ...oldShapeEntry, season: 0 }],
+    }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [{ ...oldShapeEntry, season: -1 }],
+    }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [{ ...oldShapeEntry, season: '2' }],
+    }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [{ ...oldShapeEntry, season: { n: 2 } }],
+    }, { merge: true }));
+  });
+
+  it('does not let a friend create an entry whose episode is not a part number', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [{ ...oldShapeEntry, season: 2, episode: 0 }],
+    }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [{ ...oldShapeEntry, season: 2, episode: 'nine' }],
+    }, { merge: true }));
+  });
+
+  it('does not let a friend create an entry recording an episode with no season', async () => {
+    // The client drops one, because "E9" of an unnamed season is not something
+    // any screen can show.
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [{ ...oldShapeEntry, episode: 9 }],
+    }, { merge: true }));
+  });
+
+  it('does not let a friend put anything but a list of entries on a day', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': 'hacked',
+    }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': { hacked: true },
+    }, { merge: true }));
+  });
+
+  it('still refuses a friend touching two days at once, in either entry shape', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [newShapeEntry],
+      '2026-01-03': [newShapeEntry],
+    }, { merge: true }));
+
+    await seedCalendar();
+    await assertFails(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [newShapeEntry],
+      '2026-01-03': [oldShapeEntry],
+    }, { merge: true }));
+  });
+
+  it('lets the owner write their own calendar wholesale, in either entry shape', async () => {
+    // Owner writes never went through the friend validators and must not start
+    // now: the app rewrites the whole document when an entry is deleted.
+    const alice = ctxFor(ALICE).firestore();
+    await assertSucceeds(setDoc(doc(alice, `${ALICE}/Calendar`), {
+      '2026-01-01': [oldShapeEntry],
+      '2026-01-02': [newShapeEntry, seasonOnlyEntry],
+    }));
+  });
+});
+
 describe('D3. Progress is owner-only', () => {
   const progress = {
     Movies: { m1: { started: '2026-01-01', finished: null, updated: '2026-01-01' } },

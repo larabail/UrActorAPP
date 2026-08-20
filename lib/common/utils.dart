@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'calendar_episode.dart';
 import 'constants.dart';
 import 'api/http_client.dart';
 
@@ -77,11 +78,12 @@ class Utils {
 
   /// Fetches TMDB details for a calendar [element] (as stored under a user's
   /// or friend's calendar day) and appends the decoded result to
-  /// [targetList], carrying over the "friends" field if present. Set
-  /// [sanitizeName] to strip non-alphanumeric characters from the title
-  /// before building the request URL (calendar.dart's historical behavior).
-  /// Set [dedupe] to skip appending when [targetList] already contains an
-  /// identical map (friends_calendar.dart's historical behavior).
+  /// [targetList], carrying over the "friends" field and any recorded
+  /// season/episode if present. Set [sanitizeName] to strip non-alphanumeric
+  /// characters from the title before building the request URL
+  /// (calendar.dart's historical behavior). Set [dedupe] to skip appending
+  /// when [targetList] already contains an identical map
+  /// (friends_calendar.dart's historical behavior).
   static Future<void> fetchCalendarElement(
     Map element,
     List targetList, {
@@ -101,10 +103,17 @@ class Utils {
     final response = await AppHttp.client.get(Uri.parse('$link$id-$name$API_KEY'));
     if (response.statusCode == 200) {
       dynamic json = jsonDecode(response.body);
+      if (element.containsKey("friends")) {
+        json["friends"] = element["friends"];
+      }
+      // The calendar screens render this TMDB payload rather than the stored
+      // entry, so whatever the entry recorded has to be carried across the
+      // fetch or it is invisible on the screen it was recorded for.
+      CalendarEpisode.copyOnto(element, json);
+      // Dedupe on the enriched map, not the bare TMDB payload: two episodes of
+      // one show on one day are two entries and both belong on the day, and
+      // comparing before the carry-over would collapse them into one.
       if (!dedupe || !containsMap(targetList, json)) {
-        if (element.containsKey("friends")) {
-          json["friends"] = element["friends"];
-        }
         targetList.add(json);
       }
     } else {

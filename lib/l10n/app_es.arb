@@ -205,5 +205,30 @@
   "watchProgressUnmarkSeason": "Borrar esta temporada",
   "watchProgressMarkEpisode": "Marcar el episodio como visto",
   "watchProgressUnmarkEpisode": "Desmarcar el episodio",
-  "watchProgressEpisodesWatched": "{watched} de {total} vistos"
+  "watchProgressEpisodesWatched": "{watched} de {total} vistos",
+  "calendarEpisodeSectionTitle": "¿Qué parte viste?",
+  "calendarSeasonFieldLabel": "Temporada (opcional)",
+  "calendarEpisodeFieldLabel": "Episodio (opcional)",
+  "calendarEpisodeNeedsSeason": "Añade el número de temporada para guardar un episodio.",
+  "calendarSeasonEpisodeBadge": "T{season} E{episode}",
+  "@calendarSeasonEpisodeBadge": {
+    "description": "Compact season and episode shown on a calendar entry",
+    "placeholders": {
+      "season": {
+        "type": "int"
+      },
+      "episode": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarSeasonBadge": "T{season}",
+  "@calendarSeasonBadge": {
+    "description": "Compact season shown on a calendar entry with no episode",
+    "placeholders": {
+      "season": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -24,8 +24,11 @@ target (see [Platforms](#platforms)).
   (`lib/common/item_container.dart`, `lib/common/media_pair_membership.dart`).
 - Rate a title and write a review. Movie and TV reviews are stored separately
   (`lib/reviews.dart`, `lib/popups/rating_popup.dart`).
-- Log what you watched on a calendar — a single date or a date range
-  (`lib/calendar.dart`, `lib/popups/add_to_calendar_pop_up.dart`).
+- Log what you watched on a calendar — a single date or a date range. A show
+  entry can also record which season and episode it was, which is optional and
+  shown on both your own calendar and a friend's (`lib/calendar.dart`,
+  `lib/friends_calendar.dart`, `lib/popups/add_to_calendar_pop_up.dart`,
+  `lib/common/calendar_episode.dart`).
 - Track what you are part way through. A movie or show is not started, being
   watched, or finished, and the control for moving between those states sits in
   the icon row on each detail page (`lib/common/watch_progress_widgets.dart`,
@@ -378,22 +381,22 @@ npm install
 npm test
 ```
 
-`flutter test` currently runs 347 tests with no emulator, credentials or
+`flutter test` currently runs 379 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
 `FirestoreCore.db` and `AppHttp.client` — which default to the real
 implementations and are pointed at fakes by the tests.
 `test/support/harness.dart` installs those fakes and restores them afterwards.
 The Flutter suite covers pure logic, TMDB/OMDB request parsing with a stubbed
 HTTP client, auth/session helpers, search and playlist ordering, playlist join
-handling, settings, inbox, calendar/list services, in-memory Firestore
-service behaviour, watch-progress rules and controls, and the reviews and
-Continue watching screens.
+handling, settings, inbox, calendar/list services, calendar episode detail,
+in-memory Firestore service behaviour, watch-progress rules and controls, and
+the reviews and Continue watching screens.
 
 `npm test` in `functions/` runs the Node 22 unit tests for the playlist
 membership and join-throttle helpers. It currently reports 21 passing tests.
 
 `npm test` in `firestore-tests/` starts the Firestore emulator with
-`firebase emulators:exec` and runs the rules suite. It currently reports 61
+`firebase emulators:exec` and runs the rules suite. It currently reports 76
 passing tests. If port 8080 is already held by an emulator you started
 separately, run `npx mocha rules.test.js --timeout 20000` from
 `firestore-tests/` instead.
