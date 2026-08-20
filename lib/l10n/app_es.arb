@@ -90,6 +90,27 @@
   "opinion": "Opinión: {opinion}",
   "rating": "Nota: {rating}",
   "viewingHistory": "Historial de Visualización",
+  "viewingHistoryRange": "{start} – {end}",
+  "@viewingHistoryRange": {
+    "description": "Cuándo empezó y terminó de verse un título",
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "viewingHistoryRangeOpen": "{start} – presente",
+  "@viewingHistoryRangeOpen": {
+    "description": "Cuándo empezó a verse un título que aún se está viendo",
+    "placeholders": {
+      "start": {
+        "type": "String"
+      }
+    }
+  },
   "noViewingHistory": "No hay historial de visualización",
   "noReviews": "No has dejado ninguna reseña todavía",
   "peopleWatchedwith": "Con quien la has visto",
@@ -206,7 +227,8 @@
   "watchProgressMarkEpisode": "Marcar el episodio como visto",
   "watchProgressUnmarkEpisode": "Desmarcar el episodio",
   "watchProgressEpisodesWatched": "{watched} de {total} vistos",
-  "calendarEpisodeSectionTitle": "¿Qué parte viste?",
+  "calendarEpisodeSectionTitle": "¿Cuál es el último episodio que terminaste hoy?",
+  "calendarEpisodeBackfillNote": "Todo lo anterior se marca como visto.",
   "calendarSeasonFieldLabel": "Temporada (opcional)",
   "calendarEpisodeFieldLabel": "Episodio (opcional)",
   "calendarEpisodeNeedsSeason": "Añade el número de temporada para guardar un episodio.",

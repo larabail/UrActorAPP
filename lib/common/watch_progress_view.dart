@@ -79,6 +79,50 @@ class WatchProgressView {
         .length;
   }
 
+  /// Every episode up to and including season [season] episode [episode].
+  ///
+  /// Someone who says they finished S2E5 today has almost always watched what
+  /// came before it, and recording only E5 is worse in a way they see at once:
+  /// the next unwatched episode stays S1E1 and Continue watching points at
+  /// something they finished months ago. So the earlier seasons are filled in.
+  ///
+  /// The result is a set to add, never one to replace with — a later season
+  /// already ticked is not mentioned here and so cannot be undone by applying
+  /// it. Specials are skipped, because `ProgressService` does not track them.
+  ///
+  /// A season TMDB has no count for is still ticked through [episode]. The
+  /// calendar deliberately accepts shows TMDB knows nothing about, and
+  /// refusing to record those would make the entry a lie rather than an
+  /// approximation.
+  static Map<int, List<int>> episodesThrough({
+    required List<SeasonEpisodeCount> seasons,
+    required int season,
+    required int episode,
+  }) {
+    if (season <= 0 || episode <= 0) return const <int, List<int>>{};
+    final through = <int, List<int>>{};
+    var targetCount = 0;
+    for (final entry in seasons) {
+      if (entry.seasonNumber <= 0) continue;
+      if (entry.seasonNumber == season) {
+        targetCount = entry.episodeCount;
+        continue;
+      }
+      if (entry.seasonNumber > season || entry.episodeCount <= 0) continue;
+      through[entry.seasonNumber] = _upTo(entry.episodeCount);
+    }
+    // A season can shrink when TMDB corrects its data, so an episode number
+    // past the end of the season is clamped rather than recorded as watched.
+    final count = targetCount > 0 && episode > targetCount
+        ? targetCount
+        : episode;
+    through[season] = _upTo(count);
+    return through;
+  }
+
+  static List<int> _upTo(int count) =>
+      List<int>.generate(count, (index) => index + 1);
+
   static SeasonTickState seasonTickState({
     required int episodeCount,
     required Iterable<int> watched,

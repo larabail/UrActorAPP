@@ -383,4 +383,119 @@ void main() {
       expect(dates.finished, isNull);
     });
   });
+
+  group('markEpisodesWatched', () {
+    test('ticks every episode it is given and starts the show', () async {
+      await ProgressService.markEpisodesWatched('s1', {
+        1: [1, 2],
+        2: [1],
+      }, seasons, date: DateTime(2026, 5, 1));
+
+      expect(await ProgressService.watchedEpisodes('s1', 1), [1, 2]);
+      expect(await ProgressService.watchedEpisodes('s1', 2), [1]);
+      expect(
+        await ProgressService.showState('s1'),
+        WatchProgressState.inProgress,
+      );
+      final dates = await ProgressService.datesFor(progressTVShowsKey, 's1');
+      expect(dates.started, '2026-05-01');
+      expect(dates.finished, isNull);
+    });
+
+    test('adds to what is already recorded rather than replacing it', () async {
+      // Logging "I finished S1E1 today" must not wipe a season 2 already
+      // watched, which is the whole reason this is additive.
+      await ProgressService.markSeasonWatched('s1', 2, 2, seasons);
+
+      await ProgressService.markEpisodesWatched('s1', {
+        1: [1],
+      }, seasons);
+
+      expect(await ProgressService.watchedEpisodes('s1', 1), [1]);
+      expect(await ProgressService.watchedEpisodes('s1', 2), [1, 2]);
+    });
+
+    test('does not drop an episode already ticked in the same season',
+        () async {
+      await ProgressService.markEpisodeWatched('s1', 1, 2, seasons);
+
+      await ProgressService.markEpisodesWatched('s1', {
+        1: [1],
+      }, seasons);
+
+      expect(await ProgressService.watchedEpisodes('s1', 1), [1, 2]);
+    });
+
+    test('finishes the show when it completes every non-special episode',
+        () async {
+      await ProgressService.markEpisodesWatched('s1', {
+        1: [1, 2],
+        2: [1, 2],
+      }, seasons, date: DateTime(2026, 5, 2));
+
+      expect(
+        await ProgressService.showState('s1'),
+        WatchProgressState.finished,
+      );
+      final seen = await seenDoc();
+      expect(seen[progressTVShowsKey], contains('s1'));
+    });
+
+    test('leaves the show in progress when specials are the only gap',
+        () async {
+      await ProgressService.markEpisodesWatched('s1', {
+        1: [1, 2],
+        2: [1, 2],
+      }, seasons);
+
+      // Season 0 has four episodes and none of them were ticked; a show is
+      // still finished without them.
+      expect(await ProgressService.watchedEpisodes('s1', 0), isEmpty);
+      expect(
+        await ProgressService.showState('s1'),
+        WatchProgressState.finished,
+      );
+    });
+
+    test('ignores specials it is asked to tick', () async {
+      await ProgressService.markEpisodesWatched('s1', {
+        0: [1],
+        1: [1],
+      }, seasons);
+
+      expect(await ProgressService.watchedEpisodes('s1', 0), isEmpty);
+      expect(await ProgressService.watchedEpisodes('s1', 1), [1]);
+    });
+
+    test('starts the show even with nothing to tick', () async {
+      // What a calendar entry naming a season TMDB has no episode count for
+      // amounts to: the show is being watched, and that is all that is known.
+      await ProgressService.markEpisodesWatched(
+        's1',
+        const <int, List<int>>{},
+        seasons,
+        date: DateTime(2026, 5, 3),
+      );
+
+      expect(
+        await ProgressService.showState('s1'),
+        WatchProgressState.inProgress,
+      );
+      final dates = await ProgressService.datesFor(progressTVShowsKey, 's1');
+      expect(dates.started, '2026-05-03');
+    });
+
+    test('keeps the original start date when more is watched later', () async {
+      await ProgressService.markEpisodesWatched('s1', {
+        1: [1],
+      }, seasons, date: DateTime(2026, 5, 1));
+
+      await ProgressService.markEpisodesWatched('s1', {
+        1: [2],
+      }, seasons, date: DateTime(2026, 5, 4));
+
+      final dates = await ProgressService.datesFor(progressTVShowsKey, 's1');
+      expect(dates.started, '2026-05-01');
+    });
+  });
 }
