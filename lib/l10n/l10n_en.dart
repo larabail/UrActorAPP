@@ -144,6 +144,14 @@ class SEn extends S {
   String get seen => 'Seen';
 
   @override
+  String get continueWatching => 'Continue watching';
+
+  @override
+  String nextEpisode(int season, int episode) {
+    return 'Next: S$season E$episode';
+  }
+
+  @override
   String get notifications => 'Notifications';
 
   @override
@@ -634,6 +642,9 @@ class SEn extends S {
 
   @override
   String get favoriteBadge => 'In your favorites';
+
+  @override
+  String get watchlistBadge => 'In your watchlist';
 
   @override
   String get friendRequestActionFailedError =>

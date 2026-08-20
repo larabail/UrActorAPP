@@ -16,6 +16,12 @@ target (see [Platforms](#platforms)).
   `lib/common/firebase/watched_service.dart`).
 - Keep a watchlist of things you mean to get to (`lib/watchlist.dart`).
 - Keep favorites separately from the watchlist (`lib/favorites.dart`).
+- Every media tile carries badges for the lists it is already on — a heart for
+  a favorite, a bookmark for the watchlist — so search results, filmographies,
+  playlists, the calendar and friends' profiles all say what you have already
+  saved. The Favorites page drops the heart and the Watchlist page drops the
+  bookmark, since there every tile would carry one
+  (`lib/common/item_container.dart`, `lib/common/media_pair_membership.dart`).
 - Rate a title and write a review. Movie and TV reviews are stored separately
   (`lib/reviews.dart`, `lib/popups/rating_popup.dart`).
 - Log what you watched on a calendar — a single date or a date range
@@ -29,6 +35,12 @@ target (see [Platforms](#platforms)).
   episode finishes the show on its own (`lib/season_guide.dart`,
   `lib/common/watch_progress_controller.dart`). Specials (season 0) are not
   counted towards completion and offer no tick.
+- Pick up where you left off. The home page carries a Continue watching row of
+  everything started but not finished, most recent activity first, naming the
+  next unwatched episode under each show. It is absent rather than empty when
+  there is nothing to resume (`lib/continue_watching_section.dart`,
+  `lib/common/continue_watching.dart`,
+  `lib/common/firebase/progress_service.dart`).
 
 ### Lists
 
@@ -255,6 +267,7 @@ lib/
   cast_and_crew.dart         Full credits
   list_result.dart           A single list
   seen.dart  watchlist.dart  favorites.dart  playlists.dart  reviews.dart
+  continue_watching_section.dart  Home page "Continue watching" row
   calendar.dart              Watch calendar
   seenTogether.dart          Titles watched with a given friend
   friends.dart  friends_profile.dart  friends_calendar.dart  friends_thoughts.dart
@@ -265,6 +278,7 @@ lib/
   common/
     constants.dart           TMDB endpoints; API key read from --dart-define
     utils.dart
+    continue_watching.dart   Continue watching ordering and TMDB derivations
     item_container.dart  mediaitembuilder.dart  tabView.dart
     watch_progress_view.dart        Pure watch-progress rules
     watch_progress_controller.dart  Per-show episode tick state
@@ -364,15 +378,16 @@ npm install
 npm test
 ```
 
-`flutter test` currently runs 209 tests with no emulator, credentials or
+`flutter test` currently runs 347 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
 `FirestoreCore.db` and `AppHttp.client` — which default to the real
 implementations and are pointed at fakes by the tests.
 `test/support/harness.dart` installs those fakes and restores them afterwards.
 The Flutter suite covers pure logic, TMDB/OMDB request parsing with a stubbed
 HTTP client, auth/session helpers, search and playlist ordering, playlist join
-handling, settings, inbox, calendar/list services, and in-memory Firestore
-service behaviour.
+handling, settings, inbox, calendar/list services, in-memory Firestore
+service behaviour, watch-progress rules and controls, and the reviews and
+Continue watching screens.
 
 `npm test` in `functions/` runs the Node 22 unit tests for the playlist
 membership and join-throttle helpers. It currently reports 21 passing tests.

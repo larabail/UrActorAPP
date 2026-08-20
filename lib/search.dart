@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/common/media_pair_membership.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'common/api/apiutils.dart';
 import 'package:uractor/objects/movie.dart';
@@ -209,7 +210,12 @@ class _SearchResultState extends State<Search> {
       onTap: () => _handleTap(context, item, typeContainer),
       child: Column(
         children: [
-          getItemContainer(context, item, typeContainer),
+          getItemContainer(
+            context,
+            item,
+            typeContainer,
+            mediaPair: mediaPairForData(item, containerType: typeContainer),
+          ),
           SizedBox(
             width: MediaQuery.of(context).size.width * 0.28,
             child: SingleChildScrollView(

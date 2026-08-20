@@ -313,6 +313,18 @@ abstract class S {
   /// **'Seen'**
   String get seen;
 
+  /// Title of the home page section listing started but unfinished titles
+  ///
+  /// In en, this message translates to:
+  /// **'Continue watching'**
+  String get continueWatching;
+
+  /// Shown under a show in Continue watching, naming the episode to play next
+  ///
+  /// In en, this message translates to:
+  /// **'Next: S{season} E{episode}'**
+  String nextEpisode(int season, int episode);
+
   /// No description provided for @notifications.
   ///
   /// In en, this message translates to:
@@ -1224,6 +1236,12 @@ abstract class S {
   /// In en, this message translates to:
   /// **'In your favorites'**
   String get favoriteBadge;
+
+  /// No description provided for @watchlistBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'In your watchlist'**
+  String get watchlistBadge;
 
   /// No description provided for @friendRequestActionFailedError.
   ///

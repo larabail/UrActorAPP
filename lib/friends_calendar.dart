@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/common/media_pair_membership.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
@@ -193,7 +194,10 @@ class _FriendCalendarState extends State<FriendCalendar> {
                                                     child: getItemContainer(
                                                         context, event, "media",
                                                         widthPercentage: 0.32,
-                                                        heightPercentage: 0.2)),
+                                                        heightPercentage: 0.2,
+                                                        mediaPair:
+                                                            mediaPairForData(
+                                                                event))),
                                                 if (event
                                                     .containsKey("friends"))
                                                   Positioned(
