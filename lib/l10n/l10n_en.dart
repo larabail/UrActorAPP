@@ -144,6 +144,14 @@ class SEn extends S {
   String get seen => 'Seen';
 
   @override
+  String get continueWatching => 'Continue watching';
+
+  @override
+  String nextEpisode(int season, int episode) {
+    return 'Next: S$season E$episode';
+  }
+
+  @override
   String get notifications => 'Notifications';
 
   @override

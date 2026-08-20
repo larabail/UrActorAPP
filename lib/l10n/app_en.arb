@@ -92,6 +92,22 @@
   "favorites": "Favorites",
   "watchlist": "Watchlist",
   "seen": "Seen",
+  "continueWatching": "Continue watching",
+  "@continueWatching": {
+    "description": "Title of the home page section listing started but unfinished titles"
+  },
+  "nextEpisode": "Next: S{season} E{episode}",
+  "@nextEpisode": {
+    "description": "Shown under a show in Continue watching, naming the episode to play next",
+    "placeholders": {
+      "season": {
+        "type": "int"
+      },
+      "episode": {
+        "type": "int"
+      }
+    }
+  },
   "notifications": "Notifications",
   "totalContent": "{totalContent, plural, one{{totalContent} item} other{{totalContent} items}}",
   "@totalContent": {
