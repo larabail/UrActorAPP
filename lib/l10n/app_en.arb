@@ -342,5 +342,6 @@
   "profileSetupFailedError": "We couldn't set up your profile, so we undid the account. Please try signing up again.",
   "profileSetupRollbackFailedError": "We couldn't set up your profile or undo the account. Please try again later.",
   "favoriteBadge": "In your favorites",
+  "watchlistBadge": "In your watchlist",
   "friendRequestActionFailedError": "Something went wrong. Please try again."
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/common/media_pair_membership.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/movie.dart';
 import 'package:uractor/objects/person.dart';
@@ -507,7 +508,8 @@ class _PersonResultState extends State<PersonResult> {
             currentUser.seenTVShows, [type, movie['id']])) {
       return Stack(
         children: [
-          getItemContainer(context, movie, "media"),
+          getItemContainer(context, movie, "media",
+              mediaPair: mediaPairForData(movie, containerType: type)),
           if (type == "Movies" &&
               oscars.containsKey(movie["title"].toLowerCase()))
             Align(
@@ -566,7 +568,8 @@ class _PersonResultState extends State<PersonResult> {
     } else {
       return Stack(
         children: [
-          getItemContainer(context, movie, "media"),
+          getItemContainer(context, movie, "media",
+              mediaPair: mediaPairForData(movie, containerType: type)),
           Container(
             margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
             width: MediaQuery.of(context).size.width * 0.28,
@@ -658,7 +661,8 @@ class _PersonResultState extends State<PersonResult> {
             currentUser.seenTVShows, [type, movie['id']])) {
       return Stack(
         children: [
-          getItemContainer(context, movie, "media"),
+          getItemContainer(context, movie, "media",
+              mediaPair: mediaPairForData(movie, containerType: type)),
           if (type == "Movies" &&
               oscars.containsKey(movie["title"].toLowerCase()))
             Align(
@@ -717,7 +721,8 @@ class _PersonResultState extends State<PersonResult> {
     } else {
       return Stack(
         children: [
-          getItemContainer(context, movie, "media"),
+          getItemContainer(context, movie, "media",
+              mediaPair: mediaPairForData(movie, containerType: type)),
           Container(
             margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
             width: MediaQuery.of(context).size.width * 0.28,

@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/common/media_pair_membership.dart';
 import 'package:uractor/common/firebase/firestore_core.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/tv_show.dart';
@@ -726,7 +727,10 @@ class _ProfileState extends State<Profile> {
                                 snapshot.data,
                                 (type == "Movie" || type == "TVShow")
                                     ? "media"
-                                    : "person"));
+                                    : "person",
+                                mediaPair: (type == "Movie" || type == "TVShow")
+                                    ? mediaPairForData(snapshot.data)
+                                    : null));
                       }
                     },
                   );

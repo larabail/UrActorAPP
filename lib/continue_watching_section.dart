@@ -7,6 +7,7 @@ import 'common/constants.dart';
 import 'common/continue_watching.dart';
 import 'common/firebase/progress_service.dart';
 import 'common/item_container.dart';
+import 'common/media_pair_membership.dart';
 import 'l10n/l10n.dart';
 import 'movie_result.dart';
 import 'objects/movie.dart';
@@ -188,6 +189,7 @@ class _ContinueWatchingSectionState extends State<ContinueWatchingSection> {
         final tile = snapshot.data!;
         final media = tile.media;
         final title = media.title ?? S.of(context)!.unknown;
+        final itemData = media.itemData(title);
         final next = tile.nextEpisode;
 
         return GestureDetector(
@@ -196,7 +198,22 @@ class _ContinueWatchingSectionState extends State<ContinueWatchingSection> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              getItemContainer(context, media.itemData(title), 'media'),
+              // The progress entry already knows the type, so the pair is
+              // taken from it rather than inferred from the item map: a title
+              // TMDB would not resolve renders through
+              // `ContinueWatchingMedia.missing`, where there is no name to
+              // infer from. Such a tile still gets its badges — it is no
+              // longer reachable, but whether it is a favorite or on the
+              // watchlist remains true and is the more useful thing to say.
+              getItemContainer(
+                context,
+                itemData,
+                'media',
+                mediaPair: mediaPairForData(
+                  itemData,
+                  containerType: item.type,
+                ),
+              ),
               if (next != null)
                 Text(
                   S.of(context)!.nextEpisode(

@@ -38,8 +38,14 @@ class Favorites extends StatelessWidget {
                 Expanded(
                   child: TabBarView(
                     children: [
-                      MyTabView(favItems: currentUser.favMovies),
-                      MyTabView(favItems: currentUser.favTVShows),
+                      MyTabView(
+                        favItems: currentUser.favMovies,
+                        showFavoriteBadge: false,
+                      ),
+                      MyTabView(
+                        favItems: currentUser.favTVShows,
+                        showFavoriteBadge: false,
+                      ),
                     ],
                   ),
                 ),
