@@ -101,7 +101,7 @@ target (see [Platforms](#platforms)).
 | `cloud_firestore` | Users, history, lists, reviews, friends, playlists, `Oscars` |
 | `firebase_storage` | Profile photos and fallback cover/person images |
 | Cloud Functions (Node 22) | Server-verified playlist joins and playlist membership sync |
-| [TMDB API v3](https://developer.themoviedb.org/docs) | Movie, TV, person, search, credits, videos, watch providers, genres |
+| [TMDB API v3](https://developer.themoviedb.org/docs) | Movie, TV, person, search, credits (a show's aggregated across every season), videos, watch providers, genres |
 | `table_calendar` | The watch calendar |
 | `fl_chart` | Profile stats |
 | `youtube_player_flutter` | Trailer playback |
@@ -286,7 +286,9 @@ lib/
     watch_progress_view.dart        Pure watch-progress rules
     watch_progress_controller.dart  Per-show episode tick state
     watch_progress_widgets.dart     The season, episode and detail controls
-    api/apiutils.dart        All TMDB HTTP calls
+    api/apiutils.dart        All TMDB HTTP calls; a show's credits come from
+                             aggregate_credits and are flattened to the shape
+                             /credits returns
     navigation/              appbar.dart, bottom_app_bar.dart
     firebase/                One service per domain: calendar, favorites,
                              playlist, progress, recommendation, review,
@@ -381,7 +383,7 @@ npm install
 npm test
 ```
 
-`flutter test` currently runs 564 tests with no emulator, credentials or
+`flutter test` currently runs 586 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
 `FirestoreCore.db` and `AppHttp.client` — which default to the real
 implementations and are pointed at fakes by the tests.

@@ -30,6 +30,14 @@ const String IMG_LINK = 'https://image.tmdb.org/t/p/w500/';
 const String MOVIE_LINK = "https://api.themoviedb.org/3/movie/";
 const String TV_SHOW_LINK = "https://api.themoviedb.org/3/tv/";
 const String CREDITS_LINK = "/credits$API_KEY";
+
+/// Credits for a show across every season it has ever had.
+///
+/// `/tv/{id}/credits` answers with the newest season's regular cast only, so a
+/// long running show comes back with a handful of people and everyone who left
+/// missing. This endpoint aggregates all seasons, at the cost of a different
+/// response shape -- see `ApiUtils.normalizeCredits`.
+const String AGGREGATE_CREDITS_LINK = "/aggregate_credits$API_KEY";
 const String WATCH_PROVIDERS_LINK = "/watch/providers$API_KEY";
 const String VIDEOS_LINK = "/videos$API_KEY";
 const String EXTERNAL_IDS_LINK = "/external_ids$API_KEY";
