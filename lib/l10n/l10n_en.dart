@@ -575,4 +575,12 @@ class SEn extends S {
 
   @override
   String get everyone => 'Everyone';
+
+  @override
+  String get profileSetupFailedError =>
+      'Your account was created, but we couldn\'t set up your profile. Please try signing in again.';
+
+  @override
+  String get friendRequestActionFailedError =>
+      'Something went wrong. Please try again.';
 }
