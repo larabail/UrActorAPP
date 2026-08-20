@@ -1,0 +1,144 @@
+name: Release to internal testing
+
+# Every merge to master ships to internal testers. Production is a separate,
+# manual workflow, so nothing here can reach real users.
+on:
+  push:
+    branches: [master]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - '.gitignore'
+  workflow_dispatch:
+
+# Two runs uploading at once would pick the same version code and the second
+# would be rejected, so releases are serialised. In-progress runs are allowed
+# to finish rather than being cancelled, because a cancelled run can leave an
+# uploaded-but-unassigned version code behind.
+concurrency:
+  group: play-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and upload to internal
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Release notes are derived from the commits since the previous build
+          # tag, which needs full history and tags rather than a shallow clone.
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.35.3
+          channel: stable
+          cache: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Play API client
+        run: pip install --quiet google-auth requests
+
+      - name: Resolve dependencies
+        run: |
+          flutter pub get
+          flutter gen-l10n
+
+      # A failing build must not reach testers, so verification gates the upload.
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Restore signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          cat > android/key.properties <<EOF
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=upload-keystore.jks
+          EOF
+
+      # Derived from Play rather than pubspec.yaml: Play refuses a version code
+      # that was ever uploaded, including to an abandoned edit, so the committed
+      # build number drifts out of date and collides.
+      - name: Determine next version code
+        id: version
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          CODE=$(python tool/play.py next-code)
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          NAME=$(grep '^version:' pubspec.yaml | sed 's/version: *//' | cut -d+ -f1)
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "Building $NAME ($CODE)"
+
+      - name: Build app bundle
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          flutter build appbundle --release \
+            --build-name="${{ steps.version.outputs.name }}" \
+            --build-number="${{ steps.version.outputs.code }}" \
+            --dart-define=TMDB_API_KEY="$TMDB_API_KEY" \
+            --dart-define=OPENAI_API_KEY="$OPENAI_API_KEY"
+
+      - name: Generate release notes
+        run: |
+          mkdir -p build
+          python tool/release_notes.py --output build/release_notes.json
+          echo '### Release notes' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          python tool/release_notes.py --stdout >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload to internal testing
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          python tool/play.py upload \
+            --aab build/app/outputs/bundle/release/app-release.aab \
+            --track internal \
+            --status completed \
+            --release-name "${{ steps.version.outputs.name }} (${{ steps.version.outputs.code }})" \
+            --notes build/release_notes.json
+
+      # Tags the exact commit that produced the build, so production promotion
+      # can be traced back to source.
+      - name: Tag the build
+        run: |
+          git tag "build-${{ steps.version.outputs.code }}"
+          git push origin "build-${{ steps.version.outputs.code }}"
+
+      - name: Keep the bundle for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-${{ steps.version.outputs.code }}
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - name: Remove signing material
+        if: always()
+        run: rm -f android/app/upload-keystore.jks android/key.properties

@@ -339,6 +339,8 @@ all, so treat this as a floor to build on rather than as real coverage.
 
 ## Repo tooling
 
+- [`tool/play.py`](tool/play.py) — Google Play release helper used by the
+  release workflows and runnable by hand. See [Releasing](docs/releases.md).
 - [`tools/sync-oscars`](tools/sync-oscars/README.md) — a standalone Node 18+
   script (no npm dependencies) that populates the Firestore `Oscars`
   collection from the UrActor API, resolving winners to TMDB ids. It has its

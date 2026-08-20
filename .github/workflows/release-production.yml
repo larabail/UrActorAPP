@@ -1,0 +1,143 @@
+name: Release to production
+
+# Manual only, and deliberately never triggered by a push. Promotion reuses the
+# bundle that testers already installed instead of rebuilding, so the artifact
+# that reaches production is byte-for-byte the one that was verified.
+on:
+  workflow_dispatch:
+    inputs:
+      version_code:
+        description: 'Version code to promote (blank = latest on internal)'
+        required: false
+        type: string
+      rollout:
+        description: 'Share of users to release to'
+        required: true
+        default: '20%'
+        type: choice
+        options: ['5%', '10%', '20%', '50%', '100%']
+      status:
+        description: 'draft = staged in Play for manual review, inProgress = live'
+        required: true
+        default: 'inProgress'
+        type: choice
+        options: ['inProgress', 'draft']
+
+concurrency:
+  group: play-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  # Deployment protection rules (required reviewers) are not available on
+  # private repositories on the Free plan, so authorisation is enforced here
+  # instead. Set the RELEASE_MANAGERS repository variable to a comma-separated
+  # list of logins to change who may release.
+  #
+  # This is weaker than required reviewers: anyone with write access could edit
+  # this file. Branch protection on master is what makes it meaningful.
+  authorize:
+    name: Check who started this
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify actor is a release manager
+        env:
+          MANAGERS: ${{ vars.RELEASE_MANAGERS || 'larabail' }}
+        run: |
+          if echo "$MANAGERS" | tr ',' '\n' | tr -d ' ' | grep -qx "$GITHUB_ACTOR"; then
+            echo "$GITHUB_ACTOR is authorised to release."
+          else
+            echo "::error::$GITHUB_ACTOR is not a release manager. Allowed: $MANAGERS"
+            exit 1
+          fi
+
+  promote:
+    name: Promote to production
+    needs: authorize
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Referencing an environment records the deployment and gives somewhere to
+    # attach required reviewers if this repository moves to a plan that offers
+    # them; the approval gate then applies with no change to this file.
+    environment:
+      name: production
+      url: https://play.google.com/store/apps/details?id=com.uractor.uractorapp
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Play API client
+        run: pip install --quiet google-auth requests
+
+      # Production notes cover everything since the last production release,
+      # not since the last internal build, so a user who skipped several test
+      # builds still sees what changed for them. The range ends at the tag for
+      # the promoted build rather than at HEAD, so notes never describe commits
+      # that are not in the artifact being shipped.
+      - name: Generate release notes
+        env:
+          VERSION_CODE: ${{ inputs.version_code }}
+        run: |
+          mkdir -p build
+          LAST=$(git tag --list 'released-*' --sort=-v:refname | head -n1)
+          END="HEAD"
+          if [ -n "$VERSION_CODE" ] && git rev-parse -q --verify "build-$VERSION_CODE" >/dev/null; then
+            END="build-$VERSION_CODE"
+          fi
+          echo "notes range: ${LAST:-full history}..$END"
+          if [ -n "$LAST" ]; then
+            python tool/release_notes.py --since "$LAST" --until "$END" --output build/release_notes.json
+          else
+            python tool/release_notes.py --since "" --until "$END" --output build/release_notes.json
+          fi
+
+      - name: Promote
+        id: promote
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          VERSION_CODE: ${{ inputs.version_code }}
+          ROLLOUT: ${{ inputs.rollout }}
+          STATUS: ${{ inputs.status }}
+        run: |
+          FRACTION=$(echo "$ROLLOUT" | tr -d '%' | awk '{print $1 / 100}')
+          ARGS=(promote --source internal --target production
+                --status "$STATUS" --rollout "$FRACTION"
+                --notes build/release_notes.json)
+          if [ -n "$VERSION_CODE" ]; then
+            ARGS+=(--version-code "$VERSION_CODE")
+          fi
+          python tool/play.py "${ARGS[@]}"
+
+      # Marks where production reached, so the next promotion's notes start
+      # from here rather than repeating changes users have already seen.
+      - name: Tag the production release
+        run: |
+          CODE="${{ steps.promote.outputs.version-code }}"
+          TAG="released-$CODE"
+          # Point at the commit that produced the build, not at whatever HEAD
+          # happens to be, since promotion can ship an older build.
+          TARGET=$(git rev-parse -q --verify "build-$CODE" || git rev-parse HEAD)
+          git tag -f "$TAG" "$TARGET"
+          git push -f origin "$TAG"
+          echo "tagged $TAG at $TARGET"
+
+      - name: Summary
+        run: |
+          echo "### Promoted to production" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Version code: ${VERSION_CODE:-latest on internal}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Rollout: ${{ inputs.rollout }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Status: ${{ inputs.status }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Increase the rollout or halt it from the Play Console." >> "$GITHUB_STEP_SUMMARY"
+        env:
+          VERSION_CODE: ${{ inputs.version_code }}
