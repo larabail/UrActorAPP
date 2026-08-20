@@ -32,6 +32,7 @@ class AppUser {
   List allReviews = [];
   Map recommendations = {};
   Map<String, dynamic> notifications = {};
+  Map<String, dynamic> progress = {};
 
   AppUser({
     required this.uid,
@@ -203,6 +204,8 @@ class AppUser {
         } else if (doc.id == "Recommendations") {
           Map w = doc.data() as Map;
           recommendations = w;
+        } else if (doc.id == "Progress") {
+          progress = Map<String, dynamic>.from(doc.data() as Map);
         }
       }
     });
@@ -243,6 +246,7 @@ class AppUser {
     settings = {};
     friends = [];
     notifications = {};
+    progress = {};
   }
 
   void clearUser() {

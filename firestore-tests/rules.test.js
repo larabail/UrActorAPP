@@ -367,6 +367,45 @@ describe('D2. Friend writes lazily create missing per-user documents', () => {
   });
 });
 
+describe('D3. Progress is owner-only', () => {
+  const progress = {
+    Movies: { m1: { started: '2026-01-01', finished: null, updated: '2026-01-01' } },
+    TVShows: { s1: { started: '2026-01-02', finished: null, updated: '2026-01-02', episodes: { 1: [1, 2] } } },
+  };
+
+  beforeEach(async () => {
+    await seed(async (db) => {
+      await setDoc(doc(db, `${ALICE}/Friends`), { friends: [BOB] });
+      await setDoc(doc(db, `${ALICE}/Progress`), progress);
+    });
+  });
+
+  it('lets the owner write their own Progress document', async () => {
+    const alice = ctxFor(ALICE).firestore();
+    await assertSucceeds(setDoc(doc(alice, `${ALICE}/Progress`), progress, { merge: true }));
+  });
+
+  it('does not let a friend read or write Progress', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(getDoc(doc(bob, `${ALICE}/Progress`)));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Progress`), progress, { merge: true }));
+  });
+
+  it('does not let a stranger read or write Progress', async () => {
+    const carol = ctxFor(CAROL).firestore();
+    await assertFails(getDoc(doc(carol, `${ALICE}/Progress`)));
+    await assertFails(setDoc(doc(carol, `${ALICE}/Progress`), progress, { merge: true }));
+  });
+
+  it('does not let a friend create a missing Progress document', async () => {
+    await seed(async (db) => {
+      await setDoc(doc(db, `${DAVE}/Friends`), { friends: [BOB] });
+    });
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(setDoc(doc(bob, `${DAVE}/Progress`), progress, { merge: true }));
+  });
+});
+
 describe('E. The Friends document self-toggle rule', () => {
   beforeEach(async () => {
     await seed(async (db) => {
