@@ -185,6 +185,7 @@
   "deleteCalendarEntryQuestion": "¿Quieres eliminar esto solo de tu calendario o del de todos?",
   "justMe": "Solo yo",
   "everyone": "Todos",
-  "profileSetupFailedError": "Tu cuenta fue creada, pero no pudimos configurar tu perfil. Por favor, inicia sesión de nuevo.",
+  "profileSetupFailedError": "No pudimos configurar tu perfil, así que deshicimos la cuenta. Por favor, regístrate de nuevo.",
+  "profileSetupRollbackFailedError": "No pudimos configurar tu perfil ni deshacer la cuenta. Por favor, inténtalo de nuevo más tarde.",
   "friendRequestActionFailedError": "Algo salió mal. Por favor, inténtalo de nuevo."
 }
