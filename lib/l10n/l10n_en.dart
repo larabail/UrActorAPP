@@ -409,6 +409,13 @@ class SEn extends S {
   String get generateRecommendation => 'Generate Handpicked Recommendations';
 
   @override
+  String get recommendationsFailed =>
+      'Couldn\'t generate recommendations. Please try again later.';
+
+  @override
+  String get fetchingRecommendations => 'Fetching recommendations...';
+
+  @override
   String get handpicked => 'Handpicked for You';
 
   @override

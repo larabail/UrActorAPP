@@ -413,6 +413,13 @@ class SEs extends S {
   String get generateRecommendation => 'Generar Recomendaciones';
 
   @override
+  String get recommendationsFailed =>
+      'No se pudieron generar recomendaciones. Inténtalo de nuevo más tarde.';
+
+  @override
+  String get fetchingRecommendations => 'Generando recomendaciones...';
+
+  @override
   String get handpicked => 'Recomendaciones Para Ti';
 
   @override
