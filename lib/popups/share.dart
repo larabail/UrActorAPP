@@ -2,17 +2,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../main.dart';
-import '../objects/Media.dart';
+import '../objects/media.dart';
 
 class Share extends StatefulWidget {
   final MediaItem item;
   final String type;
 
-  const Share({Key? key, required this.item, required this.type})
-      : super(key: key);
+  const Share({super.key, required this.item, required this.type});
 
   @override
-  _ShareState createState() => _ShareState();
+  State<Share> createState() => _ShareState();
 }
 
 class _ShareState extends State<Share> {
@@ -43,7 +42,7 @@ class _ShareState extends State<Share> {
           tempNotification;
       await friendNotificationDoc.set(finalNotifications);
     } catch (e) {
-      print('Error sending notification: $e');
+      debugPrint('Error sending notification: $e');
     }
   }
 
@@ -176,6 +175,7 @@ class _ShareState extends State<Share> {
                         await sendNotification(friendId, widget.item, itemType);
                       }
                     }
+                    if (!context.mounted) return;
                     Navigator.pop(context, true);
                   },
                   style: ElevatedButton.styleFrom(

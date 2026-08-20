@@ -29,7 +29,7 @@ class WatchedService {
         .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) {
-      querySnapshot.docs.forEach((doc) async {
+      for (var doc in querySnapshot.docs) {
         if (doc.id == type) {
           Map moviesResult = doc.data() as Map;
           w = moviesResult["Seen"];
@@ -57,12 +57,13 @@ class WatchedService {
             }
           }
         }
-      });
+      }
     });
     if (type == "Movies") {
       final today = DateTime.now();
       final snapshot =
           await FirebaseFirestore.instance.collection(currentUser.uid).get();
+      if (!context.mounted) return true;
       for (var doc in snapshot.docs) {
         if (doc.id == 'Calendar') {
           if (!currentUser.dontAskCalendar) {

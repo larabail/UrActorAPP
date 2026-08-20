@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'common/api/apiutils.dart';
-import 'package:uractor/objects/Movie.dart';
-import 'package:uractor/objects/Person.dart';
-import 'package:uractor/objects/TVShow.dart';
+import 'package:uractor/objects/movie.dart';
+import 'package:uractor/objects/person.dart';
+import 'package:uractor/objects/tv_show.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'person_result.dart';
@@ -19,7 +19,7 @@ class Search extends StatefulWidget {
   const Search({super.key});
 
   @override
-  _SearchResultState createState() => _SearchResultState();
+  State<Search> createState() => _SearchResultState();
 }
 
 class _SearchResultState extends State<Search> {

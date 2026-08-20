@@ -8,7 +8,7 @@ import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'main.dart';
 import 'list_result.dart';
-import 'objects/Playlist.dart';
+import 'objects/playlist.dart';
 import 'popups/list_add_popup.dart';
 import 'popups/list_join_popup.dart';
 
@@ -155,7 +155,7 @@ class _PlaylistsState extends State<Playlists> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => ListResult(
-                        list_result: listResult,
+                        listResult: listResult,
                       ),
                     ),
                   );
@@ -210,7 +210,7 @@ class _PlaylistsState extends State<Playlists> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => ListResult(
-                                list_result: listResult,
+                                listResult: listResult,
                               ),
                             ),
                           );
@@ -310,7 +310,7 @@ class _PlaylistsState extends State<Playlists> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => ListResult(
-                                  list_result: listResult,
+                                  listResult: listResult,
                                 ),
                               ),
                             );
@@ -344,7 +344,7 @@ class _PlaylistsState extends State<Playlists> {
                                       end: Alignment.bottomCenter,
                                       colors: [
                                         Colors.transparent,
-                                        Colors.black.withOpacity(1),
+                                        Colors.black.withValues(alpha: 1),
                                       ],
                                     ),
                                   ),
