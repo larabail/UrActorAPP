@@ -23,8 +23,69 @@ permissions:
   contents: write
 
 jobs:
+  # Deployed before the app is uploaded, and the upload is blocked if this
+  # fails. The order matters: a build that reaches testers expecting a callable
+  # that is not deployed yet fails on the device, so the server side goes first.
+  functions:
+    name: Deploy Cloud Functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install
+        working-directory: functions
+        run: npm ci
+
+      # The same gate the pull request ran. Repeated here because a merge
+      # commit is a combination neither branch tested on its own.
+      - name: Test
+        working-directory: functions
+        run: npm test
+
+      - name: Deploy
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${FIREBASE_SERVICE_ACCOUNT:-}" ]; then
+            echo "FIREBASE_SERVICE_ACCOUNT is not set." >&2
+            echo "Create a service account with the Firebase Admin and Cloud" >&2
+            echo "Functions Admin roles, and store its JSON key as that" >&2
+            echo "repository secret. Failing rather than skipping: a silent" >&2
+            echo "skip ships an app whose server side does not exist." >&2
+            exit 1
+          fi
+
+          # Written to the runner's temp directory rather than the workspace,
+          # so it cannot be picked up by a later step or an artifact upload.
+          CREDENTIALS="$RUNNER_TEMP/firebase-service-account.json"
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$CREDENTIALS"
+          export GOOGLE_APPLICATION_CREDENTIALS="$CREDENTIALS"
+
+          npx --yes firebase-tools@15 deploy \
+            --only functions \
+            --project actordb-cf981 \
+            --non-interactive \
+            --force
+
+      # Runs even when the deploy fails, so a failed run never leaves a key
+      # behind on the runner.
+      - name: Remove credentials
+        if: always()
+        run: rm -f "$RUNNER_TEMP/firebase-service-account.json"
+
   release:
     name: Build and upload to internal
+    needs: functions
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
