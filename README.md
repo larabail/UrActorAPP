@@ -26,6 +26,15 @@ target (see [Platforms](#platforms)).
   (`lib/reviews.dart`, `lib/popups/rating_popup.dart`).
 - Log what you watched on a calendar — a single date or a date range
   (`lib/calendar.dart`, `lib/popups/add_to_calendar_pop_up.dart`).
+- Track what you are part way through. A movie or show is not started, being
+  watched, or finished, and the control for moving between those states sits in
+  the icon row on each detail page (`lib/common/watch_progress_widgets.dart`,
+  `lib/common/firebase/progress_service.dart`). A finished show can be picked
+  up again; a finished movie cannot, since rewatches are counted separately.
+- Tick episodes and whole seasons off in the season guide. Watching the last
+  episode finishes the show on its own (`lib/season_guide.dart`,
+  `lib/common/watch_progress_controller.dart`). Specials (season 0) are not
+  counted towards completion and offer no tick.
 - Pick up where you left off. The home page carries a Continue watching row of
   everything started but not finished, most recent activity first, naming the
   next unwatched episode under each show. It is absent rather than empty when
@@ -62,7 +71,8 @@ target (see [Platforms](#platforms)).
 - Detail pages for movies, TV shows, and people (`lib/movie_result.dart`,
   `lib/tvshow_result.dart`, `lib/person_result.dart`).
 - Full cast and crew (`lib/cast_and_crew.dart`).
-- Season and episode guide for TV shows (`lib/season_guide.dart`).
+- Season and episode guide for TV shows, with per-episode and per-season watch
+  ticks (`lib/season_guide.dart`).
 - Trailers play inline (`lib/common/mediaitembuilder.dart`).
 - Streaming availability, via TMDB's watch providers endpoint.
 - Oscar badges on person pages — a win count for the person and a marker on
@@ -253,7 +263,7 @@ lib/
   movie_result.dart          Movie detail
   tvshow_result.dart         TV detail
   person_result.dart         Person detail, Oscar badges
-  season_guide.dart          Seasons and episodes
+  season_guide.dart          Seasons and episodes, with watch ticks
   cast_and_crew.dart         Full credits
   list_result.dart           A single list
   seen.dart  watchlist.dart  favorites.dart  playlists.dart  reviews.dart
@@ -270,11 +280,14 @@ lib/
     utils.dart
     continue_watching.dart   Continue watching ordering and TMDB derivations
     item_container.dart  mediaitembuilder.dart  tabView.dart
+    watch_progress_view.dart        Pure watch-progress rules
+    watch_progress_controller.dart  Per-show episode tick state
+    watch_progress_widgets.dart     The season, episode and detail controls
     api/apiutils.dart        All TMDB HTTP calls
     navigation/              appbar.dart, bottom_app_bar.dart
     firebase/                One service per domain: calendar, favorites,
-                             playlist, recommendation, review, social,
-                             watched, watchlist, progress, plus firestore_core
+                             playlist, progress, recommendation, review,
+                             social, watched, watchlist, plus firestore_core
                              and firebaseutils
   popups/                    Dialogs: add to calendar, add friends seen with,
                              rating, share, settings, list add/edit/join,
@@ -365,7 +378,7 @@ npm install
 npm test
 ```
 
-`flutter test` currently runs 262 tests with no emulator, credentials or
+`flutter test` currently runs 347 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
 `FirestoreCore.db` and `AppHttp.client` — which default to the real
 implementations and are pointed at fakes by the tests.
@@ -373,7 +386,8 @@ implementations and are pointed at fakes by the tests.
 The Flutter suite covers pure logic, TMDB/OMDB request parsing with a stubbed
 HTTP client, auth/session helpers, search and playlist ordering, playlist join
 handling, settings, inbox, calendar/list services, in-memory Firestore
-service behaviour, and the reviews and Continue watching screens.
+service behaviour, watch-progress rules and controls, and the reviews and
+Continue watching screens.
 
 `npm test` in `functions/` runs the Node 22 unit tests for the playlist
 membership and join-throttle helpers. It currently reports 21 passing tests.

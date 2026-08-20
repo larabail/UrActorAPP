@@ -649,4 +649,52 @@ class SEn extends S {
   @override
   String get friendRequestActionFailedError =>
       'Something went wrong. Please try again.';
+
+  @override
+  String get watchProgress => 'Watch progress';
+
+  @override
+  String get watchProgressNotStarted => 'Not started';
+
+  @override
+  String get watchProgressInProgress => 'Watching';
+
+  @override
+  String get watchProgressFinished => 'Finished';
+
+  @override
+  String watchProgressStartedOn(String date) {
+    return 'Watching since $date';
+  }
+
+  @override
+  String watchProgressFinishedOn(String date) {
+    return 'Finished on $date';
+  }
+
+  @override
+  String get watchProgressStart => 'Start watching';
+
+  @override
+  String get watchProgressFinish => 'Mark as finished';
+
+  @override
+  String get watchProgressReopen => 'Watch again';
+
+  @override
+  String get watchProgressMarkSeason => 'Mark season as watched';
+
+  @override
+  String get watchProgressUnmarkSeason => 'Clear this season';
+
+  @override
+  String get watchProgressMarkEpisode => 'Mark episode as watched';
+
+  @override
+  String get watchProgressUnmarkEpisode => 'Unmark episode';
+
+  @override
+  String watchProgressEpisodesWatched(int watched, int total) {
+    return '$watched of $total watched';
+  }
 }

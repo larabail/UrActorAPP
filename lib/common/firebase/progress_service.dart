@@ -45,6 +45,15 @@ class WatchProgressEpisode {
   String toString() => 'S$seasonNumber E$episodeNumber';
 }
 
+/// The dates recorded against a title, as stored: `yyyy-MM-dd` strings, or null
+/// when nothing has been recorded yet.
+class WatchProgressDates {
+  const WatchProgressDates({this.started, this.finished});
+
+  final String? started;
+  final String? finished;
+}
+
 /// An item for a later Continue watching surface.
 class WatchProgressListItem {
   const WatchProgressListItem({
@@ -236,6 +245,39 @@ class ProgressService {
     final entry = await _entry(progressTVShowsKey, showId.toString());
     if (entry == null) return <int>[];
     return _sortedEpisodes(_watchedSet(_episodesFrom(entry), seasonNumber));
+  }
+
+  /// Every season's watched episodes in one read.
+  ///
+  /// [watchedEpisodes] answers for a single season, which costs a document read
+  /// each time; a screen showing a whole show would pay that per season on
+  /// every tick. Same data, same shape, read once.
+  static Future<Map<int, List<int>>> watchedEpisodesBySeason(
+    String showId,
+  ) async {
+    final entry = await _entry(progressTVShowsKey, showId.toString());
+    if (entry == null) return <int, List<int>>{};
+    final episodes = _episodesFrom(entry);
+    final bySeason = <int, List<int>>{};
+    for (final key in episodes.keys) {
+      final seasonNumber = int.tryParse(key);
+      if (seasonNumber == null) continue;
+      bySeason[seasonNumber] = _sortedEpisodes(
+        _watchedSet(episodes, seasonNumber),
+      );
+    }
+    return bySeason;
+  }
+
+  /// The start and finish dates recorded for a title, so a screen can show when
+  /// something was watched without reaching into the stored entry shape itself.
+  static Future<WatchProgressDates> datesFor(String type, String id) async {
+    final entry = await _entry(type, id.toString());
+    if (entry == null) return const WatchProgressDates();
+    return WatchProgressDates(
+      started: entry['started']?.toString(),
+      finished: entry['finished']?.toString(),
+    );
   }
 
   static Future<WatchProgressEpisode?> nextUnwatchedEpisode(

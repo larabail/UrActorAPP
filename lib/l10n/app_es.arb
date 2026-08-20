@@ -191,5 +191,19 @@
   "profileSetupRollbackFailedError": "No pudimos configurar tu perfil ni deshacer la cuenta. Por favor, inténtalo de nuevo más tarde.",
   "favoriteBadge": "En tus favoritas",
   "watchlistBadge": "En tu lista de pendientes",
-  "friendRequestActionFailedError": "Algo salió mal. Por favor, inténtalo de nuevo."
+  "friendRequestActionFailedError": "Algo salió mal. Por favor, inténtalo de nuevo.",
+  "watchProgress": "Progreso",
+  "watchProgressNotStarted": "Sin empezar",
+  "watchProgressInProgress": "Viendo",
+  "watchProgressFinished": "Terminada",
+  "watchProgressStartedOn": "Viéndola desde el {date}",
+  "watchProgressFinishedOn": "Terminada el {date}",
+  "watchProgressStart": "Empezar a ver",
+  "watchProgressFinish": "Marcar como terminada",
+  "watchProgressReopen": "Volver a verla",
+  "watchProgressMarkSeason": "Marcar la temporada como vista",
+  "watchProgressUnmarkSeason": "Borrar esta temporada",
+  "watchProgressMarkEpisode": "Marcar el episodio como visto",
+  "watchProgressUnmarkEpisode": "Desmarcar el episodio",
+  "watchProgressEpisodesWatched": "{watched} de {total} vistos"
 }

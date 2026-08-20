@@ -3,12 +3,14 @@
 import 'package:uractor/common/api/apiutils.dart';
 import 'package:uractor/common/firebase/calendar_service.dart';
 import 'package:uractor/common/firebase/favorites_service.dart';
+import 'package:uractor/common/firebase/progress_service.dart';
 import 'package:uractor/common/firebase/review_service.dart';
 import 'package:uractor/common/firebase/watched_service.dart';
 import 'package:uractor/common/firebase/watchlist_service.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/common/media_result_widgets.dart';
 import 'package:uractor/common/mediaitembuilder.dart';
+import 'package:uractor/common/watch_progress_widgets.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/popups/add_friends_seen_with_popup.dart';
 import 'package:uractor/popups/add_to_calendar_pop_up.dart';
@@ -46,6 +48,11 @@ class _MovieResultState extends State<MovieResult> {
   bool _isTappedWatchlist = false;
   bool _isTappedFav = false;
   bool _isTappedList = false;
+
+  /// Bumped whenever something outside the progress control could have changed
+  /// the movie's state. Marking a movie seen finishes it, and the control has
+  /// no way of noticing that on its own.
+  int _progressToken = 0;
 
   void check() {
     if (widget.movie.isSeen()) {
@@ -248,11 +255,22 @@ class _MovieResultState extends State<MovieResult> {
       watchlistImage: _imageProviderWatchlist,
       favImage: _imageProviderFav,
       listImage: _imageProviderList,
-      onIconTap: (type) {
-        _onTap(type, data["id"].toString(), data["title"], data["runtime"],
-            double.parse(data["imdb_rating"]));
-        setState(() {});
+      onIconTap: (type) async {
+        await _onTap(type, data["id"].toString(), data["title"],
+            data["runtime"], double.parse(data["imdb_rating"]));
+        if (!mounted) return;
+        setState(() {
+          _progressToken++;
+        });
       },
+      trailing: MediaProgressControl(
+        id: data["id"].toString(),
+        type: progressMoviesKey,
+        refreshToken: _progressToken,
+        onChanged: () {
+          if (mounted) setState(() {});
+        },
+      ),
     );
   }
 
