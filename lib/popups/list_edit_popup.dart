@@ -6,15 +6,14 @@ import 'package:uractor/common/item_container.dart';
 import '../common/constants.dart';
 import '../common/api/apiutils.dart';
 import '../list_result.dart';
-import '../objects/Playlist.dart';
+import '../objects/playlist.dart';
 
 class ListEditDialogue extends StatefulWidget {
   final Playlist list_result;
-  const ListEditDialogue({Key? key, required this.list_result})
-      : super(key: key);
+  const ListEditDialogue({super.key, required this.list_result});
 
   @override
-  _ListEditDialogueState createState() => _ListEditDialogueState();
+  State<ListEditDialogue> createState() => _ListEditDialogueState();
 }
 
 class _ListEditDialogueState extends State<ListEditDialogue> {
@@ -65,7 +64,7 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
     );
   }
 
-  contentBox(BuildContext context) {
+  Widget contentBox(BuildContext context) {
     return Stack(
       children: <Widget>[
         Container(

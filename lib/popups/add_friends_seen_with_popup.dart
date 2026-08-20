@@ -2,15 +2,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../main.dart';
-import '../objects/Movie.dart';
+import '../objects/movie.dart';
 
 class AddFriendsPopUp extends StatefulWidget {
   final Movie movie;
   
-  const AddFriendsPopUp({Key? key, required this.movie}) : super(key: key);
+  const AddFriendsPopUp({super.key, required this.movie});
 
   @override
-  _AddFriendsPopUpState createState() => _AddFriendsPopUpState();
+  State<AddFriendsPopUp> createState() => _AddFriendsPopUpState();
 }
 
 class _AddFriendsPopUpState extends State<AddFriendsPopUp> {
@@ -163,7 +163,7 @@ class _AddFriendsPopUpState extends State<AddFriendsPopUp> {
                       SetOptions(merge: true));
                 }
               }).catchError((error) {
-                print("Failed to update document: $error");
+                debugPrint("Failed to update document: $error");
               });
             }
             DocumentReference userDoc2 =
@@ -211,8 +211,9 @@ class _AddFriendsPopUpState extends State<AddFriendsPopUp> {
                     SetOptions(merge: true));
               }
             }).catchError((error) {
-              print("Failed to update document: $error");
+              debugPrint("Failed to update document: $error");
             });
+            if (!context.mounted) return;
             Navigator.of(context).pop();
           },
         ),

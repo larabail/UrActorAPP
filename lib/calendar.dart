@@ -4,34 +4,23 @@ import 'package:uractor/common/firebase/calendar_service.dart';
 import 'package:uractor/common/firebase/firebaseutils.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/l10n/l10n.dart';
-import 'package:uractor/objects/TVShow.dart';
+import 'package:uractor/objects/tv_show.dart';
 import 'package:uractor/tvshow_result.dart';
 import 'common/constants.dart';
+import 'common/utils.dart';
 import 'popups/add_to_calendar_pop_up.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
-import 'objects/Movie.dart';
+import 'objects/movie.dart';
 import 'main.dart';
 import 'movie_result.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 DateTime selectedDate = DateTime.now();
 
 String dateForMap = '';
 FirebaseFirestore db = FirebaseFirestore.instance;
-
-bool containsMap(List list, Map map) {
-  String jsonString = json.encode(map);
-  for (int i = 0; i < list.length; i++) {
-    if (json.encode(list[i]) == jsonString) {
-      return true;
-    }
-  }
-  return false;
-}
 
 class Calendar extends StatefulWidget {
   const Calendar({super.key});
@@ -353,21 +342,7 @@ class _CalendarState extends State<Calendar> {
       int i = 0;
       movies = [];
       moviesOnDay.forEach((element) async {
-        String id = element['id'];
-        String name = element['title']
-            .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
-            .replaceAll(" ", "-");
-        final response = await http.get(Uri.parse(
-            '${element.containsKey("type") ? element["type"] == "movie" ? MOVIE_LINK : TV_SHOW_LINK : MOVIE_LINK}${id}-${name}${API_KEY}'));
-        if (response.statusCode == 200) {
-          dynamic json = jsonDecode(response.body);
-          if (element.containsKey("friends")) {
-            json["friends"] = element["friends"];
-          }
-          movies.add(json);
-        } else {
-          throw Exception('Failed to load movie details');
-        }
+        await Utils.fetchCalendarElement(element, movies, sanitizeName: true);
         if (i == moviesOnDay.length - 1) {
           showModalBottomSheet(
             context: context,
@@ -551,8 +526,7 @@ class _CalendarState extends State<Calendar> {
                                         ],
                                       ),
                                     ),
-                                  )
-                                  .toList(),
+                                  ),
                             ],
                           ),
                         ),

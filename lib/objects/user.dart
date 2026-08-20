@@ -37,7 +37,7 @@ class AppUser {
     this.country = "",
   });
 
-  setUserName(String newUserName) {
+  void setUserName(String newUserName) {
     userName = newUserName;
   }
 

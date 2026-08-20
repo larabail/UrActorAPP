@@ -4,7 +4,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:uractor/main.dart';
-import 'package:uractor/objects/User.dart';
+import 'package:uractor/objects/user.dart';
 import 'dart:convert';
 
 import '../common/constants.dart';
@@ -169,10 +169,10 @@ class Person {
         ? currentUser.rewatchedMovies
         : currentUser.rewatchedTVShows;
     for (var element in cast) {
-      if (Utils.contains_non_type(seen, [type, element["id"]])) {
+      if (Utils.containsNonType(seen, [type, element["id"]])) {
         if (!counted.contains(element["id"].toString())) {
           stats += 1;
-          if (Utils.contains_non_type(favs, [type, element["id"].toString()])) {
+          if (Utils.containsNonType(favs, [type, element["id"].toString()])) {
             score += 3;
           }
           if (rewatched.keys.toList().contains(element["id"].toString())) {
@@ -184,7 +184,7 @@ class Person {
           }
           counted.add(element["id"].toString());
         }
-      } else if (Utils.contains_non_type(
+      } else if (Utils.containsNonType(
               watchlist, [type, element["id"].toString()]) &&
           !counted.contains(element["id"].toString())) {
         score += 1;
@@ -225,11 +225,11 @@ class Person {
         countedItems.add(element["id"].toString());
       }
 
-      if (Utils.contains_non_type(seen, [type, element["id"].toString()])) {
+      if (Utils.containsNonType(seen, [type, element["id"].toString()])) {
         if (element["job"] == "Director" &&
             !countedTVShowsDirector.contains(element["id"].toString())) {
           statsDir += 1;
-          if (Utils.contains_non_type(favs, [type, element["id"].toString()])) {
+          if (Utils.containsNonType(favs, [type, element["id"].toString()])) {
             scoreDirector += 3;
           }
           if (rewatched.keys.toList().contains(element["id"].toString())) {
@@ -244,7 +244,7 @@ class Person {
                 element["job"] == "Screenplay") &&
             !countedTVShowsWriter.contains(element["id"].toString())) {
           statsWriterTV += 1;
-          if (Utils.contains_non_type(favs, [type, element["id"].toString()])) {
+          if (Utils.containsNonType(favs, [type, element["id"].toString()])) {
             scoreWriter += 3;
           }
           if (rewatched.keys.toList().contains(element["id"].toString())) {
@@ -256,13 +256,13 @@ class Person {
           }
           countedTVShowsWriter.add(element["id"].toString());
         }
-      } else if (Utils.contains_non_type(
+      } else if (Utils.containsNonType(
               watchlist, [type, element["id"].toString()]) &&
           element["job"] == "Director" &&
           !countedTVShowsDirector.contains(element["id"].toString())) {
         scoreDirector += 1;
         countedTVShowsDirector.add(element["id"].toString());
-      } else if (Utils.contains_non_type(
+      } else if (Utils.containsNonType(
               watchlist, [type, element["id"].toString()]) &&
           (element["job"] == "Writer" || element["job"] == "Screenplay") &&
           !countedTVShowsWriter.contains(element["id"].toString())) {

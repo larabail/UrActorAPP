@@ -6,7 +6,7 @@ import 'package:uractor/cast_and_crew.dart';
 import 'package:uractor/common/constants.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/l10n/l10n.dart';
-import 'package:uractor/objects/TVShow.dart';
+import 'package:uractor/objects/tv_show.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'package:http/http.dart' as http;
@@ -16,11 +16,10 @@ class SeasonGuide extends StatefulWidget {
   final TVShow show;
   final Map tvShowData;
 
-  const SeasonGuide({Key? key, required this.show, required this.tvShowData})
-      : super(key: key);
+  const SeasonGuide({super.key, required this.show, required this.tvShowData});
 
   @override
-  _SeasonGuideState createState() => _SeasonGuideState();
+  State<SeasonGuide> createState() => _SeasonGuideState();
 }
 
 class _SeasonGuideState extends State<SeasonGuide> {
@@ -139,11 +138,10 @@ class EpisodeGuide extends StatefulWidget {
   final TVShow show;
   final Map seasonData;
 
-  const EpisodeGuide({Key? key, required this.show, required this.seasonData})
-      : super(key: key);
+  const EpisodeGuide({super.key, required this.show, required this.seasonData});
 
   @override
-  _EpisodeGuideState createState() => _EpisodeGuideState();
+  State<EpisodeGuide> createState() => _EpisodeGuideState();
 }
 
 class _EpisodeGuideState extends State<EpisodeGuide> {
@@ -192,7 +190,7 @@ class Episodes extends StatelessWidget {
   }
 }
 
-Future<Map> getEpisodeData(id, season, episode) async {
+Future<Map> getEpisodeData(dynamic id, dynamic season, dynamic episode) async {
   final String showId = id.toString();
   final response = await http.get(Uri.parse(
       '$TV_SHOW_LINK$showId/season/$season/episode/$episode$API_KEY'));
@@ -205,7 +203,7 @@ Future<Map> getEpisodeData(id, season, episode) async {
       json["crew"] = jsonDecode(response2.body)["crew"];
       json["guest_stars"] = jsonDecode(response2.body)["guest_stars"];
     }
-    print(json["cast"]);
+    debugPrint(json["cast"].toString());
     return json;
   }
   return {};

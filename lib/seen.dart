@@ -5,7 +5,7 @@ import 'package:uractor/l10n/l10n.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'main.dart';
-import 'common/tabView.dart';
+import 'common/tab_view.dart';
 
 class Seen extends StatelessWidget {
   @override

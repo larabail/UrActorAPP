@@ -12,7 +12,7 @@ class ListAddDialogue extends StatefulWidget {
   const ListAddDialogue({super.key});
 
   @override
-  _ListAddDialogueState createState() => _ListAddDialogueState();
+  State<ListAddDialogue> createState() => _ListAddDialogueState();
 }
 
 class _ListAddDialogueState extends State<ListAddDialogue> {
@@ -82,7 +82,7 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
     );
   }
 
-  contentBox(BuildContext context) {
+  Widget contentBox(BuildContext context) {
     return Stack(
       children: <Widget>[
         Container(

@@ -83,10 +83,10 @@ void main() {
     });
   });
 
-  group('Utils.contains_non_type', () {
+  group('Utils.containsNonType', () {
     test('matches when both the type and the id agree', () {
       expect(
-        Utils.contains_non_type([
+        Utils.containsNonType([
           ['TVShows', 7]
         ], [
           'TVShows',
@@ -98,7 +98,7 @@ void main() {
 
     test('rejects a matching id under a different type', () {
       expect(
-        Utils.contains_non_type([
+        Utils.containsNonType([
           ['Movies', 7]
         ], [
           'TVShows',

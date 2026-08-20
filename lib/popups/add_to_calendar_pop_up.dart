@@ -1,4 +1,3 @@
-// ignore_for_file: library_private_types_in_public_api
 // ignore_for_file: use_build_context_synchronously, non_constant_identifier_names
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -7,28 +6,27 @@ import 'package:uractor/common/firebase/calendar_service.dart';
 import 'package:uractor/common/firebase/social_service.dart';
 import 'package:uractor/common/firebase/watched_service.dart';
 import 'package:uractor/common/item_container.dart';
-import 'package:uractor/objects/Movie.dart';
-import 'package:uractor/objects/TVShow.dart';
+import 'package:uractor/objects/movie.dart';
+import 'package:uractor/objects/tv_show.dart';
 import 'dart:convert';
 
 import '../common/constants.dart';
 import '../common/utils.dart';
 import '../main.dart';
-import '../objects/Media.dart';
+import '../objects/media.dart';
 
 class CalendarAddDialogue extends StatefulWidget {
   final String dateForMap;
   final String dateRange;
   final String type;
   const CalendarAddDialogue(
-      {Key? key,
+      {super.key,
       required this.dateForMap,
       required this.dateRange,
-      required this.type})
-      : super(key: key);
+      required this.type});
 
   @override
-  _CalendarAddDialogueState createState() => _CalendarAddDialogueState();
+  State<CalendarAddDialogue> createState() => _CalendarAddDialogueState();
 }
 
 class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
@@ -467,16 +465,15 @@ class AddToCalendar extends StatefulWidget {
   final List friends;
   final String type;
   const AddToCalendar(
-      {Key? key,
+      {super.key,
       required this.media,
       required this.dateForMap,
       required this.modifying,
       required this.friends,
-      required this.type})
-      : super(key: key);
+      required this.type});
 
   @override
-  _AddToCalendarState createState() => _AddToCalendarState();
+  State<AddToCalendar> createState() => _AddToCalendarState();
 }
 
 class _AddToCalendarState extends State<AddToCalendar> {

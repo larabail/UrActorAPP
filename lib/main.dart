@@ -5,8 +5,8 @@ import 'dart:io';
 
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/notifications.dart';
-import 'package:uractor/objects/Playlist.dart';
-import 'package:uractor/objects/User.dart';
+import 'package:uractor/objects/playlist.dart';
+import 'package:uractor/objects/user.dart';
 import 'package:uractor/tvshow_result.dart';
 
 import 'package:flutter/material.dart';
@@ -19,9 +19,9 @@ import 'favorites.dart';
 import 'list_result.dart';
 import 'login.dart';
 import 'movie_result.dart';
-import 'objects/Media.dart';
-import 'objects/Movie.dart';
-import 'objects/TVShow.dart';
+import 'objects/media.dart';
+import 'objects/movie.dart';
+import 'objects/tv_show.dart';
 import 'playlists.dart';
 import 'reviews.dart';
 import 'seen.dart';
@@ -95,7 +95,7 @@ class _MyAppState extends State<MyApp> {
         primaryColor: const Color.fromARGB(250, 224, 190, 78),
         scaffoldBackgroundColor: const Color(0xFF121212),
         appBarTheme: const AppBarTheme(
-          color: Color(0xFF121212),
+          backgroundColor: Color(0xFF121212),
         ),
         switchTheme: SwitchThemeData(
           thumbColor: WidgetStateProperty.all<Color>(
@@ -166,10 +166,10 @@ class _MyHomePageState extends State<MyHomePage> {
       var response = await request.close();
 
       response.transform(const Utf8Decoder()).listen((data) {
-        print(data);
+        debugPrint(data);
       });
     } catch (e) {
-      print('Error: $e');
+      debugPrint('Error: $e');
     }
   }
 
@@ -561,7 +561,7 @@ class _MyHomePageState extends State<MyHomePage> {
               context,
               MaterialPageRoute(
                 builder: (context) => ListResult(
-                  list_result: listResult,
+                  listResult: listResult,
                 ),
               ),
             );
@@ -656,7 +656,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               Text(
                                 S
                                     .of(context)!
-                                    .totalContent(totalContent.toString()),
+                                    .totalContent(totalContent),
                                 style: const TextStyle(
                                   color: Colors.grey,
                                   fontSize: 12,

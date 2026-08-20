@@ -4,76 +4,35 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/firebase/review_service.dart';
 import 'package:uractor/l10n/l10n.dart';
-import '/common/constants.dart';
-import '/objects/Media.dart';
-import '/objects/Movie.dart';
-import '/objects/TVShow.dart';
+import '/objects/media.dart';
+import '/objects/movie.dart';
+import '/objects/tv_show.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'common/utils.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'main.dart';
 
 class Reviews extends StatefulWidget {
   const Reviews();
 
   @override
-  _ReviewsState createState() => _ReviewsState();
+  State<Reviews> createState() => _ReviewsState();
 }
 
 class _ReviewsState extends State<Reviews> {
   List<Map<String, dynamic>> movies = [];
 
-  Future<Map<String, dynamic>> getData(id, type) async {
-    Map<String, dynamic> data = {};
-    String link;
-    if (type == "TVShows") {
-      link = TV_SHOW_LINK;
-    } else {
-      link = MOVIE_LINK;
+  Future<Map<String, dynamic>> getData(dynamic id, String type) async {
+    try {
+      return await Utils.fetchMediaData(id, type, movies);
+    } catch (_) {
+      return await Utils.fetchMediaData(id, "TVShows", movies);
     }
-    final response = await http.get(Uri.parse('$link$id$API_KEY'));
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      if (type == "TVShows") {
-        data['title'] = json['name'];
-      } else {
-        data['title'] = json['title'];
-      }
-      data['poster_path'] = json['poster_path'];
-      data['id'] = json['id'];
-      data['type'] = type;
-      if (!Utils.containsMap(movies, data)) {
-        movies.add(data);
-      }
-    } else {
-      link = 'https://api.themoviedb.org/3/tv/';
-      type = "TVShows";
-      final response = await http.get(Uri.parse('$link$id$API_KEY'));
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        if (type == "TVShows") {
-          data['title'] = json['name'];
-        } else {
-          data['title'] = json['title'];
-        }
-        data['poster_path'] = json['poster_path'];
-        data['id'] = json['id'];
-        data['type'] = type;
-        if (!Utils.containsMap(movies, data)) {
-          movies.add(data);
-        }
-      } else {
-        throw Exception('Failed to load movie details');
-      }
-    }
-    return data;
   }
 
-  Widget buildReviewTile(context, Map review, String type, String id) {
+  Widget buildReviewTile(BuildContext context, Map review, String type, String id) {
     return FutureBuilder<Map<String, dynamic>>(
         future: getData(id, type),
         builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {

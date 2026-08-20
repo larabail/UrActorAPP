@@ -15,17 +15,17 @@ class Friends extends StatefulWidget {
   const Friends();
 
   @override
-  _FriendsState createState() => _FriendsState();
+  State<Friends> createState() => _FriendsState();
 }
 
 class _FriendsState extends State<Friends> {
   final TextEditingController _usernameController = TextEditingController();
   Future<void> _refreshFriends() async {
-    var FriendsDoc = await FirebaseFirestore.instance
+    var friendsDoc = await FirebaseFirestore.instance
         .collection(currentUser.uid)
         .doc("Friends")
         .get();
-    Map<String, dynamic> data = FriendsDoc.data() as Map<String, dynamic>;
+    Map<String, dynamic> data = friendsDoc.data() as Map<String, dynamic>;
     currentUser.friends = data["friends"];
     setState(() {
       currentUser.friends = currentUser.friends;
