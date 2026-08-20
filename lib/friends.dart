@@ -160,6 +160,13 @@ class _FriendsState extends State<Friends> {
         if (_isReordering) {
           return ReorderableListView.builder(
             itemCount: friends.length,
+            // Deliberately still onReorder. onReorderItem pre-adjusts newIndex,
+            // so migrating means removing the compensation inside
+            // FriendsService.reorder and rewriting the tests that pin it. That
+            // changes drag behaviour, which nothing here covers at the widget
+            // level, so it belongs in its own change rather than in a toolchain
+            // upgrade.
+            // ignore: deprecated_member_use
             onReorder: _onReorder,
             buildDefaultDragHandles: false,
             itemBuilder: (context, index) =>
