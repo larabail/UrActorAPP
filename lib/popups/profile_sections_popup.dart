@@ -52,6 +52,10 @@ class _ProfileSectionsDialogueState extends State<ProfileSectionsDialogue> {
             const SizedBox(height: 20),
             Expanded(
               child: ReorderableListView(
+                // Still onReorder; onReorderItem would pre-adjust newIndex and
+                // make the compensation below wrong. Deferred out of this
+                // upgrade along with the other two call sites.
+                // ignore: deprecated_member_use
                 onReorder: (int oldIndex, int newIndex) {
                   if (newIndex > oldIndex) {
                     newIndex -= 1;
