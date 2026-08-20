@@ -130,6 +130,17 @@ service cloud.firestore {
         && changed.removedKeys().size() == 0;
     }
 
+    function validProgressDocument() {
+      return (!('Movies' in request.resource.data)
+            || request.resource.data.Movies is map)
+        && (!('TVShows' in request.resource.data)
+            || request.resource.data.TVShows is map);
+    }
+
+    function progressReadableByFriend(uid, docId) {
+      return docId != 'Progress' && friendOf(uid);
+    }
+
     function validFriendCreate(docId) {
       return docId == 'Movies' && createsListFieldOnly('Seen')
         || docId == 'TVShows' && createsListFieldOnly('Seen')
@@ -291,7 +302,7 @@ service cloud.firestore {
       // playlist co-members and search results are read straight out of it.
       allow get: if isSelf(uid)
         || docId == 'Settings' && signedIn()
-        || friendOf(uid);
+        || progressReadableByFriend(uid, docId);
 
       // Listing the whole collection is how a friend's profile and calendar
       // pages load. Firestore fails a query outright if any single returned
@@ -309,7 +320,8 @@ service cloud.firestore {
       // Notifications. Creates stay pinned to the app's per-document shape, so
       // a friend cannot bring arbitrary documents or arbitrary payloads into
       // existence.
-      allow create: if isSelf(uid)
+      allow create: if (isSelf(uid)
+            && (docId != 'Progress' || validProgressDocument()))
         || (friendOf(uid) && friendWritableDoc(docId)
             && validFriendCreate(docId))
         // Same lazy-creation trap applies to Friends: accepting the first
@@ -319,7 +331,8 @@ service cloud.firestore {
 
       allow delete: if isSelf(uid);
 
-      allow update: if isSelf(uid)
+      allow update: if (isSelf(uid)
+            && (docId != 'Progress' || validProgressDocument()))
         || (friendOf(uid) && friendWritableDoc(docId)
             && validFriendUpdate(docId))
         // Accepting a request or ending a friendship edits the other person's
