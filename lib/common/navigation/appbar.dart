@@ -5,7 +5,12 @@ import '../../popups/settings_pop_up.dart';
 import '../../search.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const CustomAppBar({super.key});
+  const CustomAppBar({super.key, this.actions = const []});
+
+  /// Page specific icons, shown before the search and settings icons that
+  /// every page shares. Lets a page add a control without spending a row of
+  /// vertical space on it.
+  final List<Widget> actions;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -24,6 +29,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       centerTitle: false,
       actions: [
+        ...actions,
         InkWell(
           onTap: () {
             Navigator.push(

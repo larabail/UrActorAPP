@@ -6,6 +6,7 @@ import 'package:uractor/l10n/l10n.dart';
 import 'common/firebase/friends_service.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
+import 'common/reorder_toggle.dart';
 import 'friends_profile.dart';
 import 'inbox.dart';
 import 'main.dart';
@@ -70,20 +71,11 @@ class _FriendsState extends State<Friends> {
   }
 
   Widget _buildReorderToggle(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          TextButton.icon(
-            onPressed: () => setState(() => _isReordering = !_isReordering),
-            icon: Icon(_isReordering ? Icons.check : Icons.swap_vert, size: 18),
-            label: Text(_isReordering
-                ? S.of(context)!.finishReordering
-                : S.of(context)!.reorderFriends),
-          ),
-        ],
-      ),
+    return ReorderToggle(
+      isReordering: _isReordering,
+      onPressed: () => setState(() => _isReordering = !_isReordering),
+      enterTooltip: S.of(context)!.reorderFriends,
+      exitTooltip: S.of(context)!.finishReordering,
     );
   }
 
@@ -294,11 +286,17 @@ class _FriendsState extends State<Friends> {
     }
 
     return Scaffold(
-      appBar: const CustomAppBar(),
+      appBar: CustomAppBar(
+        actions: [
+          if (currentUser.friends.length > 1) ...[
+            _buildReorderToggle(context),
+            const SizedBox(width: 16),
+          ],
+        ],
+      ),
       body: Column(
         children: [
           _buildFriendRequestsTile(context),
-          if (currentUser.friends.length > 1) _buildReorderToggle(context),
           Expanded(
             child: RefreshIndicator(
               onRefresh: _refreshFriends,

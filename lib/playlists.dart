@@ -8,6 +8,7 @@ import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'common/firebase/settings_service.dart';
 import 'common/playlist_order.dart';
+import 'common/reorder_toggle.dart';
 import 'main.dart';
 import 'list_result.dart';
 import 'objects/playlist.dart';
@@ -92,7 +93,19 @@ class _PlaylistsState extends State<Playlists> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(),
+      appBar: CustomAppBar(
+        actions: [
+          if (_orderedIds.length > 1) ...[
+            ReorderToggle(
+              isReordering: _isReordering,
+              onPressed: () => setState(() => _isReordering = !_isReordering),
+              enterTooltip: S.of(context)!.reorderPlaylists,
+              exitTooltip: S.of(context)!.finishReordering,
+            ),
+            const SizedBox(width: 16),
+          ],
+        ],
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -158,25 +171,6 @@ class _PlaylistsState extends State<Playlists> {
                 ),
               ],
             ),
-            if (_orderedIds.length > 1)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton.icon(
-                      onPressed: () =>
-                          setState(() => _isReordering = !_isReordering),
-                      icon: Icon(
-                          _isReordering ? Icons.check : Icons.swap_vert,
-                          size: 18),
-                      label: Text(_isReordering
-                          ? S.of(context)!.finishReordering
-                          : S.of(context)!.reorderPlaylists),
-                    ),
-                  ],
-                ),
-              ),
             if (currentUser.recommendations["Movies"].isEmpty &&
                 currentUser.recommendations["TVShows"].isEmpty)
               GestureDetector(
