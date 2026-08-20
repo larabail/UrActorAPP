@@ -62,6 +62,13 @@ error, so nothing will catch this for you.
 Never hardcode a display string in a widget. Reach for it with
 `S.of(context)!.yourKey`.
 
+### Keep `README.md` current
+
+`README.md` is the first map for a new contributor. If a change alters setup
+steps, commands, architecture, CI behaviour, or user-facing features, update
+the README in the same pull request. Do not leave the next person to discover
+the new truth by reading the diff, a workflow log, or source code.
+
 ## Commit convention
 
 Conventional Commits, with a body that explains the reasoning.
