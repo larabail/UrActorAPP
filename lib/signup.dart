@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -135,40 +136,40 @@ class SignUp extends StatelessWidget {
                               "Movies": [],
                               "TVShows": []
                             };
-                            const Map<String, dynamic> Review = {
+                            const Map<String, dynamic> review = {
                               "Movies": [],
                               "TVShows": []
                             };
-                            const Map<String, dynamic> Favorites = {
+                            const Map<String, dynamic> favorites = {
                               "Movies": [],
                               "TVShows": []
                             };
-                            const Map<String, dynamic> Watchlist = {
+                            const Map<String, dynamic> watchlist = {
                               "Movies": [],
                               "TVShows": []
                             };
-                            const Map<String, dynamic> Country = {
+                            const Map<String, dynamic> country = {
                               "Country": "US"
                             };
-                            const Map<String, dynamic> FavDirectors = {};
-                            const Map<String, dynamic> FavWriters = {};
-                            const Map<String, dynamic> FavActors = {};
-                            const Map<String, dynamic> Calendar = {};
-                            const Map<String, dynamic> Rewatched = {};
-                            const Map<String, dynamic> RewatchedTV = {};
-                            const Map<String, dynamic> Notifications = {};
-                            const Map<String, dynamic> Friends = {
+                            const Map<String, dynamic> favDirectors = {};
+                            const Map<String, dynamic> favWriters = {};
+                            const Map<String, dynamic> favActors = {};
+                            const Map<String, dynamic> calendar = {};
+                            const Map<String, dynamic> rewatched = {};
+                            const Map<String, dynamic> rewatchedTV = {};
+                            const Map<String, dynamic> notifications = {};
+                            const Map<String, dynamic> friends = {
                               "friends": []
                             };
-                            const Map<String, dynamic> SeenWith = {
+                            const Map<String, dynamic> seenWith = {
                               "Movies": {},
                               "TVShows": {}
                             };
-                            const Map<String, dynamic> Recommendations = {
+                            const Map<String, dynamic> recommendations = {
                               "Movies": [],
                               "TVShows": []
                             };
-                            const Map<String, dynamic> Settings = {
+                            const Map<String, dynamic> settings = {
                               "darkMode": true,
                               "dontAskCalendar": false,
                               "providers": [],
@@ -197,63 +198,63 @@ class SignUp extends StatelessWidget {
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("SeenWith")
-                                .set(SeenWith);
+                                .set(seenWith);
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("Reviews")
-                                .set(Review);
+                                .set(review);
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("Favorites")
-                                .set(Favorites);
+                                .set(favorites);
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("Watchlist")
-                                .set(Watchlist);
+                                .set(watchlist);
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("Country")
-                                .set(Country);
+                                .set(country);
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("Calendar")
-                                .set(Calendar);
+                                .set(calendar);
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("FavDirectors")
-                                .set(FavDirectors);
+                                .set(favDirectors);
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("FavWriters")
-                                .set(FavWriters);
+                                .set(favWriters);
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("FavActors")
-                                .set(FavActors);
+                                .set(favActors);
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("Rewatched")
-                                .set(Rewatched);
+                                .set(rewatched);
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("RewatchedTV")
-                                .set(RewatchedTV);
+                                .set(rewatchedTV);
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("Settings")
-                                .set(Settings);
+                                .set(settings);
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("Friends")
-                                .set(Friends);
+                                .set(friends);
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("Notifications")
-                                .set(Notifications);
+                                .set(notifications);
                             FirebaseFirestore.instance
                                 .collection(credential.user!.uid)
                                 .doc("Recommendations")
-                                .set(Recommendations);
+                                .set(recommendations);
                           });
                           try {
                             await FirebaseAuth.instance
@@ -268,17 +269,50 @@ class SignUp extends StatelessWidget {
                               );
                             });
                           } on FirebaseAuthException catch (e) {
+                            if (!context.mounted) return;
                             if (e.code == 'user-not-found') {
-                              print('No user found for that email.');
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content:
+                                      Text(S.of(context)!.noUserFoundError),
+                                ),
+                              );
                             } else if (e.code == 'wrong-password') {
-                              print('Wrong password provided for that user.');
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      S.of(context)!.wrongPasswordError),
+                                ),
+                              );
                             }
                           }
                         } on FirebaseAuthException catch (e) {
-                          if (e.code == 'user-not-found') {
-                            print('No user found for that email.');
-                          } else if (e.code == 'wrong-password') {
-                            print('Wrong password provided for that user.');
+                          if (!context.mounted) return;
+                          if (e.code == 'weak-password') {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(S.of(context)!.weakPasswordError),
+                              ),
+                            );
+                          } else if (e.code == 'email-already-in-use') {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    S.of(context)!.emailAlreadyInUseError),
+                              ),
+                            );
+                          } else if (e.code == 'invalid-email') {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(S.of(context)!.invalidEmailError),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(S.of(context)!.genericAuthError),
+                              ),
+                            );
                           }
                         }
                       }
