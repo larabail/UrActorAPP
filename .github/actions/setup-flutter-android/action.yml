@@ -1,0 +1,60 @@
+name: Set up Flutter and Android
+description: >
+  Installs the toolchain needed to analyze, test and build the Android app.
+  Shared by the pull request checks and the release workflow so that a build
+  cannot pass on a pull request and then fail during a release.
+
+inputs:
+  flutter-version:
+    description: Flutter SDK version to install.
+    required: false
+    default: 3.35.3
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '17'
+
+    - uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ inputs.flutter-version }}
+        channel: stable
+        cache: true
+
+    # The project pins an NDK that is not preinstalled on the runners. Gradle
+    # will try to install it during configuration and fail, because unattended
+    # installs refuse to accept the SDK licences on their own. Installing it up
+    # front, with the version read from the build file so the two cannot drift,
+    # keeps that failure out of the build step.
+    - name: Install the pinned Android NDK
+      shell: bash
+      run: |
+        set -euo pipefail
+        NDK_VERSION=$(sed -n 's/.*ndkVersion *"\([^"]*\)".*/\1/p' android/app/build.gradle)
+        if [ -z "$NDK_VERSION" ]; then
+          echo "Could not read ndkVersion from android/app/build.gradle" >&2
+          exit 1
+        fi
+        SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+        if [ ! -x "$SDKMANAGER" ]; then
+          echo "sdkmanager not found at $SDKMANAGER" >&2
+          exit 1
+        fi
+        if [ -d "$ANDROID_HOME/ndk/$NDK_VERSION" ]; then
+          echo "NDK $NDK_VERSION already present"
+          exit 0
+        fi
+        echo "Installing NDK $NDK_VERSION"
+        # `yes` is killed by SIGPIPE once sdkmanager stops reading, which would
+        # otherwise fail the step under `pipefail`.
+        yes 2>/dev/null | "$SDKMANAGER" --licenses > /dev/null || true
+        "$SDKMANAGER" "ndk;$NDK_VERSION" > /dev/null
+
+    - name: Resolve dependencies
+      shell: bash
+      run: |
+        flutter pub get
+        flutter gen-l10n
