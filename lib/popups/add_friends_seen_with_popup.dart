@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../objects/movie.dart';
+import '../common/firebase/firestore_core.dart';
 
 class AddFriendsPopUp extends StatefulWidget {
   final Movie movie;
@@ -102,14 +103,10 @@ class _AddFriendsPopUpState extends State<AddFriendsPopUp> {
             String id = widget.movie.id;
             FirebaseFirestore firestore = FirebaseFirestore.instance;
             for (String friend in selectedFriends.keys.toList()) {
-              var userDoc =
-                  FirebaseFirestore.instance.collection(friend).doc("Movies");
-              await userDoc.update({
+              await FirestoreCore.updateDocument(friend, "Movies", {
                 'Seen': FieldValue.arrayUnion([id])
               });
-              userDoc =
-                  FirebaseFirestore.instance.collection(friend).doc("Seen");
-              await userDoc.update({
+              await FirestoreCore.updateDocument(friend, "Seen", {
                 'Movies': FieldValue.arrayUnion([id])
               });
               if (currentUser.seenWith.containsKey(friend) &&
@@ -131,6 +128,7 @@ class _AddFriendsPopUpState extends State<AddFriendsPopUp> {
                 if (!snapshot.exists) {
                   throw Exception("Document does not exist!");
                 }
+                // Guarded above, so transaction.update below is safe.
 
                 Map<String, dynamic> data =
                     snapshot.data() as Map<String, dynamic>;
@@ -180,6 +178,7 @@ class _AddFriendsPopUpState extends State<AddFriendsPopUp> {
               if (!snapshot.exists) {
                 throw Exception("Document does not exist!");
               }
+              // Guarded above, so transaction.update below is safe.
 
               Map<String, dynamic> data =
                   snapshot.data() as Map<String, dynamic>;

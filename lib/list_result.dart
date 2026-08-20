@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
+import 'package:uractor/common/firebase/firestore_core.dart';
 import 'package:uractor/common/firebase/playlist_service.dart';
 import 'package:uractor/common/firebase/recommendation_service.dart';
 import 'package:uractor/common/item_container.dart';
@@ -127,10 +128,11 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                                             item.containsKey(userData["uid"])
                                                 as bool,
                                         orElse: () => null);
-                                await FirebaseFirestore.instance
-                                    .collection('Watchlists')
-                                    .doc(widget.listResult.id)
-                                    .update({
+                                await FirestoreCore.mergeInto(
+                                    FirebaseFirestore.instance
+                                        .collection('Watchlists')
+                                        .doc(widget.listResult.id),
+                                    {
                                   'Users':
                                       FieldValue.arrayRemove([itemToRemove]),
                                   'memberUids':
@@ -234,14 +236,15 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                       Map itemToRemove = widget.listResult.users.firstWhere(
                           (item) => item.containsKey(currentUser.uid) as bool,
                           orElse: () => null);
-                      await FirebaseFirestore.instance
-                          .collection('Watchlists')
-                          .doc(widget.listResult.id)
-                          .update({
-                        'Users': FieldValue.arrayRemove([itemToRemove]),
-                        'memberUids':
-                            FieldValue.arrayRemove([currentUser.uid])
-                      });
+                      await FirestoreCore.mergeInto(
+                          FirebaseFirestore.instance
+                              .collection('Watchlists')
+                              .doc(widget.listResult.id),
+                          {
+                            'Users': FieldValue.arrayRemove([itemToRemove]),
+                            'memberUids':
+                                FieldValue.arrayRemove([currentUser.uid])
+                          });
                       await PlaylistService.refreshCurrentUserPlaylists();
                       Navigator.pushReplacement(
                           context,
