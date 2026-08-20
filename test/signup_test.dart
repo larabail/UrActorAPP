@@ -1,4 +1,5 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uractor/common/firebase/firestore_core.dart';
 import 'package:uractor/signup.dart';
@@ -75,6 +76,62 @@ void main() {
 
       expect((await users.doc('Movies').get()).exists, isFalse);
       expect((await users.doc('Friends').get()).exists, isFalse);
+    });
+  });
+
+  group('rollbackCreatedAuthAccountAfterProfileFailure', () {
+    test('deletes the newly created auth account after profile setup fails, '
+        'so the email can be used for another signup attempt', () async {
+      var deleteCalled = false;
+
+      final result = await rollbackCreatedAuthAccountAfterProfileFailure(
+        deleteAccount: () async {
+          deleteCalled = true;
+        },
+        profileError: StateError('profile batch failed'),
+      );
+
+      expect(result, CreatedAuthAccountRollbackResult.deleted);
+      expect(deleteCalled, isTrue);
+    });
+
+    test('reports the original profile setup error when auth rollback also '
+        'fails, because that is what broke signup first', () async {
+      // A failed delete means the email may still be stuck, but the log must
+      // preserve the profile-write failure that actually made signup fail.
+      final profileError = StateError('profile batch failed');
+      final rollbackError = StateError('network unavailable');
+      final reports = <FlutterErrorDetails>[];
+
+      final result = await rollbackCreatedAuthAccountAfterProfileFailure(
+        deleteAccount: () async => throw rollbackError,
+        profileError: profileError,
+        reportError: reports.add,
+      );
+
+      expect(result, CreatedAuthAccountRollbackResult.failed);
+      expect(reports, hasLength(2));
+      expect(reports.first.exception, same(profileError));
+      expect(reports.last.exception, same(rollbackError));
+    });
+
+    test('reports the original profile setup error when there is no auth user '
+        'to delete, because cleanup cannot be assumed to have happened',
+        () async {
+      // Firebase normally returns a user after account creation, but this keeps
+      // a null credential from being treated like a successful rollback.
+      final profileError = StateError('profile batch failed');
+      final reports = <FlutterErrorDetails>[];
+
+      final result = await rollbackCreatedAuthAccountAfterProfileFailure(
+        deleteAccount: null,
+        profileError: profileError,
+        reportError: reports.add,
+      );
+
+      expect(result, CreatedAuthAccountRollbackResult.unavailable);
+      expect(reports, hasLength(1));
+      expect(reports.single.exception, same(profileError));
     });
   });
 }
