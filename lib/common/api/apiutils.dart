@@ -81,6 +81,23 @@ class ApiUtils {
     return finalCrew;
   }
 
+  /// Returns the first crew member whose "job" satisfies [matches], or null.
+  ///
+  /// [mergeCrewJobs] returns a typed `List<Map>`, so callers cannot use
+  /// `firstWhere` with an `orElse` that returns null: the closure fails the
+  /// runtime cast to the element type and throws on every lookup, before the
+  /// predicate is ever evaluated.
+  static Map? findCrewMember(dynamic crew, bool Function(String job) matches) {
+    if (crew is! List) return null;
+    for (final person in crew) {
+      final String? job = person["job"] as String?;
+      if (job != null && matches(job)) {
+        return person as Map;
+      }
+    }
+    return null;
+  }
+
   /// Fetches cast, crew, and trailer data for a specific media item in the current language.
   /// @param movieId The TMDb media ID.
   /// @param name The slugified title.
