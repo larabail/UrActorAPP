@@ -583,4 +583,12 @@ class SEs extends S {
 
   @override
   String get everyone => 'Todos';
+
+  @override
+  String get profileSetupFailedError =>
+      'Tu cuenta fue creada, pero no pudimos configurar tu perfil. Por favor, inicia sesión de nuevo.';
+
+  @override
+  String get friendRequestActionFailedError =>
+      'Algo salió mal. Por favor, inténtalo de nuevo.';
 }

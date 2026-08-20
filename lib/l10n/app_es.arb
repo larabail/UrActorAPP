@@ -169,5 +169,7 @@
   "deleteCalendarEntry": "Eliminar Entrada del Calendario",
   "deleteCalendarEntryQuestion": "¿Quieres eliminar esto solo de tu calendario o del de todos?",
   "justMe": "Solo yo",
-  "everyone": "Todos"
+  "everyone": "Todos",
+  "profileSetupFailedError": "Tu cuenta fue creada, pero no pudimos configurar tu perfil. Por favor, inicia sesión de nuevo.",
+  "friendRequestActionFailedError": "Algo salió mal. Por favor, inténtalo de nuevo."
 }
