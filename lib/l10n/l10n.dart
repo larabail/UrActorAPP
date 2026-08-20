@@ -793,6 +793,18 @@ abstract class S {
   /// **'Generate Handpicked Recommendations'**
   String get generateRecommendation;
 
+  /// No description provided for @recommendationsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t generate recommendations. Please try again later.'**
+  String get recommendationsFailed;
+
+  /// No description provided for @fetchingRecommendations.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetching recommendations...'**
+  String get fetchingRecommendations;
+
   /// No description provided for @handpicked.
   ///
   /// In en, this message translates to:
