@@ -1,6 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../main.dart';
+import 'firestore_core.dart';
 
 /// Reads and writes the signed-in user's Settings document.
 ///
@@ -13,7 +13,7 @@ class SettingsService {
   /// @param value The new value.
   static Future<void> update(String key, dynamic value) async {
     currentUser.settings[key] = value;
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection(currentUser.uid)
         .doc("Settings")
         .set(Map<String, dynamic>.from(currentUser.settings));

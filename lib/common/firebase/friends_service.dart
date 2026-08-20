@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../main.dart';
 import 'firestore_core.dart';
@@ -78,7 +77,7 @@ class FriendsService {
 
     await Future.wait(missing.map((uid) async {
       try {
-        final doc = await FirebaseFirestore.instance
+        final doc = await FirestoreCore.db
             .collection(uid)
             .doc('Settings')
             .get();

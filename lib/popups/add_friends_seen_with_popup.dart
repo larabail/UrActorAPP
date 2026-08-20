@@ -28,7 +28,7 @@ class _AddFriendsPopUpState extends State<AddFriendsPopUp> {
               currentUser.friends.length,
               (friendIndex) {
                 return FutureBuilder<DocumentSnapshot>(
-                  future: FirebaseFirestore.instance
+                  future: FirestoreCore.db
                       .collection(currentUser.friends[friendIndex])
                       .doc('Settings')
                       .get(),
@@ -101,7 +101,7 @@ class _AddFriendsPopUpState extends State<AddFriendsPopUp> {
           child: const Text('Apply'),
           onPressed: () async {
             String id = widget.movie.id;
-            FirebaseFirestore firestore = FirebaseFirestore.instance;
+            FirebaseFirestore firestore = FirestoreCore.db;
             for (String friend in selectedFriends.keys.toList()) {
               await FirestoreCore.updateDocument(friend, "Movies", {
                 'Seen': FieldValue.arrayUnion([id])

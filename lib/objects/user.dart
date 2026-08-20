@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../main.dart';
+import '../common/firebase/firestore_core.dart';
 
 class AppUser {
   String uid;
@@ -43,7 +44,7 @@ class AppUser {
 
   Future<bool> getFirebaseData() async {
     clearUserData();
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection(uid)
         .get()
         .then((QuerySnapshot querySnapshot) {
@@ -204,7 +205,7 @@ class AppUser {
         }
       }
     });
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection("Watchlists")
         .get()
         .then((QuerySnapshot querySnapshot) {
@@ -221,7 +222,7 @@ class AppUser {
         }
       }
     });
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection("Oscars")
         .get()
         .then((QuerySnapshot querySnapshot) {

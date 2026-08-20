@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../common/constants.dart';
 import '../common/api/apiutils.dart';
@@ -6,8 +5,8 @@ import '../common/firebase/firestore_core.dart';
 import '../common/utils.dart';
 import '../main.dart';
 import 'media.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../common/api/http_client.dart';
 
 class Movie extends MediaItem {
   Movie({
@@ -18,7 +17,7 @@ class Movie extends MediaItem {
 
   @override
   Future<Map> getData() async {
-    final response = await http.get(Uri.parse('$MOVIE_LINK$id$API_KEY'));
+    final response = await AppHttp.client.get(Uri.parse('$MOVIE_LINK$id$API_KEY'));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       return json as Map;
@@ -70,7 +69,7 @@ class Movie extends MediaItem {
   }
 
   Future removeFriend(String friendUid, List friendsWatchedWith) async {
-    var userDoc = await FirebaseFirestore.instance
+    var userDoc = await FirestoreCore.db
         .collection(currentUser.uid)
         .doc("SeenWith")
         .get();
@@ -83,7 +82,7 @@ class Movie extends MediaItem {
         currentUser.uid, "SeenWith", {"Movies": movieMap});
     currentUser.seenWith[friendUid]["Movies"].remove(id);
 
-    var friendsDoc = await FirebaseFirestore.instance
+    var friendsDoc = await FirestoreCore.db
         .collection(friendUid)
         .doc("SeenWith")
         .get();

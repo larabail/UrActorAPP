@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 
 import '../../main.dart';
 import '../constants.dart';
+import 'http_client.dart';
 
 class ApiUtils {
   static const String _omdbApiKey = String.fromEnvironment('OMDB_API_KEY',
@@ -13,7 +13,7 @@ class ApiUtils {
   /// @param imdbId The IMDb ID of the movie or show.
   /// @return The decoded JSON response containing OMDB metadata.
   static Future<dynamic> fetchOmdbData(String imdbId) async {
-    final response = await http.get(
+    final response = await AppHttp.client.get(
         Uri.parse('https://www.omdbapi.com/?i=$imdbId&apikey=$_omdbApiKey'));
     if (response.statusCode != 200) {
       throw Exception('Failed to load OMDB data');
@@ -29,7 +29,7 @@ class ApiUtils {
   /// @return A list of provider name and logo URL pairs.
   static Future<List<dynamic>> fetchProviders(
       String movieId, String name, String country, String type) async {
-    final response = await http.get(Uri.parse(
+    final response = await AppHttp.client.get(Uri.parse(
         '${type == "movie" ? MOVIE_LINK : TV_SHOW_LINK}$movieId-$name$WATCH_PROVIDERS_LINK'));
     if (response.statusCode != 200) {
       throw Exception('Failed to load provider data');
@@ -106,9 +106,9 @@ class ApiUtils {
   static Future<Map<String, dynamic>> fetchCreditsAndTrailer(
       String movieId, String name, String type) async {
     final lang = currentUser.settings['language'] ?? 'en';
-    final creditsResponse = await http.get(Uri.parse(
+    final creditsResponse = await AppHttp.client.get(Uri.parse(
         '${type == "movie" ? MOVIE_LINK : TV_SHOW_LINK}$movieId-$name$CREDITS_LINK&language=$lang'));
-    final trailerResponse = await http.get(Uri.parse(
+    final trailerResponse = await AppHttp.client.get(Uri.parse(
         '${type == "movie" ? MOVIE_LINK : TV_SHOW_LINK}$movieId-$name$VIDEOS_LINK&language=$lang'));
 
     if (creditsResponse.statusCode != 200 ||
@@ -144,7 +144,7 @@ class ApiUtils {
   static Future<Map<String, dynamic>> fetchMovieDetails(
       String movieId, String name, String type) async {
     final lang = currentUser.settings['language'] ?? 'en';
-    final movieResponse = await http.get(Uri.parse(
+    final movieResponse = await AppHttp.client.get(Uri.parse(
         '${type == "movie" ? MOVIE_LINK : TV_SHOW_LINK}$movieId-$name$API_KEY&language=$lang'));
     if (movieResponse.statusCode != 200) {
       throw Exception('Failed to load movie details');
@@ -166,7 +166,7 @@ class ApiUtils {
 
     var imdbId = json['imdb_id'];
     if (type != "movie") {
-      final response2 = await http.get(Uri.parse(
+      final response2 = await AppHttp.client.get(Uri.parse(
           '$TV_SHOW_LINK$movieId-$name$EXTERNAL_IDS_LINK&language=$lang'));
       if (response2.statusCode == 200) {
         imdbId = jsonDecode(response2.body)['imdb_id'];
@@ -235,7 +235,7 @@ class ApiUtils {
     }
     final searchLink =
         '$SEARCH_BY_NAME_MULTI_LINK${Uri.encodeQueryComponent(query)}&page=$page';
-    final response = await http.get(Uri.parse(searchLink));
+    final response = await AppHttp.client.get(Uri.parse(searchLink));
     if (response.statusCode != 200) {
       throw Exception('Failed to load search results');
     }
@@ -371,7 +371,7 @@ class ApiUtils {
     final lang = currentUser.settings['language'] ?? 'en';
     final searchLink =
         '$SEARCH_BY_NAME_MOVIE_LINK${Uri.encodeQueryComponent(query)}&language=$lang';
-    final response = await http.get(Uri.parse(searchLink));
+    final response = await AppHttp.client.get(Uri.parse(searchLink));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       return json['results'];
@@ -388,7 +388,7 @@ class ApiUtils {
     final lang = currentUser.settings['language'] ?? 'en';
     final searchLink =
         '$SEARCH_BY_NAME_TV_SHOW_LINK${Uri.encodeQueryComponent(query)}&language=$lang';
-    final response = await http.get(Uri.parse(searchLink));
+    final response = await AppHttp.client.get(Uri.parse(searchLink));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       return json['results'];

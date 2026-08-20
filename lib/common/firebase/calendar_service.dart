@@ -49,7 +49,7 @@ class CalendarService {
 
       await FirestoreCore.updateDocument(currentUser.uid, 'Calendar', myObject);
       currentUser.calendar = {};
-      await FirebaseFirestore.instance
+      await FirestoreCore.db
           .collection(currentUser.uid)
           .get()
           .then((QuerySnapshot querySnapshot) {

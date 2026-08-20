@@ -16,6 +16,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import 'tvshow_result.dart';
+import 'common/firebase/firestore_core.dart';
 
 const String imgLink = 'https://image.tmdb.org/t/p/w500/';
 DateTime selectedDate = DateTime.now();
@@ -31,7 +32,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
   Map friendCalendar = {};
   bool gotData = false;
   Future<void> getFirebaseData() async {
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection(friendUid)
         .get()
         .then((QuerySnapshot querySnapshot) {

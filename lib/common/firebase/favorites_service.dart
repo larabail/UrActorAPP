@@ -17,7 +17,7 @@ class FavoritesService {
     } else {
       currentUser.favTVShows = [];
     }
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) {
@@ -47,7 +47,7 @@ class FavoritesService {
   /// @param type The media type (Movies or TVShows).
   /// @return True if the operation succeeded.
   static Future<bool> unfavorite(String id, context, String type) async {
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) async {

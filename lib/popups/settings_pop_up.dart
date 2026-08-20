@@ -3,7 +3,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:uractor/l10n/l10n.dart';
 import 'dart:convert';
 
@@ -11,6 +10,7 @@ import '../common/constants.dart';
 import '../common/firebase/firestore_core.dart';
 import '../login.dart';
 import '../main.dart';
+import '../common/api/http_client.dart';
 
 class Country {
   final String isoCode;
@@ -80,7 +80,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
 
   Future<void> fetchCountries() async {
     try {
-      final response = await http.get(Uri.parse(COUNTRIES_LINK));
+      final response = await AppHttp.client.get(Uri.parse(COUNTRIES_LINK));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
@@ -95,7 +95,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
   }
 
   Future<void> fetchProviders() async {
-    final response = await http.get(Uri.parse(
+    final response = await AppHttp.client.get(Uri.parse(
         "$WATCH_PROVIDERS_BY_REGION_LINK${currentUser.country}"));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -124,7 +124,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
 
   Future<void> updateSettings(String element, dynamic newValue) async {
     var userDoc =
-        FirebaseFirestore.instance.collection(currentUser.uid).doc("Settings");
+        FirestoreCore.db.collection(currentUser.uid).doc("Settings");
     currentUser.settings[element] = newValue;
     await userDoc.set(currentUser.settings as Map<String, dynamic>);
   }
@@ -414,7 +414,7 @@ class _AlertButtonDialogueState extends State<AlertButtonDialogue> {
           onPressed: () async {
             final navigator = Navigator.of(context);
             CollectionReference collectionRef =
-                FirebaseFirestore.instance.collection(currentUser.uid);
+                FirestoreCore.db.collection(currentUser.uid);
             QuerySnapshot snapshot = await collectionRef.get();
             for (DocumentSnapshot docSnapshot in snapshot.docs) {
               await docSnapshot.reference.delete();

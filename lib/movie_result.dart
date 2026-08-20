@@ -26,6 +26,7 @@ import 'objects/movie.dart';
 import 'objects/person.dart';
 import 'person_result.dart';
 import 'dart:async';
+import 'common/firebase/firestore_core.dart';
 
 class MovieResult extends StatefulWidget {
   final Movie movie;
@@ -428,7 +429,7 @@ class _MovieResultState extends State<MovieResult> {
             currentUser.seenWith.entries
                 .where((entry) =>
                     entry.value["Movies"]?.contains(widget.movie.id) ?? false)
-                .map((entry) => FirebaseFirestore.instance
+                .map((entry) => FirestoreCore.db
                     .collection(entry.key)
                     .doc("Settings")
                     .get()),
@@ -464,7 +465,7 @@ class _MovieResultState extends State<MovieResult> {
                   var username = userData['username'] ?? 'Unknown';
                   return GestureDetector(
                     onTap: () async {
-                      var querySnapshot = await FirebaseFirestore.instance
+                      var querySnapshot = await FirestoreCore.db
                           .collection('usernames')
                           .where('username', isEqualTo: username)
                           .limit(1)
