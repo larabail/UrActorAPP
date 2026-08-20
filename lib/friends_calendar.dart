@@ -7,6 +7,7 @@ import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'common/constants.dart';
 import 'common/utils.dart';
+import 'package:uractor/common/async_action.dart';
 import 'package:uractor/common/firebase/firebaseutils.dart';
 import 'friends.dart';
 import 'objects/movie.dart';
@@ -104,7 +105,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
     List moviesOnDay = [];
     List movies = [];
 
-    void onDaySelected(DateTime selectedDay, DateTime focusedDay) async {
+    Future<void> onDaySelected(DateTime selectedDay, DateTime focusedDay) async {
       String month = '${selectedDay.month}';
       String day = '${selectedDay.day}';
       if (selectedDay.month < 10) {
@@ -124,6 +125,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
       for (var element in moviesOnDay) {
         await Utils.fetchCalendarElement(element, movies, dedupe: true);
         if (i == moviesOnDay.length - 1) {
+          if (!context.mounted) return;
           showModalBottomSheet(
             context: context,
             builder: (_) {
@@ -334,14 +336,18 @@ class _FriendCalendarState extends State<FriendCalendar> {
                         _updateMonthlyStats(focusedDay);
                       });
                     },
-                    onDaySelected: (selectedDay, focusedDay) {
+                    onDaySelected: (selectedDay, focusedDay) async {
                       setState(() {
                         _selectedDay =
                             selectedDay.toIso8601String().split('T')[0];
                         _focusedDay = focusedDay; // update focusedDay here
                         _updateMonthlyStats(focusedDay);
                       });
-                      onDaySelected(selectedDay, focusedDay);
+                      await runVisibleAsyncAction(
+                        context,
+                        () => onDaySelected(selectedDay, focusedDay),
+                        S.of(context)!.genericAuthError,
+                      );
                     }),
               ),
               Padding(
