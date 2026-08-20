@@ -1129,6 +1129,24 @@ abstract class S {
   /// **'Wrong access code or list name'**
   String get joinListFailed;
 
+  /// No description provided for @joinListTooManyAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many incorrect attempts. Try again later.'**
+  String get joinListTooManyAttempts;
+
+  /// No description provided for @joinListMissingDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter both a list name and an access code.'**
+  String get joinListMissingDetails;
+
+  /// No description provided for @joinListUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not join the list. Please try again.'**
+  String get joinListUnavailable;
+
   /// No description provided for @joinListTitle.
   ///
   /// In en, this message translates to:
