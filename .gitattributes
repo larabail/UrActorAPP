@@ -1,0 +1,19 @@
+# Normalize all text files to LF in the repository and on checkout.
+* text=auto eol=lf
+
+# Windows-only scripts must keep CRLF to remain executable.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+gradlew.bat text eol=crlf
+
+# Explicit binary types (never diffed or line-ending converted).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.jar binary
+*.keystore binary
+*.p12 binary
