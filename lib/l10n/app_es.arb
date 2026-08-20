@@ -36,6 +36,8 @@
   "favorites": "Favoritas",
   "watchlist": "Siguientes",
   "seen": "Vistas",
+  "continueWatching": "Seguir viendo",
+  "nextEpisode": "Siguiente: T{season} E{episode}",
   "notifications": "Notificaciones",
   "totalContent": "{totalContent, plural, one{{totalContent} elemento} other{{totalContent} elementos}}",
   "reviews": "Reseñas",
