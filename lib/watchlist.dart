@@ -40,8 +40,14 @@ class Watchlist extends StatelessWidget {
                   Expanded(
                     child: TabBarView(
                       children: [
-                        MyTabView(favItems: currentUser.watchlist),
-                        MyTabView(favItems: currentUser.watchlistTVShows),
+                        MyTabView(
+                          favItems: currentUser.watchlist,
+                          showWatchlistBadge: false,
+                        ),
+                        MyTabView(
+                          favItems: currentUser.watchlistTVShows,
+                          showWatchlistBadge: false,
+                        ),
                       ],
                     ),
                   ),

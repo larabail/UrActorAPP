@@ -88,6 +88,9 @@ class ItemCard extends StatelessWidget {
         );
       },
       child: Row(children: [
+        // A season is not a tracked media item of its own, so it gets no
+        // favourite or watchlist badge: the show's membership would repeat on
+        // every season tile and say nothing about the season.
         getItemContainer(context, info, "media"),
         Column(
           children: [

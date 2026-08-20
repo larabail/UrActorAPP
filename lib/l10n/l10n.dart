@@ -1237,6 +1237,12 @@ abstract class S {
   /// **'In your favorites'**
   String get favoriteBadge;
 
+  /// No description provided for @watchlistBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'In your watchlist'**
+  String get watchlistBadge;
+
   /// No description provided for @friendRequestActionFailedError.
   ///
   /// In en, this message translates to:

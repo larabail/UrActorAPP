@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/common/media_pair_membership.dart';
 import 'package:uractor/notifications.dart';
 import 'package:uractor/objects/playlist.dart';
 import 'package:uractor/objects/user.dart';
@@ -428,7 +429,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                     },
                                     child: Column(children: [
                                       getItemContainer(
-                                          context, snapshot.data, type),
+                                          context, snapshot.data, type,
+                                          mediaPair: mediaPairForData(
+                                              snapshot.data,
+                                              containerType: type)),
                                       Text(
                                         '${review["Rating"]}/10',
                                         textAlign: TextAlign.center,
@@ -779,7 +783,8 @@ class _MyHomePageState extends State<MyHomePage> {
                               );
                             },
                             child: getItemContainer(
-                                context, snapshot.data, "media"));
+                                context, snapshot.data, "media",
+                                mediaPair: mediaPairForData(snapshot.data)));
                       } else if (snapshot.hasError) {
                         return Center(
                             child: Text(S.of(context)!.errorFailedToLoadDetails));

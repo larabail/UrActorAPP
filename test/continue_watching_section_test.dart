@@ -207,6 +207,109 @@ void main() {
     expect(http.requests.length, lessThanOrEqualTo(kContinueWatchingLimit));
   });
 
+  group('list membership badges', () {
+    testWidgets('a resumable title carries the badges for its lists',
+        (tester) async {
+      final user = installTestUser(uid: uid);
+      user.favMovies = [
+        ['Movies', '27205'],
+      ];
+      user.watchlist = [
+        ['Movies', '27205'],
+      ];
+      firestore = installFakeFirestore();
+      await seedProgress(
+        movies: {
+          '27205': {'started': '2026-01-01', 'updated': '2026-01-02'},
+        },
+      );
+      http.on('/3/movie/27205', json: {
+        'id': 27205,
+        'title': 'Inception',
+        'poster_path': null,
+      });
+
+      await pumpSection(tester);
+
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(const ValueKey('favoriteBadge')), findsOneWidget);
+      expect(find.byKey(const ValueKey('watchlistBadge')), findsOneWidget);
+    });
+
+    testWidgets('a title on neither list carries no badge', (tester) async {
+      await seedProgress(
+        movies: {
+          '27205': {'started': '2026-01-01', 'updated': '2026-01-02'},
+        },
+      );
+      http.on('/3/movie/27205', json: {
+        'id': 27205,
+        'title': 'Inception',
+        'poster_path': null,
+      });
+
+      await pumpSection(tester);
+
+      expect(find.byKey(const ValueKey('favoriteBadge')), findsNothing);
+      expect(find.byKey(const ValueKey('watchlistBadge')), findsNothing);
+    });
+
+    testWidgets('a show is matched against the TV lists, not the movie ones',
+        (tester) async {
+      // The two lists are keyed by type, so a show sharing an id with a
+      // favourited movie must not inherit its badge.
+      final user = installTestUser(uid: uid);
+      user.favMovies = [
+        ['Movies', '1399'],
+      ];
+      user.watchlistTVShows = [
+        ['TVShows', '1399'],
+      ];
+      firestore = installFakeFirestore();
+      await seedProgress(
+        shows: {
+          '1399': {'started': '2026-01-01', 'updated': '2026-01-02'},
+        },
+      );
+      http.on('/3/tv/1399', json: {
+        'id': 1399,
+        'name': 'Severance',
+        'poster_path': null,
+        'seasons': null,
+      });
+
+      await pumpSection(tester);
+
+      expect(find.byKey(const ValueKey('favoriteBadge')), findsNothing);
+      expect(find.byKey(const ValueKey('watchlistBadge')), findsOneWidget);
+    });
+
+    testWidgets('an unresolvable title still shows what lists it is on',
+        (tester) async {
+      // The pair comes from the progress entry rather than the item map, so a
+      // tile that fell back to the placeholder — where there is no name left to
+      // infer a type from — is still badged. It can no longer be opened, but
+      // its membership is true and is the more useful thing to say.
+      final user = installTestUser(uid: uid);
+      user.favMovies = [
+        ['Movies', '404'],
+      ];
+      firestore = installFakeFirestore();
+      await seedProgress(
+        movies: {
+          '404': {'started': '2026-01-01', 'updated': '2026-01-02'},
+        },
+      );
+      http.on('/3/movie/404', status: 404, body: '');
+
+      await pumpSection(tester);
+
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(const ValueKey('favoriteBadge')), findsOneWidget);
+      expect(find.byKey(const ValueKey('watchlistBadge')), findsNothing);
+    });
+  });
+
   testWidgets('the section reads in Spanish too', (tester) async {
     await seedProgress(
       shows: {

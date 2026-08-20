@@ -8,7 +8,6 @@ import 'package:uractor/objects/tv_show.dart';
 import '../movie_result.dart';
 import '../tvshow_result.dart';
 import 'firebase/settings_service.dart';
-import 'media_pair_membership.dart';
 import 'media_sort.dart';
 import 'media_sort_loader.dart';
 import 'utils.dart';
@@ -29,13 +28,13 @@ List<dynamic> mediaItemsForType(List<dynamic> ids, String type) {
 class SortedMediaGrid extends StatefulWidget {
   final List<dynamic> items;
   final bool showFavoriteBadge;
-  final List<dynamic> Function()? favoriteItemsProvider;
+  final bool showWatchlistBadge;
 
   const SortedMediaGrid({
     super.key,
     required this.items,
-    this.showFavoriteBadge = false,
-    this.favoriteItemsProvider,
+    this.showFavoriteBadge = true,
+    this.showWatchlistBadge = true,
   });
 
   @override
@@ -171,7 +170,7 @@ class _SortedMediaGridState extends State<SortedMediaGrid> {
                     return ItemCard(
                       item: items[itemIndex],
                       showFavoriteBadge: widget.showFavoriteBadge,
-                      favoriteItemsProvider: widget.favoriteItemsProvider,
+                      showWatchlistBadge: widget.showWatchlistBadge,
                     );
                   }
                   return const SizedBox.shrink();
@@ -188,13 +187,13 @@ class _SortedMediaGridState extends State<SortedMediaGrid> {
 class ItemCard extends StatefulWidget {
   final List<dynamic> item;
   final bool showFavoriteBadge;
-  final List<dynamic> Function()? favoriteItemsProvider;
+  final bool showWatchlistBadge;
 
   const ItemCard({
     super.key,
     required this.item,
-    this.showFavoriteBadge = false,
-    this.favoriteItemsProvider,
+    this.showFavoriteBadge = true,
+    this.showWatchlistBadge = true,
   });
 
   @override
@@ -208,12 +207,6 @@ class _ItemCardState extends State<ItemCard> {
       future: getData(widget.item[1], widget.item[0]),
       builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
         if (snapshot.hasData) {
-          final showFavoriteBadge = shouldShowFavoriteBadge(
-            showFavoriteBadge: widget.showFavoriteBadge,
-            favoriteItems: widget.favoriteItemsProvider?.call() ?? const [],
-            item: widget.item,
-          );
-
           return GestureDetector(
             onTap: () async {
               MediaItem tempMediaItem;
@@ -246,8 +239,9 @@ class _ItemCardState extends State<ItemCard> {
               context,
               snapshot.data,
               'media',
-              favoriteBadgeSemanticLabel:
-                  showFavoriteBadge ? S.of(context)!.favoriteBadge : null,
+              mediaPair: widget.item,
+              showFavoriteBadge: widget.showFavoriteBadge,
+              showWatchlistBadge: widget.showWatchlistBadge,
             ),
           );
         } else if (snapshot.hasError) {
