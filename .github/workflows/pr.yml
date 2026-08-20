@@ -37,6 +37,19 @@ jobs:
       - name: Test
         run: flutter test --coverage
 
+      # The floor is enforced here rather than only on the release workflow so
+      # that a change which drops coverage is blocked before it merges, not
+      # reported once it is already on master.
+      - name: Coverage summary
+        run: |
+          # pipefail matters here: without it tee returns 0 and the coverage
+          # floor below would never fail the build.
+          set -o pipefail
+          echo '### Coverage' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          python tool/coverage_summary.py --min 25 | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4

@@ -110,7 +110,30 @@ jobs:
         run: flutter analyze
 
       - name: Test
-        run: flutter test
+        run: flutter test --coverage
+
+      # Coverage is only useful if something reads it. The floor covers the
+      # tested layers rather than the whole project, because most of lib/ is
+      # widget code with no widget tests and a project-wide number would have
+      # to be set too low to catch anything.
+      - name: Coverage summary
+        run: |
+          # pipefail matters here: without it tee returns 0 and the coverage
+          # floor below would never fail the build.
+          set -o pipefail
+          echo '### Coverage' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          python tool/coverage_summary.py --min 25 | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/lcov.info
+          retention-days: 30
+          if-no-files-found: ignore
 
       - name: Restore signing keystore
         env:

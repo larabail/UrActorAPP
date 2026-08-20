@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../objects/media.dart';
+import '../common/firebase/firestore_core.dart';
 
 class Share extends StatefulWidget {
   final MediaItem item;
@@ -15,7 +16,7 @@ class Share extends StatefulWidget {
 }
 
 class _ShareState extends State<Share> {
-  FirebaseFirestore db = FirebaseFirestore.instance;
+  FirebaseFirestore db = FirestoreCore.db;
   Map<String, bool> selectedFriends = {};
 
   Future<void> sendNotification(
@@ -34,7 +35,7 @@ class _ShareState extends State<Share> {
         'timestamp': FieldValue.serverTimestamp(),
       };
       var friendNotificationDoc =
-          FirebaseFirestore.instance.collection(friendId).doc("Notifications");
+          FirestoreCore.db.collection(friendId).doc("Notifications");
       var friendNotifications = await friendNotificationDoc.get();
       var finalNotifications =
           friendNotifications.data() as Map<String, dynamic>;
@@ -71,7 +72,7 @@ class _ShareState extends State<Share> {
                     itemCount: currentUser.friends.length,
                     itemBuilder: (context, friendIndex) {
                       return FutureBuilder<DocumentSnapshot>(
-                        future: FirebaseFirestore.instance
+                        future: FirestoreCore.db
                             .collection(currentUser.friends[friendIndex])
                             .doc('Settings')
                             .get(),

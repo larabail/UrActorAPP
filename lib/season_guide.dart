@@ -9,8 +9,8 @@ import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/tv_show.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'common/api/http_client.dart';
 
 class SeasonGuide extends StatefulWidget {
   final TVShow show;
@@ -192,11 +192,11 @@ class Episodes extends StatelessWidget {
 
 Future<Map> getEpisodeData(dynamic id, dynamic season, dynamic episode) async {
   final String showId = id.toString();
-  final response = await http.get(Uri.parse(
+  final response = await AppHttp.client.get(Uri.parse(
       '$TV_SHOW_LINK$showId/season/$season/episode/$episode$API_KEY'));
   if (response.statusCode == 200) {
     Map json = jsonDecode(response.body);
-    final response2 = await http.get(Uri.parse(
+    final response2 = await AppHttp.client.get(Uri.parse(
         '$TV_SHOW_LINK$showId/season/$season/episode/$episode/credits$API_KEY'));
     if (response2.statusCode == 200) {
       json["cast"] = jsonDecode(response2.body)["cast"];

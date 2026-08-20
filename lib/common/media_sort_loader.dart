@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
 
 import '../main.dart';
 import 'api/apiutils.dart';
 import 'constants.dart';
 import 'media_sort.dart';
+import 'api/http_client.dart';
 
 /// Looks up the fields the media grids need in order to sort.
 ///
@@ -71,7 +71,7 @@ class MediaSortLoader {
     try {
       if (entry == null) {
         final String link = isShow ? TV_SHOW_LINK : MOVIE_LINK;
-        final response = await http.get(Uri.parse('$link$id$API_KEY'));
+        final response = await AppHttp.client.get(Uri.parse('$link$id$API_KEY'));
         if (response.statusCode != 200) return;
         final Map json = jsonDecode(response.body) as Map;
 
@@ -113,7 +113,7 @@ class MediaSortLoader {
   static Future<String?> _fetchImdbId(String type, String id) async {
     if (type != "TVShows") return null;
     final response =
-        await http.get(Uri.parse('$TV_SHOW_LINK$id$EXTERNAL_IDS_LINK'));
+        await AppHttp.client.get(Uri.parse('$TV_SHOW_LINK$id$EXTERNAL_IDS_LINK'));
     if (response.statusCode != 200) return null;
     return (jsonDecode(response.body) as Map)['imdb_id']?.toString();
   }

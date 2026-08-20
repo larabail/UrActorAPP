@@ -39,7 +39,7 @@ class _RatingDialogState extends State<RatingDialog> {
       currentUser.tvShowReviews = {};
     }
     currentUser.allReviews.removeWhere((element) => element[0] == reviewType);
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) {

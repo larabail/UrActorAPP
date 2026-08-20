@@ -1,7 +1,6 @@
 // ignore_for_file: use_build_context_synchronously, non_constant_identifier_names
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:uractor/common/firebase/calendar_service.dart';
 import 'package:uractor/common/firebase/social_service.dart';
 import 'package:uractor/common/firebase/watched_service.dart';
@@ -14,6 +13,8 @@ import '../common/constants.dart';
 import '../common/utils.dart';
 import '../main.dart';
 import '../objects/media.dart';
+import '../common/firebase/firestore_core.dart';
+import '../common/api/http_client.dart';
 
 class CalendarAddDialogue extends StatefulWidget {
   final String dateForMap;
@@ -30,7 +31,7 @@ class CalendarAddDialogue extends StatefulWidget {
 }
 
 class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
-  FirebaseFirestore db = FirebaseFirestore.instance;
+  FirebaseFirestore db = FirestoreCore.db;
   final myController = TextEditingController(text: "");
 
   String _searchTermMovie = '';
@@ -44,7 +45,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
       searchLink = widget.type == "movie"
           ? '$SEARCH_BY_NAME_MOVIE_LINK$name'
           : '$SEARCH_BY_NAME_TV_SHOW_LINK$name';
-      final response = await http.get(Uri.parse(searchLink));
+      final response = await AppHttp.client.get(Uri.parse(searchLink));
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         return json["results"];
@@ -307,7 +308,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                       itemCount: currentUser.friends.length,
                       itemBuilder: (context, friendIndex) {
                         return FutureBuilder<DocumentSnapshot>(
-                          future: FirebaseFirestore.instance
+                          future: FirestoreCore.db
                               .collection(currentUser.friends[friendIndex])
                               .doc('Settings')
                               .get(),
@@ -477,7 +478,7 @@ class AddToCalendar extends StatefulWidget {
 }
 
 class _AddToCalendarState extends State<AddToCalendar> {
-  FirebaseFirestore db = FirebaseFirestore.instance;
+  FirebaseFirestore db = FirestoreCore.db;
   Map<String, bool> selectedFriends = {};
 
   @override
@@ -519,7 +520,7 @@ class _AddToCalendarState extends State<AddToCalendar> {
                     itemCount: currentUser.friends.length,
                     itemBuilder: (context, friendIndex) {
                       return FutureBuilder<DocumentSnapshot>(
-                        future: FirebaseFirestore.instance
+                        future: FirestoreCore.db
                             .collection(currentUser.friends[friendIndex])
                             .doc('Settings')
                             .get(),
