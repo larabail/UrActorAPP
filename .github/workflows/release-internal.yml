@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   # Deployed before the app is uploaded, and the upload is blocked if this
@@ -195,12 +195,23 @@ jobs:
             --release-name "${{ steps.version.outputs.name }} (${{ steps.version.outputs.code }})" \
             --notes build/release_notes.json
 
-      # Tags the exact commit that produced the build, so production promotion
-      # can be traced back to source.
-      - name: Tag the build
+      # Tags belong to production releases only, so nothing is tagged here.
+      # Promotion still needs to know which commit produced a version code, so
+      # the mapping is recorded in the run summary and passed to the production
+      # workflow by hand.
+      - name: Record what was built
         run: |
-          git tag "build-${{ steps.version.outputs.code }}"
-          git push origin "build-${{ steps.version.outputs.code }}"
+          {
+            echo '### Built'
+            echo ''
+            echo "- version: ${{ steps.version.outputs.name }}"
+            echo "- version code: ${{ steps.version.outputs.code }}"
+            echo "- commit: $GITHUB_SHA"
+            echo ''
+            echo "To promote this build, run the production workflow with"
+            echo "version code \`${{ steps.version.outputs.code }}\` and commit"
+            echo "\`$GITHUB_SHA\`."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Keep the bundle for inspection
         uses: actions/upload-artifact@v4
