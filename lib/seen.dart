@@ -40,8 +40,16 @@ class Seen extends StatelessWidget {
                     // This Expanded widget is for the TabBarView
                     child: TabBarView(
                       children: [
-                        MyTabView(favItems: currentUser.seenMovies),
-                        MyTabView(favItems: currentUser.seenTVShows),
+                        MyTabView(
+                          favItems: currentUser.seenMovies,
+                          showFavoriteBadge: true,
+                          favoriteItemsProvider: () => currentUser.favMovies,
+                        ),
+                        MyTabView(
+                          favItems: currentUser.seenTVShows,
+                          showFavoriteBadge: true,
+                          favoriteItemsProvider: () => currentUser.favTVShows,
+                        ),
                       ],
                     ),
                   ),
