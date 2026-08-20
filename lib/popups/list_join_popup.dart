@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/l10n/l10n.dart';
+import '../common/firebase/firestore_core.dart';
 import '../main.dart';
 import '../playlists.dart';
 
@@ -34,7 +35,7 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
                 FirebaseFirestore.instance.collection("Watchlists").doc(doc.id);
             Map newUser = {};
             newUser[currentUser.uid] = "Approved";
-            await userDoc.update({
+            await FirestoreCore.mergeInto(userDoc, {
               "Users": FieldValue.arrayUnion([newUser])
             });
             joined = true;
