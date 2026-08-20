@@ -62,6 +62,95 @@ service cloud.firestore {
       ];
     }
 
+    function createsListFieldOnly(field) {
+      return request.resource.data.keys().hasOnly([field])
+        && request.resource.data[field] is list
+        && request.resource.data[field].size() == 1;
+    }
+
+    function updatesListFieldOnly(field) {
+      return request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly([field])
+        && request.resource.data[field] is list
+        && (!(field in resource.data)
+            || resource.data[field] is list
+            && resource.data[field].toSet()
+                 .difference(request.resource.data[field].toSet()).size() == 0);
+    }
+
+    function createsSeenDocOnly() {
+      return createsListFieldOnly('Movies') || createsListFieldOnly('TVShows');
+    }
+
+    function updatesSeenDocOnly() {
+      return updatesListFieldOnly('Movies') || updatesListFieldOnly('TVShows');
+    }
+
+    function createsOneDynamicFieldOnly() {
+      return request.resource.data.keys().size() == 1;
+    }
+
+    function updatesOneDynamicFieldOnly() {
+      let changed = request.resource.data.diff(resource.data);
+      return changed.affectedKeys().size() <= 1
+        && changed.removedKeys().size() == 0;
+    }
+
+    function createsSeenWithTypeOnly(type) {
+      return request.resource.data.keys().hasOnly([type])
+        && request.resource.data[type] is map;
+    }
+
+    function updatesSeenWithTypeOnly(type) {
+      let changed = request.resource.data.diff(resource.data);
+      return changed.affectedKeys().hasOnly([type])
+        && request.resource.data[type] is map
+        && (!(type in resource.data)
+            || resource.data[type] is map
+            && request.resource.data[type].diff(resource.data[type])
+                 .affectedKeys().size() <= 1
+            && request.resource.data[type].diff(resource.data[type])
+                 .removedKeys().size() == 0);
+    }
+
+    function createsSeenWithDocOnly() {
+      return createsSeenWithTypeOnly('Movies')
+        || createsSeenWithTypeOnly('TVShows');
+    }
+
+    function updatesSeenWithDocOnly() {
+      return updatesSeenWithTypeOnly('Movies')
+        || updatesSeenWithTypeOnly('TVShows');
+    }
+
+    function appendsOneNotificationOnly() {
+      let changed = request.resource.data.diff(resource.data);
+      return changed.addedKeys().size() == 1
+        && changed.changedKeys().size() == 0
+        && changed.removedKeys().size() == 0;
+    }
+
+    function validFriendCreate(docId) {
+      return docId == 'Movies' && createsListFieldOnly('Seen')
+        || docId == 'TVShows' && createsListFieldOnly('Seen')
+        || docId == 'Seen' && createsSeenDocOnly()
+        || docId == 'SeenWith' && createsSeenWithDocOnly()
+        || docId == 'Calendar' && createsOneDynamicFieldOnly()
+        || docId == 'Rewatched' && createsOneDynamicFieldOnly()
+        || docId == 'RewatchedTV' && createsOneDynamicFieldOnly();
+    }
+
+    function validFriendUpdate(docId) {
+      return docId == 'Movies' && updatesListFieldOnly('Seen')
+        || docId == 'TVShows' && updatesListFieldOnly('Seen')
+        || docId == 'Seen' && updatesSeenDocOnly()
+        || docId == 'SeenWith' && updatesSeenWithDocOnly()
+        || docId == 'Calendar' && updatesOneDynamicFieldOnly()
+        || docId == 'Rewatched' && updatesOneDynamicFieldOnly()
+        || docId == 'RewatchedTV' && updatesOneDynamicFieldOnly()
+        || docId == 'Notifications' && appendsOneNotificationOnly();
+    }
+
     // Only the `friends` array may change, and only by adding or removing the
     // requester themselves. This is what lets a friend request be accepted (the
     // accepter adds themselves to the sender's list) and a friendship be ended
@@ -206,16 +295,17 @@ service cloud.firestore {
 
       // Per-user documents are created lazily on whatever write touches them
       // first, and a friend can legitimately be that first writer: marking a
-      // title watched-together, sharing a calendar entry, or recommending a
-      // title all use a merging set() and must succeed even when the target
-      // has never opened that screen and so has no such document yet. Without
-      // `create` here those writes would fail with not-found until the owner
-      // happened to create the document themselves first. This is still
-      // pinned to the same fixed set of eight document ids as the update
-      // rule below, so a friend can only ever bring those specific documents
-      // into existence, never an arbitrary new document name.
+      // title watched-together or sharing a calendar entry both use a merging
+      // set() and must succeed even when the target has never opened that
+      // screen and so has no such document yet. Notification writes are
+      // different: the current client reads the existing document, appends a
+      // key, then set()s the full result, so a friend may update but not create
+      // Notifications. Creates stay pinned to the app's per-document shape, so
+      // a friend cannot bring arbitrary documents or arbitrary payloads into
+      // existence.
       allow create: if isSelf(uid)
-        || (friendOf(uid) && friendWritableDoc(docId))
+        || (friendOf(uid) && friendWritableDoc(docId)
+            && validFriendCreate(docId))
         // Same lazy-creation trap applies to Friends: accepting the first
         // friend request someone ever receives creates their Friends
         // document rather than updating it.
@@ -224,7 +314,8 @@ service cloud.firestore {
       allow delete: if isSelf(uid);
 
       allow update: if isSelf(uid)
-        || (friendOf(uid) && friendWritableDoc(docId))
+        || (friendOf(uid) && friendWritableDoc(docId)
+            && validFriendUpdate(docId))
         // Accepting a request or ending a friendship edits the other person's
         // Friends document at the exact moment the two are not (or no longer)
         // friends, so it cannot be gated on friendship.
@@ -245,10 +336,13 @@ service cloud.firestore {
 //    read the traffic. Fix: a callable function that takes a code, verifies it
 //    server side, and adds the caller — then read can be restricted to members.
 //
-// 2. Anything a friend may write, a friend may write badly. Rules check WHO is
-//    writing, not that the payload is sane, so a friend can still overwrite
-//    your Notifications document wholesale (the app uses .set(), not .update())
-//    or add a calendar entry you never agreed to. Narrowing this means either
-//    validating each document's shape here or moving those writes behind a
-//    function.
+// 2. Friend writes are now constrained to the coarse shape today's installed
+//    clients already send: watched lists may only grow their known list fields,
+//    SeenWith may only touch one Movies/TVShows media entry, Calendar and
+//    rewatch documents may only touch one dynamic key, and Notifications may
+//    only append one new key to an existing document. The remaining hole is the
+//    dynamic value inside those keys: rules cannot prove a Calendar entry or
+//    notification was agreed to, or that a rewatch/media id is meaningful,
+//    without either changing the client to write narrower verifiable fields or
+//    moving those writes behind a function.
 // ---------------------------------------------------------------------------
