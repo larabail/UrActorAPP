@@ -503,6 +503,42 @@ class SEs extends S {
   String get searchBar => 'Escribe el nombre de una persona/película/serie...';
 
   @override
+  String get noSearchResults => 'No se encontraron resultados';
+
+  @override
+  String get sortByAdded => 'Fecha de adición';
+
+  @override
+  String get sortByTitle => 'Título';
+
+  @override
+  String get sortByReleaseDate => 'Fecha de estreno';
+
+  @override
+  String get sortByMyRating => 'Mi valoración';
+
+  @override
+  String get sortByImdbRating => 'Valoración de IMDb';
+
+  @override
+  String get sortAscending => 'Ascendente';
+
+  @override
+  String get sortDescending => 'Descendente';
+
+  @override
+  String get reorderFriends => 'Reordenar';
+
+  @override
+  String get reorderPlaylists => 'Reordenar';
+
+  @override
+  String get finishReordering => 'Listo';
+
+  @override
+  String get noFriendsYet => '¡Todavía no has añadido ningún amigo!';
+
+  @override
   String get episodes => 'episodios';
 
   @override
