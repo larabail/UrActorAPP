@@ -195,6 +195,31 @@ depend on it.
 > **A live OpenAI key was also committed and remains in git history.** Revoke it
 > at <https://platform.openai.com/api-keys> and issue a new one.
 
+### Storing the keys locally
+
+Rather than retyping the defines on every command, keep them in a file:
+
+```bash
+cp dart_defines.example.json dart_defines.json
+```
+
+Fill in the real values, then:
+
+```bash
+flutter run --dart-define-from-file=dart_defines.json
+flutter build apk --dart-define-from-file=dart_defines.json
+```
+
+`dart_defines.json` is gitignored; `dart_defines.example.json` is committed as
+the template and holds only placeholders. The VS Code launch configurations in
+`.vscode/launch.json` already pass the flag, so **Run and Debug** works with no
+extra setup.
+
+Prefer this over exporting shell variables: `String.fromEnvironment` reads
+compile-time defines, not the process environment, so an exported variable has
+no effect.
+
+
 ## Project structure
 
 ```
