@@ -9,6 +9,7 @@ import 'package:uractor/tvshow_result.dart';
 
 import 'main.dart';
 import 'objects/media.dart';
+import 'common/firebase/firestore_core.dart';
 
 class Notifications extends StatefulWidget {
   const Notifications({super.key});
@@ -25,7 +26,7 @@ class _NotificationsState extends State<Notifications> {
   }
 
   Future<void> refreshNotifications() async {
-    var notificationDoc = await FirebaseFirestore.instance
+    var notificationDoc = await FirestoreCore.db
         .collection(currentUser.uid)
         .doc("Notifications")
         .get();
@@ -38,11 +39,11 @@ class _NotificationsState extends State<Notifications> {
 
   Future<void> _markNotificationsAsRead() async {
     try {
-      WriteBatch batch = FirebaseFirestore.instance.batch();
+      WriteBatch batch = FirestoreCore.db.batch();
       for (var notificationKey in currentUser.notifications.keys) {
         var notification = currentUser.notifications[notificationKey];
         if (!notification['read']) {
-          DocumentReference notificationRef = FirebaseFirestore.instance
+          DocumentReference notificationRef = FirestoreCore.db
               .collection(currentUser.uid)
               .doc("Notifications");
           var notificationsData = await notificationRef.get();

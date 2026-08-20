@@ -22,7 +22,7 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
 
   String _searchTermTv = '';
   String _movie = "";
-  FirebaseFirestore db = FirebaseFirestore.instance;
+  FirebaseFirestore db = FirestoreCore.db;
 
   void addTvSubmit() async {
     String docIDString = widget.list_result.id.toString();

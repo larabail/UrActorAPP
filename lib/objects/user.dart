@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../common/firebase/playlist_service.dart';
 import '../main.dart';
+import '../common/firebase/firestore_core.dart';
 
 class AppUser {
   String uid;
@@ -44,7 +45,7 @@ class AppUser {
 
   Future<bool> getFirebaseData() async {
     clearUserData();
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection(uid)
         .get()
         .then((QuerySnapshot querySnapshot) {
@@ -206,7 +207,7 @@ class AppUser {
       }
     });
     playlists = await PlaylistService.fetchPlaylists(uid);
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection("Oscars")
         .get()
         .then((QuerySnapshot querySnapshot) {

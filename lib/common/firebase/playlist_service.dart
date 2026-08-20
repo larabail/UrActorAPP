@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/firebase/firestore_core.dart';
 import 'package:uractor/main.dart';
@@ -36,7 +35,7 @@ class PlaylistService {
   /// `memberUids` is maintained by the `syncPlaylistMembers` Cloud Function,
   /// so lists last written by an older build are covered too.
   static Future<Map<String, dynamic>> fetchPlaylists(String uid) async {
-    final snapshot = await FirebaseFirestore.instance
+    final snapshot = await FirestoreCore.db
         .collection("Watchlists")
         .where("memberUids", arrayContains: uid)
         .get();

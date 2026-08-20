@@ -55,7 +55,7 @@ class _GrantAccessDialogState extends State<GrantAccessDialog> {
                     itemCount: uniqueFriendIds.length,
                     itemBuilder: (context, friendIndex) {
                       return FutureBuilder<DocumentSnapshot>(
-                        future: FirebaseFirestore.instance
+                        future: FirestoreCore.db
                             .collection(uniqueFriendIds[friendIndex])
                             .doc('Settings')
                             .get(),
@@ -161,7 +161,7 @@ class _GrantAccessDialogState extends State<GrantAccessDialog> {
                       itemToAdd.add({friendUid: "Approved"});
                     }
                     await FirestoreCore.mergeInto(
-                        FirebaseFirestore.instance
+                        FirestoreCore.db
                             .collection('Watchlists')
                             .doc(widget.listResult.id),
                         {

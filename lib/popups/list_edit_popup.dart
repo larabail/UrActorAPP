@@ -26,12 +26,12 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
       : TextEditingController(text: "");
 
   String _searchTermMovie = '';
-  FirebaseFirestore db = FirebaseFirestore.instance;
+  FirebaseFirestore db = FirestoreCore.db;
 
   int _selectedIndex = 0;
 
   void editListSubmit() async {
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection("Watchlists")
         .get()
         .then((QuerySnapshot querySnapshot) async {
@@ -40,7 +40,7 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
         if (originalListName == (docData["Name"])) {
           if (docData["AccessCode"] == originalAccessCode) {
             var userDoc =
-                FirebaseFirestore.instance.collection("Watchlists").doc(doc.id);
+                FirestoreCore.db.collection("Watchlists").doc(doc.id);
             await FirestoreCore.mergeInto(userDoc, {"Name": listName});
             await FirestoreCore.mergeInto(userDoc, {"CoverPhoto": cover});
             await FirestoreCore.mergeInto(userDoc, {"AccessCode": accessCode});

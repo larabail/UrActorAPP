@@ -22,7 +22,7 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
 
   String _searchTermMovie = '';
   String _movie = "";
-  FirebaseFirestore db = FirebaseFirestore.instance;
+  FirebaseFirestore db = FirestoreCore.db;
 
   void addMovieSubmit() async {
     String docIDString = widget.list_result.id.toString();
