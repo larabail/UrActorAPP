@@ -1,5 +1,6 @@
 // ignore_for_file: unnecessary_brace_in_string_interps, no_leading_underscores_for_local_identifiers, avoid_function_literals_in_foreach_calls, use_build_context_synchronously, library_private_types_in_public_api
 import 'package:flutter/material.dart';
+import 'package:uractor/common/async_action.dart';
 import 'package:uractor/common/firebase/calendar_service.dart';
 import 'package:uractor/common/firebase/firebaseutils.dart';
 import 'package:uractor/common/firebase/firestore_core.dart';
@@ -35,7 +36,7 @@ class _CalendarState extends State<Calendar> {
   String _selectedDay = DateTime.now().toIso8601String().split('T')[0];
   List _monthlyStats = [0, 0, 0];
   bool areFABsVisible = false;
-  void deleteMovieSubmit(String id, String title) async {
+  Future<void> deleteMovieSubmit(String id, String title) async {
     await CalendarService.deleteFromCalendar(
       currentUser.uid,
       id,
@@ -49,31 +50,28 @@ class _CalendarState extends State<Calendar> {
           ? currentUser.rewatchedMovies[id] -= 1
           : 0;
       if (currentUser.rewatchedMovies[id] == 0) {
-        List w;
-        await FirestoreCore.db
+        final querySnapshot = await FirestoreCore.db
             .collection(currentUser.uid)
-            .get()
-            .then((QuerySnapshot querySnapshot) {
-          querySnapshot.docs.forEach((doc) async {
-            if (doc.id == "Movies") {
-              Map moviesResult = doc.data() as Map;
-              w = moviesResult["Seen"];
-              int index = w.indexOf(id);
+            .get();
+        for (var doc in querySnapshot.docs) {
+          if (doc.id == "Movies") {
+            Map moviesResult = doc.data() as Map;
+            final w = List.from(moviesResult["Seen"]);
+            int index = w.indexOf(id);
 
-              if (index > -1) {
-                w.removeAt(index);
-              }
-              await FirestoreCore.updateDocument(
-                  currentUser.uid, "Movies", {'Seen': w});
-              currentUser.seenMovies = [];
-              for (var element in w) {
-                currentUser.seenMovies += [
-                  ["Movies", element]
-                ];
-              }
+            if (index > -1) {
+              w.removeAt(index);
             }
-          });
-        });
+            await FirestoreCore.updateDocument(
+                currentUser.uid, "Movies", {'Seen': w});
+            currentUser.seenMovies = [];
+            for (var element in w) {
+              currentUser.seenMovies += [
+                ["Movies", element]
+              ];
+            }
+          }
+        }
       }
       Map<Object, Object> updatedRewatched = {};
       for (String key in currentUser.rewatchedMovies.keys) {
@@ -82,6 +80,7 @@ class _CalendarState extends State<Calendar> {
       await FirestoreCore.updateDocument(
           currentUser.uid, "Rewatched", updatedRewatched);
     }
+    if (!mounted) return;
     Navigator.of(context).pop(true);
     setState(() {
       currentUser.calendar = Map<String, List>.from(currentUser.calendar);
@@ -322,7 +321,7 @@ class _CalendarState extends State<Calendar> {
       }
     }
 
-    void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
+    Future<void> _onDaySelected(DateTime selectedDay, DateTime focusedDay) async {
       String month = '${selectedDay.month}';
       String day = '${selectedDay.day}';
       if (selectedDay.month < 10) {
@@ -337,11 +336,12 @@ class _CalendarState extends State<Calendar> {
       } else {
         moviesOnDay = [];
       }
-      int i = 0;
       movies = [];
-      moviesOnDay.forEach((element) async {
+      for (var element in moviesOnDay) {
         await Utils.fetchCalendarElement(element, movies, sanitizeName: true);
-        if (i == moviesOnDay.length - 1) {
+      }
+      if (!context.mounted) return;
+      if (moviesOnDay.isNotEmpty) {
           showModalBottomSheet(
             context: context,
             builder: (_) {
@@ -505,18 +505,22 @@ class _CalendarState extends State<Calendar> {
                                             style: IconButton.styleFrom(
                                                 backgroundColor:
                                                     Colors.transparent),
-                                            onPressed: () {
+                                            onPressed: () async {
                                               String type =
                                                   event.containsKey("title")
                                                       ? "movie"
                                                       : "series";
-                                              deleteMovieSubmit(
-                                                  event['id'].toString(),
-                                                  type == "movie"
-                                                      ? event['title']
-                                                          .toString()
-                                                      : event['name']
-                                                          .toString());
+                                              await runVisibleAsyncAction(
+                                                context,
+                                                () => deleteMovieSubmit(
+                                                    event['id'].toString(),
+                                                    type == "movie"
+                                                        ? event['title']
+                                                            .toString()
+                                                        : event['name']
+                                                            .toString()),
+                                                S.of(context)!.genericAuthError,
+                                              );
                                             },
                                             icon: const Icon(Icons.delete),
                                             color: Colors.red,
@@ -535,9 +539,7 @@ class _CalendarState extends State<Calendar> {
               );
             },
           );
-        }
-        i++;
-      });
+      }
     }
 
     return Scaffold(
@@ -569,14 +571,18 @@ class _CalendarState extends State<Calendar> {
                       _updateMonthlyStats(focusedDay);
                     });
                   },
-                  onDaySelected: (selectedDay, focusedDay) {
+                  onDaySelected: (selectedDay, focusedDay) async {
                     setState(() {
                       _selectedDay =
                           selectedDay.toIso8601String().split('T')[0];
                       _focusedDay = focusedDay;
                       _updateMonthlyStats(focusedDay);
                     });
-                    _onDaySelected(selectedDay, focusedDay);
+                    await runVisibleAsyncAction(
+                      context,
+                      () => _onDaySelected(selectedDay, focusedDay),
+                      S.of(context)!.genericAuthError,
+                    );
                   }),
             ),
             Padding(

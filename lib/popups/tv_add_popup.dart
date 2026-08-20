@@ -2,10 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uractor/common/async_action.dart';
 import 'package:uractor/common/item_container.dart';
 import '../common/firebase/firestore_core.dart';
 import '../common/api/apiutils.dart';
 import '../common/firebase/playlist_service.dart';
+import '../l10n/l10n.dart';
 import '../main.dart';
 import '../objects/playlist.dart';
 
@@ -24,7 +26,7 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
   String _movie = "";
   FirebaseFirestore db = FirestoreCore.db;
 
-  void addTvSubmit() async {
+  Future<void> addTvSubmit() async {
     String docIDString = widget.list_result.id.toString();
 
     var userDoc = db.collection("Watchlists").doc(docIDString);
@@ -37,6 +39,7 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
     widget.list_result.tvshows =
         currentUser.playlists[widget.list_result.id.toString()]["TV Shows"];
 
+    if (!mounted) return;
     Navigator.pop(context);
   }
 
@@ -126,9 +129,13 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
                           Map<String, dynamic> item = snapshot.data?[index];
                           return GridTile(
                             child: GestureDetector(
-                              onTap: () {
+                              onTap: () async {
                                 _movie = item["id"].toString();
-                                addTvSubmit();
+                                await runVisibleAsyncAction(
+                                  context,
+                                  addTvSubmit,
+                                  S.of(context)!.genericAuthError,
+                                );
                               },
                               child: getItemContainer(context, item, "media")
                             ),

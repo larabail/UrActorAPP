@@ -1,11 +1,13 @@
 // ignore_for_file: use_build_context_synchronously, non_constant_identifier_names
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/common/async_action.dart';
 import 'package:uractor/common/firebase/calendar_service.dart';
 import 'package:uractor/common/firebase/social_service.dart';
 import 'package:uractor/common/firebase/watched_service.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/objects/movie.dart';
+import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/tv_show.dart';
 import 'dart:convert';
 
@@ -91,7 +93,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
     );
   }
 
-  void addMovieSubmit(String id, String title, int runtime, double rating,
+  Future<void> addMovieSubmit(String id, String title, int runtime, double rating,
       Map friendsWatchedWith) async {
     String key = widget.type == "movie" ? "Movies" : "TVShows";
     Map myObject = {
@@ -408,24 +410,32 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                   ),
                   ElevatedButton(
                     onPressed: () async {
-                      Navigator.pop(context, true);
-                      MediaItem tempMovie = widget.type == "movie"
-                          ? Movie(
-                              id: _movie["id"].toString(),
-                              title: _movie["title"].toString(),
-                              coverPhoto: _movie["poster_path"].toString())
-                          : TVShow(
-                              id: _movie["id"].toString(),
-                              title: _movie["name"].toString(),
-                              coverPhoto: _movie["poster_path"].toString());
-                      Map movieData = await tempMovie.getExtendedData();
+                      final saved = await runVisibleAsyncAction(
+                        context,
+                        () async {
+                          MediaItem tempMovie = widget.type == "movie"
+                              ? Movie(
+                                  id: _movie["id"].toString(),
+                                  title: _movie["title"].toString(),
+                                  coverPhoto: _movie["poster_path"].toString())
+                              : TVShow(
+                                  id: _movie["id"].toString(),
+                                  title: _movie["name"].toString(),
+                                  coverPhoto: _movie["poster_path"].toString());
+                          Map movieData = await tempMovie.getExtendedData();
 
-                      addMovieSubmit(
-                          tempMovie.id,
-                          tempMovie.title,
-                          movieData["runtime"] ?? 0,
-                          double.parse(movieData["imdb_rating"]),
-                          selectedFriends);
+                          await addMovieSubmit(
+                              tempMovie.id,
+                              tempMovie.title,
+                              movieData["runtime"] ?? 0,
+                              double.parse(movieData["imdb_rating"]),
+                              selectedFriends);
+                        },
+                        S.of(context)!.genericAuthError,
+                      );
+                      if (saved && context.mounted) {
+                        Navigator.pop(context, true);
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey[900],
@@ -618,24 +628,32 @@ class _AddToCalendarState extends State<AddToCalendar> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    Map data = await widget.media.getExtendedData();
-                    if (!widget.modifying) {
-                      addMovieSubmit(
-                          widget.media.id,
-                          widget.media.title,
-                          data["runtime"] ?? 0,
-                          double.parse(data["imdb_rating"]),
-                          selectedFriends);
-                    } else {
-                      modifyCalendarEntry(
-                          widget.media.id,
-                          widget.media.title,
-                          data["runtime"] ?? 0,
-                          double.parse(data["imdb_rating"]),
-                          selectedFriends,
-                          widget.type);
+                    final saved = await runVisibleAsyncAction(
+                      context,
+                      () async {
+                        Map data = await widget.media.getExtendedData();
+                        if (!widget.modifying) {
+                          await addMovieSubmit(
+                              widget.media.id,
+                              widget.media.title,
+                              data["runtime"] ?? 0,
+                              double.parse(data["imdb_rating"]),
+                              selectedFriends);
+                        } else {
+                          await modifyCalendarEntry(
+                              widget.media.id,
+                              widget.media.title,
+                              data["runtime"] ?? 0,
+                              double.parse(data["imdb_rating"]),
+                              selectedFriends,
+                              widget.type);
+                        }
+                      },
+                      S.of(context)!.genericAuthError,
+                    );
+                    if (saved && context.mounted) {
+                      Navigator.pop(context, true);
                     }
-                    Navigator.pop(context, true);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey[900],
