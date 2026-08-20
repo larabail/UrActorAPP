@@ -235,10 +235,11 @@ service cloud.firestore {
 
     // Shared playlists.
     //
-    // Read is open to any signed-in user, which is wider than it looks and is
-    // forced by the client: joining by access code fetches EVERY playlist and
-    // compares codes on the device, so restricting read to members would break
-    // joining. See KNOWN GAPS.
+    // Read is open to any signed-in user, which is wider than it looks. It is
+    // forced by clients already installed on phones, which find their lists by
+    // reading the whole collection. joinPlaylist and memberUids now make a
+    // member-only read possible; flipping it is Stage B, gated on adoption.
+    // See KNOWN GAPS.
     match /Watchlists/{listId} {
       allow read: if signedIn();
 
@@ -249,6 +250,11 @@ service cloud.firestore {
       // Members may edit the playlist's contents. Non-members may only join,
       // and only by adding themselves: `Users` is the sole field they may
       // touch, and the result must contain them.
+      //
+      // New clients do not take this path at all -- they call joinPlaylist,
+      // which runs with admin credentials and is not bound by these rules.
+      // It stays for the builds that still join by writing to `Users`
+      // directly, and goes away with the read restriction in Stage B.
       allow update: if playlistMember(resource.data)
         || (signedIn()
             && request.resource.data.diff(resource.data)
@@ -327,14 +333,24 @@ service cloud.firestore {
 // ---------------------------------------------------------------------------
 // KNOWN GAPS
 //
-// Both of these are client design problems that rules cannot close, and both
-// need a Cloud Function to fix properly.
+// Both are client design problems that rules cannot close on their own.
 //
-// 1. Every signed-in user can read every playlist. Joining by access code is
-//    implemented by downloading the whole Watchlists collection and comparing
-//    codes on the device, so the codes are not secret from anyone willing to
-//    read the traffic. Fix: a callable function that takes a code, verifies it
-//    server side, and adds the caller — then read can be restricted to members.
+// 1. Every signed-in user can still read every playlist.
+//
+//    The server side of this is now done: joinPlaylist (functions/index.js)
+//    verifies the access code without the code ever reaching the device, and
+//    syncPlaylistMembers maintains a queryable `memberUids` array so a client
+//    can ask for its own lists instead of downloading the collection.
+//
+//    What remains is flipping `allow read` on /Watchlists/{listId} from
+//    `signedIn()` to `playlistMember(resource.data)`, and dropping the
+//    non-member update branch below that exists only so the old client can
+//    join by writing to `Users` itself.
+//
+//    That flip is deliberately NOT made yet. Builds already installed on
+//    people's phones find their playlists by reading the whole collection,
+//    and restricting read breaks them the moment it ships. It is gated on
+//    Play Console adoption of a client that uses the function.
 //
 // 2. Friend writes are now constrained to the coarse shape today's installed
 //    clients already send: watched lists may only grow their known list fields,
