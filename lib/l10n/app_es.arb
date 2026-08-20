@@ -116,6 +116,8 @@
   "joinList": "Unirse a Lista",
   "newList": "Añadir Lista",
   "generateRecommendation": "Generar Recomendaciones",
+  "recommendationsFailed": "No se pudieron generar recomendaciones. Inténtalo de nuevo más tarde.",
+  "fetchingRecommendations": "Generando recomendaciones...",
   "handpicked": "Recomendaciones Para Ti",
   "noPlaylists": "Aun no tienes listas de reproducción",
   "usernameTaken": "Este nombre de usuario ya está cogido",

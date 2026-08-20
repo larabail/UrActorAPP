@@ -458,12 +458,12 @@ class _ListResultState extends State<ListResult> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return const AlertDialog(
+        return AlertDialog(
           content: Row(
             children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 20),
-              Text("Fetching recommendations..."),
+              const CircularProgressIndicator(),
+              const SizedBox(width: 20),
+              Text(S.of(context)!.fetchingRecommendations),
             ],
           ),
         );
@@ -473,6 +473,39 @@ class _ListResultState extends State<ListResult> {
 
   void hideLoadingDialog(BuildContext context) {
     Navigator.of(context).pop();
+  }
+
+  /// Regenerates recommendations for [type], keeping the loading dialog and
+  /// the failure path together.
+  ///
+  /// [sendMessage] throws on any non-200 response, so without the `finally`
+  /// the dialog is never dismissed and the app looks frozen behind a spinner
+  /// that cannot be tapped away. That is reachable in normal use: an expired
+  /// OpenAI quota answers 429, not 200.
+  Future<void> _regenerateRecommendations(String type) async {
+    showLoadingDialog(context);
+    var succeeded = false;
+    try {
+      await sendMessage(type);
+      succeeded = true;
+    } catch (e) {
+      debugPrint('Failed to generate $type recommendations: $e');
+    } finally {
+      if (mounted) hideLoadingDialog(context);
+    }
+
+    if (!mounted) return;
+    if (!succeeded) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.of(context)!.recommendationsFailed)),
+      );
+      return;
+    }
+
+    setState(() {
+      widget.listResult.movies = currentUser.recommendations["Movies"];
+      widget.listResult.tvshows = currentUser.recommendations["TVShows"];
+    });
   }
 
   Future<void> sendMessage(String type) async {
@@ -727,18 +760,7 @@ class _ListResultState extends State<ListResult> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 GestureDetector(
-                  onTap: () async {
-                    showLoadingDialog(context);
-                    await sendMessage("Movies");
-                    hideLoadingDialog(context);
-                    setState(() {
-                      currentUser.recommendations = currentUser.recommendations;
-                      widget.listResult.movies =
-                          currentUser.recommendations["Movies"];
-                      widget.listResult.tvshows =
-                          currentUser.recommendations["TVShows"];
-                    });
-                  },
+                  onTap: () => _regenerateRecommendations("Movies"),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 10),
@@ -766,18 +788,7 @@ class _ListResultState extends State<ListResult> {
                   width: 10,
                 ),
                 GestureDetector(
-                  onTap: () async {
-                    showLoadingDialog(context);
-                    await sendMessage("TVShows");
-                    hideLoadingDialog(context);
-                    setState(() {
-                      currentUser.recommendations = currentUser.recommendations;
-                      widget.listResult.movies =
-                          currentUser.recommendations["Movies"];
-                      widget.listResult.tvshows =
-                          currentUser.recommendations["TVShows"];
-                    });
-                  },
+                  onTap: () => _regenerateRecommendations("TVShows"),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 10),

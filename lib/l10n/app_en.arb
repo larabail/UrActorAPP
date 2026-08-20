@@ -247,6 +247,8 @@
   "joinList": "Join Existing List",
   "newList": "Add New List",
   "generateRecommendation": "Generate Handpicked Recommendations",
+  "recommendationsFailed": "Couldn't generate recommendations. Please try again later.",
+  "fetchingRecommendations": "Fetching recommendations...",
   "handpicked": "Handpicked for You",
   "noPlaylists": "You don't have any playlists yet!",
   "usernameTaken": "Username is already taken",
