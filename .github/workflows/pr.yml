@@ -79,3 +79,47 @@ jobs:
             echo "Signing material must never be present on a pull request build" >&2
             exit 1
           fi
+
+  # Every merge to master ships to internal testers, so a pull request that
+  # changes what the app does has to say so in the version. Otherwise two
+  # different builds reach testers under the same name and a bug report cannot
+  # be tied back to a revision.
+  version:
+    name: Version
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The check reads the commits this branch adds, which a shallow
+          # clone does not have.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Test the check itself
+        run: python -m unittest discover -s tool -p "test_*.py"
+
+      - name: Check the version bump
+        env:
+          # Through the environment rather than interpolated into the script:
+          # a pull request title is attacker-controlled text.
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          # Compared against the merge base rather than the tip of master, so
+          # the check measures what THIS branch changed. Against the tip, a
+          # version bump that landed on master after this branch started would
+          # read as this branch moving the version backwards.
+          BASE=$(git merge-base "$BASE_SHA" "$HEAD_SHA")
+
+          python tool/check_version_bump.py \
+            --base "$BASE" \
+            --head "$HEAD_SHA" \
+            --title "$PR_TITLE"
