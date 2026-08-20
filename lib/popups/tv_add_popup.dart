@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/common/item_container.dart';
 import '../common/api/apiutils.dart';
+import '../common/firebase/playlist_service.dart';
 import '../main.dart';
 import '../objects/playlist.dart';
 
@@ -25,26 +26,11 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
   void addTvSubmit() async {
     String docIDString = widget.list_result.id.toString();
 
-    var userDoc = db.collection("Watchlists").doc(docIDString);
-    await userDoc.update({
+    await db.collection("Watchlists").doc(docIDString).update({
       "TV Shows": FieldValue.arrayUnion([_movie])
     });
 
-    await FirebaseFirestore.instance
-        .collection("Watchlists")
-        .get()
-        .then((QuerySnapshot querySnapshot) {
-      for (var doc in querySnapshot.docs) {
-        Map keysOfDoc = doc.data() as Map;
-        List users = keysOfDoc['Users'] as List;
-        for (var element in users) {
-          Map el = element as Map;
-          if (el.keys.contains(currentUser.uid)) {
-            currentUser.playlists[doc.id] = doc.data();
-          }
-        }
-      }
-    });
+    await PlaylistService.refreshCurrentUserPlaylists();
 
     widget.list_result.tvshows =
         currentUser.playlists[widget.list_result.id.toString()]["TV Shows"];

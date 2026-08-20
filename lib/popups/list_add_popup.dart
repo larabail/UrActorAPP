@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/common/item_container.dart';
 import '../common/api/apiutils.dart';
-import 'dart:math';
+import '../common/firebase/playlist_service.dart';
 import '../common/constants.dart';
 import '../main.dart';
 
@@ -26,48 +26,30 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
   int _selectedIndex = 0;
 
   void addListSubmit() async {
-    int docID = Random().nextInt(10000000);
-    QuerySnapshot querySnapshot = await db.collection("Watchlists").get();
-    List<QueryDocumentSnapshot> data3 = querySnapshot.docs;
-    List lists_already = [];
+    // The id used to be a random 7-digit number checked for collisions by
+    // downloading every document in the collection. A Firestore-generated id
+    // is unique by construction, and reads nothing. Playlist.id has always
+    // been a String, so nothing downstream cares that it is no longer numeric.
+    final listDoc = db.collection("Watchlists").doc();
 
-    for (var doc in data3) {
-      lists_already.add(int.parse(doc.id));
-    }
-
-    while (lists_already.contains(docID)) {
-      docID = Random().nextInt(10000000);
-    }
-    String docIDString = docID.toString();
-
-    var userDoc = db.collection("Watchlists").doc(docIDString);
-    await userDoc.set({"AccessCode": _accessCode});
-    await userDoc.update({"CoverPhoto": cover});
-    await userDoc.update({"Movies": []});
-    await userDoc.update({"TV Shows": []});
-    await userDoc.update({"Name": _listName});
-
-    Map<String, dynamic> users = {currentUser.uid: "Owner"};
-    await userDoc.update({
-      "Users": FieldValue.arrayUnion([users])
+    // One write instead of six. The previous version called set() and then
+    // update() five times, which left a half-built playlist behind if any of
+    // them failed.
+    await listDoc.set({
+      "AccessCode": _accessCode,
+      "CoverPhoto": cover,
+      "Movies": [],
+      "TV Shows": [],
+      "Name": _listName,
+      "Users": [
+        {currentUser.uid: "Owner"}
+      ],
+      "memberUids": [currentUser.uid],
     });
 
-    await FirebaseFirestore.instance
-        .collection("Watchlists")
-        .get()
-        .then((QuerySnapshot querySnapshot) {
-      for (var doc in querySnapshot.docs) {
-        Map keysOfDoc = doc.data() as Map;
-        List users = keysOfDoc['Users'] as List;
-        for (var element in users) {
-          Map el = element as Map;
-          if (el.keys.contains(currentUser.uid)) {
-            currentUser.playlists[doc.id] = doc.data();
-          }
-        }
-      }
-    });
+    await PlaylistService.refreshCurrentUserPlaylists();
 
+    if (!mounted) return;
     Navigator.pop(context);
   }
 

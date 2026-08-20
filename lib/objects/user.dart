@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../common/firebase/playlist_service.dart';
 import '../main.dart';
 
 class AppUser {
@@ -204,23 +205,7 @@ class AppUser {
         }
       }
     });
-    await FirebaseFirestore.instance
-        .collection("Watchlists")
-        .get()
-        .then((QuerySnapshot querySnapshot) {
-      for (var doc in querySnapshot.docs) {
-        Map keysOfDoc = doc.data() as Map;
-        List users = keysOfDoc['Users'] as List;
-        for (var element in users) {
-          Map el = element as Map;
-          if (el.keys.contains(uid)) {
-            Map docData = doc.data() as Map;
-            docData["id"] = doc.id;
-            playlists[doc.id] = docData;
-          }
-        }
-      }
-    });
+    playlists = await PlaylistService.fetchPlaylists(uid);
     await FirebaseFirestore.instance
         .collection("Oscars")
         .get()
