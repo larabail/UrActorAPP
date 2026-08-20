@@ -164,7 +164,11 @@ class _GrantAccessDialogState extends State<GrantAccessDialog> {
                         FirestoreCore.db
                             .collection('Watchlists')
                             .doc(widget.listResult.id),
-                        {'Users': FieldValue.arrayUnion(itemToAdd)});
+                        {
+                          'Users': FieldValue.arrayUnion(itemToAdd),
+                          'memberUids': FieldValue.arrayUnion(
+                              selectedFriends.keys.toList())
+                        });
                     widget.listResult.users += itemToAdd;
                     if (!context.mounted) return;
                     Navigator.pop(context, widget.listResult);
