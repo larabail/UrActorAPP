@@ -63,7 +63,7 @@ import 'l10n_es.dart';
 /// property.
 abstract class S {
   S(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -85,16 +85,16 @@ abstract class S {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('es')
+    Locale('es'),
   ];
 
   /// No description provided for @addTVShowToCalendar.
@@ -1192,8 +1192,14 @@ abstract class S {
   /// No description provided for @profileSetupFailedError.
   ///
   /// In en, this message translates to:
-  /// **'Your account was created, but we couldn\'t set up your profile. Please try signing in again.'**
+  /// **'We couldn\'t set up your profile, so we undid the account. Please try signing up again.'**
   String get profileSetupFailedError;
+
+  /// No description provided for @profileSetupRollbackFailedError.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t set up your profile or undo the account. Please try again later.'**
+  String get profileSetupRollbackFailedError;
 
   /// No description provided for @friendRequestActionFailedError.
   ///
@@ -1228,8 +1234,9 @@ S lookupS(Locale locale) {
   }
 
   throw FlutterError(
-      'S.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'S.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

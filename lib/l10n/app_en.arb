@@ -320,6 +320,7 @@
   "deleteCalendarEntryQuestion": "Do you want to delete this from just your calendar or everyone's?",
   "justMe": "Just me",
   "everyone": "Everyone",
-  "profileSetupFailedError": "Your account was created, but we couldn't set up your profile. Please try signing in again.",
+  "profileSetupFailedError": "We couldn't set up your profile, so we undid the account. Please try signing up again.",
+  "profileSetupRollbackFailedError": "We couldn't set up your profile or undo the account. Please try again later.",
   "friendRequestActionFailedError": "Something went wrong. Please try again."
 }

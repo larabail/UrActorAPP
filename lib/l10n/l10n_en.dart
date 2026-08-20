@@ -614,7 +614,11 @@ class SEn extends S {
 
   @override
   String get profileSetupFailedError =>
-      'Your account was created, but we couldn\'t set up your profile. Please try signing in again.';
+      'We couldn\'t set up your profile, so we undid the account. Please try signing up again.';
+
+  @override
+  String get profileSetupRollbackFailedError =>
+      'We couldn\'t set up your profile or undo the account. Please try again later.';
 
   @override
   String get friendRequestActionFailedError =>
