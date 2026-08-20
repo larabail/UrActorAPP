@@ -90,6 +90,43 @@ that is what saves the next person from repeating your dead ends.
 Do not describe the change as a list of edited files. Do not write "as
 requested". Do not mention the agent, the model, or the conversation.
 
+## Versioning
+
+`version:` in `pubspec.yaml` is `MAJOR.MINOR.PATCH+BUILD`, for example
+`3.5.4+47`. Bump the **name**; leave the `+BUILD` suffix alone. The release
+workflow overwrites it with a code derived from Play, which refuses any code it
+has seen before, so editing it here achieves nothing.
+
+How far to bump follows directly from the commit kind:
+
+| The change is | Kind | Bump |
+| --- | --- | --- |
+| Something users could not do before | `feat` | MINOR — `3.5.4` to `3.6.0` |
+| Something that was broken now works | `fix`, `perf` | PATCH — `3.5.4` to `3.5.5` |
+| Something users must relearn, redo, or lose | any kind with `!` | MAJOR — `3.5.4` to `4.0.0` |
+| Nothing a user would notice | `docs`, `ci`, `test`, `chore`, `refactor`, `build` | none |
+
+A minor bump resets the patch to zero, and a major resets both. `3.6.4` after
+`3.5.4` reads as four patches that never happened.
+
+MAJOR is a judgement call, not an arithmetic one. Reserve it for a release
+someone would experience as a different app: a redesign they have to relearn, a
+migration that makes them sign in again, a feature taken away. Reorganising code
+is never major, however large the diff. Mark it by putting `!` before the colon
+(`feat(auth)!: drop anonymous sign in`) or with a `BREAKING CHANGE:` footer.
+
+Bumping further than required is always allowed — nothing overrules a person who
+decides a release deserves more.
+
+Every merge to master builds and ships to internal testers, which is why this
+matters: without a bump, two different builds reach testers under the same name
+and a bug report cannot be tied to a revision.
+
+`tool/check_version_bump.py` enforces this on every pull request, reading both
+the title and the commits and taking the larger requirement. The title counts
+because pull requests are squash merged, so it is the only subject that reaches
+master.
+
 ## Pull requests
 
 ### Title
