@@ -100,13 +100,18 @@ jobs:
           cache: npm
           cache-dependency-path: functions/package-lock.json
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
       - name: Install
         working-directory: functions
         run: npm ci
 
       - name: Test
         working-directory: functions
-        run: npm test
+        run: npm run test:emulator
 
       # JavaScript has no compile step, so this stands in for one: the deployer
       # loads index.js to discover the exported functions, and anything that
