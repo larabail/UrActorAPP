@@ -86,12 +86,24 @@ class SEn extends S {
 
   @override
   String playlistCount(int playlistCount) {
-    return '$playlistCount playlists';
+    String _temp0 = intl.Intl.pluralLogic(
+      playlistCount,
+      locale: localeName,
+      other: '$playlistCount playlists',
+      one: '$playlistCount playlist',
+    );
+    return '$_temp0';
   }
 
   @override
   String seeAll(int number) {
-    return 'See All ($number items)';
+    String _temp0 = intl.Intl.pluralLogic(
+      number,
+      locale: localeName,
+      other: 'See All ($number items)',
+      one: 'See All ($number item)',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -135,8 +147,14 @@ class SEn extends S {
   String get notifications => 'Notifications';
 
   @override
-  String totalContent(String totalContent) {
-    return '$totalContent items';
+  String totalContent(int totalContent) {
+    String _temp0 = intl.Intl.pluralLogic(
+      totalContent,
+      locale: localeName,
+      other: '$totalContent items',
+      one: '$totalContent item',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -468,7 +486,7 @@ class SEn extends S {
   String get noDataAvailable => 'No data available';
 
   @override
-  String get unknown => 'Unkown';
+  String get unknown => 'Unknown';
 
   @override
   String get searchBar => 'Enter name of person/movie/show...';
@@ -490,4 +508,64 @@ class SEn extends S {
 
   @override
   String get createdBy => 'Created by';
+
+  @override
+  String get noUserFoundError => 'No user found for that email.';
+
+  @override
+  String get wrongPasswordError => 'Wrong password provided for that user.';
+
+  @override
+  String get weakPasswordError => 'The password provided is too weak.';
+
+  @override
+  String get emailAlreadyInUseError =>
+      'An account already exists for that email.';
+
+  @override
+  String get invalidEmailError => 'That email address is not valid.';
+
+  @override
+  String get genericAuthError => 'Something went wrong. Please try again.';
+
+  @override
+  String get deleteAccount => 'Delete Account';
+
+  @override
+  String get deleteAccountConfirmation =>
+      'Are you sure you want to delete your account? This action will delete all your information.';
+
+  @override
+  String get joinListFailed => 'Wrong access code or list name';
+
+  @override
+  String get joinListTitle => 'Join List';
+
+  @override
+  String get enterListName => 'Please enter a list name';
+
+  @override
+  String get listName => 'List Name';
+
+  @override
+  String get accessCodeLabel => 'Access Code';
+
+  @override
+  String get add => 'Add';
+
+  @override
+  String get confirmWatchedToday => 'Did you watch this movie today?';
+
+  @override
+  String get deleteCalendarEntry => 'Delete Calendar Entry';
+
+  @override
+  String get deleteCalendarEntryQuestion =>
+      'Do you want to delete this from just your calendar or everyone\'s?';
+
+  @override
+  String get justMe => 'Just me';
+
+  @override
+  String get everyone => 'Everyone';
 }
