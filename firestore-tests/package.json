@@ -1,0 +1,17 @@
+{
+  "name": "uractor-firestore-rules-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Unit tests for UrActor's Firestore security rules, run against the Firebase emulator.",
+  "type": "commonjs",
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore --project uractor-rules-test \"npm run test:mocha\"",
+    "test:mocha": "mocha rules.test.js --timeout 20000",
+    "test:emulator": "npm test"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^3.0.4",
+    "firebase": "^10.14.1",
+    "mocha": "^10.7.3"
+  }
+}
