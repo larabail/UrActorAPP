@@ -46,6 +46,142 @@ class ApiUtils {
     return providers;
   }
 
+  /// Flattens a TMDB `aggregate_credits` payload into the shape `/credits`
+  /// returns, so no caller has to know which endpoint the data came from.
+  ///
+  /// `aggregate_credits` reports a person once, carrying a `roles` array (cast)
+  /// or a `jobs` array (crew) instead of the flat `character`/`job` field the
+  /// rest of the app reads. Each of those entries has its own `episode_count`,
+  /// and the person carries a `total_episode_count` across all of them.
+  ///
+  /// Cast is collapsed to one entry per person with their characters joined by
+  /// " / ", matching how TMDB itself writes a dual role in a film credit. Crew
+  /// is expanded to one entry per job, which is exactly what `/credits` sends,
+  /// leaving [mergeCrewJobs] to collapse a person's jobs as it already does --
+  /// including across two departments, which a person-level join would miss.
+  ///
+  /// Both lists come back ordered by `total_episode_count`, descending. Raw
+  /// billing order is a poor guide once every season is in play, because a guest
+  /// star billed high in their single episode outranks a lead of ten years.
+  /// `order` breaks ties so a season's regulars stay in their billed order.
+  ///
+  /// An entry with no `roles`/`jobs` array passes through untouched, so a plain
+  /// `/credits` payload survives this unchanged: with no episode counts to sort
+  /// on, the ordering degrades to `order` ascending, which is the billing order
+  /// TMDB already returned it in.
+  /// @param credits The decoded credits payload.
+  /// @return A map holding the flattened "cast" and "crew" lists.
+  static Map<String, dynamic> normalizeCredits(Map credits) {
+    return <String, dynamic>{
+      'cast': _flattenCast(credits['cast']),
+      'crew': _flattenCrew(credits['crew']),
+    };
+  }
+
+  /// One entry per person, with every character they played joined together.
+  static List<Map> _flattenCast(dynamic entries) {
+    final List<Map> cast = [];
+    for (final entry in _mapsIn(entries)) {
+      final person = Map<String, dynamic>.from(entry);
+      final List<Map> roles = _creditsIn(person.remove('roles'));
+      if (roles.isNotEmpty) {
+        person['character'] = _joinDistinct(roles, 'character');
+        person['credit_id'] = roles.first['credit_id'] ?? person['credit_id'];
+        person['total_episode_count'] = _totalEpisodes(entry, roles);
+      }
+      cast.add(person);
+    }
+    return _byEpisodesThenBilling(cast);
+  }
+
+  /// One entry per job, the shape `/credits` sends and [mergeCrewJobs] expects.
+  static List<Map> _flattenCrew(dynamic entries) {
+    final List<Map> crew = [];
+    for (final entry in _mapsIn(entries)) {
+      final person = Map<String, dynamic>.from(entry);
+      final List<Map> jobs = _creditsIn(person.remove('jobs'));
+      if (jobs.isEmpty) {
+        crew.add(person);
+        continue;
+      }
+      final int total = _totalEpisodes(entry, jobs);
+      for (final job in jobs) {
+        crew.add(Map<String, dynamic>.from(person)
+          ..['job'] = job['job']
+          ..['credit_id'] = job['credit_id'] ?? person['credit_id']
+          ..['episode_count'] = job['episode_count']
+          ..['total_episode_count'] = total);
+      }
+    }
+    return _byEpisodesThenBilling(crew);
+  }
+
+  /// The `Map` entries of [value], ignoring anything else TMDB sends.
+  static List<Map> _mapsIn(dynamic value) {
+    if (value is! List) return const [];
+    return value.whereType<Map>().toList();
+  }
+
+  /// The `roles`/`jobs` entries of [value], most episodes first, so a person's
+  /// main character or job leads the joined string.
+  static List<Map> _creditsIn(dynamic value) {
+    return _stableSort(
+      _mapsIn(value),
+      (a, b) => _episodesOf(b, 'episode_count')
+          .compareTo(_episodesOf(a, 'episode_count')),
+    );
+  }
+
+  /// The distinct non-empty [field] values of [credits], joined by " / " --
+  /// the separator [mergeCrewJobs] and the screens reading these already use.
+  static String _joinDistinct(List<Map> credits, String field) {
+    final List<String> values = [];
+    for (final credit in credits) {
+      final String value = (credit[field] ?? '').toString().trim();
+      if (value.isNotEmpty && !values.contains(value)) values.add(value);
+    }
+    return values.join(' / ');
+  }
+
+  /// The episodes a person appears in, preferring TMDB's own total: it counts
+  /// an episode once where a person credited twice would be counted twice.
+  static int _totalEpisodes(Map entry, List<Map> credits) {
+    final int? declared = int.tryParse(
+        (entry['total_episode_count'] ?? '').toString());
+    if (declared != null) return declared;
+    return credits.fold<int>(
+        0, (sum, credit) => sum + _episodesOf(credit, 'episode_count'));
+  }
+
+  static int _episodesOf(Map credit, String field) =>
+      int.tryParse((credit[field] ?? '').toString()) ?? 0;
+
+  /// Orders credits by episodes descending, then by billing order ascending.
+  /// A credit with no billing order sorts after every credit that has one.
+  static List<Map> _byEpisodesThenBilling(List<Map> credits) {
+    return _stableSort(credits, (a, b) {
+      final int byEpisodes = _episodesOf(b, 'total_episode_count')
+          .compareTo(_episodesOf(a, 'total_episode_count'));
+      if (byEpisodes != 0) return byEpisodes;
+      return (int.tryParse((a['order'] ?? '').toString()) ?? 1 << 31)
+          .compareTo(int.tryParse((b['order'] ?? '').toString()) ?? 1 << 31);
+    });
+  }
+
+  /// [List.sort] is not stable, which would shuffle equally ranked credits
+  /// between rebuilds. Falling back to the original index makes it stable.
+  static List<Map> _stableSort(
+      List<Map> items, int Function(Map a, Map b) compare) {
+    final List<MapEntry<int, Map>> indexed = [
+      for (int i = 0; i < items.length; i++) MapEntry(i, items[i])
+    ];
+    indexed.sort((a, b) {
+      final int result = compare(a.value, b.value);
+      return result != 0 ? result : a.key.compareTo(b.key);
+    });
+    return [for (final entry in indexed) entry.value];
+  }
+
   /// Merges duplicate crew entries (same person appearing more than once,
   /// e.g. as both Director and Writer) into a single entry per person, with
   /// their distinct job titles joined by " / " in order of first appearance.
@@ -99,6 +235,11 @@ class ApiUtils {
   }
 
   /// Fetches cast, crew, and trailer data for a specific media item in the current language.
+  ///
+  /// A show asks for `aggregate_credits` rather than `credits`, because the
+  /// latter answers with the newest season's regulars alone and drops everyone
+  /// who left. [normalizeCredits] puts the richer payload back into the shape
+  /// the screens read, so only this method knows the difference.
   /// @param movieId The TMDb media ID.
   /// @param name The slugified title.
   /// @param type The media type ("movie" or "tv").
@@ -106,20 +247,21 @@ class ApiUtils {
   static Future<Map<String, dynamic>> fetchCreditsAndTrailer(
       String movieId, String name, String type) async {
     final lang = currentUser.settings['language'] ?? 'en';
+    final bool isMovie = type == "movie";
     final creditsResponse = await AppHttp.client.get(Uri.parse(
-        '${type == "movie" ? MOVIE_LINK : TV_SHOW_LINK}$movieId-$name$CREDITS_LINK&language=$lang'));
+        '${isMovie ? MOVIE_LINK : TV_SHOW_LINK}$movieId-$name${isMovie ? CREDITS_LINK : AGGREGATE_CREDITS_LINK}&language=$lang'));
     final trailerResponse = await AppHttp.client.get(Uri.parse(
-        '${type == "movie" ? MOVIE_LINK : TV_SHOW_LINK}$movieId-$name$VIDEOS_LINK&language=$lang'));
+        '${isMovie ? MOVIE_LINK : TV_SHOW_LINK}$movieId-$name$VIDEOS_LINK&language=$lang'));
 
     if (creditsResponse.statusCode != 200 ||
         trailerResponse.statusCode != 200) {
       throw Exception('Failed to load credits or trailer data');
     }
-    List<Map> finalCrew =
-        mergeCrewJobs(List<Map>.from(jsonDecode(creditsResponse.body)["crew"]));
+    final Map credits = normalizeCredits(jsonDecode(creditsResponse.body));
+    List<Map> finalCrew = mergeCrewJobs(List<Map>.from(credits["crew"]));
 
     Map<String, dynamic> data = {
-      'cast': jsonDecode(creditsResponse.body)["cast"],
+      'cast': credits["cast"],
       'crew': finalCrew,
       'trailer': null
     };

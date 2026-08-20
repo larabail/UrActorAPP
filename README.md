@@ -113,7 +113,7 @@ target (see [Platforms](#platforms)).
 | `cloud_firestore` | Users, history, lists, reviews, friends, playlists, `Oscars` |
 | `firebase_storage` | Profile photos and fallback cover/person images |
 | Cloud Functions (Node 22) | Server-verified playlist joins and playlist membership sync |
-| [TMDB API v3](https://developer.themoviedb.org/docs) | Movie, TV, person, search, credits, videos, watch providers, genres |
+| [TMDB API v3](https://developer.themoviedb.org/docs) | Movie, TV, person, search, credits (a show's aggregated across every season), videos, watch providers, genres |
 | `table_calendar` | The watch calendar |
 | `fl_chart` | Profile stats |
 | `youtube_player_flutter` | Trailer playback |
@@ -301,7 +301,9 @@ lib/
     calendar_progress.dart          What a calendar entry means for tracking
     viewing_history_range.dart      When a title was started and finished
     viewing_history_widgets.dart    The range shown above a viewing history
-    api/apiutils.dart        All TMDB HTTP calls
+    api/apiutils.dart        All TMDB HTTP calls; a show's credits come from
+                             aggregate_credits and are flattened to the shape
+                             /credits returns
     navigation/              appbar.dart, bottom_app_bar.dart
     firebase/                One service per domain: calendar, favorites,
                              playlist, progress, recommendation, review,
@@ -396,7 +398,7 @@ npm install
 npm test
 ```
 
-`flutter test` currently runs 624 tests with no emulator, credentials or
+`flutter test` currently runs 655 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
 `FirestoreCore.db` and `AppHttp.client` — which default to the real
 implementations and are pointed at fakes by the tests.
@@ -445,17 +447,27 @@ only Markdown, docs, or `.gitignore`. The workflow has three jobs:
   checked to ensure no release signing material is present.
 - **Functions** installs Node 22 dependencies in `functions/`, runs `npm test`,
   and confirms `index.js` loads.
-- **Version** runs the unit tests for `tool/check_version_bump.py` and then
-  enforces the version policy from [AGENTS.md](AGENTS.md#versioning) against
-  the pull request title and commits. Do not edit the `+BUILD` suffix; the
-  release workflow derives the build code from Play.
+- **Version** runs the unit tests under `tool/` and then enforces the version
+  policy from [AGENTS.md](AGENTS.md#versioning) against the pull request title
+  and commits. Do not edit the `+BUILD` suffix: the release workflow builds
+  with a code derived from Play and writes that code back to `master` itself.
 
 Every merge to `master` that is not docs-only runs
 `.github/workflows/release-internal.yml`. It deploys Cloud Functions to
 `actordb-cf981` first, then analyzes, tests with coverage, builds a signed app
 bundle with a Play-derived version code, generates release notes, uploads to
-Play internal testing, tags the build, and keeps the bundle and coverage report
-as artifacts. Production promotion is separate and manual.
+Play internal testing, and keeps the bundle and coverage report as artifacts.
+Internal builds are not tagged; the run summary records the version code and
+the commit, which is what a production promotion is given. Production promotion
+is separate and manual.
+
+Once the upload succeeds, a last job commits the version code that shipped into
+`pubspec.yaml` on `master`, so the `+BUILD` suffix in the repository matches the
+newest build on the internal track. It pushes with the built-in `GITHUB_TOKEN`,
+which GitHub does not let trigger further workflow runs — that is what stops a
+release from releasing itself. If the push cannot be made, the run says so in
+its summary and still passes: the app is already on Play by then, and failing
+would report a shipped release as a broken one.
 
 ## Repo tooling
 

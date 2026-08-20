@@ -130,7 +130,9 @@ void main() {
       http.on('/external_ids', json: {'imdb_id': 'tt0903747'});
       http.on('omdbapi.com', json: {'imdbRating': '9.5', 'Year': '2008–2013'});
       http.on('watch/providers', json: {'results': <String, dynamic>{}});
-      http.on('/credits?', json: {'cast': [], 'crew': []});
+      // A show's credits come from `/aggregate_credits`, since `/credits`
+      // returns the newest season's regulars alone.
+      http.on('/aggregate_credits?', json: {'cast': [], 'crew': []});
       http.on('/videos?', json: {'results': []});
     });
 

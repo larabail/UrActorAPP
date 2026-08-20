@@ -89,6 +89,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
+    # The version code is decided here, by asking Play, and is needed by the
+    # job that records it afterwards.
+    outputs:
+      code: ${{ steps.version.outputs.code }}
+      name: ${{ steps.version.outputs.name }}
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -223,3 +229,135 @@ jobs:
       - name: Remove signing material
         if: always()
         run: rm -f android/app/upload-keystore.jks android/key.properties
+
+  # The version code exists only inside the run that asked Play for it, which
+  # is why the committed `+BUILD` suffix sat at 47 while Play was serving codes
+  # in the fifties. Writing it back afterwards makes pubspec.yaml a record of
+  # the last build that actually shipped, for anyone reading the repository or
+  # building a release by hand.
+  #
+  # Deliberately a separate job: the job that holds the signing key and the
+  # Play credentials should not also hold a token that can write to master.
+  record:
+    name: Record the build number on master
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Only after the bundle is on Play, and only for master. A
+    # workflow_dispatch run from another branch still uploads, but its build
+    # number is not master's to record.
+    if: success() && github.ref == 'refs/heads/master'
+
+    # The only write access in this workflow, narrowed to the one job and the
+    # one scope that needs it.
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # master as it is now rather than the commit that was built: another
+          # merge can land during the forty minutes the build takes, and its
+          # version name is the one that has to survive.
+          ref: master
+          # This MUST stay the built-in GITHUB_TOKEN. GitHub does not start new
+          # workflow runs from pushes made with it, and that suppression is the
+          # only thing standing between this push and the release workflow
+          # triggering itself forever. A personal access token, a deploy key or
+          # a GitHub App token all lift it. The `[skip ci]` in the commit
+          # subject below is a second line of defence, not the mechanism.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Write the build number back to master
+        env:
+          CODE: ${{ needs.release.outputs.code }}
+        run: |
+          set -uo pipefail
+
+          # Nothing below may fail the run. The bundle is already on Play by
+          # this point, and reporting a release that shipped as a release that
+          # failed is worse than a stale line in pubspec.yaml. Every failure
+          # path says so in the summary and exits 0.
+          give_up() {
+            {
+              echo '### :warning: Build number not recorded'
+              echo ''
+              echo "$1"
+              echo ''
+              echo "Build \`$CODE\` is live on the internal track; only the"
+              echo "commit recording it is missing. Set the \`+BUILD\` suffix"
+              echo "in \`pubspec.yaml\` to \`$CODE\` by hand, or leave it for"
+              echo "the next release to correct."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          }
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          MESSAGE="$RUNNER_TEMP/build-number-commit.txt"
+          printf '%s\n' \
+            "chore(release): record build $CODE as shipped [skip ci]" \
+            "" \
+            "The version code comes from Play at build time, so the committed" \
+            "+BUILD suffix never described anything that shipped and drifted" \
+            "further out of date with every release." \
+            "" \
+            "This is the release workflow writing back the code it just" \
+            "uploaded. Only the suffix is touched: the version name is a human" \
+            "decision, enforced on pull requests by tool/check_version_bump.py." \
+            > "$MESSAGE"
+
+          # Releases are serialised by the play-release concurrency group, but
+          # an ordinary merge to master can still land between the checkout and
+          # the push and have it rejected. Bounded, because a push that keeps
+          # being rejected is a busy branch, not something to sit and retry on.
+          for attempt in 1 2 3; do
+            # Each attempt starts again from master as it is now instead of
+            # rebasing the commit the last one made: the only line this touches
+            # is the line a competing release would have touched too, so a
+            # rebase would conflict exactly when it matters. Re-running the
+            # rewrite is cheap and cannot conflict.
+            git fetch --quiet origin master \
+              || give_up 'Could not fetch `master`.'
+            git reset --quiet --hard FETCH_HEAD \
+              || give_up 'Could not reset to `master`.'
+
+            python tool/set_build_number.py "$CODE" \
+              || give_up "\`tool/set_build_number.py\` would not write \`$CODE\`; see the step log."
+
+            # Nothing changed means nothing to commit: the file already says
+            # what this release shipped, and an empty commit on master is noise
+            # in a log that release notes are read from.
+            if git diff --quiet -- pubspec.yaml; then
+              {
+                echo '### Build number'
+                echo ''
+                echo "\`pubspec.yaml\` on \`master\` already records build"
+                echo "\`$CODE\`, so nothing was committed."
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+
+            git add pubspec.yaml
+            git commit --quiet --file "$MESSAGE" \
+              || give_up 'Could not create the commit.'
+
+            if git push --quiet origin HEAD:master; then
+              {
+                echo '### Build number'
+                echo ''
+                echo "\`pubspec.yaml\` on \`master\` now records build \`$CODE\`,"
+                echo "committed as \`$(git rev-parse --short HEAD)\`."
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+
+            echo "Push rejected on attempt $attempt of 3; master moved. Retrying."
+          done
+
+          give_up 'Three pushes in a row were rejected because `master` kept moving.'

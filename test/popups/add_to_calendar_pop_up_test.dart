@@ -53,6 +53,9 @@ void main() {
     http.on('omdbapi.com', json: {'imdbRating': '8.8', 'Year': '2010'});
     http.on('watch/providers', json: {'results': <String, dynamic>{}});
     http.on('/credits?', json: {'cast': [], 'crew': []});
+    // A show reaches for `/aggregate_credits` instead, which spans every
+    // season rather than just the newest one.
+    http.on('/aggregate_credits?', json: {'cast': [], 'crew': []});
     http.on('/videos?', json: {'results': []});
   });
 
