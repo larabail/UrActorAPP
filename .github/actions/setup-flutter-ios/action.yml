@@ -1,0 +1,59 @@
+name: Set up Flutter for iOS
+description: >
+  Installs the toolchain needed to build the iOS app on a macOS runner. Shared
+  by the iOS pull request check and the TestFlight release workflow so that a
+  build cannot pass on a pull request and then fail during a release.
+
+inputs:
+  flutter-version:
+    description: Flutter SDK version to install.
+    required: false
+    default: 3.47.1
+
+runs:
+  using: composite
+  steps:
+    - uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ inputs.flutter-version }}
+        channel: stable
+        cache: true
+
+    # Flutter 3.47 reaches for Swift Package Manager before CocoaPods. This
+    # project has no SPM integration — the Xcode project carries no package
+    # references and every plugin is wired through the committed Podfile — so
+    # left on, the build stops while resolving packages rather than falling
+    # back to pods.
+    - name: Use CocoaPods rather than Swift Package Manager
+      shell: bash
+      run: flutter config --no-enable-swift-package-manager
+
+    - name: Resolve dependencies
+      shell: bash
+      run: |
+        flutter pub get
+        flutter gen-l10n
+
+    # Only the download cache is kept, not `ios/Pods`. The archives here are
+    # content addressed, so restoring them can only save network time. A
+    # restored `ios/Pods` would instead be an installed tree that has to agree
+    # with the current Podfile.lock, and disagreeing copies of a plugin are
+    # exactly how the "different definitions in different modules" failure
+    # happens. `pod install` rebuilds the tree from these archives without
+    # going back to the network, which is where nearly all the time went.
+    - name: Cache the CocoaPods downloads
+      uses: actions/cache@v4
+      with:
+        path: ~/Library/Caches/CocoaPods
+        key: cocoapods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock') }}
+        restore-keys: |
+          cocoapods-${{ runner.os }}-
+
+    # The runner image carries a spec repo snapshot taken when the image was
+    # built, so a pod released since then resolves to nothing. The message
+    # blames the version for not existing rather than the index for being
+    # stale, which is a slow thing to work out from a CI log.
+    - name: Refresh the CocoaPods spec index
+      shell: bash
+      working-directory: ios
+      run: pod repo update

@@ -217,9 +217,19 @@ A simulator build needs no code signing. A device or release build does: the
 project sets `DEVELOPMENT_TEAM = Q8XY8276AC`, so that Apple Developer account
 has to be signed in to Xcode.
 
-Nothing in CI covers any of this. Every workflow runs on `ubuntu-latest` and
-builds Android only, so an iOS break is found on a developer's machine or not
-at all.
+CI covers this on macOS runners. `.github/workflows/ios.yml` builds the app
+and launches it on a simulator for pull requests that touch `ios/` or either
+pubspec file, and `.github/workflows/release-testflight.yml` ships to
+TestFlight. The pull request check is filtered to those paths on purpose:
+macOS runners bill at ten times the Linux rate on a private repository, and a
+Dart-only change cannot break the native build without also changing pubspec.
+See [docs/releases.md](docs/releases.md).
+
+**Run `flutter clean` after any change to `ios/Podfile.lock`.** `flutter
+build` will not do it for you, and a stale `build/` directory holding the
+previous version of a plugin produces a compiler error about "different
+definitions in different modules" that names neither the stale file nor the
+pod that changed.
 
 ## Configuration
 
@@ -479,6 +489,22 @@ only Markdown, docs, or `.gitignore`. The workflow has three jobs:
   and commits. Do not edit the `+BUILD` suffix: the release workflow builds
   with a code derived from Play and writes that code back to `master` itself.
 
+The iOS check lives in its own workflow, `.github/workflows/ios.yml`, because
+it needs a macOS runner and those bill at ten times the Linux rate on a private
+repository. It runs only for pull requests touching `ios/`, `pubspec.yaml` or
+`pubspec.lock` — a Dart-only change is already covered on Linux and cannot
+break the native build without also changing pubspec. It builds for the
+simulator with `--no-codesign`, then installs and launches the app and checks
+it is still running fifteen seconds later, because the iOS failure that
+matters most, Firebase failing to configure, happens at launch rather than at
+compile time.
+
+There is no XCTest job. `ios/RunnerTests` still contains only the empty
+`testExample` stub that `flutter create` generates, and the app has no native
+code beyond an `AppDelegate` that registers plugins, so running it would spend
+macOS minutes asserting nothing. If real Swift is ever added to `ios/Runner`,
+that is the point to wire `xcodebuild test` into the iOS workflow.
+
 Every merge to `master` that is not docs-only runs
 `.github/workflows/release-internal.yml`. It deploys Cloud Functions to
 `actordb-cf981` first, then analyzes, tests with coverage, builds a signed app
@@ -487,6 +513,15 @@ Play internal testing, and keeps the bundle and coverage report as artifacts.
 Internal builds are not tagged; the run summary records the version code and
 the commit, which is what a production promotion is given. Production promotion
 is separate and manual.
+
+The same merge also runs `.github/workflows/release-testflight.yml`, which
+builds a signed IPA on a macOS runner and uploads it to TestFlight. Its build
+number comes from App Store Connect through `tool/appstore.py`, the counterpart
+to `tool/play.py`, and is deliberately **not** written back to `pubspec.yaml`:
+the `+BUILD` suffix there records Play's version code, and the two stores count
+independently. The workflow stays inert until its six App Store secrets exist —
+a `preflight` job reports which are missing and skips the expensive job — so it
+does not fail every merge before the credentials are in place.
 
 Once the upload succeeds, a last job commits the version code that shipped into
 `pubspec.yaml` on `master`, so the `+BUILD` suffix in the repository matches the
@@ -527,5 +562,5 @@ Things that are true today and worth knowing before you start:
 |---|---|
 | Push notifications are not implemented | The old notification function was removed because the app never registered FCM tokens and its legacy FCM API would no longer send. A future implementation needs `firebase_messaging`, token persistence, current FCM sends, APNs setup, and device testing. |
 | iOS Firebase config is partial | There is no `ios/Runner/GoogleService-Info.plist`, and `firebase_options.dart` declares `iosBundleId: 'com.example.uractor'` while Xcode builds `com.uractor.uractorios`. Neither stops an iOS build or a sign in, because Firebase is configured from Dart, but APNs, `firebase_messaging` and App Check would all need the plist. |
-| iOS is never built by CI | Every workflow runs on `ubuntu-latest` and builds Android only, so an iOS regression reaches `master` unnoticed. See [Building for iOS](#building-for-ios). |
+| iOS is not released to the App Store automatically | `.github/workflows/release-testflight.yml` uploads to TestFlight, but submitting for App Store review is still done by hand in App Store Connect. There is no iOS equivalent of the production promotion workflow. |
 | Coverage is uneven | The API layer, the data objects and the popups are covered; the full screens under `lib/` still have very few widget tests. See [Tests](#tests). |
