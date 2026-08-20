@@ -6,9 +6,12 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uractor/common/media_sort.dart';
+import 'package:uractor/common/sorted_media_grid.dart';
 
 List<dynamic> _items(List<String> ids) {
-  return [for (final id in ids) ['Movies', id]];
+  return [
+    for (final id in ids) ['Movies', id],
+  ];
 }
 
 List<String> _ids(List<dynamic> items) {
@@ -29,7 +32,10 @@ void main() {
     test('falls back to the default for an unrecognised key', () {
       // A key removed in a later version must not break the screen for a user
       // who still has it stored.
-      expect(MediaSort.fromStorage('somethingElse:desc'), MediaSort.defaultSort);
+      expect(
+        MediaSort.fromStorage('somethingElse:desc'),
+        MediaSort.defaultSort,
+      );
     });
 
     test('falls back to the default for a malformed value', () {
@@ -44,7 +50,9 @@ void main() {
     });
 
     test('every other field needs lookups', () {
-      for (final key in MediaSortKey.values.where((k) => k != MediaSortKey.added)) {
+      for (final key in MediaSortKey.values.where(
+        (k) => k != MediaSortKey.added,
+      )) {
         expect(MediaSort(key).needsMetadata, isTrue, reason: key.name);
       }
     });
@@ -55,23 +63,47 @@ void main() {
     });
   });
 
+  group('mediaItemsForType', () {
+    test('turns playlist ids into the typed media pairs sorting expects', () {
+      expect(mediaItemsForType(['10', 20], 'TVShows'), [
+        ['TVShows', '10'],
+        ['TVShows', 20],
+      ]);
+    });
+  });
+
   group('sortMediaItems by date added', () {
     test('shows newest first when descending, matching the old behaviour', () {
       final items = _items(['1', '2', '3']);
-      final sorted = sortMediaItems(items, const MediaSort(MediaSortKey.added), {});
+      final sorted = sortMediaItems(
+        items,
+        const MediaSort(MediaSortKey.added),
+        {},
+      );
       expect(_ids(sorted), ['3', '2', '1']);
     });
 
     test('shows oldest first when ascending', () {
       final items = _items(['1', '2', '3']);
       final sorted = sortMediaItems(
-          items, const MediaSort(MediaSortKey.added, descending: false), {});
+        items,
+        const MediaSort(MediaSortKey.added, descending: false),
+        {},
+      );
       expect(_ids(sorted), ['1', '2', '3']);
     });
 
     test('needs no metadata at all', () {
-      expect(_ids(sortMediaItems(_items(['1']), const MediaSort(MediaSortKey.added), {})),
-          ['1']);
+      expect(
+        _ids(
+          sortMediaItems(
+            _items(['1']),
+            const MediaSort(MediaSortKey.added),
+            {},
+          ),
+        ),
+        ['1'],
+      );
     });
   });
 
@@ -83,14 +115,20 @@ void main() {
     };
 
     test('orders A to Z when ascending', () {
-      final sorted = sortMediaItems(_items(['1', '2', '3']),
-          const MediaSort(MediaSortKey.title, descending: false), metadata);
+      final sorted = sortMediaItems(
+        _items(['1', '2', '3']),
+        const MediaSort(MediaSortKey.title, descending: false),
+        metadata,
+      );
       expect(_ids(sorted), ['2', '3', '1']);
     });
 
     test('orders Z to A when descending', () {
-      final sorted = sortMediaItems(_items(['1', '2', '3']),
-          const MediaSort(MediaSortKey.title), metadata);
+      final sorted = sortMediaItems(
+        _items(['1', '2', '3']),
+        const MediaSort(MediaSortKey.title),
+        metadata,
+      );
       expect(_ids(sorted), ['1', '3', '2']);
     });
 
@@ -99,8 +137,11 @@ void main() {
         'Movies:1': const MediaSortMetadata(title: 'apple'),
         'Movies:2': const MediaSortMetadata(title: 'Banana'),
       };
-      final sorted = sortMediaItems(_items(['2', '1']),
-          const MediaSort(MediaSortKey.title, descending: false), mixed);
+      final sorted = sortMediaItems(
+        _items(['2', '1']),
+        const MediaSort(MediaSortKey.title, descending: false),
+        mixed,
+      );
       expect(_ids(sorted), ['1', '2']);
     });
   });
@@ -114,13 +155,19 @@ void main() {
 
     test('orders newest first when descending', () {
       final sorted = sortMediaItems(
-          _items(['1', '2', '3']), const MediaSort(MediaSortKey.releaseDate), metadata);
+        _items(['1', '2', '3']),
+        const MediaSort(MediaSortKey.releaseDate),
+        metadata,
+      );
       expect(_ids(sorted), ['2', '3', '1']);
     });
 
     test('orders oldest first when ascending', () {
-      final sorted = sortMediaItems(_items(['1', '2', '3']),
-          const MediaSort(MediaSortKey.releaseDate, descending: false), metadata);
+      final sorted = sortMediaItems(
+        _items(['1', '2', '3']),
+        const MediaSort(MediaSortKey.releaseDate, descending: false),
+        metadata,
+      );
       expect(_ids(sorted), ['1', '3', '2']);
     });
   });
@@ -132,7 +179,10 @@ void main() {
         'Movies:2': const MediaSortMetadata(myRating: 9),
       };
       final sorted = sortMediaItems(
-          _items(['1', '2']), const MediaSort(MediaSortKey.myRating), metadata);
+        _items(['1', '2']),
+        const MediaSort(MediaSortKey.myRating),
+        metadata,
+      );
       expect(_ids(sorted), ['2', '1']);
     });
 
@@ -142,28 +192,33 @@ void main() {
         'Movies:2': const MediaSortMetadata(imdbRating: 8.9),
       };
       final sorted = sortMediaItems(
-          _items(['1', '2']), const MediaSort(MediaSortKey.imdbRating), metadata);
+        _items(['1', '2']),
+        const MediaSort(MediaSortKey.imdbRating),
+        metadata,
+      );
       expect(_ids(sorted), ['2', '1']);
     });
   });
 
   group('sortMediaItems with missing data', () {
     test('sinks items with no metadata when descending', () {
-      final metadata = {
-        'Movies:2': const MediaSortMetadata(title: 'Amelie'),
-      };
+      final metadata = {'Movies:2': const MediaSortMetadata(title: 'Amelie')};
       final sorted = sortMediaItems(
-          _items(['1', '2']), const MediaSort(MediaSortKey.title), metadata);
+        _items(['1', '2']),
+        const MediaSort(MediaSortKey.title),
+        metadata,
+      );
       expect(_ids(sorted), ['2', '1']);
     });
 
     test('sinks items with no metadata when ascending too', () {
       // Missing data must not masquerade as an empty title that sorts first.
-      final metadata = {
-        'Movies:2': const MediaSortMetadata(title: 'Amelie'),
-      };
-      final sorted = sortMediaItems(_items(['1', '2']),
-          const MediaSort(MediaSortKey.title, descending: false), metadata);
+      final metadata = {'Movies:2': const MediaSortMetadata(title: 'Amelie')};
+      final sorted = sortMediaItems(
+        _items(['1', '2']),
+        const MediaSort(MediaSortKey.title, descending: false),
+        metadata,
+      );
       expect(_ids(sorted), ['2', '1']);
     });
 
@@ -172,14 +227,20 @@ void main() {
         'Movies:1': const MediaSortMetadata(title: '   '),
         'Movies:2': const MediaSortMetadata(title: 'Amelie'),
       };
-      final sorted = sortMediaItems(_items(['1', '2']),
-          const MediaSort(MediaSortKey.title, descending: false), metadata);
+      final sorted = sortMediaItems(
+        _items(['1', '2']),
+        const MediaSort(MediaSortKey.title, descending: false),
+        metadata,
+      );
       expect(_ids(sorted), ['2', '1']);
     });
 
     test('keeps the original order among items that are all missing data', () {
       final sorted = sortMediaItems(
-          _items(['1', '2', '3']), const MediaSort(MediaSortKey.title), {});
+        _items(['1', '2', '3']),
+        const MediaSort(MediaSortKey.title),
+        {},
+      );
       expect(_ids(sorted), ['1', '2', '3']);
     });
   });
@@ -192,7 +253,10 @@ void main() {
         'Movies:3': const MediaSortMetadata(myRating: 5),
       };
       final sorted = sortMediaItems(
-          _items(['1', '2', '3']), const MediaSort(MediaSortKey.myRating), metadata);
+        _items(['1', '2', '3']),
+        const MediaSort(MediaSortKey.myRating),
+        metadata,
+      );
       expect(_ids(sorted), ['1', '2', '3']);
     });
 
@@ -203,13 +267,18 @@ void main() {
     });
 
     test('returns an empty list unchanged', () {
-      expect(sortMediaItems([], const MediaSort(MediaSortKey.title), {}), isEmpty);
+      expect(
+        sortMediaItems([], const MediaSort(MediaSortKey.title), {}),
+        isEmpty,
+      );
     });
 
     test('distinguishes a movie and a show sharing an id', () {
       // Ids are only unique within a type, so the metadata key must include it.
-      expect(mediaMetadataKey(['Movies', '42']),
-          isNot(mediaMetadataKey(['TVShows', '42'])));
+      expect(
+        mediaMetadataKey(['Movies', '42']),
+        isNot(mediaMetadataKey(['TVShows', '42'])),
+      );
     });
   });
 }
