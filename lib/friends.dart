@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/l10n/l10n.dart';
+import 'common/firebase/friends_service.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'friends_profile.dart';
@@ -20,6 +21,166 @@ class Friends extends StatefulWidget {
 
 class _FriendsState extends State<Friends> {
   final TextEditingController _usernameController = TextEditingController();
+
+  /// Reordering is a mode rather than always-on, because a long press to drag
+  /// would otherwise fight with the tap that opens a friend's profile.
+  bool _isReordering = false;
+
+  late Future<List<FriendProfileSummary>> _profiles;
+
+  @override
+  void initState() {
+    super.initState();
+    _profiles = FriendsService.loadProfiles(currentUser.friends);
+  }
+
+  Future<void> _onReorder(int oldIndex, int newIndex) async {
+    final List<String> next =
+        FriendsService.reorder(currentUser.friends, oldIndex, newIndex);
+    setState(() {
+      currentUser.friends = next;
+      _profiles = FriendsService.loadProfiles(next);
+    });
+    await FriendsService.saveOrder(next);
+  }
+
+  Widget _buildFriendRequestsTile(BuildContext context) {
+    return ListTile(
+      leading: const Padding(
+        padding: EdgeInsets.only(left: 16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.mail),
+          ],
+        ),
+      ),
+      title: Text(S.of(context)!.friendRequests),
+      subtitle: Text(S.of(context)!.viewRequests),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                FriendRequestsPage(currentUserUID: currentUser.uid),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildReorderToggle(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          TextButton.icon(
+            onPressed: () => setState(() => _isReordering = !_isReordering),
+            icon: Icon(_isReordering ? Icons.check : Icons.swap_vert, size: 18),
+            label: Text(_isReordering
+                ? S.of(context)!.finishReordering
+                : S.of(context)!.reorderFriends),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFriendRow(
+    BuildContext context,
+    FriendProfileSummary friend,
+    int index,
+  ) {
+    final avatar = ClipOval(
+      child: friend.profilePhoto != ""
+          ? Image.network(
+              friend.profilePhoto,
+              height: 50,
+              width: 50,
+              fit: BoxFit.cover,
+            )
+          : Image.asset(
+              'assets/main_profile.png',
+              height: 50,
+              width: 50,
+              fit: BoxFit.cover,
+            ),
+    );
+
+    return GestureDetector(
+      key: ValueKey(friend.uid),
+      onTap: _isReordering
+          ? null
+          : () {
+              friendUid = friend.uid;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FriendProfile(friendUid: friendUid),
+                ),
+              );
+            },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        margin: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: Row(
+          children: [
+            avatar,
+            const SizedBox(width: 16.0),
+            Expanded(
+              child: Text(
+                friend.userName,
+                style: const TextStyle(fontSize: 16.0),
+              ),
+            ),
+            if (_isReordering)
+              ReorderableDragStartListener(
+                index: index,
+                child: const Icon(Icons.drag_handle, color: Colors.grey),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFriendsList(BuildContext context) {
+    return FutureBuilder<List<FriendProfileSummary>>(
+      future: _profiles,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final List<FriendProfileSummary> friends = snapshot.data ?? [];
+        if (friends.isEmpty) {
+          return ListView(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Center(child: Text(S.of(context)!.noFriendsYet)),
+              ),
+            ],
+          );
+        }
+        if (_isReordering) {
+          return ReorderableListView.builder(
+            itemCount: friends.length,
+            onReorder: _onReorder,
+            buildDefaultDragHandles: false,
+            itemBuilder: (context, index) =>
+                _buildFriendRow(context, friends[index], index),
+          );
+        }
+        return ListView.builder(
+          itemCount: friends.length,
+          itemBuilder: (context, index) =>
+              _buildFriendRow(context, friends[index], index),
+        );
+      },
+    );
+  }
+
   Future<void> _refreshFriends() async {
     var friendsDoc = await FirebaseFirestore.instance
         .collection(currentUser.uid)
@@ -27,8 +188,10 @@ class _FriendsState extends State<Friends> {
         .get();
     Map<String, dynamic> data = friendsDoc.data() as Map<String, dynamic>;
     currentUser.friends = data["friends"];
+    FriendsService.clearCache();
     setState(() {
       currentUser.friends = currentUser.friends;
+      _profiles = FriendsService.loadProfiles(currentUser.friends);
     });
   }
 
@@ -132,101 +295,17 @@ class _FriendsState extends State<Friends> {
 
     return Scaffold(
       appBar: const CustomAppBar(),
-      body: RefreshIndicator(
-        onRefresh: _refreshFriends,
-        child: ListView.builder(
-          itemCount: currentUser.friends.length + 1,
-          itemBuilder: (context, index) {
-            if (index == 0) {
-              return ListTile(
-                leading: const Padding(
-                  padding: EdgeInsets.only(left: 16.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.mail),
-                    ],
-                  ),
-                ),
-                title: Text(S.of(context)!.friendRequests),
-                subtitle: Text(S.of(context)!.viewRequests),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          FriendRequestsPage(currentUserUID: currentUser.uid),
-                    ),
-                  );
-                },
-              );
-            } else {
-              int friendIndex = index - 1;
-
-              return FutureBuilder<DocumentSnapshot>(
-                future: FirebaseFirestore.instance
-                    .collection(currentUser.friends[friendIndex])
-                    .doc('Settings')
-                    .get(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Text('Error: ${snapshot.error}');
-                  } else if (!snapshot.hasData || !snapshot.data!.exists) {
-                    return Text(S.of(context)!.noData);
-                  } else {
-                    var data = snapshot.data!.data() as Map<String, dynamic>;
-                    String profilePath = data['profile_photo'] ?? '';
-                    String userName = data['username'] ?? '';
-                    return GestureDetector(
-                      onTap: () {
-                        friendUid = currentUser.friends[friendIndex];
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                FriendProfile(friendUid: friendUid),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        margin: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Row(
-                          children: [
-                            ClipOval(
-                              child: profilePath != ""
-                                  ? Image.network(
-                                      profilePath,
-                                      height: 50,
-                                      width: 50,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : Image.asset(
-                                      'assets/main_profile.png',
-                                      height: 50,
-                                      width: 50,
-                                      fit: BoxFit.cover,
-                                    ),
-                            ),
-                            const SizedBox(width: 16.0),
-                            Expanded(
-                              child: Text(
-                                userName,
-                                style: const TextStyle(fontSize: 16.0),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-                },
-              );
-            }
-          },
-        ),
+      body: Column(
+        children: [
+          _buildFriendRequestsTile(context),
+          if (currentUser.friends.length > 1) _buildReorderToggle(context),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _refreshFriends,
+              child: _buildFriendsList(context),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: addFriend,
