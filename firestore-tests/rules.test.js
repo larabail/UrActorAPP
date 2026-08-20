@@ -85,9 +85,9 @@ describe('A. Unauthenticated access', () => {
   });
 
   it('cannot read or write any user document while unauthenticated', async () => {
-    const anon = ctxFor(null);
-    await assertFails(getDoc(doc(anon.firestore(), `${ALICE}/Calendar`)));
-    await assertFails(setDoc(doc(anon.firestore(), `${ALICE}/Calendar`), { entries: [] }));
+    const db = ctxFor(null).firestore();
+    await assertFails(getDoc(doc(db, `${ALICE}/Calendar`)));
+    await assertFails(setDoc(doc(db, `${ALICE}/Calendar`), { entries: [] }));
   });
 
   it('cannot read usernames while unauthenticated', async () => {
@@ -150,19 +150,32 @@ describe('C. Settings as public profile', () => {
 });
 
 describe('D. Friends', () => {
+  const movieEntry = { id: 'm1', title: 'Movie', runtime: 90, rating: 7.5, friends: [BOB], type: 'movie' };
+  const notification0 = {
+    type: 'movie', id: 'm0', title: 'Old', coverPhoto: '/old.jpg',
+    sender: { username: 'bob', uid: BOB }, read: false, timestamp: new Date('2026-01-01T00:00:00Z'),
+  };
+  const notification1 = {
+    type: 'movie', id: 'm1', title: 'New', coverPhoto: '/new.jpg',
+    sender: { username: 'bob', uid: BOB }, read: false, timestamp: new Date('2026-01-02T00:00:00Z'),
+  };
+
   beforeEach(async () => {
     await seed(async (db) => {
       // Alice's Friends document contains Bob, so Bob is Alice's friend.
       await setDoc(doc(db, `${ALICE}/Friends`), { friends: [BOB] });
-      await setDoc(doc(db, `${ALICE}/Calendar`), { entries: [] });
+      await setDoc(doc(db, `${ALICE}/Calendar`), { '2026-01-01': [movieEntry] });
       await setDoc(doc(db, `${ALICE}/FavActors`), { list: [] });
-      await setDoc(doc(db, `${ALICE}/Rewatched`), { count: 0 });
-      await setDoc(doc(db, `${ALICE}/Movies`), {});
-      await setDoc(doc(db, `${ALICE}/TVShows`), {});
-      await setDoc(doc(db, `${ALICE}/Seen`), {});
-      await setDoc(doc(db, `${ALICE}/SeenWith`), {});
-      await setDoc(doc(db, `${ALICE}/RewatchedTV`), {});
-      await setDoc(doc(db, `${ALICE}/Notifications`), {});
+      await setDoc(doc(db, `${ALICE}/Rewatched`), { m0: 1 });
+      await setDoc(doc(db, `${ALICE}/Movies`), { Seen: ['m0'] });
+      await setDoc(doc(db, `${ALICE}/TVShows`), { Seen: ['t0'] });
+      await setDoc(doc(db, `${ALICE}/Seen`), { Movies: ['m0'], TVShows: ['t0'] });
+      await setDoc(doc(db, `${ALICE}/SeenWith`), {
+        Movies: { m0: { friends: [ALICE, BOB] } },
+        TVShows: { t0: { friends: [ALICE, BOB] } },
+      });
+      await setDoc(doc(db, `${ALICE}/RewatchedTV`), { t0: 1 });
+      await setDoc(doc(db, `${ALICE}/Notifications`), { 0: notification0 });
       await setDoc(doc(db, `${ALICE}/Reviews`), {});
       await setDoc(doc(db, `${ALICE}/Favorites`), {});
       await setDoc(doc(db, `${ALICE}/Watchlist`), {});
@@ -184,12 +197,64 @@ describe('D. Friends', () => {
     await assertSucceeds(getDocs(collection(bob, ALICE)));
   });
 
-  it('lets a friend update Movies, TVShows, Seen, SeenWith, Calendar, Rewatched, RewatchedTV and Notifications', async () => {
+  it('lets a friend make the current installed-client writes to the eight friend-writable documents', async () => {
     const bob = ctxFor(BOB).firestore();
-    const writable = ['Movies', 'TVShows', 'Seen', 'SeenWith', 'Calendar', 'Rewatched', 'RewatchedTV', 'Notifications'];
-    for (const docId of writable) {
-      await assertSucceeds(updateDoc(doc(bob, `${ALICE}/${docId}`), { touched: true }));
-    }
+
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Movies`), { Seen: ['m0', 'm1'] }, { merge: true }));
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/TVShows`), { Seen: ['t0', 't1'] }, { merge: true }));
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Seen`), { Movies: ['m0', 'm1'] }, { merge: true }));
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/SeenWith`), {
+      Movies: {
+        m0: { friends: [ALICE, BOB] },
+        m1: { friends: [ALICE, BOB] },
+      },
+    }, { merge: true }));
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [movieEntry],
+    }, { merge: true }));
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Rewatched`), { m1: 1 }, { merge: true }));
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/RewatchedTV`), { t1: 1 }, { merge: true }));
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Notifications`), {
+      0: notification0,
+      1: notification1,
+    }));
+  });
+
+  it('does not let a friend rewrite watched-list documents beyond the app append shape', async () => {
+    const bob = ctxFor(BOB).firestore();
+
+    await assertFails(setDoc(doc(bob, `${ALICE}/Movies`), { Seen: [] }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Movies`), { Seen: ['m0'], hacked: true }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Seen`), {
+      Movies: ['m0', 'm1'],
+      TVShows: ['t0', 't1'],
+    }, { merge: true }));
+  });
+
+  it('does not let a friend rewrite SeenWith, Calendar or rewatch documents wholesale', async () => {
+    const bob = ctxFor(BOB).firestore();
+
+    await assertFails(setDoc(doc(bob, `${ALICE}/SeenWith`), {
+      Movies: {
+        m0: { friends: [BOB] },
+        m1: { friends: [BOB] },
+      },
+    }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [movieEntry],
+      '2026-01-03': [movieEntry],
+    }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Rewatched`), { m1: 1, m2: 1 }, { merge: true }));
+  });
+
+  it('does not let a friend remove or change existing notifications', async () => {
+    const bob = ctxFor(BOB).firestore();
+
+    await assertFails(setDoc(doc(bob, `${ALICE}/Notifications`), { 1: notification1 }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Notifications`), {
+      0: { ...notification0, read: true },
+      1: notification1,
+    }));
   });
 
   it('does not let a friend update Reviews, Favorites, Watchlist, Settings, Country or Recommendations', async () => {
@@ -210,7 +275,7 @@ describe('D. Friends', () => {
     const carol = ctxFor(CAROL).firestore();
     await assertFails(getDoc(doc(carol, `${ALICE}/Calendar`)));
     await assertFails(getDocs(collection(carol, ALICE)));
-    await assertFails(updateDoc(doc(carol, `${ALICE}/Movies`), { touched: true }));
+    await assertFails(setDoc(doc(carol, `${ALICE}/Movies`), { Seen: ['m0', 'm1'] }, { merge: true }));
   });
 
   it('does not grant access to Alice\'s collection when a stranger writes themselves into their OWN Friends document', async () => {
@@ -223,19 +288,17 @@ describe('D. Friends', () => {
     });
     await assertFails(getDoc(doc(carol, `${ALICE}/Calendar`)));
     await assertFails(getDocs(collection(carol, ALICE)));
-    await assertFails(updateDoc(doc(carol, `${ALICE}/Movies`), { touched: true }));
+    await assertFails(setDoc(doc(carol, `${ALICE}/Movies`), { Seen: ['m0', 'm1'] }, { merge: true }));
   });
 });
 
 describe('D2. Friend writes lazily create missing per-user documents', () => {
-  // Regression coverage for a real crash: FirestoreCore.updateDocument used
-  // to call update(), which fails with not-found the first time a friend
-  // writes into a document the other person has never touched (e.g. marking
-  // a movie watched together before the friend has ever opened Calendar).
-  // The app fix is to use a merging set() instead, which performs a CREATE
-  // rather than an UPDATE when the document doesn't exist yet, so the rules
-  // must grant friends create (not just update) on the eight friend-writable
-  // documents.
+  const movieEntry = { id: 'm1', title: 'Movie', runtime: 90, rating: 7.5, friends: [BOB], type: 'movie' };
+
+  // Regression coverage for a real crash: FirestoreCore.updateDocument uses a
+  // merging set(), which performs a CREATE rather than an UPDATE when the
+  // document does not exist yet. Friends can still create the documents the app
+  // creates lazily, but only with the same one-field shape the app sends.
   beforeEach(async () => {
     await seed(async (db) => {
       // Alice's Friends document contains Bob, so Bob is Alice's friend. None
@@ -244,17 +307,36 @@ describe('D2. Friend writes lazily create missing per-user documents', () => {
     });
   });
 
-  it('lets a friend create a Calendar document that does not exist yet (the watched-together crash)', async () => {
+  it('lets a friend create missing friend-writable documents with the app write shape', async () => {
     const bob = ctxFor(BOB).firestore();
-    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Calendar`), { entries: ['2026-01-01'] }, { merge: true }));
+
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Movies`), { Seen: ['m1'] }, { merge: true }));
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/TVShows`), { Seen: ['t1'] }, { merge: true }));
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Seen`), { Movies: ['m1'] }, { merge: true }));
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/SeenWith`), {
+      Movies: { m1: { friends: [ALICE, BOB] } },
+    }, { merge: true }));
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Calendar`), { '2026-01-02': [movieEntry] }, { merge: true }));
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Rewatched`), { m1: 1 }, { merge: true }));
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/RewatchedTV`), { t1: 1 }, { merge: true }));
   });
 
-  it('lets a friend create missing Seen, SeenWith, Rewatched, RewatchedTV and Notifications documents', async () => {
+  it('does not let a friend create missing documents with oversized or arbitrary payloads', async () => {
     const bob = ctxFor(BOB).firestore();
-    const lazilyCreatable = ['Seen', 'SeenWith', 'Rewatched', 'RewatchedTV', 'Notifications', 'Movies', 'TVShows'];
-    for (const docId of lazilyCreatable) {
-      await assertSucceeds(setDoc(doc(bob, `${ALICE}/${docId}`), { touched: true }, { merge: true }));
-    }
+
+    await assertFails(setDoc(doc(bob, `${ALICE}/Movies`), { Seen: ['m1', 'm2'] }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Movies`), { Seen: ['m1'], hacked: true }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Seen`), { Movies: ['m1'], TVShows: ['t1'] }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/SeenWith`), {
+      Movies: { m1: { friends: [BOB] } },
+      TVShows: { t1: { friends: [BOB] } },
+    }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [movieEntry],
+      '2026-01-03': [movieEntry],
+    }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Rewatched`), { m1: 1, m2: 1 }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Notifications`), { 0: { type: 'movie' } }));
   });
 
   it('does not let a friend create a Reviews, Favorites, Watchlist, Settings or Country document that does not exist yet', async () => {
@@ -278,9 +360,9 @@ describe('D2. Friend writes lazily create missing per-user documents', () => {
 
   it('does not let a stranger create any of the friend-writable documents, missing or not', async () => {
     const carol = ctxFor(CAROL).firestore();
-    await assertFails(setDoc(doc(carol, `${ALICE}/Calendar`), { entries: [] }, { merge: true }));
-    await assertFails(setDoc(doc(carol, `${ALICE}/Seen`), {}, { merge: true }));
-    await assertFails(setDoc(doc(carol, `${ALICE}/Notifications`), {}, { merge: true }));
+    await assertFails(setDoc(doc(carol, `${ALICE}/Calendar`), { '2026-01-02': [movieEntry] }, { merge: true }));
+    await assertFails(setDoc(doc(carol, `${ALICE}/Seen`), { Movies: ['m1'] }, { merge: true }));
+    await assertFails(setDoc(doc(carol, `${ALICE}/Notifications`), { 0: { type: 'movie' } }));
     await assertFails(deleteDoc(doc(carol, `${ALICE}/Calendar`)));
   });
 });
