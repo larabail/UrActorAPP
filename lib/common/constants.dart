@@ -2,8 +2,10 @@
 
 /// The TMDB API key is supplied at build time instead of being committed:
 ///
+/// ```
 ///   flutter run   --dart-define=TMDB_API_KEY=<key>
 ///   flutter build --dart-define=TMDB_API_KEY=<key>
+/// ```
 ///
 /// Defaults to an empty string when the define is missing. Call
 /// [assertTmdbApiKey] once at startup so a missing key fails loudly, rather
@@ -46,7 +48,7 @@ const String COUNTRIES_LINK =
     "https://api.themoviedb.org/3/configuration/countries$API_KEY";
 const String WATCH_PROVIDERS_BY_REGION_LINK =
     "https://api.themoviedb.org/3/watch/providers/movie$API_KEY&watch_region=";
-const String UNKOWN_COVER =
-    "https://firebasestorage.googleapis.com/v0/b/actordb-cf981.appspot.com/o/unkown_cover.png?alt=media&token=4a9b8c89-67b4-4859-91c1-166383ab1586";
-const String UNKOWN_PERSON =
-    "https://firebasestorage.googleapis.com/v0/b/actordb-cf981.appspot.com/o/unkown_actor.png?alt=media&token=054473a7-ed7a-4bc7-9ff9-7b7f37b5ae84";
+const String UNKNOWN_COVER =
+    "https://firebasestorage.googleapis.com/v0/b/actordb-cf981.appspot.com/o/UNKNOWN_cover.png?alt=media&token=4a9b8c89-67b4-4859-91c1-166383ab1586";
+const String UNKNOWN_PERSON =
+    "https://firebasestorage.googleapis.com/v0/b/actordb-cf981.appspot.com/o/UNKNOWN_actor.png?alt=media&token=054473a7-ed7a-4bc7-9ff9-7b7f37b5ae84";

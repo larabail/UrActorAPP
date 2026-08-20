@@ -187,13 +187,13 @@ Widget getCover(Map data, context, MediaItem mediaItem, String type) {
                                 title: data["title"],
                                 coverPhoto: data["poster_path"] != null
                                     ? IMG_LINK + data["poster_path"]
-                                    : UNKOWN_COVER)
+                                    : UNKNOWN_COVER)
                             : TVShow(
                                 id: mediaItem.id,
                                 title: data["name"],
                                 coverPhoto: data["poster_path"] != null
                                     ? IMG_LINK + data["poster_path"]
-                                    : UNKOWN_COVER);
+                                    : UNKNOWN_COVER);
                         return Share(
                           item: tempItem,
                           type: type,
