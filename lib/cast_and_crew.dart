@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/l10n/l10n.dart';
-import 'package:uractor/objects/Person.dart';
+import 'package:uractor/objects/person.dart';
 import 'package:uractor/person_result.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
@@ -11,10 +11,10 @@ import 'common/navigation/bottom_app_bar.dart';
 class CastCrew extends StatefulWidget {
   final Map data;
 
-  const CastCrew({Key? key, required this.data}) : super(key: key);
+  const CastCrew({super.key, required this.data});
 
   @override
-  _CastCrewState createState() => _CastCrewState();
+  State<CastCrew> createState() => _CastCrewState();
 }
 
 class _CastCrewState extends State<CastCrew> {
@@ -160,7 +160,7 @@ class ItemCard extends StatelessWidget {
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Text(
-                        "${S.of(context)!.as} ${person.data["character"] ?? person.data["job"]}",
+                        "${S.of(context)!.as} ${person.data["character"] ?? person.data["job"] ?? ""}",
                         style: const TextStyle(
                           fontSize: 14,
                         ),
