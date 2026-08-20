@@ -320,11 +320,18 @@ To add a language:
 ## Tests
 
 ```bash
-flutter test
+flutter test              # run the suite
+flutter test --coverage   # and write coverage/lcov.info
+python tool/coverage_summary.py
 ```
 
-Three suites, all pure Dart — they import no Flutter bindings and no Firebase,
-so they run without any emulator or credentials:
+Everything runs locally with no emulator, credentials or network access.
+Firestore and HTTP are reached through two seams — `FirestoreCore.db` and
+`AppHttp.client` — which default to the real implementations and are pointed at
+fakes by the tests. `test/support/harness.dart` installs those fakes and
+restores them afterwards.
+
+Pure logic:
 
 - `test/utils_test.dart` — the `Utils` list/map membership helpers, including
   two tests that pin down surprising current behaviour (`containsMap` is
@@ -334,8 +341,25 @@ so they run without any emulator or credentials:
 - `test/api_utils_test.dart` — the crew-credit helpers behind the movie
   screen's Director/Writer block, which broke twice from two unrelated causes.
 
-This is deliberately narrow. The screens and Firebase services have no tests at
-all, so treat this as a floor to build on rather than as real coverage.
+Against a stubbed HTTP client:
+
+- `test/api/apiutils_network_test.dart` — TMDB and OMDB parsing, the language
+  and country a request is made with, and the fallbacks when a title has no
+  IMDb entry.
+- `test/api/utils_network_test.dart` — the shared media and calendar fetch
+  helpers, including their caching and deduplication.
+
+Against an in-memory Firestore:
+
+- `test/firebase/list_services_test.dart` — the watchlist and favorites
+  services, asserting the stored document and the in-memory copy stay in step.
+- `test/objects/user_test.dart` — `AppUser.getFirebaseData`, the parser that
+  turns a user's documents into the state the whole app reads.
+
+Coverage of `lib/common` and `lib/objects` is enforced at a floor in CI. The
+floor deliberately excludes widget code: there are no widget tests, so a
+project-wide number would be dominated by untested UI and would have to be set
+too low to catch a regression.
 
 ## Repo tooling
 
@@ -357,4 +381,4 @@ Things that are true today and worth knowing before you start:
 | Push notifications are wired only halfway | The Cloud Function reads `fcmToken` from `Settings`, but the app has no `firebase_messaging` dependency and never writes that field, so the function has nothing to send to. Fixing it needs APNs setup and a device to test on. |
 | `firebase_options.dart` is committed | Points at `actordb-cf981`. Re-run `flutterfire configure` for your own project. This is normal for FlutterFire — the values are identifiers, not secrets. |
 | iOS Firebase config is incomplete | No `ios/Runner/GoogleService-Info.plist`, and `firebase_options.dart` declares `iosBundleId: 'com.example.uractor'` while Xcode builds `com.uractor.uractorios`. Correcting it requires the real values from the Firebase console. |
-| Coverage is thin | Three pure-Dart suites only. See [Tests](#tests). |
+| Coverage is thin | The API layer and the list/user Firebase code are covered; the screens and popups have no widget tests at all. See [Tests](#tests). |

@@ -58,9 +58,26 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+
+  # In-memory Firestore, so the services can be tested without a live Firebase
+  # app. See the dependency_overrides note below for why meta is pinned up.
+  fake_cloud_firestore: ^4.2.0
   mocktail: ^1.0.5
-  fake_cloud_firestore: ^4.1.1
-  firebase_auth_mocks: ^0.15.2
+
+# fake_cloud_firestore 4.2.0 needs meta ^1.17.0, while the pinned Flutter
+# 3.35.3 ships meta 1.16.0, so pub refuses to resolve the two together.
+#
+# The alternatives were worse. Staying on fake_cloud_firestore 4.1.1 does not
+# compile against cloud_firestore 6.8.0 (upstream made WriteBatch.update
+# generic), and dropping to a cloud_firestore old enough for 4.1.1 would drag
+# firebase_auth and the rest of the Firebase stack backwards with it, purely to
+# suit a test package.
+#
+# meta contains only annotations, so overriding it is low risk, and the full
+# suite plus flutter analyze pass with it. Remove this once the Flutter version
+# is raised: anything shipping meta 1.17.0 or newer makes it unnecessary.
+dependency_overrides:
+  meta: ^1.17.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
