@@ -6,8 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'dart:convert';
 
+import '../common/auth_session.dart';
 import '../common/constants.dart';
 import '../common/firebase/firestore_core.dart';
+import '../common/firebase/settings_service.dart';
 import '../login.dart';
 import '../main.dart';
 import '../common/api/http_client.dart';
@@ -95,8 +97,8 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
   }
 
   Future<void> fetchProviders() async {
-    final response = await AppHttp.client.get(Uri.parse(
-        "$WATCH_PROVIDERS_BY_REGION_LINK${currentUser.country}"));
+    final response = await AppHttp.client.get(
+        Uri.parse("$WATCH_PROVIDERS_BY_REGION_LINK${currentUser.country}"));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       setState(() {
@@ -123,10 +125,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
   }
 
   Future<void> updateSettings(String element, dynamic newValue) async {
-    var userDoc =
-        FirestoreCore.db.collection(currentUser.uid).doc("Settings");
-    currentUser.settings[element] = newValue;
-    await userDoc.set(currentUser.settings as Map<String, dynamic>);
+    await SettingsService.update(element, newValue);
   }
 
   @override
@@ -302,7 +301,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                   GestureDetector(
                     onTap: () async {
                       final navigator = Navigator.of(context);
-                      await FirebaseAuth.instance.signOut();
+                      await AuthSession.signOut();
                       if (!context.mounted) return;
                       navigator.pop();
                       navigator.popUntil((route) => route.isFirst);
@@ -427,6 +426,7 @@ class _AlertButtonDialogueState extends State<AlertButtonDialogue> {
             await user.reauthenticateWithCredential(credential);
 
             await user.delete();
+            AuthSession.clearPerUserCaches();
 
             if (!context.mounted) return;
             navigator.pop();
