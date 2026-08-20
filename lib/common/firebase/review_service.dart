@@ -74,10 +74,8 @@ class ReviewService {
               tempReviewsInList.add(element);
             }
           }
-          final userDoc = FirebaseFirestore.instance
-              .collection(currentUser.uid)
-              .doc("Reviews");
-          await userDoc.update({type: tempReviewsInList});
+          await FirestoreCore.updateDocument(
+              currentUser.uid, "Reviews", {type: tempReviewsInList});
           if (type == "Movies") {
             currentUser.reviews = {};
           } else {

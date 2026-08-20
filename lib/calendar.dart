@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:uractor/common/firebase/calendar_service.dart';
 import 'package:uractor/common/firebase/firebaseutils.dart';
+import 'package:uractor/common/firebase/firestore_core.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/tv_show.dart';
@@ -35,7 +36,6 @@ class _CalendarState extends State<Calendar> {
   List _monthlyStats = [0, 0, 0];
   bool areFABsVisible = false;
   void deleteMovieSubmit(String id, String title) async {
-    var userDoc = db.collection(currentUser.uid).doc("Calendar");
     await CalendarService.deleteFromCalendar(
       currentUser.uid,
       id,
@@ -63,10 +63,8 @@ class _CalendarState extends State<Calendar> {
               if (index > -1) {
                 w.removeAt(index);
               }
-              var userDoc = FirebaseFirestore.instance
-                  .collection(currentUser.uid)
-                  .doc("Movies");
-              await userDoc.update({'Seen': w});
+              await FirestoreCore.updateDocument(
+                  currentUser.uid, "Movies", {'Seen': w});
               currentUser.seenMovies = [];
               for (var element in w) {
                 currentUser.seenMovies += [
@@ -77,12 +75,12 @@ class _CalendarState extends State<Calendar> {
           });
         });
       }
-      userDoc = db.collection(currentUser.uid).doc("Rewatched");
       Map<Object, Object> updatedRewatched = {};
       for (String key in currentUser.rewatchedMovies.keys) {
         updatedRewatched[key] = currentUser.rewatchedMovies[key];
       }
-      await userDoc.update(updatedRewatched);
+      await FirestoreCore.updateDocument(
+          currentUser.uid, "Rewatched", updatedRewatched);
     }
     Navigator.of(context).pop(true);
     setState(() {

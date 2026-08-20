@@ -9,9 +9,9 @@ class FirebaseUtils {
   /// Updates the profile sections in the user's settings document.
   /// @param newSections A map of the updated profile sections.
   static Future<void> updateProfileSections(Map newSections) async {
-    var userDoc = await FirestoreCore.getDocument(currentUser.uid, "Settings");
     currentUser.settings["profileSections"] = newSections;
-    userDoc.update(currentUser.settings as Map<String, dynamic>);
+    await FirestoreCore.updateDocument(
+        currentUser.uid, "Settings", currentUser.settings);
   }
 
   /// Retrieves the profile photos for a list of user IDs.

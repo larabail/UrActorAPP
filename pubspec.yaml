@@ -58,6 +58,15 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  fake_cloud_firestore: ^4.2.0
+
+# fake_cloud_firestore 4.1.1 does not compile against cloud_firestore 6.x
+# (MockWriteBatch.update no longer overrides the now-generic WriteBatch.update).
+# 4.2.0 fixes that but needs meta ^1.17.0, while the Flutter version pinned for
+# this project ships meta 1.16.0. meta is annotations-only, so overriding it is
+# safe. Remove this override once the pinned Flutter SDK ships meta >=1.17.0.
+dependency_overrides:
+  meta: ^1.17.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

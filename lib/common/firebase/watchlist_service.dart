@@ -9,9 +9,7 @@ class WatchlistService {
   /// @param type The media type (Movies or TVShows).
   /// @return True if the operation succeeded.
   static Future<bool> bookmark(String id, context, String type) async {
-    final watchlistDoc =
-        await FirestoreCore.getDocument(currentUser.uid, "Watchlist");
-    await watchlistDoc.update({
+    await FirestoreCore.updateDocument(currentUser.uid, "Watchlist", {
       type: FieldValue.arrayUnion([id])
     });
     if (type == "Movies") {
@@ -59,10 +57,8 @@ class WatchlistService {
           if (index > -1) {
             movieInWatchlist.removeAt(index);
           }
-          final userDoc = FirebaseFirestore.instance
-              .collection(currentUser.uid)
-              .doc("Watchlist");
-          await userDoc.update({type: movieInWatchlist});
+          await FirestoreCore.updateDocument(
+              currentUser.uid, "Watchlist", {type: movieInWatchlist});
           if (type == "Movies") {
             currentUser.watchlist = [];
           } else {

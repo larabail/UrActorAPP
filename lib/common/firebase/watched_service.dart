@@ -15,13 +15,11 @@ class WatchedService {
   /// @return True if the item was successfully marked.
   static Future<bool> markWatched(String id, String title, int runtime,
       double rating, BuildContext context, String type) async {
-    final typeDoc = await FirestoreCore.getDocument(currentUser.uid, type);
-    final seenDoc = await FirestoreCore.getDocument(currentUser.uid, "Seen");
     id = id.toString();
-    await typeDoc.update({
+    await FirestoreCore.updateDocument(currentUser.uid, type, {
       'Seen': FieldValue.arrayUnion([id])
     });
-    await seenDoc.update({
+    await FirestoreCore.updateDocument(currentUser.uid, "Seen", {
       type: FieldValue.arrayUnion([id])
     });
     List w;
@@ -98,12 +96,14 @@ class WatchedService {
       String uid, String id, String type) async {
     Map info = await FirestoreCore.getDocumentData(
         uid, type == "movie" ? "Rewatched" : "RewatchedTV");
-    DocumentReference rewatchedDoc = info["snapshot"];
     Map data = info["data"];
     if (data.containsKey(id)) {
-      await rewatchedDoc.update({id: FieldValue.increment(1)});
+      await FirestoreCore.updateDocument(uid,
+          type == "movie" ? "Rewatched" : "RewatchedTV",
+          {id: FieldValue.increment(1)});
     } else {
-      await rewatchedDoc.update({id: 1});
+      await FirestoreCore.updateDocument(
+          uid, type == "movie" ? "Rewatched" : "RewatchedTV", {id: 1});
     }
   }
 
@@ -116,12 +116,13 @@ class WatchedService {
       String uid, String id, int value, String type) async {
     Map info = await FirestoreCore.getDocumentData(
         uid, type == "movie" ? "Rewatched" : "RewatchedTV");
-    DocumentReference rewatchedDoc = info["snapshot"];
     Map data = info["data"];
     if (data.containsKey(id)) {
-      await rewatchedDoc.update({id: value});
+      await FirestoreCore.updateDocument(
+          uid, type == "movie" ? "Rewatched" : "RewatchedTV", {id: value});
     } else {
-      await rewatchedDoc.update({id: 1});
+      await FirestoreCore.updateDocument(
+          uid, type == "movie" ? "Rewatched" : "RewatchedTV", {id: 1});
     }
   }
 
@@ -155,12 +156,15 @@ class WatchedService {
     Map seenData = seenDocData["data"];
 
     if (seenDoc.exists) {
+      // Guarded by the exists check above, so `update` can't hit `not-found`
+      // here; left as-is rather than converted for its own sake.
       List<dynamic> items = seenData[type] ?? [];
       items.remove(id);
       await seenSnapshot.update({type: items});
       currentUser.seen.removeWhere((pair) => pair[1] == id && pair[0] == type);
     }
     if (typeDoc.exists) {
+      // Same reasoning as above: guarded by the exists check.
       List<dynamic> items = typeData['Seen'] ?? [];
       items.remove(id);
       await typeSnapshot.update({'Seen': items});

@@ -1188,6 +1188,18 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Everyone'**
   String get everyone;
+
+  /// No description provided for @profileSetupFailedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account was created, but we couldn\'t set up your profile. Please try signing in again.'**
+  String get profileSetupFailedError;
+
+  /// No description provided for @friendRequestActionFailedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get friendRequestActionFailedError;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

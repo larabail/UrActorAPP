@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/common/item_container.dart';
+import '../common/firebase/firestore_core.dart';
 import '../common/api/apiutils.dart';
 import '../main.dart';
 import '../objects/playlist.dart';
@@ -26,7 +27,7 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
     String docIDString = widget.list_result.id.toString();
 
     var userDoc = db.collection("Watchlists").doc(docIDString);
-    await userDoc.update({
+    await FirestoreCore.mergeInto(userDoc, {
       "TV Shows": FieldValue.arrayUnion([_movie])
     });
 
