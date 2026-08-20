@@ -1,9 +1,12 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+import 'package:uractor/common/firebase/playlist_join.dart';
+import 'package:uractor/common/firebase/playlist_service.dart';
 import 'package:uractor/l10n/l10n.dart';
-import '../main.dart';
 import '../playlists.dart';
 
 String cover = "";
@@ -20,40 +23,74 @@ class ListJoinDialogue extends StatefulWidget {
 }
 
 class _ListJoinDialogueState extends State<ListJoinDialogue> {
-  void joinList() async {
-    bool joined = false;
-    await FirebaseFirestore.instance
-        .collection("Watchlists")
-        .get()
-        .then((QuerySnapshot querySnapshot) async {
-      for (var doc in querySnapshot.docs) {
-        Map docData = doc.data() as Map;
-        if (_listName == (docData["Name"])) {
-          if (docData["AccessCode"] == _accessCode) {
-            var userDoc =
-                FirebaseFirestore.instance.collection("Watchlists").doc(doc.id);
-            Map newUser = {};
-            newUser[currentUser.uid] = "Approved";
-            await userDoc.update({
-              "Users": FieldValue.arrayUnion([newUser])
-            });
-            joined = true;
-            if (!context.mounted) return;
-            Navigator.pop(context);
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => const Playlists()));
-          }
-        }
+  bool _joining = false;
+
+  /// Asks the server whether this name and code match a list.
+  ///
+  /// The previous version downloaded every document in Watchlists and compared
+  /// the access code on the device, which meant the app held every list's
+  /// code in memory to check one of them. The check now happens in the
+  /// joinPlaylist Cloud Function and only the answer comes back.
+  Future<void> joinList() async {
+    if (_joining) return;
+    setState(() => _joining = true);
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      final idToken = user == null ? null : await user.getIdToken();
+      if (idToken == null) {
+        if (mounted) _report(S.of(context)!.joinListFailed);
+        return;
       }
-      if (!joined) {
-        debugPrint("WRONG ACCESS CODE OR LIST NAME");
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.joinListFailed)),
-          );
-        }
+
+      final client = http.Client();
+      JoinPlaylistResult result;
+      try {
+        result = await const PlaylistJoiner().join(
+          client: client,
+          projectId: Firebase.app().options.projectId,
+          idToken: idToken,
+          name: _listName,
+          accessCode: _accessCode,
+        );
+      } finally {
+        client.close();
       }
-    });
+
+      if (!mounted) return;
+
+      if (result.isSuccess) {
+        await PlaylistService.refreshCurrentUserPlaylists();
+        if (!mounted) return;
+        Navigator.pop(context);
+        Navigator.pushReplacement(context,
+            MaterialPageRoute(builder: (context) => const Playlists()));
+        return;
+      }
+
+      _report(_messageFor(result.outcome));
+    } finally {
+      if (mounted) setState(() => _joining = false);
+    }
+  }
+
+  String _messageFor(JoinPlaylistOutcome outcome) {
+    final strings = S.of(context)!;
+    switch (outcome) {
+      case JoinPlaylistOutcome.tooManyAttempts:
+        return strings.joinListTooManyAttempts;
+      case JoinPlaylistOutcome.invalidInput:
+        return strings.joinListMissingDetails;
+      case JoinPlaylistOutcome.notFound:
+        return strings.joinListFailed;
+      default:
+        return strings.joinListUnavailable;
+    }
+  }
+
+  void _report(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -154,9 +191,11 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () {
-                          joinList();
-                        },
+                        onTap: _joining
+                            ? null
+                            : () {
+                                joinList();
+                              },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 10),

@@ -546,6 +546,18 @@ class SEn extends S {
   String get joinListFailed => 'Wrong access code or list name';
 
   @override
+  String get joinListTooManyAttempts =>
+      'Too many incorrect attempts. Try again later.';
+
+  @override
+  String get joinListMissingDetails =>
+      'Enter both a list name and an access code.';
+
+  @override
+  String get joinListUnavailable =>
+      'Could not join the list. Please try again.';
+
+  @override
   String get joinListTitle => 'Join List';
 
   @override
