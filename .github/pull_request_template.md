@@ -34,5 +34,7 @@ The tests you added, and anything you checked by hand that a test cannot cover
       `app_es.arb`, `flutter gen-l10n` was run, and the generated files are
       committed
 - [ ] Security rule changes come with matching tests in `firestore-tests/`
+- [ ] README.md was updated for any setup, command, architecture, CI, or
+      user-facing change
 - [ ] No commit carries a `Co-authored-by` trailer
 - [ ] Commit messages follow the convention in [AGENTS.md](../AGENTS.md)

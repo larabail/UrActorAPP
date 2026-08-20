@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Auto Backup rules for Android 11 and below.
+
+  Firebase Auth persists the signed-in session in SharedPreferences, encrypted
+  with a key held in the Android Keystore. Backups copy the encrypted
+  preferences but never the Keystore key, so a restored install holds a session
+  it can never decrypt and signs the user out on every cold start. Excluding
+  shared preferences keeps that state device-local. Nothing else is stored
+  locally: all user data lives in Firestore.
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" path="." />
+</full-backup-content>
