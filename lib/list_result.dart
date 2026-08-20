@@ -13,6 +13,7 @@ import 'package:uractor/objects/tv_show.dart';
 import 'package:uractor/popups/grant_access_dialogue.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
+import 'common/sorted_media_grid.dart';
 import 'common/utils.dart';
 import 'objects/media.dart';
 import 'objects/movie.dart';
@@ -871,10 +872,18 @@ class _ListResultState extends State<ListResult> {
                     Expanded(
                       child: TabBarView(
                         children: [
-                          buildMediaList(
-                              widget.listResult.movies, "Movies", context),
-                          buildMediaList(
-                              widget.listResult.tvshows, "TVShows", context),
+                          SortedMediaGrid(
+                            items: mediaItemsForType(
+                              List<dynamic>.from(widget.listResult.movies),
+                              'Movies',
+                            ),
+                          ),
+                          SortedMediaGrid(
+                            items: mediaItemsForType(
+                              List<dynamic>.from(widget.listResult.tvshows),
+                              'TVShows',
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -885,14 +894,22 @@ class _ListResultState extends State<ListResult> {
           if (widget.listResult.movies.isNotEmpty &&
               widget.listResult.tvshows.isEmpty)
             Expanded(
-              child:
-                  buildMediaList(widget.listResult.movies, "Movies", context),
+              child: SortedMediaGrid(
+                items: mediaItemsForType(
+                  List<dynamic>.from(widget.listResult.movies),
+                  'Movies',
+                ),
+              ),
             ),
           if (widget.listResult.tvshows.isNotEmpty &&
               widget.listResult.movies.isEmpty)
             Expanded(
-              child: buildMediaList(
-                  widget.listResult.tvshows, "TVShows", context),
+              child: SortedMediaGrid(
+                items: mediaItemsForType(
+                  List<dynamic>.from(widget.listResult.tvshows),
+                  'TVShows',
+                ),
+              ),
             ),
         ],
       ),
