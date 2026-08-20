@@ -47,12 +47,12 @@ class CalendarService {
         ])
       };
 
-      final userDoc = FirebaseFirestore.instance
+      final userDoc = FirestoreCore.db
           .collection(currentUser.uid)
           .doc('Calendar');
       await userDoc.update(myObject);
       currentUser.calendar = {};
-      await FirebaseFirestore.instance
+      await FirestoreCore.db
           .collection(currentUser.uid)
           .get()
           .then((QuerySnapshot querySnapshot) {

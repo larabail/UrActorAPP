@@ -2,13 +2,14 @@
 // ignore_for_file: non_constant_identifier_names
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:http/http.dart' as http;
 import 'package:uractor/main.dart';
 import 'package:uractor/objects/user.dart';
 import 'dart:convert';
 
 import '../common/constants.dart';
 import '../common/utils.dart';
+import '../common/firebase/firestore_core.dart';
+import '../common/api/http_client.dart';
 
 class Person {
   final String name;
@@ -25,7 +26,7 @@ class Person {
 
   Future<Map> getSimpleData() async {
     final response =
-        await http.get(Uri.parse('$PERSON_LINK$id$API_KEY&language=$lang'));
+        await AppHttp.client.get(Uri.parse('$PERSON_LINK$id$API_KEY&language=$lang'));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       return json;
@@ -38,11 +39,11 @@ class Person {
     Map json = {};
     String formattedName =
         name.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "-");
-    final personResponse = await http.get(
+    final personResponse = await AppHttp.client.get(
         Uri.parse('$PERSON_LINK$id-$formattedName$API_KEY&language=$lang'));
     json = jsonDecode(personResponse.body);
     if (personResponse.statusCode == 200) {
-      final movieCreditsResponse = await http.get(Uri.parse(
+      final movieCreditsResponse = await AppHttp.client.get(Uri.parse(
           '$PERSON_LINK$id-$formattedName$MOVIE_CREDITS_LINK&language=$lang'));
       if (movieCreditsResponse.statusCode == 200) {
         List movieCast = [];
@@ -72,7 +73,7 @@ class Person {
         json['movie_credits_cast'] = movieCast;
       }
 
-      final tvCreditsResponse = await http.get(Uri.parse(
+      final tvCreditsResponse = await AppHttp.client.get(Uri.parse(
           '$PERSON_LINK$id-$formattedName$TV_SHOW_CREDITS_LINK&language=$lang'));
       if (tvCreditsResponse.statusCode == 200) {
         List tvCast = [];
@@ -99,7 +100,7 @@ class Person {
 
   Future<int> updateStatsDoc(int score, AppUser currentUser, docName) async {
     var ActorDoc =
-        FirebaseFirestore.instance.collection(currentUser.uid).doc(docName);
+        FirestoreCore.db.collection(currentUser.uid).doc(docName);
     Map<Object, Object?> actorStats = {};
     actorStats[id.toString()] = score;
     await ActorDoc.update(actorStats);
@@ -126,7 +127,7 @@ class Person {
     currentUser.favActors = [];
     currentUser.favDirectors = [];
     currentUser.favWriters = [];
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) {

@@ -20,6 +20,7 @@ import 'objects/person.dart';
 import 'person_result.dart';
 import 'movie_result.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'common/firebase/firestore_core.dart';
 
 class Profile extends StatefulWidget {
   const Profile();
@@ -40,7 +41,7 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<void> _loadCurrentUsername() async {
-    DocumentSnapshot settingsDoc = await FirebaseFirestore.instance
+    DocumentSnapshot settingsDoc = await FirestoreCore.db
         .collection(currentUser.uid)
         .doc('Settings')
         .get();
@@ -54,7 +55,7 @@ class _ProfileState extends State<Profile> {
     String newUsername = _usernameController.text.trim();
 
     // Check if username is unique
-    QuerySnapshot result = await FirebaseFirestore.instance
+    QuerySnapshot result = await FirestoreCore.db
         .collection('usernames')
         .where('username', isEqualTo: newUsername)
         .get();
@@ -65,19 +66,19 @@ class _ProfileState extends State<Profile> {
           .showSnackBar(SnackBar(content: Text(S.of(context)!.usernameTaken)));
     } else {
       // Update username in user's Settings document
-      await FirebaseFirestore.instance
+      await FirestoreCore.db
           .collection(currentUser.uid)
           .doc('Settings')
           .update({'username': newUsername});
 
       // Add username to usernames collection
-      await FirebaseFirestore.instance
+      await FirestoreCore.db
           .collection('usernames')
           .add({'username': newUsername, "uid": currentUser.uid});
 
       // Optionally, remove old username from usernames collection
       if (currentUsername != null) {
-        QuerySnapshot oldUsernameDocs = await FirebaseFirestore.instance
+        QuerySnapshot oldUsernameDocs = await FirestoreCore.db
             .collection('usernames')
             .where('username', isEqualTo: currentUsername)
             .get();
@@ -138,7 +139,7 @@ class _ProfileState extends State<Profile> {
       await uploadTask.whenComplete(() => null);
       String downloadUrl = await ref.getDownloadURL();
 
-      var userDoc = FirebaseFirestore.instance
+      var userDoc = FirestoreCore.db
           .collection(currentUser.uid)
           .doc("Settings");
       await userDoc.update({'profile_photo': downloadUrl});

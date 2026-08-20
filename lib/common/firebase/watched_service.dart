@@ -25,7 +25,7 @@ class WatchedService {
       type: FieldValue.arrayUnion([id])
     });
     List w;
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) {
@@ -62,7 +62,7 @@ class WatchedService {
     if (type == "Movies") {
       final today = DateTime.now();
       final snapshot =
-          await FirebaseFirestore.instance.collection(currentUser.uid).get();
+          await FirestoreCore.db.collection(currentUser.uid).get();
       if (!context.mounted) return true;
       for (var doc in snapshot.docs) {
         if (doc.id == 'Calendar') {

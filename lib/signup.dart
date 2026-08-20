@@ -1,11 +1,11 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'common/firebase/firestore_core.dart';
 
 class SignUp extends StatelessWidget {
   const SignUp({super.key});
@@ -183,75 +183,75 @@ class SignUp extends StatelessWidget {
                                 "MostSeenTVShows": {"show": false, "weight": 2}
                               },
                             };
-                            FirebaseFirestore.instance
+                            FirestoreCore.db
                                 .collection(credential.user!.uid)
                                 .doc("Movies")
                                 .set(data);
-                            FirebaseFirestore.instance
+                            FirestoreCore.db
                                 .collection(credential.user!.uid)
                                 .doc("TVShows")
                                 .set(tvshows);
-                            FirebaseFirestore.instance
+                            FirestoreCore.db
                                 .collection(credential.user!.uid)
                                 .doc("Seen")
                                 .set(seenDoc);
-                            FirebaseFirestore.instance
+                            FirestoreCore.db
                                 .collection(credential.user!.uid)
                                 .doc("SeenWith")
                                 .set(seenWith);
-                            FirebaseFirestore.instance
+                            FirestoreCore.db
                                 .collection(credential.user!.uid)
                                 .doc("Reviews")
                                 .set(review);
-                            FirebaseFirestore.instance
+                            FirestoreCore.db
                                 .collection(credential.user!.uid)
                                 .doc("Favorites")
                                 .set(favorites);
-                            FirebaseFirestore.instance
+                            FirestoreCore.db
                                 .collection(credential.user!.uid)
                                 .doc("Watchlist")
                                 .set(watchlist);
-                            FirebaseFirestore.instance
+                            FirestoreCore.db
                                 .collection(credential.user!.uid)
                                 .doc("Country")
                                 .set(country);
-                            FirebaseFirestore.instance
+                            FirestoreCore.db
                                 .collection(credential.user!.uid)
                                 .doc("Calendar")
                                 .set(calendar);
-                            FirebaseFirestore.instance
+                            FirestoreCore.db
                                 .collection(credential.user!.uid)
                                 .doc("FavDirectors")
                                 .set(favDirectors);
-                            FirebaseFirestore.instance
+                            FirestoreCore.db
                                 .collection(credential.user!.uid)
                                 .doc("FavWriters")
                                 .set(favWriters);
-                            FirebaseFirestore.instance
+                            FirestoreCore.db
                                 .collection(credential.user!.uid)
                                 .doc("FavActors")
                                 .set(favActors);
-                            FirebaseFirestore.instance
+                            FirestoreCore.db
                                 .collection(credential.user!.uid)
                                 .doc("Rewatched")
                                 .set(rewatched);
-                            FirebaseFirestore.instance
+                            FirestoreCore.db
                                 .collection(credential.user!.uid)
                                 .doc("RewatchedTV")
                                 .set(rewatchedTV);
-                            FirebaseFirestore.instance
+                            FirestoreCore.db
                                 .collection(credential.user!.uid)
                                 .doc("Settings")
                                 .set(settings);
-                            FirebaseFirestore.instance
+                            FirestoreCore.db
                                 .collection(credential.user!.uid)
                                 .doc("Friends")
                                 .set(friends);
-                            FirebaseFirestore.instance
+                            FirestoreCore.db
                                 .collection(credential.user!.uid)
                                 .doc("Notifications")
                                 .set(notifications);
-                            FirebaseFirestore.instance
+                            FirestoreCore.db
                                 .collection(credential.user!.uid)
                                 .doc("Recommendations")
                                 .set(recommendations);

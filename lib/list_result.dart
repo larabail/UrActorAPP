@@ -19,12 +19,13 @@ import 'playlists.dart';
 import 'main.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'popups/list_edit_popup.dart';
 import 'popups/movie_add_popup.dart';
 import 'popups/tv_add_popup.dart';
+import 'common/firebase/firestore_core.dart';
+import 'common/api/http_client.dart';
 
 class ListInfoDialog extends StatefulWidget {
   final Playlist listResult;
@@ -36,7 +37,7 @@ class ListInfoDialog extends StatefulWidget {
 class _ListInfoDialogState extends State<ListInfoDialog> {
   Future<Map<String, dynamic>> getUserData(String uid) async {
     DocumentSnapshot doc =
-        await FirebaseFirestore.instance.collection(uid).doc("Settings").get();
+        await FirestoreCore.db.collection(uid).doc("Settings").get();
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     data["uid"] = uid;
     return data;
@@ -126,14 +127,14 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                                             item.containsKey(userData["uid"])
                                                 as bool,
                                         orElse: () => null);
-                                FirebaseFirestore.instance
+                                FirestoreCore.db
                                     .collection('Watchlists')
                                     .doc(widget.listResult.id)
                                     .update({
                                   'Users':
                                       FieldValue.arrayRemove([itemToRemove])
                                 });
-                                await FirebaseFirestore.instance
+                                await FirestoreCore.db
                                     .collection("Watchlists")
                                     .get()
                                     .then((QuerySnapshot querySnapshot) {
@@ -246,14 +247,14 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                       Map itemToRemove = widget.listResult.users.firstWhere(
                           (item) => item.containsKey(currentUser.uid) as bool,
                           orElse: () => null);
-                      FirebaseFirestore.instance
+                      FirestoreCore.db
                           .collection('Watchlists')
                           .doc(widget.listResult.id)
                           .update({
                         'Users': FieldValue.arrayRemove([itemToRemove])
                       });
                       currentUser.playlists = {};
-                      await FirebaseFirestore.instance
+                      await FirestoreCore.db
                           .collection("Watchlists")
                           .get()
                           .then((QuerySnapshot querySnapshot) {
@@ -327,11 +328,11 @@ class AlertButtonDialogue extends StatelessWidget {
           onPressed: () async {
             // Perform the delete operation here
             currentUser.playlists = {};
-            await FirebaseFirestore.instance
+            await FirestoreCore.db
                 .collection("Watchlists")
                 .doc(listResult.id)
                 .delete();
-            await FirebaseFirestore.instance
+            await FirestoreCore.db
                 .collection("Watchlists")
                 .get()
                 .then((QuerySnapshot querySnapshot) {
@@ -394,7 +395,7 @@ class _ListResultState extends State<ListResult> {
   Future<String> fetchMovieName(String movieId, String type) async {
     final url =
         '${type == "Movies" ? MOVIE_LINK : TV_SHOW_LINK}$movieId$API_KEY';
-    final response = await http.get(Uri.parse(url));
+    final response = await AppHttp.client.get(Uri.parse(url));
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return type == "Movies" ? data['title'] : data['name'];
@@ -427,7 +428,7 @@ class _ListResultState extends State<ListResult> {
     final url =
         'https://api.themoviedb.org/3/search/${type == "Movies" ? "movie" : "tv"}$API_KEY&query=${Uri.encodeComponent(movieTitle)}';
 
-    final response = await http.get(Uri.parse(url));
+    final response = await AppHttp.client.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -535,7 +536,7 @@ class _ListResultState extends State<ListResult> {
           "Please return the list as a semicolon-separated CSV, like this: title1;title2;title3.";
     }
 
-    final response = await http.post(
+    final response = await AppHttp.client.post(
       Uri.parse(apiUrl),
       headers: {
         'Content-Type': 'application/json',
