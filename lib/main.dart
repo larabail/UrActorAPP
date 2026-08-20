@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
 import 'common/constants.dart';
 import 'common/firebase/settings_service.dart';
+import 'common/home_media_section.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'common/playlist_order.dart';
@@ -320,21 +321,24 @@ class _MyHomePageState extends State<MyHomePage> {
               ContinueWatchingSection(
                 key: ValueKey('continueWatching-$_refreshCount'),
               ),
-              buildMainPageContainer(
-                  S.of(context)!.watchlist,
-                  currentUser.watchlistTVShows + currentUser.watchlist,
-                  Icons.bookmark,
-                  Watchlist()),
-              buildMainPageContainer(
-                  S.of(context)!.favorites,
-                  currentUser.favTVShows + currentUser.favMovies,
-                  Icons.favorite,
-                  Favorites()),
-              buildMainPageContainer(
-                  S.of(context)!.seen,
-                  currentUser.seenTVShows + currentUser.seenMovies,
-                  Icons.remove_red_eye,
-                  Seen()),
+              HomeMediaSection.watchlist(
+                title: S.of(context)!.watchlist,
+                content: currentUser.watchlistTVShows + currentUser.watchlist,
+                icon: Icons.bookmark,
+                page: Watchlist(),
+              ),
+              HomeMediaSection.favorites(
+                title: S.of(context)!.favorites,
+                content: currentUser.favTVShows + currentUser.favMovies,
+                icon: Icons.favorite,
+                page: Favorites(),
+              ),
+              HomeMediaSection.seen(
+                title: S.of(context)!.seen,
+                content: currentUser.seenTVShows + currentUser.seenMovies,
+                icon: Icons.remove_red_eye,
+                page: Seen(),
+              ),
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey[900],
@@ -697,114 +701,4 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget buildMainPageContainer(String title, List content, icon, page) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(10),
-      ),
-      margin: const EdgeInsets.all(5.0),
-      padding: const EdgeInsets.all(10),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Icon(icon),
-              const SizedBox(width: 10),
-              Text(
-                S.of(context)!.yourSection(title),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => page,
-                    ),
-                  );
-                },
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: Text(
-                      S.of(context)!.seeAll(content.length),
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          if (content.isEmpty) Text(S.of(context)!.emptySection),
-          if (content.isEmpty) const SizedBox(height: 10),
-          if (content.isNotEmpty)
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.18,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: content.length > 10 ? 10 : content.length,
-                itemBuilder: (context, index) {
-                  MediaItem tempMedia;
-                  if (content.reversed.toList()[index][0] == "Movies") {
-                    tempMedia = Movie(
-                        id: content.reversed.toList()[index][1],
-                        title: "title",
-                        coverPhoto: "coverPhoto");
-                  } else {
-                    tempMedia = TVShow(
-                        id: content.reversed.toList()[index][1],
-                        title: "title",
-                        coverPhoto: "coverPhoto");
-                  }
-                  return FutureBuilder<Map>(
-                    future: tempMedia.getData(),
-                    builder:
-                        (BuildContext context, AsyncSnapshot<Map> snapshot) {
-                      if (snapshot.hasData) {
-                        return GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => content.reversed
-                                                .toList()[index][0] ==
-                                            "Movies"
-                                        ? MovieResult(movie: tempMedia as Movie)
-                                        : TVShowResult(
-                                            tvshow: tempMedia as TVShow)),
-                              );
-                            },
-                            child: getItemContainer(
-                                context, snapshot.data, "media",
-                                mediaPair: mediaPairForData(snapshot.data)));
-                      } else if (snapshot.hasError) {
-                        return Center(
-                            child: Text(S.of(context)!.errorFailedToLoadDetails));
-                      } else {
-                        return Container(
-                          margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                          width: MediaQuery.of(context).size.width * 0.28,
-                          height: MediaQuery.of(context).size.height * 0.18,
-                          child: const Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        );
-                      }
-                    },
-                  );
-                },
-              ),
-            ),
-        ],
-      ),
-    );
-  }
 }

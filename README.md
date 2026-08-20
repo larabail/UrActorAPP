@@ -381,7 +381,7 @@ npm install
 npm test
 ```
 
-`flutter test` currently runs 550 tests with no emulator, credentials or
+`flutter test` currently runs 559 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
 `FirestoreCore.db` and `AppHttp.client` — which default to the real
 implementations and are pointed at fakes by the tests.
