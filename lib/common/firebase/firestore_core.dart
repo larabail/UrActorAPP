@@ -1,6 +1,27 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FirestoreCore {
+  static FirebaseFirestore? _db;
+
+  /// The Firestore instance every service reads and writes through.
+  ///
+  /// Services used to name `FirebaseFirestore.instance` directly, which
+  /// requires a live Firebase app and so could not run under `flutter test`.
+  /// Routing through here lets tests substitute an in-memory instance.
+  ///
+  /// Resolved lazily: touching `FirebaseFirestore.instance` at field
+  /// initialisation would throw in a test binding before a fake is installed.
+  static FirebaseFirestore get db => _db ??= FirebaseFirestore.instance;
+
+  static set db(FirebaseFirestore value) {
+    _db = value;
+  }
+
+  /// Drops the override so the next read resolves the real instance again.
+  static void resetDb() {
+    _db = null;
+  }
+
   /// Retrieves a Firestore document's reference, snapshot, and data for a given user and document name.
   /// @param uid The user ID whose document is being retrieved.
   /// @param docName The name of the document.

@@ -8,6 +8,7 @@ import 'common/navigation/bottom_app_bar.dart';
 import 'friends_profile.dart';
 import 'inbox.dart';
 import 'main.dart';
+import 'common/firebase/firestore_core.dart';
 
 String friendUid = "";
 
@@ -21,7 +22,7 @@ class Friends extends StatefulWidget {
 class _FriendsState extends State<Friends> {
   final TextEditingController _usernameController = TextEditingController();
   Future<void> _refreshFriends() async {
-    var friendsDoc = await FirebaseFirestore.instance
+    var friendsDoc = await FirestoreCore.db
         .collection(currentUser.uid)
         .doc("Friends")
         .get();
@@ -37,7 +38,7 @@ class _FriendsState extends State<Friends> {
     friendUid = "";
 
     void sendFriendRequest(String recipientUID) async {
-      await FirebaseFirestore.instance
+      await FirestoreCore.db
           .collection(recipientUID)
           .doc('Friends')
           .collection('FriendRequests')
@@ -77,7 +78,7 @@ class _FriendsState extends State<Friends> {
                     onTap: () async {
                       String inputUsername = _usernameController.text.trim();
                       if (inputUsername.isNotEmpty) {
-                        QuerySnapshot query = await FirebaseFirestore.instance
+                        QuerySnapshot query = await FirestoreCore.db
                             .collection('usernames')
                             .where('username', isEqualTo: inputUsername)
                             .get();
@@ -164,7 +165,7 @@ class _FriendsState extends State<Friends> {
               int friendIndex = index - 1;
 
               return FutureBuilder<DocumentSnapshot>(
-                future: FirebaseFirestore.instance
+                future: FirestoreCore.db
                     .collection(currentUser.friends[friendIndex])
                     .doc('Settings')
                     .get(),

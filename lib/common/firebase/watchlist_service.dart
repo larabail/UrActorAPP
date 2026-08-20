@@ -19,7 +19,7 @@ class WatchlistService {
     } else {
       currentUser.watchlistTVShows = [];
     }
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) {
@@ -47,7 +47,7 @@ class WatchlistService {
   /// @param uids A list of user UIDs.
   /// @return A list of profile photo URLs.
   static Future<bool> unbookmark(String id, context, String type) async {
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection(currentUser.uid)
         .get()
         .then((QuerySnapshot querySnapshot) async {
@@ -59,7 +59,7 @@ class WatchlistService {
           if (index > -1) {
             movieInWatchlist.removeAt(index);
           }
-          final userDoc = FirebaseFirestore.instance
+          final userDoc = FirestoreCore.db
               .collection(currentUser.uid)
               .doc("Watchlist");
           await userDoc.update({type: movieInWatchlist});

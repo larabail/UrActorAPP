@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:uractor/l10n/l10n.dart';
 
 import 'main.dart';
+import 'common/firebase/firestore_core.dart';
 
 class FriendRequestsPage extends StatefulWidget {
   final String currentUserUID;
@@ -16,7 +17,7 @@ class FriendRequestsPage extends StatefulWidget {
 class _FriendRequestsPageState extends State<FriendRequestsPage> {
   void acceptFriendRequest(String recipientUID, String senderUID) async {
     // Update status to accepted
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection(recipientUID)
         .doc('Friends')
         .collection('FriendRequests')
@@ -24,14 +25,14 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
         .update({'status': 'accepted'});
 
     // Add each other to friends list
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection(recipientUID)
         .doc('Friends')
         .update({
       'friends': FieldValue.arrayUnion([senderUID]),
     });
 
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection(senderUID)
         .doc('Friends')
         .update({
@@ -41,7 +42,7 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
   }
 
   void rejectFriendRequest(String recipientUID, String senderUID) async {
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection(recipientUID)
         .doc('Friends')
         .collection('FriendRequests')
@@ -50,7 +51,7 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
   }
 
   Stream<QuerySnapshot> getFriendRequests(String recipientUID) {
-    return FirebaseFirestore.instance
+    return FirestoreCore.db
         .collection(recipientUID)
         .doc('Friends')
         .collection('FriendRequests')
@@ -80,7 +81,7 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
                 var request = snapshot.data!.docs[index];
                 String status = request['status'];
                 return FutureBuilder<DocumentSnapshot>(
-                  future: FirebaseFirestore.instance
+                  future: FirestoreCore.db
                       .collection(request.id)
                       .doc("Settings")
                       .get(),

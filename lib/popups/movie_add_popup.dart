@@ -6,6 +6,7 @@ import 'package:uractor/common/item_container.dart';
 import '../common/api/apiutils.dart';
 import '../main.dart';
 import '../objects/playlist.dart';
+import '../common/firebase/firestore_core.dart';
 
 class MovieAddDialogue extends StatefulWidget {
   final Playlist list_result;
@@ -20,7 +21,7 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
 
   String _searchTermMovie = '';
   String _movie = "";
-  FirebaseFirestore db = FirebaseFirestore.instance;
+  FirebaseFirestore db = FirestoreCore.db;
 
   void addMovieSubmit() async {
     String docIDString = widget.list_result.id.toString();
@@ -30,7 +31,7 @@ class _MovieAddDialogueState extends State<MovieAddDialogue> {
       "Movies": FieldValue.arrayUnion([_movie])
     });
 
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection("Watchlists")
         .get()
         .then((QuerySnapshot querySnapshot) {

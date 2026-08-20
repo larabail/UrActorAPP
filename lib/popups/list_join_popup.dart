@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/l10n/l10n.dart';
 import '../main.dart';
 import '../playlists.dart';
+import '../common/firebase/firestore_core.dart';
 
 String cover = "";
 String _listName = "";
@@ -22,7 +23,7 @@ class ListJoinDialogue extends StatefulWidget {
 class _ListJoinDialogueState extends State<ListJoinDialogue> {
   void joinList() async {
     bool joined = false;
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection("Watchlists")
         .get()
         .then((QuerySnapshot querySnapshot) async {
@@ -31,7 +32,7 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
         if (_listName == (docData["Name"])) {
           if (docData["AccessCode"] == _accessCode) {
             var userDoc =
-                FirebaseFirestore.instance.collection("Watchlists").doc(doc.id);
+                FirestoreCore.db.collection("Watchlists").doc(doc.id);
             Map newUser = {};
             newUser[currentUser.uid] = "Approved";
             await userDoc.update({

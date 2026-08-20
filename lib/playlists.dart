@@ -11,6 +11,7 @@ import 'list_result.dart';
 import 'objects/playlist.dart';
 import 'popups/list_add_popup.dart';
 import 'popups/list_join_popup.dart';
+import 'common/firebase/firestore_core.dart';
 
 class Playlists extends StatefulWidget {
   const Playlists({super.key});
@@ -25,7 +26,7 @@ class _PlaylistsState extends State<Playlists> {
 
   Future<void> _refreshPlaylists() async {
     currentUser.playlists = {};
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection("Watchlists")
         .get()
         .then((QuerySnapshot querySnapshot) {

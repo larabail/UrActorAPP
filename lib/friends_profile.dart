@@ -19,6 +19,7 @@ import 'movie_result.dart';
 
 import 'seen_together.dart';
 import 'tvshow_result.dart';
+import 'common/firebase/firestore_core.dart';
 
 int weekOffset = 0; // This will be used to go to previous or next weeks
 
@@ -46,7 +47,7 @@ class _FriendProfileState extends State<FriendProfile> {
   }
 
   Future<void> getFirebaseData() async {
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection(widget.friendUid)
         .get()
         .then((QuerySnapshot querySnapshot) {
@@ -277,7 +278,7 @@ class _FriendProfileState extends State<FriendProfile> {
                       if (confirmed) {
                         // Reference to the Firestore instance
                         FirebaseFirestore firestore =
-                            FirebaseFirestore.instance;
+                            FirestoreCore.db;
 
                         // Remove friend from current user's friend list
                         await firestore

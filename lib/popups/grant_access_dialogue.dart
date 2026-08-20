@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../objects/playlist.dart';
+import '../common/firebase/firestore_core.dart';
 
 class GrantAccessDialog extends StatefulWidget {
   final Playlist listResult;
@@ -54,7 +55,7 @@ class _GrantAccessDialogState extends State<GrantAccessDialog> {
                     itemCount: uniqueFriendIds.length,
                     itemBuilder: (context, friendIndex) {
                       return FutureBuilder<DocumentSnapshot>(
-                        future: FirebaseFirestore.instance
+                        future: FirestoreCore.db
                             .collection(uniqueFriendIds[friendIndex])
                             .doc('Settings')
                             .get(),
@@ -159,7 +160,7 @@ class _GrantAccessDialogState extends State<GrantAccessDialog> {
                     for (String friendUid in selectedFriends.keys.toList()) {
                       itemToAdd.add({friendUid: "Approved"});
                     }
-                    await FirebaseFirestore.instance
+                    await FirestoreCore.db
                         .collection('Watchlists')
                         .doc(widget.listResult.id)
                         .update({'Users': FieldValue.arrayUnion(itemToAdd)});

@@ -7,6 +7,7 @@ import '../common/api/apiutils.dart';
 import 'dart:math';
 import '../common/constants.dart';
 import '../main.dart';
+import '../common/firebase/firestore_core.dart';
 
 class ListAddDialogue extends StatefulWidget {
   const ListAddDialogue({super.key});
@@ -22,7 +23,7 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
   String cover = "";
   String _listName = "";
   String _accessCode = "";
-  FirebaseFirestore db = FirebaseFirestore.instance;
+  FirebaseFirestore db = FirestoreCore.db;
   int _selectedIndex = 0;
 
   void addListSubmit() async {
@@ -52,7 +53,7 @@ class _ListAddDialogueState extends State<ListAddDialogue> {
       "Users": FieldValue.arrayUnion([users])
     });
 
-    await FirebaseFirestore.instance
+    await FirestoreCore.db
         .collection("Watchlists")
         .get()
         .then((QuerySnapshot querySnapshot) {

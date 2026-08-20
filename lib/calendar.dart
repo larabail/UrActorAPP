@@ -16,11 +16,12 @@ import 'main.dart';
 import 'movie_result.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'common/firebase/firestore_core.dart';
 
 DateTime selectedDate = DateTime.now();
 
 String dateForMap = '';
-FirebaseFirestore db = FirebaseFirestore.instance;
+FirebaseFirestore db = FirestoreCore.db;
 
 class Calendar extends StatefulWidget {
   const Calendar({super.key});
@@ -50,7 +51,7 @@ class _CalendarState extends State<Calendar> {
           : 0;
       if (currentUser.rewatchedMovies[id] == 0) {
         List w;
-        await FirebaseFirestore.instance
+        await FirestoreCore.db
             .collection(currentUser.uid)
             .get()
             .then((QuerySnapshot querySnapshot) {
@@ -63,7 +64,7 @@ class _CalendarState extends State<Calendar> {
               if (index > -1) {
                 w.removeAt(index);
               }
-              var userDoc = FirebaseFirestore.instance
+              var userDoc = FirestoreCore.db
                   .collection(currentUser.uid)
                   .doc("Movies");
               await userDoc.update({'Seen': w});
