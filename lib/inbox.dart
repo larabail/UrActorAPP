@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:uractor/common/firebase/firestore_core.dart';
 import 'package:uractor/l10n/l10n.dart';
 
 import 'main.dart';
@@ -15,7 +16,10 @@ class FriendRequestsPage extends StatefulWidget {
 
 class _FriendRequestsPageState extends State<FriendRequestsPage> {
   void acceptFriendRequest(String recipientUID, String senderUID) async {
-    // Update status to accepted
+    // Update status to accepted. Deliberately left as `update`, not a
+    // merging `set`: this mutates a friend request that must already exist,
+    // and if it doesn't we want a `not-found` failure rather than to
+    // fabricate an "accepted" request out of nothing.
     await FirebaseFirestore.instance
         .collection(recipientUID)
         .doc('Friends')
@@ -24,23 +28,19 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
         .update({'status': 'accepted'});
 
     // Add each other to friends list
-    await FirebaseFirestore.instance
-        .collection(recipientUID)
-        .doc('Friends')
-        .update({
+    await FirestoreCore.updateDocument(recipientUID, 'Friends', {
       'friends': FieldValue.arrayUnion([senderUID]),
     });
 
-    await FirebaseFirestore.instance
-        .collection(senderUID)
-        .doc('Friends')
-        .update({
+    await FirestoreCore.updateDocument(senderUID, 'Friends', {
       'friends': FieldValue.arrayUnion([recipientUID]),
     });
     currentUser.friends.add(senderUID);
   }
 
   void rejectFriendRequest(String recipientUID, String senderUID) async {
+    // See the comment in acceptFriendRequest: deliberately left as `update`
+    // since a request that doesn't exist can't be rejected.
     await FirebaseFirestore.instance
         .collection(recipientUID)
         .doc('Friends')

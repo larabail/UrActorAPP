@@ -23,6 +23,8 @@ class SocialService {
       if (!snapshot.exists) {
         throw Exception("Document does not exist!");
       }
+      // The exists check above means every transaction.update below is safe:
+      // it never runs against a missing document.
 
       Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
       if (data.containsKey(type) && data[type] is Map<String, dynamic>) {
@@ -83,6 +85,7 @@ class SocialService {
       if (!snapshot.exists) {
         throw Exception("Document does not exist!");
       }
+      // Guarded above, so the transaction.update below is safe.
       Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
 
       if (data.containsKey(type) && data[type] is Map<String, dynamic>) {

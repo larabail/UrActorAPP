@@ -8,6 +8,7 @@ import 'package:uractor/objects/user.dart';
 import 'dart:convert';
 
 import '../common/constants.dart';
+import '../common/firebase/firestore_core.dart';
 import '../common/utils.dart';
 
 class Person {
@@ -102,7 +103,7 @@ class Person {
         FirebaseFirestore.instance.collection(currentUser.uid).doc(docName);
     Map<Object, Object?> actorStats = {};
     actorStats[id.toString()] = score;
-    await ActorDoc.update(actorStats);
+    await FirestoreCore.updateDocument(currentUser.uid, docName, actorStats);
     var doc = await ActorDoc.get();
     Map info = doc.data() as Map;
     List actrs = [];
