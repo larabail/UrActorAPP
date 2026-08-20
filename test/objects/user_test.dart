@@ -186,6 +186,35 @@ void main() {
       expect(user.rewatchedTVShows['1399'], 2);
     });
 
+    test('loads watch progress', () async {
+      await seedCompleteUser(firestore, user.uid, overrides: {
+        'Progress': {
+          'Movies': {
+            '27205': {
+              'started': '2026-01-01',
+              'finished': null,
+              'updated': '2026-01-01',
+            }
+          },
+          'TVShows': {
+            '1399': {
+              'started': '2026-01-02',
+              'finished': null,
+              'updated': '2026-01-02',
+              'episodes': {
+                '1': [1]
+              },
+            }
+          },
+        },
+      });
+
+      await user.getFirebaseData();
+
+      expect(user.progress['Movies']['27205']['started'], '2026-01-01');
+      expect(user.progress['TVShows']['1399']['episodes']['1'], [1]);
+    });
+
     test('picks up only the playlists the user belongs to', () async {
       await seedCompleteUser(firestore, user.uid);
       await firestore.collection('Watchlists').doc('mine').set({
