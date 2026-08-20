@@ -2,7 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
 
-Widget getItemContainer(context, item, type, {widthPercentage = 0.28, heightPercentage = 0.18}) {
+Widget getItemContainer(BuildContext context, dynamic item, String type,
+    {double widthPercentage = 0.28, double heightPercentage = 0.18}) {
   String imagePath = "";
   if (item!["poster_path"] != null) {
     imagePath = IMG_LINK + item!["poster_path"];
@@ -10,9 +11,9 @@ Widget getItemContainer(context, item, type, {widthPercentage = 0.28, heightPerc
     imagePath = IMG_LINK + item!["profile_path"];
   } else {
     if (type == "media") {
-      imagePath = UNKOWN_COVER;
+      imagePath = UNKNOWN_COVER;
     } else {
-      imagePath = UNKOWN_PERSON;
+      imagePath = UNKNOWN_PERSON;
     }
   }
 
@@ -32,7 +33,7 @@ Widget getItemContainer(context, item, type, {widthPercentage = 0.28, heightPerc
             ),
           ),
         ),
-        if (imagePath == UNKOWN_COVER || imagePath == UNKOWN_PERSON)
+        if (imagePath == UNKNOWN_COVER || imagePath == UNKNOWN_PERSON)
           Container(
             alignment: Alignment.center,
             child: Text(
@@ -45,7 +46,7 @@ Widget getItemContainer(context, item, type, {widthPercentage = 0.28, heightPerc
                   Shadow(
                     offset: Offset(0, 1),
                     blurRadius: 3,
-                    color: Colors.black.withOpacity(0.8),
+                    color: Colors.black.withValues(alpha: 0.8),
                   ),
                 ],
               ),
@@ -57,7 +58,8 @@ Widget getItemContainer(context, item, type, {widthPercentage = 0.28, heightPerc
   );
 }
 
-Widget getItemSelectableContainer(context, item, type, isSelected) {
+Widget getItemSelectableContainer(
+    BuildContext context, dynamic item, String type, bool isSelected) {
   return SizedBox(
     width: MediaQuery.of(context).size.width * 0.28,
     height: MediaQuery.of(context).size.height * 0.18,
@@ -73,8 +75,8 @@ Widget getItemSelectableContainer(context, item, type, isSelected) {
                 item!["poster_path"] != null
                     ? IMG_LINK + item!["poster_path"]
                     : type == "media"
-                        ? UNKOWN_COVER
-                        : UNKOWN_PERSON,
+                        ? UNKNOWN_COVER
+                        : UNKNOWN_PERSON,
               ),
               fit: BoxFit.fitWidth,
             ),
@@ -97,7 +99,7 @@ Widget getItemSelectableContainer(context, item, type, isSelected) {
                   Shadow(
                     offset: Offset(0, 1),
                     blurRadius: 3,
-                    color: Colors.black.withOpacity(0.8),
+                    color: Colors.black.withValues(alpha: 0.8),
                   ),
                 ],
               ),

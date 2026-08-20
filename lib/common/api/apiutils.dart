@@ -6,12 +6,15 @@ import '../../main.dart';
 import '../constants.dart';
 
 class ApiUtils {
+  static const String _omdbApiKey = String.fromEnvironment('OMDB_API_KEY',
+      defaultValue: '768d2cf9');
+
   /// Fetches movie data from the OMDB API using the IMDb ID.
   /// @param imdbId The IMDb ID of the movie or show.
   /// @return The decoded JSON response containing OMDB metadata.
   static Future<dynamic> fetchOmdbData(String imdbId) async {
-    final response = await http
-        .get(Uri.parse('https://www.omdbapi.com/?i=$imdbId&apikey=768d2cf9'));
+    final response = await http.get(
+        Uri.parse('https://www.omdbapi.com/?i=$imdbId&apikey=$_omdbApiKey'));
     if (response.statusCode != 200) {
       throw Exception('Failed to load OMDB data');
     }
@@ -43,6 +46,58 @@ class ApiUtils {
     return providers;
   }
 
+  /// Merges duplicate crew entries (same person appearing more than once,
+  /// e.g. as both Director and Writer) into a single entry per person, with
+  /// their distinct job titles joined by " / " in order of first appearance.
+  /// Duplicate job names for the same person are collapsed to one occurrence.
+  /// Entries with a null/missing "job" are treated as having no job to add.
+  /// @param crew The raw crew list (each entry expected to contain an "id").
+  /// @return A new list with one merged entry per distinct crew member id.
+  static List<Map> mergeCrewJobs(List<Map> crew) {
+    List countedCrew = [];
+    List<Map> finalCrew = [];
+    for (Map crewMember in crew) {
+      if (countedCrew.contains(crewMember["id"])) {
+        for (Map credit in finalCrew) {
+          if (credit["id"].toString() == crewMember["id"].toString()) {
+            List<String> jobs = (credit["job"] as String?)
+                    ?.split('/')
+                    .map((role) => role.trim())
+                    .where((role) => role.isNotEmpty)
+                    .toList() ??
+                [];
+            final newJob = (crewMember["job"] as String?)?.trim();
+            if (newJob != null && newJob.isNotEmpty && !jobs.contains(newJob)) {
+              jobs.add(newJob);
+            }
+            credit["job"] = jobs.join(' / ');
+          }
+        }
+      } else {
+        finalCrew.add(crewMember);
+        countedCrew.add(crewMember["id"]);
+      }
+    }
+    return finalCrew;
+  }
+
+  /// Returns the first crew member whose "job" satisfies [matches], or null.
+  ///
+  /// [mergeCrewJobs] returns a typed `List<Map>`, so callers cannot use
+  /// `firstWhere` with an `orElse` that returns null: the closure fails the
+  /// runtime cast to the element type and throws on every lookup, before the
+  /// predicate is ever evaluated.
+  static Map? findCrewMember(dynamic crew, bool Function(String job) matches) {
+    if (crew is! List) return null;
+    for (final person in crew) {
+      final String? job = person["job"] as String?;
+      if (job != null && matches(job)) {
+        return person as Map;
+      }
+    }
+    return null;
+  }
+
   /// Fetches cast, crew, and trailer data for a specific media item in the current language.
   /// @param movieId The TMDb media ID.
   /// @param name The slugified title.
@@ -60,20 +115,8 @@ class ApiUtils {
         trailerResponse.statusCode != 200) {
       throw Exception('Failed to load credits or trailer data');
     }
-    List countedCrew = [];
-    List finalCrew = [];
-    for (Map crewMember in jsonDecode(creditsResponse.body)["crew"]) {
-      if (countedCrew.contains(crewMember["id"])) {
-        for (Map credit in finalCrew) {
-          if (credit["id"].toString() == crewMember["id"].toString()) {
-            credit["job"] = "\${credit['job']} / \${crewMember['job']}";
-          }
-        }
-      } else {
-        finalCrew.add(crewMember);
-        countedCrew.add(crewMember["id"]);
-      }
-    }
+    List<Map> finalCrew =
+        mergeCrewJobs(List<Map>.from(jsonDecode(creditsResponse.body)["crew"]));
 
     Map<String, dynamic> data = {
       'cast': jsonDecode(creditsResponse.body)["cast"],
@@ -174,7 +217,7 @@ class ApiUtils {
   /// Performs a multi-type search (actors, movies, shows) based on a term.
   /// @param searchTermActor The search term.
   /// @return A list of result objects matching the query.
-  static Future<List> searchData(searchTermActor) async {
+  static Future<List> searchData(String searchTermActor) async {
     String searchLink = "";
     if (searchTermActor != "") {
       searchLink =

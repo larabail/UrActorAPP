@@ -1,18 +1,18 @@
-// ignore_for_file: use_build_context_synchronously, non_constant_identifier_names, library_private_types_in_public_api
+// ignore_for_file: use_build_context_synchronously, non_constant_identifier_names
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/common/item_container.dart';
 import '../common/api/apiutils.dart';
 import '../main.dart';
-import '../objects/Playlist.dart';
+import '../objects/playlist.dart';
 
 class TvAddDialogue extends StatefulWidget {
   final Playlist list_result;
-  const TvAddDialogue({Key? key, required this.list_result}) : super(key: key);
+  const TvAddDialogue({super.key, required this.list_result});
 
   @override
-  _TvAddDialogueState createState() => _TvAddDialogueState();
+  State<TvAddDialogue> createState() => _TvAddDialogueState();
 }
 
 class _TvAddDialogueState extends State<TvAddDialogue> {

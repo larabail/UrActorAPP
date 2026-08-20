@@ -9,14 +9,14 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/l10n/l10n.dart';
-import 'package:uractor/objects/TVShow.dart';
+import 'package:uractor/objects/tv_show.dart';
 import 'package:uractor/popups/profile_sections_popup.dart';
 import 'package:uractor/tvshow_result.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
-import 'objects/Movie.dart';
+import 'objects/movie.dart';
 import 'main.dart';
-import 'objects/Person.dart';
+import 'objects/person.dart';
 import 'person_result.dart';
 import 'movie_result.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -25,7 +25,7 @@ class Profile extends StatefulWidget {
   const Profile();
 
   @override
-  _ProfileState createState() => _ProfileState();
+  State<Profile> createState() => _ProfileState();
 }
 
 class _ProfileState extends State<Profile> {
@@ -39,7 +39,7 @@ class _ProfileState extends State<Profile> {
     _loadCurrentUsername();
   }
 
-  _loadCurrentUsername() async {
+  Future<void> _loadCurrentUsername() async {
     DocumentSnapshot settingsDoc = await FirebaseFirestore.instance
         .collection(currentUser.uid)
         .doc('Settings')
@@ -50,7 +50,7 @@ class _ProfileState extends State<Profile> {
     });
   }
 
-  _updateUsername() async {
+  Future<void> _updateUsername() async {
     String newUsername = _usernameController.text.trim();
 
     // Check if username is unique
@@ -679,7 +679,7 @@ class _ProfileState extends State<Profile> {
                 scrollDirection: Axis.horizontal,
                 itemCount: content.length > 10 ? 10 : content.length,
                 itemBuilder: (context, index) {
-                  var item;
+                  dynamic item;
                   if (type == "Person") {
                     item = Person(id: content[index][1], name: "", data: {});
                   } else if (type == "Movie") {

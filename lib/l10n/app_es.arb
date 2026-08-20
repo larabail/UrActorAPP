@@ -5,14 +5,6 @@
   "selectADateRange": "Selecciona un rango de fechas",
   "cancel": "Cancelar",
   "seenOn": "Visto el {date}",
-  "@seenOn": {
-    "description": "Shown before a selected watch date",
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
   "labelSeen": "# Visto",
   "labelHoursSpent": "Horas invertidas",
   "labelAvgRating": "Nota media",
@@ -22,14 +14,6 @@
   "errorLoadingImages": "Error al cargar las imágenes",
   "yourCalendarSection": "Tu Calendario",
   "yourSection": "Tus {section}",
-  "@yourSection": {
-    "description": "Shown as title of a section",
-    "placeholders": {
-      "section": {
-        "type": "String"
-      }
-    }
-  },
   "confirmation": "Confirmación",
   "removeFriendConfirmation": "Estás seguro de que quieres quitarte a este amigo?",
   "yes": "Si",
@@ -37,53 +21,13 @@
   "calendar": "Calendario",
   "noMoviesTogether": "Aún no habeís visto nada juntos",
   "friendSections": "Sus {title}",
-  "@friendSections": {
-    "description": "Shown as title of a section in a friends profile",
-    "placeholders": {
-      "title": {
-        "type": "String"
-      }
-    }
-  },
   "emptySection": "Nada todavía",
   "simpleSeeAll": "Ver Todas",
-  "playlistCount": "{playlistCount} listas",
-  "@playlistCount": {
-    "description": "Shown under see all to show playlist count",
-    "placeholders": {
-      "playlistCount": {
-        "type": "int"
-      }
-    }
-  },
-  "seeAll": "Ver todo ({number} elementos)",
-  "@seeAll": {
-    "description": "Shown at the end of a title to expand items",
-    "placeholders": {
-      "number": {
-        "type": "int"
-      }
-    }
-  },
+  "playlistCount": "{playlistCount, plural, one{{playlistCount} lista} other{{playlistCount} listas}}",
+  "seeAll": "{number, plural, one{Ver todo ({number} elemento)} other{Ver todo ({number} elementos)}}",
   "friendsThoughts": "Las opiniones de tus amigos sobre {item}",
-  "@friendsThoughts": {
-    "description": "Shown when friends have seen the same movie",
-    "placeholders": {
-      "item": {
-        "type": "String"
-      }
-    }
-  },
   "errorFailedToLoadFavorites": "Ha habido un error",
   "friendLeftNoReview": "{friendUsername} no ha dejado una reseña",
-  "@friendLeftNoReview": {
-    "description": "Shown when a friend has not reviewed the movie",
-    "placeholders": {
-      "friendUsername": {
-        "type": "String"
-      }
-    }
-  },
   "addFriend": "Añadir un amigo",
   "noSuchUser": "No existe ningun usuario con este nombre",
   "friendRequests": "Solicitudes de amistad",
@@ -93,15 +37,7 @@
   "watchlist": "Siguientes",
   "seen": "Vistas",
   "notifications": "Notificaciones",
-  "totalContent": "{totalContent} elementos",
-  "@totalContent": {
-    "description": "Shown in the playlist cards",
-    "placeholders": {
-      "totalContent": {
-        "type": "String"
-      }
-    }
-  },
+  "totalContent": "{totalContent, plural, one{{totalContent} elemento} other{{totalContent} elementos}}",
   "reviews": "Reseñas",
   "friends": "Amigos",
   "home": "Casa",
@@ -115,32 +51,8 @@
   "favTVShows": "Series Más Vistas",
   "loading": "Cargando...",
   "requestFrom": "Solicitud de: {senderUsername}",
-  "@requestFrom": {
-    "description": "Shown when a friend request is received",
-    "placeholders": {
-      "senderUsername": {
-        "type": "String"
-      }
-    }
-  },
-  "status": "Status: {status}",
-  "@status": {
-    "description": "Shown as a subtitle while loading",
-    "placeholders": {
-      "status": {
-        "type": "String"
-      }
-    }
-  },
+  "status": "Estado: {status}",
   "accessCode": "Codigo de Acceso: '{accessCode}'",
-  "@accessCode": {
-    "description": "Shown when needing access code to share playlist",
-    "placeholders": {
-      "accessCode": {
-        "type": "String"
-      }
-    }
-  },
   "usersAccess": "Usuarios con acceso",
   "noUsersAccess": "Ningún usuario tiene acceso",
   "grantAccess": "Dar Acceso a Usuarios",
@@ -150,17 +62,6 @@
   "deleteList": "Borrar Lista",
   "deleteListConfirmation": "Estás seguro de que quieres borrar esta lista?",
   "listElements": "Peliculas: {movieCount}, Series: {tvCount}",
-  "@listElements": {
-    "description": "Shown when detailing items in playlist",
-    "placeholders": {
-      "movieCount": {
-        "type": "String"
-      },
-      "tvCount": {
-        "type": "String"
-      }
-    }
-  },
   "newMovies": "Peliculas Nuevas",
   "newShows": "Series Nuevas",
   "addMovie": "Añadir Pelicula",
@@ -172,14 +73,6 @@
   "password": "Contraseña",
   "resetEmail": "Se ha enviado un correo electrónico para restablecer la contraseña",
   "failedResetEmail": "Ha habido un error al restablecer la contraseña: {e}",
-  "@failedResetEmail": {
-    "description": "Show when there's an error to send reset password email",
-    "placeholders": {
-      "e": {
-        "type": "String"
-      }
-    }
-  },
   "yourEmail": "Tu correo electrónico",
   "email": "Correo Electrónico",
   "login": "Iniciar sesión",
@@ -193,23 +86,7 @@
   "readAll": "Leer Todo",
   "yourReview": "Tu Reseña",
   "opinion": "Opinión: {opinion}",
-  "@opinion": {
-    "description": "Shows when a user has entered a review for a movie or show",
-    "placeholders": {
-      "opinion": {
-        "type": "String"
-      }
-    }
-  },
   "rating": "Nota: {rating}",
-  "@rating": {
-    "description": "Shows when a user has entered a review for a movie or show",
-    "placeholders": {
-      "rating": {
-        "type": "String"
-      }
-    }
-  },
   "viewingHistory": "Historial de Visualización",
   "noViewingHistory": "No hay historial de visualización",
   "noReviews": "No has dejado ninguna reseña todavía",
@@ -218,14 +95,6 @@
   "addFriends": "Añadir amigos",
   "addDate": "Añadir fecha",
   "directedBy": "Dirigida por {director}",
-  "@directedBy": {
-    "description": "Shows to tell the user the director of a movie ",
-    "placeholders": {
-      "director": {
-        "type": "String"
-      }
-    }
-  },
   "written": "Escrita",
   "screenplay": "Guión",
   "by": "por",
@@ -247,6 +116,8 @@
   "joinList": "Unirse a Lista",
   "newList": "Añadir Lista",
   "generateRecommendation": "Generar Recomendaciones",
+  "recommendationsFailed": "No se pudieron generar recomendaciones. Inténtalo de nuevo más tarde.",
+  "fetchingRecommendations": "Generando recomendaciones...",
   "handpicked": "Recomendaciones Para Ti",
   "noPlaylists": "Aun no tienes listas de reproducción",
   "usernameTaken": "Este nombre de usuario ya está cogido",
@@ -268,13 +139,6 @@
   "inWord": "en",
   "thisWeek": "Esta Semana",
   "currentRecordMovies": "Record actual: {maxMovies} películas en un día",
-  "@currentRecordMovies": {
-    "placeholders": {
-      "maxMovies": {
-        "type": "int"
-      }
-    }
-  },
   "totalMovies": "Películas Vistas en Total",
   "totalTVShows": "Series Vistas en Total",
   "modifyProfile": "Modificar Secciones",
@@ -286,5 +150,24 @@
   "seemWith": "Vistas con",
   "seasons": "temporadas",
   "apply": "Aplicar",
-  "createdBy": "Creada por"
+  "createdBy": "Creada por",
+  "noUserFoundError": "No se encontró ningún usuario con ese correo electrónico.",
+  "wrongPasswordError": "Contraseña incorrecta para ese usuario.",
+  "weakPasswordError": "La contraseña proporcionada es demasiado débil.",
+  "emailAlreadyInUseError": "Ya existe una cuenta con ese correo electrónico.",
+  "invalidEmailError": "Esa dirección de correo electrónico no es válida.",
+  "genericAuthError": "Algo salió mal. Por favor, inténtalo de nuevo.",
+  "deleteAccount": "Eliminar Cuenta",
+  "deleteAccountConfirmation": "¿Estás seguro de que quieres eliminar tu cuenta? Esta acción eliminará toda tu información.",
+  "joinListFailed": "Código de acceso o nombre de lista incorrecto",
+  "joinListTitle": "Unirse a Lista",
+  "enterListName": "Por favor, introduce un nombre de lista",
+  "listName": "Nombre de la Lista",
+  "accessCodeLabel": "Código de Acceso",
+  "add": "Añadir",
+  "confirmWatchedToday": "¿Has visto esta película hoy?",
+  "deleteCalendarEntry": "Eliminar Entrada del Calendario",
+  "deleteCalendarEntryQuestion": "¿Quieres eliminar esto solo de tu calendario o del de todos?",
+  "justMe": "Solo yo",
+  "everyone": "Todos"
 }

@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:uractor/common/firebase/firestore_core.dart';
 import 'package:uractor/main.dart';
-import 'package:uractor/objects/Media.dart';
+import 'package:uractor/objects/media.dart';
 
 class SocialService {
   /// Updates the list of friends a user watched a media item with, stored in the SeenWith document.
@@ -56,7 +57,8 @@ class SocialService {
             SetOptions(merge: true));
       }
     }).catchError((error) {
-      print("Failed to update document: $error");
+      debugPrint("Failed to update document: $error");
+      throw error;
     });
   }
 
@@ -109,7 +111,8 @@ class SocialService {
             SetOptions(merge: true));
       }
     }).catchError((error) {
-      print("Failed to update document: $error");
+      debugPrint("Failed to update document: $error");
+      throw error;
     });
   }
 

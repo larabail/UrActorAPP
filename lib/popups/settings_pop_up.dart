@@ -57,7 +57,7 @@ class InfoButtonDialog extends StatefulWidget {
   const InfoButtonDialog({super.key});
 
   @override
-  _InfoButtonDialogState createState() => _InfoButtonDialogState();
+  State<InfoButtonDialog> createState() => _InfoButtonDialogState();
 }
 
 class _InfoButtonDialogState extends State<InfoButtonDialog> {
@@ -89,7 +89,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
         selectedCountryObject = findCountryByIsoCode(selectedCountry);
       }
     } catch (e) {
-      print('Error: $e');
+      debugPrint('Error: $e');
     }
   }
 
@@ -103,7 +103,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
             data["results"].map((country) => Provider.fromJson(country)));
       });
     } else {
-      print('Failed to fetch providers');
+      debugPrint('Failed to fetch providers');
     }
   }
 
@@ -122,7 +122,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
     currentUser.country = element.isoCode;
   }
 
-  Future<void> updateSettings(element, newValue) async {
+  Future<void> updateSettings(String element, dynamic newValue) async {
     var userDoc =
         FirebaseFirestore.instance.collection(currentUser.uid).doc("Settings");
     currentUser.settings[element] = newValue;
@@ -159,6 +159,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                     });
                     currentUser.settings["language"] = newLocale.languageCode;
                     await updateSettings("language", newLocale.languageCode);
+                    if (!context.mounted) return;
                     MyApp.setLocale(context, newLocale);
                   }
                 },
@@ -221,7 +222,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                             "dontAskCalendar", currentUser.dontAskCalendar);
                       });
                     },
-                    activeColor: Colors.green,
+                    activeThumbColor: Colors.green,
                   ),
                   const SizedBox(width: 16),
                   const Icon(Icons.disabled_by_default,
@@ -300,11 +301,12 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                   // Logout Button
                   GestureDetector(
                     onTap: () async {
+                      final navigator = Navigator.of(context);
                       await FirebaseAuth.instance.signOut();
-                      Navigator.pop(context);
-                      Navigator.popUntil(context, (route) => route.isFirst);
-                      Navigator.push(
-                        context,
+                      if (!context.mounted) return;
+                      navigator.pop();
+                      navigator.popUntil((route) => route.isFirst);
+                      navigator.push(
                         MaterialPageRoute(builder: (context) => const Login()),
                       );
                     },
@@ -371,26 +373,38 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
   }
 }
 
-class AlertButtonDialogue extends StatelessWidget {
-  TextEditingController passwordController = TextEditingController();
+class AlertButtonDialogue extends StatefulWidget {
+  const AlertButtonDialogue({super.key});
 
-  AlertButtonDialogue({super.key});
+  @override
+  State<AlertButtonDialogue> createState() => _AlertButtonDialogueState();
+}
+
+class _AlertButtonDialogueState extends State<AlertButtonDialogue> {
+  final TextEditingController passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    passwordController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Delete Account'),
+      title: Text(S.of(context)!.deleteAccount),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'Are you sure you want to delete your account? This action will delete all your information.',
-            style: TextStyle(color: Colors.red),
+          Text(
+            S.of(context)!.deleteAccountConfirmation,
+            style: const TextStyle(color: Colors.red),
           ),
           TextField(
             controller: passwordController,
             obscureText: true,
-            decoration: const InputDecoration(
-              hintText: "Enter your password",
+            decoration: InputDecoration(
+              hintText: S.of(context)!.yourPassword,
             ),
           ),
         ],
@@ -398,6 +412,7 @@ class AlertButtonDialogue extends StatelessWidget {
       actions: [
         ElevatedButton(
           onPressed: () async {
+            final navigator = Navigator.of(context);
             CollectionReference collectionRef =
                 FirebaseFirestore.instance.collection(currentUser.uid);
             QuerySnapshot snapshot = await collectionRef.get();
@@ -407,22 +422,21 @@ class AlertButtonDialogue extends StatelessWidget {
             User? user = FirebaseAuth.instance.currentUser;
             AuthCredential credential = EmailAuthProvider.credential(
               email: user!.email as String,
-              password: passwordController
-                  .text, // Replace 'user_password' with the user's password
+              password: passwordController.text,
             );
             await user.reauthenticateWithCredential(credential);
 
             await user.delete();
 
-            Navigator.pop(context);
-            Navigator.popUntil(context, (route) => route.isFirst);
-            Navigator.push(
-              context,
+            if (!context.mounted) return;
+            navigator.pop();
+            navigator.popUntil((route) => route.isFirst);
+            navigator.push(
               MaterialPageRoute(builder: (context) => const Login()),
             );
           },
           style: ButtonStyle(
-            backgroundColor: MaterialStateProperty.all(Colors.red),
+            backgroundColor: WidgetStateProperty.all(Colors.red),
           ),
           child: const Text('Delete'),
         ),

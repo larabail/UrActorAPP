@@ -44,5 +44,13 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Gradle build output
+/android/build/
+/android/.gradle/
+
 # security related
 /signingkey
+
+# Local API keys, passed via --dart-define-from-file.
+# Copy dart_defines.example.json to dart_defines.json and fill it in.
+/dart_defines.json

@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/firebase/firestore_core.dart';
 import 'package:uractor/main.dart';
-import 'package:uractor/objects/Media.dart';
+import 'package:uractor/objects/media.dart';
 import 'package:uractor/popups/rating_popup.dart';
 
 class ReviewService {
@@ -13,7 +13,7 @@ class ReviewService {
   /// @param type The media type.
   /// @param context The UI context.
   /// @return A Future indicating if the dialog was completed.
-  static Future<bool> writeReview(id, type, context) {
+  static Future<bool> writeReview(dynamic id, String type, BuildContext context) {
     reviewId = id.toString();
     reviewType = type;
     Completer<bool> completer = Completer();
@@ -31,7 +31,7 @@ class ReviewService {
   /// @param type The media type.
   /// @param context The UI context.
   /// @return A Future indicating if the dialog was completed.
-  static Future<bool> editReview(id, type, context) {
+  static Future<bool> editReview(dynamic id, String type, BuildContext context) {
     reviewId = id.toString();
     reviewType = type;
 
@@ -56,7 +56,7 @@ class ReviewService {
   /// @param type The media type.
   /// @param context The UI context.
   /// @return True if the review was successfully deleted.
-  static Future<bool> deleteReview(id, type, context) async {
+  static Future<bool> deleteReview(dynamic id, String type, BuildContext context) async {
     reviewInfo = {};
     reviewed = false;
     await FirebaseFirestore.instance

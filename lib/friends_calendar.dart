@@ -9,13 +9,11 @@ import 'common/constants.dart';
 import 'common/utils.dart';
 import 'package:uractor/common/firebase/firebaseutils.dart';
 import 'friends.dart';
-import 'objects/Movie.dart';
-import 'objects/TVShow.dart';
+import 'objects/movie.dart';
+import 'objects/tv_show.dart';
 import 'movie_result.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 import 'tvshow_result.dart';
 
@@ -25,7 +23,7 @@ DateTime selectedDate = DateTime.now();
 class FriendCalendar extends StatefulWidget {
   const FriendCalendar({super.key, required String friendUid});
   @override
-  _FriendCalendarState createState() => _FriendCalendarState();
+  State<FriendCalendar> createState() => _FriendCalendarState();
 }
 
 class _FriendCalendarState extends State<FriendCalendar> {
@@ -105,7 +103,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
     List moviesOnDay = [];
     List movies = [];
 
-    void onDaySelected(DateTime selectedDay, DateTime focusedDay) {
+    void onDaySelected(DateTime selectedDay, DateTime focusedDay) async {
       String month = '${selectedDay.month}';
       String day = '${selectedDay.day}';
       if (selectedDay.month < 10) {
@@ -122,22 +120,8 @@ class _FriendCalendarState extends State<FriendCalendar> {
       }
       int i = 0;
       movies = [];
-      moviesOnDay.forEach((element) async {
-        String id = element['id'];
-        String name = element['title'];
-        final response = await http.get(Uri.parse(
-            '${element.containsKey("type") ? element["type"] == "movie" ? MOVIE_LINK : TV_SHOW_LINK : MOVIE_LINK}$id-$name$API_KEY'));
-        if (response.statusCode == 200) {
-          dynamic json = jsonDecode(response.body);
-          if (!Utils.containsMap(movies, json)) {
-            if (element.containsKey("friends")) {
-              json["friends"] = element["friends"];
-            }
-            movies.add(json);
-          }
-        } else {
-          throw Exception('Failed to load movie details');
-        }
+      for (var element in moviesOnDay) {
+        await Utils.fetchCalendarElement(element, movies, dedupe: true);
         if (i == moviesOnDay.length - 1) {
           showModalBottomSheet(
             context: context,
@@ -175,14 +159,14 @@ class _FriendCalendarState extends State<FriendCalendar> {
                                                       title: event['title'],
                                                       coverPhoto: event[
                                                               "poster_path"] ??
-                                                          UNKOWN_COVER)
+                                                          UNKNOWN_COVER)
                                                   : TVShow(
                                                       id: event["id"]
                                                           .toString(),
                                                       title: event['name'],
                                                       coverPhoto: event[
                                                               "poster_path"] ??
-                                                          UNKOWN_COVER);
+                                                          UNKNOWN_COVER);
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
@@ -298,8 +282,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
                                         ],
                                       ),
                                     ),
-                                  )
-                                  .toList(),
+                                  ),
                             ],
                           ),
                         ),
@@ -312,7 +295,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
           );
         }
         i++;
-      });
+      }
     }
 
     if (gotData) {

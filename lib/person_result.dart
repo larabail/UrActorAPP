@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/l10n/l10n.dart';
-import 'package:uractor/objects/Movie.dart';
-import 'package:uractor/objects/Person.dart';
-import 'package:uractor/objects/TVShow.dart';
+import 'package:uractor/objects/movie.dart';
+import 'package:uractor/objects/person.dart';
+import 'package:uractor/objects/tv_show.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'common/utils.dart';
@@ -13,21 +13,21 @@ import 'tvshow_result.dart';
 
 class PersonResult extends StatefulWidget {
   final Person personResult;
-  const PersonResult({Key? key, required this.personResult}) : super(key: key);
+  const PersonResult({super.key, required this.personResult});
 
   @override
-  _PersonResultState createState() => _PersonResultState();
+  State<PersonResult> createState() => _PersonResultState();
 }
 
 class _PersonResultState extends State<PersonResult> {
-  Widget ranking(role, ranking, score) {
+  Widget ranking(String role, dynamic ranking, dynamic score) {
     return Text(
       "$role ${S.of(context)!.ranking}: #$ranking ($score)",
       style: const TextStyle(fontSize: 16),
     );
   }
 
-  Widget statsProgress(role, totalStats, totalCount) {
+  Widget statsProgress(String role, int totalStats, int totalCount) {
     return Text(
       "$role ${S.of(context)!.progress}: $totalStats / $totalCount (${(((totalStats / totalCount) * 100).toStringAsFixed(2))}%)",
       style: const TextStyle(fontSize: 16),
@@ -502,8 +502,8 @@ class _PersonResultState extends State<PersonResult> {
   }
 
   Stack seen(BuildContext context, movie, type, oscars) {
-    if (!Utils.contains_non_type(currentUser.seenMovies, [type, movie['id']]) &&
-        !Utils.contains_non_type(
+    if (!Utils.containsNonType(currentUser.seenMovies, [type, movie['id']]) &&
+        !Utils.containsNonType(
             currentUser.seenTVShows, [type, movie['id']])) {
       return Stack(
         children: [
@@ -577,8 +577,8 @@ class _PersonResultState extends State<PersonResult> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  const Color.fromARGB(255, 0, 0, 0).withOpacity(0.85),
-                  const Color.fromARGB(0, 255, 255, 255).withOpacity(0),
+                  const Color.fromARGB(255, 0, 0, 0).withValues(alpha: 0.85),
+                  const Color.fromARGB(0, 255, 255, 255).withValues(alpha: 0),
                 ],
               ),
             ),
@@ -653,8 +653,8 @@ class _PersonResultState extends State<PersonResult> {
   }
 
   Stack seenCrew(BuildContext context, movie, type, oscars) {
-    if (!Utils.contains_non_type(currentUser.seenMovies, [type, movie['id']]) &&
-        !Utils.contains_non_type(
+    if (!Utils.containsNonType(currentUser.seenMovies, [type, movie['id']]) &&
+        !Utils.containsNonType(
             currentUser.seenTVShows, [type, movie['id']])) {
       return Stack(
         children: [
@@ -728,8 +728,8 @@ class _PersonResultState extends State<PersonResult> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  const Color.fromARGB(255, 0, 0, 0).withOpacity(0.75),
-                  const Color.fromARGB(0, 255, 255, 255).withOpacity(0),
+                  const Color.fromARGB(255, 0, 0, 0).withValues(alpha: 0.75),
+                  const Color.fromARGB(0, 255, 255, 255).withValues(alpha: 0),
                 ],
               ),
             ),

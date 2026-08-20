@@ -1,16 +1,16 @@
+// ignore_for_file: non_constant_identifier_names
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../main.dart';
-import '../objects/Playlist.dart';
+import '../objects/playlist.dart';
 
 class GrantAccessDialog extends StatefulWidget {
-  final Playlist list_result;
-  const GrantAccessDialog({Key? key, required this.list_result})
-      : super(key: key);
+  final Playlist listResult;
+  const GrantAccessDialog({super.key, required this.listResult});
 
   @override
-  _GrantAccessDialogState createState() => _GrantAccessDialogState();
+  State<GrantAccessDialog> createState() => _GrantAccessDialogState();
 }
 
 class _GrantAccessDialogState extends State<GrantAccessDialog> {
@@ -19,7 +19,7 @@ class _GrantAccessDialogState extends State<GrantAccessDialog> {
   @override
   Widget build(BuildContext context) {
     Set uidsInListResult =
-        widget.list_result.users.expand((map) => map.keys).toSet();
+        widget.listResult.users.expand((map) => map.keys).toSet();
 
     // Filter currentUser.friends to get UIDs not in uidsInListResult
     List uniqueFriendIds = currentUser.friends
@@ -161,10 +161,11 @@ class _GrantAccessDialogState extends State<GrantAccessDialog> {
                     }
                     await FirebaseFirestore.instance
                         .collection('Watchlists')
-                        .doc(widget.list_result.id)
+                        .doc(widget.listResult.id)
                         .update({'Users': FieldValue.arrayUnion(itemToAdd)});
-                    widget.list_result.users += itemToAdd;
-                    Navigator.pop(context, widget.list_result);
+                    widget.listResult.users += itemToAdd;
+                    if (!context.mounted) return;
+                    Navigator.pop(context, widget.listResult);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey[900],

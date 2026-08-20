@@ -5,15 +5,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/common/item_container.dart';
 import '../common/api/apiutils.dart';
 import '../main.dart';
-import '../objects/Playlist.dart';
+import '../objects/playlist.dart';
 
 class MovieAddDialogue extends StatefulWidget {
   final Playlist list_result;
-  const MovieAddDialogue({Key? key, required this.list_result})
-      : super(key: key);
+  const MovieAddDialogue({super.key, required this.list_result});
 
   @override
-  _MovieAddDialogueState createState() => _MovieAddDialogueState();
+  State<MovieAddDialogue> createState() => _MovieAddDialogueState();
 }
 
 class _MovieAddDialogueState extends State<MovieAddDialogue> {

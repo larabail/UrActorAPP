@@ -17,7 +17,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 3.5.3+44
+version: 3.5.4+47
 
 environment:
   sdk: ">=3.5.4 <4.0.0"
@@ -34,19 +34,16 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.2
-  firebase_core: ^3.8.0
-  firebase_auth: ^5.3.3
-  cloud_firestore: ^5.5.0
+  firebase_core: ^4.13.0
+  firebase_auth: ^6.5.7
+  cloud_firestore: ^6.8.0
   table_calendar: ^3.0.8
   http: ^1.0.0
   fl_chart: ^1.0.0
   youtube_player_flutter: ^9.1.1
-  firebase_storage: ^12.3.6
+  firebase_storage: ^13.4.6
   image_picker: ^1.0.4
-  image_cropper: ^9.1.0
+  image_cropper: ^12.2.1
   intl: ^0.20.2
   marquee: ^2.1.1
   cached_network_image: ^3.3.1
@@ -74,20 +71,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
-    - assets/round_logo.png
-    - assets/main_profile.png
-    - assets/logo_character.png
-    - assets/watchlist_after.png
-    - assets/watchlist_before.png
-    - assets/seen_before.png
-    - assets/seen_after.png
-    - assets/playlists_before.png
-    - assets/playlists_after.png
-    - assets/fav_after.png
-    - assets/fav_before.png
-    - assets/oscar2.png
-    - assets/oscars_api.json
-    - assets/temp_cover.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
