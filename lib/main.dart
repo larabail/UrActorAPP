@@ -12,8 +12,10 @@ import 'package:uractor/tvshow_result.dart';
 import 'package:flutter/material.dart';
 import 'package:marquee/marquee.dart';
 import 'common/constants.dart';
+import 'common/firebase/settings_service.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
+import 'common/playlist_order.dart';
 import 'calendar.dart';
 import 'favorites.dart';
 import 'list_result.dart';
@@ -476,9 +478,12 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget buildPlaylistsSection() {
-    List filteredKeys = currentUser.playlists.keys
-        .where((key) => key != "recommendations")
-        .toList();
+    // Shares the order arranged on the Playlists page, so rearranging there is
+    // what decides which playlists make the cut here.
+    List filteredKeys = orderPlaylistIds(
+      currentUser.playlists.keys.map((key) => key.toString()),
+      SettingsService.read<dynamic>(kPlaylistOrderSettingsKey, null),
+    );
 
     return GridView.builder(
       physics: const NeverScrollableScrollPhysics(),

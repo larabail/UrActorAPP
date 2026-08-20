@@ -967,6 +967,78 @@ abstract class S {
   /// **'Enter name of person/movie/show...'**
   String get searchBar;
 
+  /// No description provided for @noSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found'**
+  String get noSearchResults;
+
+  /// No description provided for @sortByAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Date added'**
+  String get sortByAdded;
+
+  /// No description provided for @sortByTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get sortByTitle;
+
+  /// No description provided for @sortByReleaseDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Release date'**
+  String get sortByReleaseDate;
+
+  /// No description provided for @sortByMyRating.
+  ///
+  /// In en, this message translates to:
+  /// **'My rating'**
+  String get sortByMyRating;
+
+  /// No description provided for @sortByImdbRating.
+  ///
+  /// In en, this message translates to:
+  /// **'IMDb rating'**
+  String get sortByImdbRating;
+
+  /// No description provided for @sortAscending.
+  ///
+  /// In en, this message translates to:
+  /// **'Ascending'**
+  String get sortAscending;
+
+  /// No description provided for @sortDescending.
+  ///
+  /// In en, this message translates to:
+  /// **'Descending'**
+  String get sortDescending;
+
+  /// No description provided for @reorderFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'Reorder'**
+  String get reorderFriends;
+
+  /// No description provided for @reorderPlaylists.
+  ///
+  /// In en, this message translates to:
+  /// **'Reorder'**
+  String get reorderPlaylists;
+
+  /// No description provided for @finishReordering.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get finishReordering;
+
+  /// No description provided for @noFriendsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t added any friends yet!'**
+  String get noFriendsYet;
+
   /// No description provided for @episodes.
   ///
   /// In en, this message translates to:
