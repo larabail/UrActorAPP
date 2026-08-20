@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:uractor/cast_and_crew.dart';
 import 'package:uractor/common/constants.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/common/watch_progress_controller.dart';
+import 'package:uractor/common/watch_progress_view.dart';
+import 'package:uractor/common/watch_progress_widgets.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/tv_show.dart';
 import 'common/navigation/appbar.dart';
@@ -23,6 +26,29 @@ class SeasonGuide extends StatefulWidget {
 }
 
 class _SeasonGuideState extends State<SeasonGuide> {
+  late final ShowProgressController _progress;
+
+  @override
+  void initState() {
+    super.initState();
+    // The season list already carries every episode count TMDB knows about, so
+    // the completion metadata the service needs comes free rather than costing
+    // another round of requests.
+    _progress = ShowProgressController(
+      showId: widget.show.id.toString(),
+      seasons: WatchProgressView.seasonCounts(
+        widget.tvShowData["seasons"] as List?,
+      ),
+    );
+    _progress.load();
+  }
+
+  @override
+  void dispose() {
+    _progress.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,8 +56,11 @@ class _SeasonGuideState extends State<SeasonGuide> {
       body: Column(
         children: [
           Expanded(
-            child:
-                Seasons(items: widget.tvShowData["seasons"], show: widget.show),
+            child: Seasons(
+              items: widget.tvShowData["seasons"],
+              show: widget.show,
+              progress: _progress,
+            ),
           ),
         ],
       ),
@@ -43,8 +72,14 @@ class _SeasonGuideState extends State<SeasonGuide> {
 class Seasons extends StatelessWidget {
   final List<dynamic> items;
   final TVShow show;
+  final ShowProgressController progress;
 
-  const Seasons({super.key, required this.items, required this.show});
+  const Seasons({
+    super.key,
+    required this.items,
+    required this.show,
+    required this.progress,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +92,7 @@ class Seasons extends StatelessWidget {
             final itemIndex = index * 1 + i;
             if (itemIndex < items.length) {
               final item = items[itemIndex] as Map;
-              return ItemCard(info: item, show: show);
+              return ItemCard(info: item, show: show, progress: progress);
             }
             return const SizedBox.shrink(); // Return an empty widget if no item
           }),
@@ -70,11 +105,19 @@ class Seasons extends StatelessWidget {
 class ItemCard extends StatelessWidget {
   final Map info;
   final TVShow show;
+  final ShowProgressController progress;
 
-  const ItemCard({super.key, required this.info, required this.show});
+  const ItemCard({
+    super.key,
+    required this.info,
+    required this.show,
+    required this.progress,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final seasonNumber =
+        int.tryParse(info["season_number"]?.toString() ?? '') ?? -1;
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -83,17 +126,17 @@ class ItemCard extends StatelessWidget {
             builder: (context) => EpisodeGuide(
               show: show,
               seasonData: info,
+              progress: progress,
             ),
           ),
         );
       },
       child: Row(children: [
         getItemContainer(context, info, "media"),
-        Column(
-          children: [
-            SizedBox(
-              width: MediaQuery.of(context).size.width * 0.5,
-              child: SingleChildScrollView(
+        Expanded(
+          child: Column(
+            children: [
+              SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Text(
                   "${info['name']}",
@@ -102,10 +145,7 @@ class ItemCard extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
-            SizedBox(
-              width: MediaQuery.of(context).size.width * 0.5,
-              child: SingleChildScrollView(
+              SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Text(
                   "${info["episode_count"]} ${S.of(context)!.episodes}",
@@ -114,19 +154,36 @@ class ItemCard extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-        SizedBox(
-          width: MediaQuery.of(context).size.width * 0.1,
-          child: const SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Text(
-              " →",
-              style: TextStyle(
-                fontSize: 14,
+              // Only worth the line once there is progress to report; an
+              // untouched show would otherwise carry a "0 of 10" on every row.
+              AnimatedBuilder(
+                animation: progress,
+                builder: (context, _) {
+                  final watched = progress.watchedCountOf(seasonNumber);
+                  if (watched == 0) return const SizedBox.shrink();
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Text(
+                      S.of(context)!.watchProgressEpisodesWatched(
+                            watched,
+                            progress.episodeCountOf(seasonNumber),
+                          ),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.green,
+                      ),
+                    ),
+                  );
+                },
               ),
-            ),
+            ],
+          ),
+        ),
+        SeasonWatchToggle(controller: progress, seasonNumber: seasonNumber),
+        const Text(
+          " →",
+          style: TextStyle(
+            fontSize: 14,
           ),
         ),
       ]),
@@ -137,8 +194,14 @@ class ItemCard extends StatelessWidget {
 class EpisodeGuide extends StatefulWidget {
   final TVShow show;
   final Map seasonData;
+  final ShowProgressController progress;
 
-  const EpisodeGuide({super.key, required this.show, required this.seasonData});
+  const EpisodeGuide({
+    super.key,
+    required this.show,
+    required this.seasonData,
+    required this.progress,
+  });
 
   @override
   State<EpisodeGuide> createState() => _EpisodeGuideState();
@@ -152,7 +215,11 @@ class _EpisodeGuideState extends State<EpisodeGuide> {
       body: Column(
         children: [
           Expanded(
-            child: Episodes(seasonData: widget.seasonData, show: widget.show),
+            child: Episodes(
+              seasonData: widget.seasonData,
+              show: widget.show,
+              progress: widget.progress,
+            ),
           ),
         ],
       ),
@@ -164,7 +231,14 @@ class _EpisodeGuideState extends State<EpisodeGuide> {
 class Episodes extends StatelessWidget {
   final Map seasonData;
   final TVShow show;
-  const Episodes({super.key, required this.seasonData, required this.show});
+  final ShowProgressController progress;
+
+  const Episodes({
+    super.key,
+    required this.seasonData,
+    required this.show,
+    required this.progress,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -180,6 +254,7 @@ class Episodes extends StatelessWidget {
                 seasonInfo: seasonData,
                 show: show,
                 episode: itemIndex + 1,
+                progress: progress,
               );
             }
             return const SizedBox.shrink();
@@ -213,15 +288,19 @@ class EpisodeCard extends StatelessWidget {
   final Map seasonInfo;
   final TVShow show;
   final int episode;
+  final ShowProgressController progress;
 
   const EpisodeCard(
       {super.key,
       required this.seasonInfo,
       required this.show,
-      required this.episode});
+      required this.episode,
+      required this.progress});
 
   @override
   Widget build(BuildContext context) {
+    final seasonNumber =
+        int.tryParse(seasonInfo["season_number"]?.toString() ?? '') ?? -1;
     return FutureBuilder<Map>(
       future: getEpisodeData(show.id, seasonInfo["season_number"], episode),
       builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
@@ -257,11 +336,10 @@ class EpisodeCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Column(
-                children: [
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.5,
-                    child: SingleChildScrollView(
+              Expanded(
+                child: Column(
+                  children: [
+                    SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Text(
                         "${S.of(context)!.episode} ${snapshot.data!["episode_number"]}",
@@ -270,10 +348,7 @@ class EpisodeCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.5,
-                    child: SingleChildScrollView(
+                    SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Text(
                         "${snapshot.data!['name']}",
@@ -282,19 +357,18 @@ class EpisodeCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              SizedBox(
-                width: MediaQuery.of(context).size.width * 0.1,
-                child: const SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Text(
-                    " →",
-                    style: TextStyle(
-                      fontSize: 14,
-                    ),
-                  ),
+              EpisodeWatchToggle(
+                controller: progress,
+                seasonNumber: seasonNumber,
+                episodeNumber: episode,
+              ),
+              const Text(
+                " →",
+                style: TextStyle(
+                  fontSize: 14,
                 ),
               ),
             ]),

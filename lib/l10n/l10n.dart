@@ -63,7 +63,7 @@ import 'l10n_es.dart';
 /// property.
 abstract class S {
   S(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -85,16 +85,16 @@ abstract class S {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('es'),
+    Locale('es')
   ];
 
   /// No description provided for @addTVShowToCalendar.
@@ -1230,6 +1230,90 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Something went wrong. Please try again.'**
   String get friendRequestActionFailedError;
+
+  /// No description provided for @watchProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch progress'**
+  String get watchProgress;
+
+  /// No description provided for @watchProgressNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get watchProgressNotStarted;
+
+  /// No description provided for @watchProgressInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Watching'**
+  String get watchProgressInProgress;
+
+  /// No description provided for @watchProgressFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished'**
+  String get watchProgressFinished;
+
+  /// Watch progress status for a title started on a date and not finished yet
+  ///
+  /// In en, this message translates to:
+  /// **'Watching since {date}'**
+  String watchProgressStartedOn(String date);
+
+  /// Watch progress status for a title finished on a date
+  ///
+  /// In en, this message translates to:
+  /// **'Finished on {date}'**
+  String watchProgressFinishedOn(String date);
+
+  /// No description provided for @watchProgressStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start watching'**
+  String get watchProgressStart;
+
+  /// No description provided for @watchProgressFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as finished'**
+  String get watchProgressFinish;
+
+  /// No description provided for @watchProgressReopen.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch again'**
+  String get watchProgressReopen;
+
+  /// No description provided for @watchProgressMarkSeason.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark season as watched'**
+  String get watchProgressMarkSeason;
+
+  /// No description provided for @watchProgressUnmarkSeason.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear this season'**
+  String get watchProgressUnmarkSeason;
+
+  /// No description provided for @watchProgressMarkEpisode.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark episode as watched'**
+  String get watchProgressMarkEpisode;
+
+  /// No description provided for @watchProgressUnmarkEpisode.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmark episode'**
+  String get watchProgressUnmarkEpisode;
+
+  /// How many episodes of a season the user has ticked off
+  ///
+  /// In en, this message translates to:
+  /// **'{watched} of {total} watched'**
+  String watchProgressEpisodesWatched(int watched, int total);
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {
@@ -1258,9 +1342,8 @@ S lookupS(Locale locale) {
   }
 
   throw FlutterError(
-    'S.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
-  );
+      'S.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }
