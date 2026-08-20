@@ -18,8 +18,11 @@ target (see [Platforms](#platforms)).
 - Keep favorites separately from the watchlist (`lib/favorites.dart`).
 - Rate a title and write a review. Movie and TV reviews are stored separately
   (`lib/reviews.dart`, `lib/popups/rating_popup.dart`).
-- Log what you watched on a calendar — a single date or a date range
-  (`lib/calendar.dart`, `lib/popups/add_to_calendar_pop_up.dart`).
+- Log what you watched on a calendar — a single date or a date range. A show
+  entry can also record which season and episode it was, which is optional and
+  shown on both your own calendar and a friend's (`lib/calendar.dart`,
+  `lib/friends_calendar.dart`, `lib/popups/add_to_calendar_pop_up.dart`,
+  `lib/common/calendar_episode.dart`).
 
 ### Lists
 

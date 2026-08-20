@@ -188,5 +188,30 @@
   "profileSetupFailedError": "No pudimos configurar tu perfil, así que deshicimos la cuenta. Por favor, regístrate de nuevo.",
   "profileSetupRollbackFailedError": "No pudimos configurar tu perfil ni deshacer la cuenta. Por favor, inténtalo de nuevo más tarde.",
   "favoriteBadge": "En tus favoritas",
-  "friendRequestActionFailedError": "Algo salió mal. Por favor, inténtalo de nuevo."
+  "friendRequestActionFailedError": "Algo salió mal. Por favor, inténtalo de nuevo.",
+  "calendarEpisodeSectionTitle": "¿Qué parte viste?",
+  "calendarSeasonFieldLabel": "Temporada (opcional)",
+  "calendarEpisodeFieldLabel": "Episodio (opcional)",
+  "calendarEpisodeNeedsSeason": "Añade el número de temporada para guardar un episodio.",
+  "calendarSeasonEpisodeBadge": "T{season} E{episode}",
+  "@calendarSeasonEpisodeBadge": {
+    "description": "Compact season and episode shown on a calendar entry",
+    "placeholders": {
+      "season": {
+        "type": "int"
+      },
+      "episode": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarSeasonBadge": "T{season}",
+  "@calendarSeasonBadge": {
+    "description": "Compact season shown on a calendar entry with no episode",
+    "placeholders": {
+      "season": {
+        "type": "int"
+      }
+    }
+  }
 }

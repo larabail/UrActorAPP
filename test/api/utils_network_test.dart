@@ -171,6 +171,63 @@ void main() {
       expect(deduped, hasLength(1));
     });
 
+    test('carries a recorded season and episode over onto the result', () async {
+      // The screens render this payload, not the stored entry, so detail that
+      // does not survive the fetch is detail the user never sees again.
+      http.on('/3/tv/', json: {'id': 1399, 'name': 'Thrones'});
+
+      final target = [];
+      await Utils.fetchCalendarElement({
+        'id': '1399',
+        'title': 'Thrones',
+        'type': 'series',
+        'season': 2,
+        'episode': 9,
+      }, target);
+
+      expect(target.single['season'], 2);
+      expect(target.single['episode'], 9);
+    });
+
+    test('adds no season or episode to an entry that recorded none', () async {
+      // Every entry written before this feature existed, and every entry a
+      // friend on an older build writes, has to keep rendering unchanged.
+      http.on('/3/movie/', json: {'id': 27205, 'title': 'Inception'});
+
+      final target = [];
+      await Utils.fetchCalendarElement(
+          {'id': '27205', 'title': 'Inception', 'type': 'movie'}, target);
+
+      expect(target.single.containsKey('season'), isFalse);
+      expect(target.single.containsKey('episode'), isFalse);
+    });
+
+    test('keeps two episodes of one show on one day apart when deduping',
+        () async {
+      // Deduping used to compare the bare TMDB payload, which is identical for
+      // both, so the second episode vanished from the friend calendar.
+      http.on('/3/tv/', json: {'id': 1399, 'name': 'Thrones'});
+
+      final target = [];
+      await Utils.fetchCalendarElement({
+        'id': '1399',
+        'title': 'Thrones',
+        'type': 'series',
+        'season': 1,
+        'episode': 1,
+      }, target, dedupe: true);
+      await Utils.fetchCalendarElement({
+        'id': '1399',
+        'title': 'Thrones',
+        'type': 'series',
+        'season': 1,
+        'episode': 2,
+      }, target, dedupe: true);
+
+      expect(target, hasLength(2));
+      expect(target.map((e) => e['episode']), [1, 2]);
+    });
+
     test('throws when the request fails', () async {
       http.on('/3/movie/', status: 500, body: '');
 

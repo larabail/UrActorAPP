@@ -326,5 +326,30 @@
   "profileSetupFailedError": "We couldn't set up your profile, so we undid the account. Please try signing up again.",
   "profileSetupRollbackFailedError": "We couldn't set up your profile or undo the account. Please try again later.",
   "favoriteBadge": "In your favorites",
-  "friendRequestActionFailedError": "Something went wrong. Please try again."
+  "friendRequestActionFailedError": "Something went wrong. Please try again.",
+  "calendarEpisodeSectionTitle": "Which part did you watch?",
+  "calendarSeasonFieldLabel": "Season (optional)",
+  "calendarEpisodeFieldLabel": "Episode (optional)",
+  "calendarEpisodeNeedsSeason": "Add a season number to record an episode.",
+  "calendarSeasonEpisodeBadge": "S{season} E{episode}",
+  "@calendarSeasonEpisodeBadge": {
+    "description": "Compact season and episode shown on a calendar entry",
+    "placeholders": {
+      "season": {
+        "type": "int"
+      },
+      "episode": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarSeasonBadge": "S{season}",
+  "@calendarSeasonBadge": {
+    "description": "Compact season shown on a calendar entry with no episode",
+    "placeholders": {
+      "season": {
+        "type": "int"
+      }
+    }
+  }
 }

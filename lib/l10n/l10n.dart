@@ -1230,6 +1230,42 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Something went wrong. Please try again.'**
   String get friendRequestActionFailedError;
+
+  /// No description provided for @calendarEpisodeSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which part did you watch?'**
+  String get calendarEpisodeSectionTitle;
+
+  /// No description provided for @calendarSeasonFieldLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Season (optional)'**
+  String get calendarSeasonFieldLabel;
+
+  /// No description provided for @calendarEpisodeFieldLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Episode (optional)'**
+  String get calendarEpisodeFieldLabel;
+
+  /// No description provided for @calendarEpisodeNeedsSeason.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a season number to record an episode.'**
+  String get calendarEpisodeNeedsSeason;
+
+  /// Compact season and episode shown on a calendar entry
+  ///
+  /// In en, this message translates to:
+  /// **'S{season} E{episode}'**
+  String calendarSeasonEpisodeBadge(int season, int episode);
+
+  /// Compact season shown on a calendar entry with no episode
+  ///
+  /// In en, this message translates to:
+  /// **'S{season}'**
+  String calendarSeasonBadge(int season);
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

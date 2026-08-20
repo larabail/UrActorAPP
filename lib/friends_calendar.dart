@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:uractor/common/calendar_episode_badge.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'common/navigation/appbar.dart';
@@ -282,6 +283,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
                                               ],
                                             ),
                                           ),
+                                          CalendarEpisodeBadge(entry: event),
                                         ],
                                       ),
                                     ),
