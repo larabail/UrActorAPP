@@ -87,12 +87,24 @@ class SEs extends S {
 
   @override
   String playlistCount(int playlistCount) {
-    return '$playlistCount listas';
+    String _temp0 = intl.Intl.pluralLogic(
+      playlistCount,
+      locale: localeName,
+      other: '$playlistCount listas',
+      one: '$playlistCount lista',
+    );
+    return '$_temp0';
   }
 
   @override
   String seeAll(int number) {
-    return 'Ver todo ($number elementos)';
+    String _temp0 = intl.Intl.pluralLogic(
+      number,
+      locale: localeName,
+      other: 'Ver todo ($number elementos)',
+      one: 'Ver todo ($number elemento)',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -136,8 +148,14 @@ class SEs extends S {
   String get notifications => 'Notificaciones';
 
   @override
-  String totalContent(String totalContent) {
-    return '$totalContent elementos';
+  String totalContent(int totalContent) {
+    String _temp0 = intl.Intl.pluralLogic(
+      totalContent,
+      locale: localeName,
+      other: '$totalContent elementos',
+      one: '$totalContent elemento',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -183,7 +201,7 @@ class SEs extends S {
 
   @override
   String status(String status) {
-    return 'Status: $status';
+    return 'Estado: $status';
   }
 
   @override
@@ -494,4 +512,68 @@ class SEs extends S {
 
   @override
   String get createdBy => 'Creada por';
+
+  @override
+  String get noUserFoundError =>
+      'No se encontró ningún usuario con ese correo electrónico.';
+
+  @override
+  String get wrongPasswordError => 'Contraseña incorrecta para ese usuario.';
+
+  @override
+  String get weakPasswordError =>
+      'La contraseña proporcionada es demasiado débil.';
+
+  @override
+  String get emailAlreadyInUseError =>
+      'Ya existe una cuenta con ese correo electrónico.';
+
+  @override
+  String get invalidEmailError =>
+      'Esa dirección de correo electrónico no es válida.';
+
+  @override
+  String get genericAuthError =>
+      'Algo salió mal. Por favor, inténtalo de nuevo.';
+
+  @override
+  String get deleteAccount => 'Eliminar Cuenta';
+
+  @override
+  String get deleteAccountConfirmation =>
+      '¿Estás seguro de que quieres eliminar tu cuenta? Esta acción eliminará toda tu información.';
+
+  @override
+  String get joinListFailed => 'Código de acceso o nombre de lista incorrecto';
+
+  @override
+  String get joinListTitle => 'Unirse a Lista';
+
+  @override
+  String get enterListName => 'Por favor, introduce un nombre de lista';
+
+  @override
+  String get listName => 'Nombre de la Lista';
+
+  @override
+  String get accessCodeLabel => 'Código de Acceso';
+
+  @override
+  String get add => 'Añadir';
+
+  @override
+  String get confirmWatchedToday => '¿Has visto esta película hoy?';
+
+  @override
+  String get deleteCalendarEntry => 'Eliminar Entrada del Calendario';
+
+  @override
+  String get deleteCalendarEntryQuestion =>
+      '¿Quieres eliminar esto solo de tu calendario o del de todos?';
+
+  @override
+  String get justMe => 'Solo yo';
+
+  @override
+  String get everyone => 'Todos';
 }

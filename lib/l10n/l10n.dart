@@ -238,13 +238,13 @@ abstract class S {
   /// Shown under see all to show playlist count
   ///
   /// In en, this message translates to:
-  /// **'{playlistCount} playlists'**
+  /// **'{playlistCount, plural, one{{playlistCount} playlist} other{{playlistCount} playlists}}'**
   String playlistCount(int playlistCount);
 
   /// Shown at the end of a title to expand items
   ///
   /// In en, this message translates to:
-  /// **'See All ({number} items)'**
+  /// **'{number, plural, one{See All ({number} item)} other{See All ({number} items)}}'**
   String seeAll(int number);
 
   /// Shown when friends have seen the same movie
@@ -322,8 +322,8 @@ abstract class S {
   /// Shown in the playlist cards
   ///
   /// In en, this message translates to:
-  /// **'{totalContent} items'**
-  String totalContent(String totalContent);
+  /// **'{totalContent, plural, one{{totalContent} item} other{{totalContent} items}}'**
+  String totalContent(int totalContent);
 
   /// No description provided for @reviews.
   ///
@@ -946,7 +946,7 @@ abstract class S {
   /// No description provided for @unknown.
   ///
   /// In en, this message translates to:
-  /// **'Unkown'**
+  /// **'Unknown'**
   String get unknown;
 
   /// No description provided for @searchBar.
@@ -990,6 +990,120 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Created by'**
   String get createdBy;
+
+  /// No description provided for @noUserFoundError.
+  ///
+  /// In en, this message translates to:
+  /// **'No user found for that email.'**
+  String get noUserFoundError;
+
+  /// No description provided for @wrongPasswordError.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong password provided for that user.'**
+  String get wrongPasswordError;
+
+  /// No description provided for @weakPasswordError.
+  ///
+  /// In en, this message translates to:
+  /// **'The password provided is too weak.'**
+  String get weakPasswordError;
+
+  /// No description provided for @emailAlreadyInUseError.
+  ///
+  /// In en, this message translates to:
+  /// **'An account already exists for that email.'**
+  String get emailAlreadyInUseError;
+
+  /// No description provided for @invalidEmailError.
+  ///
+  /// In en, this message translates to:
+  /// **'That email address is not valid.'**
+  String get invalidEmailError;
+
+  /// No description provided for @genericAuthError.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get genericAuthError;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete your account? This action will delete all your information.'**
+  String get deleteAccountConfirmation;
+
+  /// No description provided for @joinListFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong access code or list name'**
+  String get joinListFailed;
+
+  /// No description provided for @joinListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join List'**
+  String get joinListTitle;
+
+  /// No description provided for @enterListName.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a list name'**
+  String get enterListName;
+
+  /// No description provided for @listName.
+  ///
+  /// In en, this message translates to:
+  /// **'List Name'**
+  String get listName;
+
+  /// No description provided for @accessCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Access Code'**
+  String get accessCodeLabel;
+
+  /// No description provided for @add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get add;
+
+  /// No description provided for @confirmWatchedToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Did you watch this movie today?'**
+  String get confirmWatchedToday;
+
+  /// No description provided for @deleteCalendarEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Calendar Entry'**
+  String get deleteCalendarEntry;
+
+  /// No description provided for @deleteCalendarEntryQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to delete this from just your calendar or everyone\'s?'**
+  String get deleteCalendarEntryQuestion;
+
+  /// No description provided for @justMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Just me'**
+  String get justMe;
+
+  /// No description provided for @everyone.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone'**
+  String get everyone;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

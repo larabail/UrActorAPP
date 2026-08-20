@@ -47,7 +47,7 @@
   },
   "emptySection": "Nothing here yet",
   "simpleSeeAll": "See All",
-  "playlistCount": "{playlistCount} playlists",
+  "playlistCount": "{playlistCount, plural, one{{playlistCount} playlist} other{{playlistCount} playlists}}",
   "@playlistCount": {
     "description": "Shown under see all to show playlist count",
     "placeholders": {
@@ -56,7 +56,7 @@
       }
     }
   },
-  "seeAll": "See All ({number} items)",
+  "seeAll": "{number, plural, one{See All ({number} item)} other{See All ({number} items)}}",
   "@seeAll": {
     "description": "Shown at the end of a title to expand items",
     "placeholders": {
@@ -93,12 +93,12 @@
   "watchlist": "Watchlist",
   "seen": "Seen",
   "notifications": "Notifications",
-  "totalContent": "{totalContent} items",
+  "totalContent": "{totalContent, plural, one{{totalContent} item} other{{totalContent} items}}",
   "@totalContent": {
     "description": "Shown in the playlist cards",
     "placeholders": {
       "totalContent": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
@@ -279,12 +279,31 @@
   "totalTVShows": "Total TV Shows Ever Seen",
   "modifyProfile": "Modify Profile Sections",
   "noDataAvailable": "No data available",
-  "unknown": "Unkown",
+  "unknown": "Unknown",
   "searchBar": "Enter name of person/movie/show...",
   "episodes": "episodes",
   "episode": "Episode",
   "seemWith": "Seen with",
   "seasons": "seasons",
   "apply": "Apply",
-  "createdBy": "Created by"
+  "createdBy": "Created by",
+  "noUserFoundError": "No user found for that email.",
+  "wrongPasswordError": "Wrong password provided for that user.",
+  "weakPasswordError": "The password provided is too weak.",
+  "emailAlreadyInUseError": "An account already exists for that email.",
+  "invalidEmailError": "That email address is not valid.",
+  "genericAuthError": "Something went wrong. Please try again.",
+  "deleteAccount": "Delete Account",
+  "deleteAccountConfirmation": "Are you sure you want to delete your account? This action will delete all your information.",
+  "joinListFailed": "Wrong access code or list name",
+  "joinListTitle": "Join List",
+  "enterListName": "Please enter a list name",
+  "listName": "List Name",
+  "accessCodeLabel": "Access Code",
+  "add": "Add",
+  "confirmWatchedToday": "Did you watch this movie today?",
+  "deleteCalendarEntry": "Delete Calendar Entry",
+  "deleteCalendarEntryQuestion": "Do you want to delete this from just your calendar or everyone's?",
+  "justMe": "Just me",
+  "everyone": "Everyone"
 }
