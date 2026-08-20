@@ -98,11 +98,13 @@ class CalendarService {
     // means -- not the full friend list, which would also wipe the entry from
     // friends who logged the same title on the same day independently.
     List watchedWith = [];
+    String seenWithType = "Movies";
     if (calendarData[date] is List) {
       for (Map entry in List.from(calendarData[date])) {
         if (entry['id'].toString() == id.toString() &&
             entry['title'].toString() == title.toString()) {
           watchedWith = List.from(entry['friends'] ?? [])..remove(uid);
+          seenWithType = entry['type'] == "series" ? "TVShows" : "Movies";
           break;
         }
       }
@@ -110,6 +112,8 @@ class CalendarService {
 
     if (deleteForEveryone == true && watchedWith.isNotEmpty) {
       await deleteFromFriendsCalendar(id, title, date, watchedWith);
+    } else if (deleteForEveryone == false && watchedWith.isNotEmpty) {
+      await removeCurrentUserFromFriendsSeenWith(id, seenWithType, watchedWith);
     }
     Map<Object, Object> updatedCalendar = {};
     for (String key in calendarData.keys) {
@@ -145,6 +149,36 @@ class CalendarService {
       currentUser.calendar = Map<String, List>.from(calendarData);
     }
     await FirestoreCore.updateDocument(uid, "Calendar", updatedCalendar);
+  }
+
+  /// Removes the current user from friends' reciprocal SeenWith records.
+  /// @param id The media ID.
+  /// @param type The SeenWith type key, "Movies" or "TVShows".
+  /// @param friendUids The friends whose reciprocal records may reference the current user.
+  static Future<void> removeCurrentUserFromFriendsSeenWith(
+      String id, String type, List friendUids) async {
+    for (String friendUid in friendUids.cast<String>()) {
+      Map seenWithDocInfo =
+          await FirestoreCore.getDocumentData(friendUid, "SeenWith");
+      Map seenWithData = seenWithDocInfo["data"];
+      DocumentReference seenWithDoc = seenWithDocInfo["snapshot"];
+
+      if (seenWithData[type] is! Map) continue;
+
+      Map<String, dynamic> typeMap =
+          Map<String, dynamic>.from(seenWithData[type] as Map);
+      if (typeMap[id] is! Map) continue;
+
+      Map<String, dynamic> itemMap = Map<String, dynamic>.from(typeMap[id]);
+      if (itemMap["friends"] is! List) continue;
+
+      List friends = List.from(itemMap["friends"]);
+      if (!friends.remove(currentUser.uid)) continue;
+
+      itemMap["friends"] = friends;
+      typeMap[id] = itemMap;
+      await FirestoreCore.mergeInto(seenWithDoc, {type: typeMap});
+    }
   }
 
   /// Deletes a calendar entry from the calendars of the friends it was
