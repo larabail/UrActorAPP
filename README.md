@@ -25,9 +25,11 @@ target (see [Platforms](#platforms)).
 
 - Build custom lists that can hold both movies and TV shows
   (`lib/playlists.dart`, `lib/objects/Playlist.dart`).
-- Share a list. Each list carries an access code, and friends join by entering
-  it (`lib/popups/list_join_popup.dart`). You can also grant access to specific
-  friends directly (`lib/popups/grant_access_dialogue.dart`).
+- Share a list. Each list carries an access code, but new clients send the
+  list name and code to the `joinPlaylist` Cloud Function so the code is
+  checked server-side instead of exposing every playlist to the device
+  (`lib/popups/list_join_popup.dart`, `functions/index.js`). You can also
+  grant access to specific friends directly (`lib/popups/grant_access_dialogue.dart`).
 
 ### Friends
 
@@ -69,11 +71,11 @@ target (see [Platforms](#platforms)).
 
 | Piece | What it's used for |
 |---|---|
-| Flutter / Dart | The app itself, all six platform targets |
+| Flutter / Dart | The Android and iOS app |
 | `firebase_auth` | Email accounts and session restore |
-| `cloud_firestore` | Users, history, lists, reviews, friends, `Oscars` |
+| `cloud_firestore` | Users, history, lists, reviews, friends, playlists, `Oscars` |
 | `firebase_storage` | Profile photos and fallback cover/person images |
-| Cloud Functions (Node 22) | One Firestore trigger, in `functions/` |
+| Cloud Functions (Node 22) | Server-verified playlist joins and playlist membership sync |
 | [TMDB API v3](https://developer.themoviedb.org/docs) | Movie, TV, person, search, credits, videos, watch providers, genres |
 | `table_calendar` | The watch calendar |
 | `fl_chart` | Profile stats |
@@ -102,10 +104,12 @@ hand-edited, so re-running the tool does not produce a spurious diff.
 
 ### Prerequisites
 
-- **Flutter 3.35.0 or newer** (Dart 3.9.0+). `pubspec.yaml` declares
-  `sdk: ">=3.5.4 <4.0.0"`, but the committed `pubspec.lock` resolves to
-  `dart: ">=3.9.0 <4.0.0"` / `flutter: ">=3.35.0"`, so the lockfile is the
-  constraint that actually bites.
+- **Flutter 3.35.3**. CI installs that exact SDK in
+  `.github/actions/setup-flutter-android/action.yml`; using a newer local SDK
+  can surface a misleading Android Gradle Plugin error before the app code is
+  reached. `pubspec.yaml` still declares the wider Dart constraint
+  `sdk: ">=3.5.4 <4.0.0"`, but the checked-in toolchain pin is the one to
+  match for local verification.
 - A **Firebase project** with Authentication, Firestore, and Storage enabled.
 - A **TMDB API key** ([get one here](https://www.themoviedb.org/settings/api)).
 - **Node 22** if you intend to deploy the Cloud Functions.
@@ -257,7 +261,9 @@ lib/
                              grant access, movie add, tv add, profile sections
   l10n/                      app_en.arb, app_es.arb and their generated output
 
-functions/                   Cloud Functions (Node 22)
+functions/                   Cloud Functions (Node 22): playlist join,
+                             member sync, join-attempt cleanup
+firestore-tests/              Firestore rules tests against the local emulator
 tools/sync-oscars/           Firestore Oscars sync job
 assets/                      Logos, tab icons, placeholder images, oscars_api.json
 test/                        Flutter tests
@@ -265,27 +271,33 @@ test/                        Flutter tests
 
 ## Cloud Functions
 
-`functions/` holds exactly one function, `sendFriendRequestNotification`
-(`functions/index.js`). It is a Firestore `onCreate` trigger on
-`{userId}/Friends/FriendRequests/{requestId}`. When a request document is
-created it reads the recipient's `fcmToken` from their `Settings` document and
-sends an FCM push titled "New Friend Request".
+`functions/` holds three gen 2 Cloud Functions for project `actordb-cf981`, all
+running on Node 22 in `us-central1`:
 
-Deploy it with:
+- `joinPlaylist` is a callable function. It requires auth, normalizes the list
+  name and access code, throttles repeated misses in `JoinAttempts`, queries
+  `Watchlists` by `Name`, compares the submitted code on the server, and adds
+  the caller as `Approved` when it matches. The device no longer has to read
+  every playlist just to test an access code.
+- `syncPlaylistMembers` is a Firestore `onDocumentWritten` trigger on
+  `Watchlists/{listId}`. It derives a flat `memberUids` array from the legacy
+  `Users` role maps so clients can query their own playlists, and it exits when
+  the projection is already current to avoid recursion.
+- `cleanupJoinAttempts` is a scheduled function that runs every 24 hours and
+  deletes stale join-throttle documents.
+
+Deploy from `functions/` with the Firebase CLI after authenticating to the
+Firebase project:
 
 ```bash
-cd functions
 npm install
-firebase deploy --only functions
+npm test
+npm run deploy
 ```
 
-`firebase.json` configures the `functions` codebase only — there are no
-hosting, Firestore rules, or Storage rules blocks in this repo. Rules are
-managed outside of it.
-
-> **Note:** the Flutter app does not depend on `firebase_messaging` and never
-> writes `fcmToken`, so this function currently finds no token to send to. See
-> [Known gaps](#known-gaps).
+Push notifications are not implemented. The old friend-request notification
+trigger was removed because the app never registers an FCM token and the legacy
+FCM send API it used was decommissioned.
 
 ## Localization
 
@@ -319,47 +331,75 @@ To add a language:
 
 ## Tests
 
+The repo has three local suites:
+
 ```bash
-flutter test              # run the suite
-flutter test --coverage   # and write coverage/lcov.info
+flutter test
+
+cd functions
+npm install
+npm test
+
+cd ../firestore-tests
+npm install
+npm test
+```
+
+`flutter test` currently runs 209 tests with no emulator, credentials or
+network access. Firestore and HTTP are reached through two seams —
+`FirestoreCore.db` and `AppHttp.client` — which default to the real
+implementations and are pointed at fakes by the tests.
+`test/support/harness.dart` installs those fakes and restores them afterwards.
+The Flutter suite covers pure logic, TMDB/OMDB request parsing with a stubbed
+HTTP client, auth/session helpers, search and playlist ordering, playlist join
+handling, settings, inbox, calendar/list services, and in-memory Firestore
+service behaviour.
+
+`npm test` in `functions/` runs the Node 22 unit tests for the playlist
+membership and join-throttle helpers. It currently reports 21 passing tests.
+
+`npm test` in `firestore-tests/` starts the Firestore emulator with
+`firebase emulators:exec` and runs the rules suite. It currently reports 61
+passing tests. If port 8080 is already held by an emulator you started
+separately, run `npx mocha rules.test.js --timeout 20000` from
+`firestore-tests/` instead.
+
+For coverage:
+
+```bash
+flutter test --coverage
 python tool/coverage_summary.py
 ```
 
-Everything runs locally with no emulator, credentials or network access.
-Firestore and HTTP are reached through two seams — `FirestoreCore.db` and
-`AppHttp.client` — which default to the real implementations and are pointed at
-fakes by the tests. `test/support/harness.dart` installs those fakes and
-restores them afterwards.
-
-Pure logic:
-
-- `test/utils_test.dart` — the `Utils` list/map membership helpers, including
-  two tests that pin down surprising current behaviour (`containsMap` is
-  sensitive to key order, and `containsList` only ever matches `"Movies"`).
-- `test/constants_test.dart` — the TMDB key guard and endpoint construction,
-  including a regression test that fails if a key is ever hardcoded again.
-- `test/api_utils_test.dart` — the crew-credit helpers behind the movie
-  screen's Director/Writer block, which broke twice from two unrelated causes.
-
-Against a stubbed HTTP client:
-
-- `test/api/apiutils_network_test.dart` — TMDB and OMDB parsing, the language
-  and country a request is made with, and the fallbacks when a title has no
-  IMDb entry.
-- `test/api/utils_network_test.dart` — the shared media and calendar fetch
-  helpers, including their caching and deduplication.
-
-Against an in-memory Firestore:
-
-- `test/firebase/list_services_test.dart` — the watchlist and favorites
-  services, asserting the stored document and the in-memory copy stay in step.
-- `test/objects/user_test.dart` — `AppUser.getFirebaseData`, the parser that
-  turns a user's documents into the state the whole app reads.
-
 Coverage of `lib/common` and `lib/objects` is enforced at a floor in CI. The
-floor deliberately excludes widget code: there are no widget tests, so a
-project-wide number would be dominated by untested UI and would have to be set
-too low to catch a regression.
+floor deliberately covers the tested layers rather than every screen in `lib/`,
+so a useful regression signal is not diluted by UI code that still lacks widget
+tests.
+
+## CI and releases
+
+Pull requests to `master` run `.github/workflows/pr.yml` unless the change is
+only Markdown, docs, or `.gitignore`. The workflow has three jobs:
+
+- **Analyze, test and build** installs Flutter 3.35.3 plus the pinned Android
+  NDK through `.github/actions/setup-flutter-android`, then runs
+  `flutter analyze`, `flutter test --coverage`, the coverage floor, and a
+  release app bundle build using `TMDB_API_KEY` and `OPENAI_API_KEY` from
+  GitHub Actions secrets. Pull request bundles use debug signing and are
+  checked to ensure no release signing material is present.
+- **Functions** installs Node 22 dependencies in `functions/`, runs `npm test`,
+  and confirms `index.js` loads.
+- **Version** runs the unit tests for `tool/check_version_bump.py` and then
+  enforces the version policy from [AGENTS.md](AGENTS.md#versioning) against
+  the pull request title and commits. Do not edit the `+BUILD` suffix; the
+  release workflow derives the build code from Play.
+
+Every merge to `master` that is not docs-only runs
+`.github/workflows/release-internal.yml`. It deploys Cloud Functions to
+`actordb-cf981` first, then analyzes, tests with coverage, builds a signed app
+bundle with a Play-derived version code, generates release notes, uploads to
+Play internal testing, tags the build, and keeps the bundle and coverage report
+as artifacts. Production promotion is separate and manual.
 
 ## Repo tooling
 
@@ -369,9 +409,12 @@ too low to catch a regression.
   script (no npm dependencies) that populates the Firestore `Oscars`
   collection from the UrActor API, resolving winners to TMDB ids. It has its
   own README covering name resolution, overrides, and known gaps.
-- [`firestore.rules`](firestore.rules) — the Firestore security rules, with
-  their own test suite in [`firestore-tests/`](firestore-tests/README.md) that
-  runs against the local emulator.
+- [`firestore.rules`](firestore.rules) — the checked-in Firestore security
+  rules. They constrain both who may write and, for friend writes, the shape of
+  what may be written. Read the rules' own KNOWN GAPS section before treating
+  them as complete. The matching tests live in
+  [`firestore-tests/`](firestore-tests/README.md) and run against the local
+  emulator.
 - [`.githooks/pre-commit`](.githooks/pre-commit) — runs analyze and the tests
   before a commit. Enable it with `git config core.hooksPath .githooks`.
 
@@ -389,7 +432,7 @@ Things that are true today and worth knowing before you start:
 |---|---|
 | The old TMDB key is still in git history | The working tree no longer contains it, but history does. Revoke and reissue the key at TMDB. |
 | A live OpenAI key is still in git history | Same situation. Revoke it at <https://platform.openai.com/api-keys>. |
-| Push notifications are wired only halfway | The Cloud Function reads `fcmToken` from `Settings`, but the app has no `firebase_messaging` dependency and never writes that field, so the function has nothing to send to. Fixing it needs APNs setup and a device to test on. |
+| Push notifications are not implemented | The old notification function was removed because the app never registered FCM tokens and its legacy FCM API would no longer send. A future implementation needs `firebase_messaging`, token persistence, current FCM sends, APNs setup, and device testing. |
 | `firebase_options.dart` is committed | Points at `actordb-cf981`. Re-run `flutterfire configure` for your own project. This is normal for FlutterFire — the values are identifiers, not secrets. |
 | iOS Firebase config is incomplete | No `ios/Runner/GoogleService-Info.plist`, and `firebase_options.dart` declares `iosBundleId: 'com.example.uractor'` while Xcode builds `com.uractor.uractorios`. Correcting it requires the real values from the Firebase console. |
 | Coverage is thin | The API layer and the list/user Firebase code are covered; the screens and popups have no widget tests at all. See [Tests](#tests). |
