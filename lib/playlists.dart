@@ -304,6 +304,11 @@ class _PlaylistsState extends State<Playlists> {
                       // drag still scrolls the page rather than picking a
                       // playlist up.
                       buildDefaultDragHandles: false,
+                      // Still onReorder for the same reason as friends.dart:
+                      // onReorderItem pre-adjusts newIndex, so switching means
+                      // changing reorderPlaylistIds and the tests that pin its
+                      // index convention. Deferred out of this upgrade.
+                      // ignore: deprecated_member_use
                       onReorder: _onReorder,
                       itemCount: _orderedIds.length,
                       itemBuilder: (context, index) {
