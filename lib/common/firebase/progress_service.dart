@@ -174,6 +174,41 @@ class ProgressService {
     }
   }
 
+  /// Ticks every episode in [bySeason] on top of whatever is already recorded.
+  ///
+  /// Additive on purpose: a season the caller did not mention keeps its ticks,
+  /// so logging "I finished S2E5 today" cannot undo a season 3 already
+  /// watched. An empty map still leaves the show in progress, which is what a
+  /// calendar entry naming a season TMDB has no episode count for amounts to.
+  ///
+  /// Finishes the show when this completes every non-special episode, by the
+  /// same check the season guide uses.
+  static Future<void> markEpisodesWatched(
+    String showId,
+    Map<int, List<int>> bySeason,
+    List<SeasonEpisodeCount> seasons, {
+    DateTime? date,
+  }) async {
+    final today = formatDate(date ?? DateTime.now());
+    final entry = await _showEntryInProgress(showId, today);
+    final episodes = _episodesFrom(entry);
+    for (final season in bySeason.entries) {
+      if (season.key <= 0) continue;
+      final watched = _watchedSet(episodes, season.key)
+        ..addAll(season.value.where((episode) => episode > 0));
+      episodes[season.key.toString()] = _sortedEpisodes(watched);
+    }
+    await _writeEntry(progressTVShowsKey, showId.toString(), {
+      ...entry,
+      'finished': null,
+      'updated': today,
+      'episodes': episodes,
+    });
+    if (_allNonSpecialEpisodesWatched(episodes, seasons)) {
+      await finishShow(showId, date: date);
+    }
+  }
+
   static Future<void> unmarkEpisodeWatched(
     String showId,
     int seasonNumber,

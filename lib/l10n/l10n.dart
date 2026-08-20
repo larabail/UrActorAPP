@@ -63,7 +63,7 @@ import 'l10n_es.dart';
 /// property.
 abstract class S {
   S(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -85,16 +85,16 @@ abstract class S {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('es')
+    Locale('es'),
   ];
 
   /// No description provided for @addTVShowToCalendar.
@@ -636,6 +636,18 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Viewing History'**
   String get viewingHistory;
+
+  /// When watching a title started and finished
+  ///
+  /// In en, this message translates to:
+  /// **'{start} – {end}'**
+  String viewingHistoryRange(String start, String end);
+
+  /// When watching a title started, for one still being watched
+  ///
+  /// In en, this message translates to:
+  /// **'{start} – present'**
+  String viewingHistoryRangeOpen(String start);
 
   /// No description provided for @noViewingHistory.
   ///
@@ -1336,8 +1348,14 @@ abstract class S {
   /// No description provided for @calendarEpisodeSectionTitle.
   ///
   /// In en, this message translates to:
-  /// **'Which part did you watch?'**
+  /// **'What\'s the last episode you finished today?'**
   String get calendarEpisodeSectionTitle;
+
+  /// No description provided for @calendarEpisodeBackfillNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything before it is marked as watched.'**
+  String get calendarEpisodeBackfillNote;
 
   /// No description provided for @calendarSeasonFieldLabel.
   ///
@@ -1396,8 +1414,9 @@ S lookupS(Locale locale) {
   }
 
   throw FlutterError(
-      'S.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'S.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }
