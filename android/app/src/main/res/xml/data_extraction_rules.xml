@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Backup and device-to-device transfer rules for Android 12 and above.
+
+  See backup_rules.xml: the Firebase Auth session is encrypted with a
+  device-bound Keystore key, so carrying the encrypted preferences to another
+  install or another device produces a session that cannot be decrypted.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="." />
+    </device-transfer>
+</data-extraction-rules>
