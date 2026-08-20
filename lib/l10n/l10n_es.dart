@@ -641,6 +641,9 @@ class SEs extends S {
       'No pudimos configurar tu perfil ni deshacer la cuenta. Por favor, inténtalo de nuevo más tarde.';
 
   @override
+  String get favoriteBadge => 'En tus favoritas';
+
+  @override
   String get friendRequestActionFailedError =>
       'Algo salió mal. Por favor, inténtalo de nuevo.';
 }
