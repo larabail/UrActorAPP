@@ -160,6 +160,45 @@ base64 -i dist.p12 | pbcopy
 base64 -i profile.mobileprovision | pbcopy
 ```
 
+#### The distribution certificate has to be one you generated
+
+This is the part that looks done when it is not. Building locally with
+automatic signing produces a correctly signed App Store IPA without ever
+putting a distribution certificate in your keychain — Xcode uses a
+*cloud managed* certificate, where Apple holds the private key and signs on
+request. `codesign -dvvv` on the result names an `Apple Distribution`
+authority, so everything appears to be in place, while:
+
+```bash
+security find-identity -v -p codesigning     # only Apple Development
+```
+
+There is nothing to export. A private key you do not have cannot go in a
+`.p12`, and CI signs on a machine that has never spoken to your Apple account.
+
+So create one explicitly, on this Mac, and keep the key:
+
+1. **Keychain Access → Certificate Assistant → Request a Certificate From a
+   Certificate Authority**. Save to disk. This generates the key pair locally,
+   which is the whole point.
+2. **developer.apple.com → Certificates → +  → Apple Distribution**, upload
+   the request, download the `.cer`. Apple caps you at three distribution
+   certificates; revoke a stale one if the button is refused.
+3. Double-click the `.cer` to install it.
+4. In Keychain Access find it, expand the triangle to confirm a private key
+   hangs beneath it, select **both** rows, right-click → **Export** as `.p12`
+   and set a password. That password is `IOS_DIST_CERT_PASSWORD`.
+5. Create an **App Store** provisioning profile for `com.uractor.uractorios`
+   against that certificate and download it. The
+   `iOS Team Store Provisioning Profile` Xcode leaves in
+   `~/Library/Developer/Xcode/UserData/Provisioning Profiles` belongs to the
+   cloud certificate and will not match.
+
+The workflow imports the `.p12` with `security import` rather than OpenSSL on
+purpose: macOS exports these with a legacy cipher that OpenSSL 3 refuses to
+read, and re-wrapping it to satisfy OpenSSL is a step that only exists to
+undo itself.
+
 ### Build numbers
 
 Asked of Apple, for the same reason Android asks Play, and by the same shape
