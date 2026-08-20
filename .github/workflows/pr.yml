@@ -1,0 +1,68 @@
+name: Pull request checks
+
+# Runs the same verification and release build as the internal release
+# workflow, without touching Play. A pull request that passes here should be
+# able to merge and release without surprises.
+on:
+  pull_request:
+    branches: [master]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - '.gitignore'
+
+# Superseded runs are wasted work: a new push to the same pull request makes
+# the previous result irrelevant.
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Analyze, test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-flutter-android
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test --coverage
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/lcov.info
+          retention-days: 7
+          if-no-files-found: ignore
+
+      # No signing key here: pull requests must not have access to the upload
+      # key, and the branch may come from a fork. The bundle falls back to debug
+      # signing, which cannot be published but still proves the release build
+      # compiles, packages and resolves its native dependencies.
+      - name: Build app bundle
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          flutter build appbundle --release \
+            --dart-define=TMDB_API_KEY="$TMDB_API_KEY" \
+            --dart-define=OPENAI_API_KEY="$OPENAI_API_KEY"
+
+      - name: Confirm the bundle is not release signed
+        run: |
+          set -euo pipefail
+          if [ -f android/key.properties ] || [ -f android/app/upload-keystore.jks ]; then
+            echo "Signing material must never be present on a pull request build" >&2
+            exit 1
+          fi
