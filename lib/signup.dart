@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uractor/common/firebase/firestore_core.dart';
@@ -67,6 +68,66 @@ Future<void> writeInitialProfile(String uid) async {
       const <String, dynamic>{"Movies": [], "TVShows": []});
 
   await batch.commit();
+}
+
+@visibleForTesting
+enum CreatedAuthAccountRollbackResult { deleted, failed, unavailable }
+
+/// Deletes the Firebase Auth account that was just created when the profile
+/// batch fails, so a retry can reuse the same email address.
+@visibleForTesting
+Future<CreatedAuthAccountRollbackResult>
+    rollbackCreatedAuthAccountAfterProfileFailure({
+  required Future<void> Function()? deleteAccount,
+  required Object profileError,
+  StackTrace? profileStackTrace,
+  void Function(FlutterErrorDetails details) reportError =
+      FlutterError.reportError,
+}) async {
+  if (deleteAccount == null) {
+    reportError(
+      FlutterErrorDetails(
+        exception: profileError,
+        stack: profileStackTrace,
+        context: ErrorDescription('while writing profile for a new signup'),
+        informationCollector: () sync* {
+          yield ErrorDescription(
+            'The auth user was unavailable, so account rollback could not run.',
+          );
+        },
+      ),
+    );
+    return CreatedAuthAccountRollbackResult.unavailable;
+  }
+
+  try {
+    await deleteAccount();
+    return CreatedAuthAccountRollbackResult.deleted;
+  } catch (rollbackError, rollbackStackTrace) {
+    reportError(
+      FlutterErrorDetails(
+        exception: profileError,
+        stack: profileStackTrace,
+        context: ErrorDescription('while writing profile for a new signup'),
+        informationCollector: () sync* {
+          yield ErrorDescription(
+            'Deleting the just-created auth account also failed.',
+          );
+          yield DiagnosticsProperty<Object>('rollback error', rollbackError);
+        },
+      ),
+    );
+    reportError(
+      FlutterErrorDetails(
+        exception: rollbackError,
+        stack: rollbackStackTrace,
+        context: ErrorDescription(
+          'while deleting a just-created auth account after profile setup failed',
+        ),
+      ),
+    );
+    return CreatedAuthAccountRollbackResult.failed;
+  }
 }
 
 class SignUp extends StatelessWidget {
@@ -194,21 +255,24 @@ class SignUp extends StatelessWidget {
 
                           try {
                             await writeInitialProfile(credential.user!.uid);
-                          } catch (e) {
-                            // The auth account now exists but the profile
-                            // batch failed to commit. Since the batch is
-                            // all-or-nothing, no partial profile was written,
-                            // so we do not sign the user in or navigate --
-                            // that would leave them on a broken account with
-                            // no visible error. They can retry signing up
-                            // (or, if desired later, sign in and see the
-                            // missing-profile error path elsewhere).
+                          } catch (e, stackTrace) {
+                            final rollbackResult =
+                                await rollbackCreatedAuthAccountAfterProfileFailure(
+                              deleteAccount: credential.user == null
+                                  ? null
+                                  : () => credential.user!.delete(),
+                              profileError: e,
+                              profileStackTrace: stackTrace,
+                            );
                             if (!context.mounted) return;
+                            final errorMessage = rollbackResult ==
+                                    CreatedAuthAccountRollbackResult.deleted
+                                ? S.of(context)!.profileSetupFailedError
+                                : S
+                                    .of(context)!
+                                    .profileSetupRollbackFailedError;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    S.of(context)!.profileSetupFailedError),
-                              ),
+                              SnackBar(content: Text(errorMessage)),
                             );
                             return;
                           }
