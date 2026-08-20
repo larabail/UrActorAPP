@@ -2,25 +2,22 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:uractor/common/constants.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/l10n/l10n.dart';
-import 'package:uractor/objects/Media.dart';
-import 'package:uractor/objects/TVShow.dart';
+import 'package:uractor/objects/media.dart';
+import 'package:uractor/objects/tv_show.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'common/utils.dart';
 import 'friends.dart';
 import 'friends_calendar.dart';
-import 'objects/Movie.dart';
+import 'objects/movie.dart';
 import 'main.dart';
-import 'objects/Person.dart';
+import 'objects/person.dart';
 import 'person_result.dart';
 import 'movie_result.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
-import 'seenTogether.dart';
+import 'seen_together.dart';
 import 'tvshow_result.dart';
 
 int weekOffset = 0; // This will be used to go to previous or next weeks
@@ -30,7 +27,7 @@ class FriendProfile extends StatefulWidget {
   const FriendProfile({super.key, required this.friendUid});
 
   @override
-  _FriendProfileState createState() => _FriendProfileState();
+  State<FriendProfile> createState() => _FriendProfileState();
 }
 
 class _FriendProfileState extends State<FriendProfile> {
@@ -44,32 +41,8 @@ class _FriendProfileState extends State<FriendProfile> {
   bool gotData = false;
 
   List<Map<String, dynamic>> movies = [];
-  Future<Map<String, dynamic>> getData(id, type) async {
-    Map<String, dynamic> data = {};
-    String link;
-    if (type == "TVShows") {
-      link = TV_SHOW_LINK;
-    } else {
-      link = MOVIE_LINK;
-    }
-    final response = await http.get(Uri.parse('$link$id$API_KEY'));
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      if (type == "TVShows") {
-        data['title'] = json['name'];
-      } else {
-        data['title'] = json['title'];
-      }
-      data['poster_path'] = json['poster_path'];
-      data['id'] = json['id'];
-      data['type'] = type;
-      if (!Utils.containsMap(movies, data)) {
-        movies.add(data);
-      }
-    } else {
-      throw Exception('Failed to load movie details');
-    }
-    return data;
+  Future<Map<String, dynamic>> getData(dynamic id, String type) async {
+    return Utils.fetchMediaData(id, type, movies);
   }
 
   Future<void> getFirebaseData() async {
@@ -212,24 +185,24 @@ class _FriendProfileState extends State<FriendProfile> {
           if (profileSections[key]["show"]) {
             switch (key) {
               case "Actors":
-                sections.add(buildProfileContainer("Favorite Actors",
+                sections.add(buildProfileContainer(S.of(context)!.favActors,
                     tempActors, Icons.theater_comedy, "Person"));
                 break;
               case "Directors":
-                sections.add(buildProfileContainer("Favorite Directors",
+                sections.add(buildProfileContainer(S.of(context)!.favDirectors,
                     tempDirectors, Icons.chair, "Person"));
                 break;
               case "MostSeenMovies":
                 sections.add(buildProfileContainer(
-                    "Most Seen Movies", moviesTemp, Icons.movie, "Movie"));
+                    S.of(context)!.favMovies, moviesTemp, Icons.movie, "Movie"));
                 break;
               case "Writers":
-                sections.add(buildProfileContainer(
-                    "Favorite Writers", tempWriters, Icons.edit, "Person"));
+                sections.add(buildProfileContainer(S.of(context)!.favWriters,
+                    tempWriters, Icons.edit, "Person"));
                 break;
               case "MostSeenTVShows":
                 sections.add(buildProfileContainer(
-                    "Most Seen TV Shows", tvTemp, Icons.tv, "TVShow"));
+                    S.of(context)!.favTVShows, tvTemp, Icons.tv, "TVShow"));
                 break;
             }
           }
@@ -446,7 +419,7 @@ class _FriendProfileState extends State<FriendProfile> {
                 scrollDirection: Axis.horizontal,
                 itemCount: content.length > 10 ? 10 : content.length,
                 itemBuilder: (context, index) {
-                  var item;
+                  dynamic item;
                   if (type == "Person") {
                     item = Person(id: content[index][1], name: "", data: {});
                   } else if (type == "Movie") {

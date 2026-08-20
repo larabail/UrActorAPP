@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/main.dart';
+import 'package:uractor/l10n/l10n.dart';
 
 import './firestore_core.dart';
 
@@ -20,16 +21,16 @@ class CalendarService {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Confirm'),
-          content: const Text('Did you watch this movie today?'),
+          content: Text(S.of(context)!.confirmWatchedToday),
           actions: <Widget>[
             TextButton(
-              child: const Text('Cancel'),
+              child: Text(S.of(context)!.cancel),
               onPressed: () {
                 Navigator.of(context).pop(false);
               },
             ),
             TextButton(
-              child: const Text('Yes'),
+              child: Text(S.of(context)!.yes),
               onPressed: () {
                 Navigator.of(context).pop(true);
               },
@@ -55,11 +56,11 @@ class CalendarService {
           .collection(currentUser.uid)
           .get()
           .then((QuerySnapshot querySnapshot) {
-        querySnapshot.docs.forEach((doc) async {
+        for (final doc in querySnapshot.docs) {
           if (doc.id == "Calendar") {
             currentUser.calendar = doc.data() as Map;
           }
-        });
+        }
       });
       return true;
     }
@@ -78,17 +79,16 @@ class CalendarService {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text("Delete Calendar Entry"),
-          content: Text(
-              "Do you want to delete this from just your calendar or everyone's?"),
+          title: Text(S.of(context)!.deleteCalendarEntry),
+          content: Text(S.of(context)!.deleteCalendarEntryQuestion),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false), // Just me
-              child: Text("Just me"),
+              child: Text(S.of(context)!.justMe),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true), // For everyone
-              child: Text("Everyone"),
+              child: Text(S.of(context)!.everyone),
             ),
           ],
         );

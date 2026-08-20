@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uractor/l10n/l10n.dart';
 import '../main.dart';
 import '../playlists.dart';
 
@@ -15,11 +16,12 @@ class ListJoinDialogue extends StatefulWidget {
   const ListJoinDialogue({super.key});
 
   @override
-  _ListJoinDialogueState createState() => _ListJoinDialogueState();
+  State<ListJoinDialogue> createState() => _ListJoinDialogueState();
 }
 
 class _ListJoinDialogueState extends State<ListJoinDialogue> {
   void joinList() async {
+    bool joined = false;
     await FirebaseFirestore.instance
         .collection("Watchlists")
         .get()
@@ -35,13 +37,22 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
             await userDoc.update({
               "Users": FieldValue.arrayUnion([newUser])
             });
+            joined = true;
+            if (!context.mounted) return;
             Navigator.pop(context);
             Navigator.pushReplacement(context,
                 MaterialPageRoute(builder: (context) => const Playlists()));
           }
         }
       }
-      print("WRONG ACCESS CODE OR LIST NAME");
+      if (!joined) {
+        debugPrint("WRONG ACCESS CODE OR LIST NAME");
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(S.of(context)!.joinListFailed)),
+          );
+        }
+      }
     });
   }
 
@@ -56,7 +67,7 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
     );
   }
 
-  contentBox(BuildContext context) {
+  Widget contentBox(BuildContext context) {
     return Stack(
       children: <Widget>[
         Container(
@@ -71,11 +82,11 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 // Contents of the Add List panel
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(20, 40, 20, 5),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 40, 20, 5),
                   child: Text(
-                    'Join List',
-                    style: TextStyle(
+                    S.of(context)!.joinListTitle,
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
@@ -86,12 +97,12 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
                   child: TextFormField(
                     validator: (String? value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter a list name';
+                        return S.of(context)!.enterListName;
                       }
                       return null;
                     },
-                    decoration: const InputDecoration(
-                      labelText: 'List Name',
+                    decoration: InputDecoration(
+                      labelText: S.of(context)!.listName,
                     ),
                     onChanged: (value) {
                       _listName = value;
@@ -102,8 +113,8 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
                 Padding(
                   padding: const EdgeInsets.all(10.0),
                   child: TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Access Code',
+                    decoration: InputDecoration(
+                      labelText: S.of(context)!.accessCodeLabel,
                     ),
                     onChanged: (value) {
                       _accessCode = value;
@@ -126,13 +137,13 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
                             color: Colors.grey[900],
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
-                              Icon(Icons.cancel, color: Colors.red),
-                              SizedBox(width: 10),
+                              const Icon(Icons.cancel, color: Colors.red),
+                              const SizedBox(width: 10),
                               Text(
-                                'Cancel',
-                                style: TextStyle(
+                                S.of(context)!.cancel,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -153,13 +164,13 @@ class _ListJoinDialogueState extends State<ListJoinDialogue> {
                             color: Colors.grey[900],
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
-                              Icon(Icons.check, color: Colors.green),
-                              SizedBox(width: 10),
+                              const Icon(Icons.check, color: Colors.green),
+                              const SizedBox(width: 10),
                               Text(
-                                'Add',
-                                style: TextStyle(
+                                S.of(context)!.add,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
