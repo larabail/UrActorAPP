@@ -91,7 +91,16 @@ const String COUNTRIES_LINK =
     "https://api.themoviedb.org/3/configuration/countries$API_KEY";
 const String WATCH_PROVIDERS_BY_REGION_LINK =
     "https://api.themoviedb.org/3/watch/providers/movie$API_KEY&watch_region=";
-const String UNKNOWN_COVER =
-    "https://firebasestorage.googleapis.com/v0/b/actordb-cf981.appspot.com/o/UNKNOWN_cover.png?alt=media&token=4a9b8c89-67b4-4859-91c1-166383ab1586";
-const String UNKNOWN_PERSON =
-    "https://firebasestorage.googleapis.com/v0/b/actordb-cf981.appspot.com/o/UNKNOWN_actor.png?alt=media&token=054473a7-ed7a-4bc7-9ff9-7b7f37b5ae84";
+
+/// Stand-ins for media TMDB has no artwork for.
+///
+/// These are bundled assets rather than URLs. They used to be hosted in
+/// Firebase Storage, which stopped serving them -- every posterless tile then
+/// threw a 403 out of the image resource service. Nothing about them ever
+/// varied per user, so shipping them in the bundle removes the request
+/// entirely and they render offline and instantly.
+///
+/// Never hand these to a network image widget. `mediaImageProvider` in
+/// `media_image.dart` picks the right provider and is what every caller uses.
+const String UNKNOWN_COVER = "assets/unknown_cover.png";
+const String UNKNOWN_PERSON = "assets/unknown_person.png";
