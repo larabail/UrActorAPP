@@ -27,7 +27,9 @@ Iterable<dynamic> userFavoriteItemsFor(dynamic mediaPair) {
 Iterable<dynamic> userWatchlistItemsFor(dynamic mediaPair) {
   final String? type = _typeOf(mediaPair);
   if (type == null) return const [];
-  return type == 'Movies' ? currentUser.watchlist : currentUser.watchlistTVShows;
+  return type == 'Movies'
+      ? currentUser.watchlist
+      : currentUser.watchlistTVShows;
 }
 
 String? _typeOf(dynamic mediaPair) {

@@ -6,7 +6,10 @@ import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/person.dart';
 import 'package:uractor/person_result.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
+import 'common/layout/breakpoints.dart';
+import 'common/layout/responsive.dart';
+import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 class CastCrew extends StatefulWidget {
   final Map data;
@@ -38,7 +41,10 @@ class _CastCrewState extends State<CastCrew> {
       return indexA.compareTo(indexB);
     });
 
-    return Scaffold(
+    return AppScaffold(
+      detailPlaceholder: DetailPanePlaceholder(
+        message: S.of(context)!.detailPanePlaceholder,
+      ),
       appBar: const CustomAppBar(),
       body: Column(
         children: [
@@ -78,7 +84,7 @@ class _CastCrewState extends State<CastCrew> {
           )
         ],
       ),
-      bottomNavigationBar: CommonBottomAppBar(-1),
+      selectedIndex: -1,
     );
   }
 }
@@ -131,13 +137,11 @@ class ItemCard extends StatelessWidget {
                   name: snapshot.data!["name"],
                   data: snapshot.data!);
 
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => PersonResult(
-                          personResult: tempMediaItem,
-                        )),
-              );
+              openDetail(
+                  context,
+                  PersonResult(
+                    personResult: tempMediaItem,
+                  ));
             },
             child: Row(children: [
               getItemContainer(context, snapshot.data, "person"),
@@ -174,15 +178,15 @@ class ItemCard extends StatelessWidget {
         } else if (snapshot.hasError) {
           return Container(
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-              width: MediaQuery.of(context).size.width * 0.28,
-              height: MediaQuery.of(context).size.height * 0.18,
+              width: context.posterWidth,
+              height: posterHeightFor(context.posterWidth),
               child:
                   Center(child: Text(S.of(context)!.errorFailedToLoadDetails)));
         } else {
           return Container(
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-              width: MediaQuery.of(context).size.width * 0.28,
-              height: MediaQuery.of(context).size.height * 0.18,
+              width: context.posterWidth,
+              height: posterHeightFor(context.posterWidth),
               child: const Center(child: CircularProgressIndicator()));
         }
       },

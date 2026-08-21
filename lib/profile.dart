@@ -15,13 +15,17 @@ import 'package:uractor/objects/tv_show.dart';
 import 'package:uractor/popups/profile_sections_popup.dart';
 import 'package:uractor/tvshow_result.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'objects/movie.dart';
 import 'main.dart';
 import 'objects/person.dart';
 import 'person_result.dart';
 import 'movie_result.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'common/layout/breakpoints.dart';
+import 'common/layout/responsive.dart';
+import 'common/navigation/app_scaffold.dart';
+import 'common/platform/capabilities.dart';
+import 'common/layout/two_pane.dart';
 
 class Profile extends StatefulWidget {
   const Profile();
@@ -108,28 +112,36 @@ class _ProfileState extends State<Profile> {
 
       if (image == null) return "";
 
-      // Crop the image
-      CroppedFile? croppedFile = await ImageCropper().cropImage(
-        sourcePath: image.path,
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'Cropper',
-            toolbarColor: Colors.deepOrange,
-            toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.original,
-            lockAspectRatio: false,
-          ),
-          IOSUiSettings(
-            title: 'Cropper',
-          ),
-        ],
-        aspectRatio:
-            CropAspectRatio(ratioX: 1, ratioY: 1), // Use this for aspect ratio
-      );
+      String sourcePath = image.path;
 
-      if (croppedFile == null) return "";
+      // Cropping is Android, iOS and web only. On desktop the picker still
+      // works, so the photo is uploaded as chosen rather than the whole
+      // feature being withdrawn there.
+      if (Capabilities.cropsImages) {
+        CroppedFile? croppedFile = await ImageCropper().cropImage(
+          sourcePath: image.path,
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: 'Cropper',
+              toolbarColor: Colors.deepOrange,
+              toolbarWidgetColor: Colors.white,
+              initAspectRatio: CropAspectRatioPreset.original,
+              lockAspectRatio: false,
+            ),
+            IOSUiSettings(
+              title: 'Cropper',
+            ),
+          ],
+          aspectRatio: CropAspectRatio(
+              ratioX: 1, ratioY: 1), // Use this for aspect ratio
+        );
+
+        if (croppedFile == null) return "";
+        sourcePath = croppedFile.path;
+      }
+
       String fileName = DateTime.now().millisecondsSinceEpoch.toString();
-      File fileToUpload = File(croppedFile.path);
+      File fileToUpload = File(sourcePath);
 
       FirebaseStorage storage = FirebaseStorage.instance;
       Reference ref = storage.ref().child("profile_images").child(fileName);
@@ -302,7 +314,7 @@ class _ProfileState extends State<Profile> {
       S.of(context)!.december,
     ];
 
-    return Scaffold(
+    return AppScaffold(
       appBar: const CustomAppBar(),
       body: Stack(
         children: [
@@ -543,7 +555,11 @@ class _ProfileState extends State<Profile> {
                                                   color: Colors.blue),
                                               const SizedBox(width: 10),
                                               Expanded(
-                                                child: Text(S.of(context)!.currentRecordMovies(maxMovies),
+                                                child: Text(
+                                                  S
+                                                      .of(context)!
+                                                      .currentRecordMovies(
+                                                          maxMovies),
                                                   style: const TextStyle(
                                                     fontSize: 15,
                                                   ),
@@ -640,7 +656,7 @@ class _ProfileState extends State<Profile> {
           ),
         ],
       ),
-      bottomNavigationBar: CommonBottomAppBar(3),
+      selectedIndex: 3,
     );
   }
 
@@ -672,7 +688,7 @@ class _ProfileState extends State<Profile> {
           if (content.isEmpty) const SizedBox(height: 10),
           if (content.isNotEmpty)
             SizedBox(
-              height: MediaQuery.of(context).size.height * 0.18,
+              height: posterRowHeight(context),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: content.length > 10 ? 10 : content.length,
@@ -696,31 +712,31 @@ class _ProfileState extends State<Profile> {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return Container(
                           margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                          width: MediaQuery.of(context).size.width * 0.28,
-                          height: MediaQuery.of(context).size.height * 0.18,
+                          width: context.posterWidth,
+                          height: posterHeightFor(context.posterWidth),
                           child:
                               const Center(child: CircularProgressIndicator()),
                         );
                       } else if (snapshot.hasError) {
                         return Center(
-                            child: Text(S.of(context)!.errorFailedToLoadGeneralDetails));
+                            child: Text(S
+                                .of(context)!
+                                .errorFailedToLoadGeneralDetails));
                       } else if (!snapshot.hasData) {
-                        return Center(child: Text(S.of(context)!.noDataAvailable));
+                        return Center(
+                            child: Text(S.of(context)!.noDataAvailable));
                       } else {
                         return GestureDetector(
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => type == "Person"
+                              openDetail(
+                                  context,
+                                  type == "Person"
                                       ? PersonResult(
                                           personResult: item as Person)
                                       : type == "Movie"
                                           ? MovieResult(movie: item as Movie)
                                           : TVShowResult(
-                                              tvshow: item as TVShow),
-                                ),
-                              );
+                                              tvshow: item as TVShow));
                             },
                             child: getItemContainer(
                                 context,

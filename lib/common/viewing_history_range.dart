@@ -86,7 +86,8 @@ class ViewingHistory {
     required List<dynamic> seenDates,
     required bool seen,
     required bool hasProgress,
-  }) => seenDates.isNotEmpty || seen || hasProgress;
+  }) =>
+      seenDates.isNotEmpty || seen || hasProgress;
 
   /// Whether a stored progress map holds an entry for [id] of [type].
   ///

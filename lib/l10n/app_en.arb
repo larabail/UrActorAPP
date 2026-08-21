@@ -431,5 +431,25 @@
         "type": "int"
       }
     }
+  },
+  "watchTrailerOnYoutube": "Watch the trailer on YouTube",
+  "@watchTrailerOnYoutube": {
+    "description": "Offered instead of an inline player on platforms with no webview, where the trailer cannot be embedded."
+  },
+  "detailPanePlaceholder": "Pick something to see it here",
+  "@detailPanePlaceholder": {
+    "description": "Shown in the empty half of the two pane layout, before anything in the list beside it has been opened."
+  },
+  "userDisabledError": "That account has been disabled.",
+  "@userDisabledError": {
+    "description": "Shown when signing in to an account an administrator has disabled."
+  },
+  "tooManyRequestsError": "Too many attempts. Wait a moment and try again.",
+  "@tooManyRequestsError": {
+    "description": "Shown when Firebase has temporarily locked out sign in after repeated failures."
+  },
+  "networkError": "Could not reach the server. Check your connection.",
+  "@networkError": {
+    "description": "Shown when a sign in attempt could not reach Firebase at all."
   }
 }

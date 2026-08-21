@@ -9,11 +9,14 @@ import '/objects/media.dart';
 import '/objects/movie.dart';
 import '/objects/tv_show.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'common/utils.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
 import 'main.dart';
+import 'common/layout/breakpoints.dart';
+import 'common/layout/responsive.dart';
+import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 class Reviews extends StatefulWidget {
   const Reviews();
@@ -82,23 +85,21 @@ class _ReviewsState extends State<Reviews> {
                                     title: title,
                                     coverPhoto: data['poster_path'] ?? "");
                               }
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => mediaType == "Movies"
-                                        ? MovieResult(
-                                            movie: tempItem as Movie,
-                                          )
-                                        : TVShowResult(
-                                            tvshow: tempItem as TVShow,
-                                          )),
-                              );
+                              openDetail(
+                                  context,
+                                  mediaType == "Movies"
+                                      ? MovieResult(
+                                          movie: tempItem as Movie,
+                                        )
+                                      : TVShowResult(
+                                          tvshow: tempItem as TVShow,
+                                        ));
                             }
                           : null,
                       child: Container(
                         margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                        width: MediaQuery.of(context).size.width * 0.28,
-                        height: MediaQuery.of(context).size.height * 0.15,
+                        width: context.posterWidth,
+                        height: posterHeightFor(context.posterWidth),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(27),
                           image: DecorationImage(
@@ -182,8 +183,8 @@ class _ReviewsState extends State<Reviews> {
           } else {
             return Container(
                 margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                width: MediaQuery.of(context).size.width * 0.28,
-                height: MediaQuery.of(context).size.height * 0.18,
+                width: context.posterWidth,
+                height: posterHeightFor(context.posterWidth),
                 child: const Center(child: CircularProgressIndicator()));
           }
         });
@@ -191,7 +192,10 @@ class _ReviewsState extends State<Reviews> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
+      detailPlaceholder: DetailPanePlaceholder(
+        message: S.of(context)!.detailPanePlaceholder,
+      ),
       appBar: const CustomAppBar(),
       body: Column(children: [
         Padding(
@@ -321,7 +325,7 @@ class _ReviewsState extends State<Reviews> {
           ),
         )
       ]),
-      bottomNavigationBar: CommonBottomAppBar(-1),
+      selectedIndex: -1,
     );
   }
 }

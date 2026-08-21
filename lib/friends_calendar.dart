@@ -6,7 +6,6 @@ import 'package:uractor/common/item_container.dart';
 import 'package:uractor/common/media_pair_membership.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'common/constants.dart';
 import 'common/utils.dart';
 import 'package:uractor/common/async_action.dart';
@@ -20,6 +19,8 @@ import 'package:table_calendar/table_calendar.dart';
 
 import 'tvshow_result.dart';
 import 'common/firebase/firestore_core.dart';
+import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 const String imgLink = 'https://image.tmdb.org/t/p/w500/';
 DateTime selectedDate = DateTime.now();
@@ -107,7 +108,8 @@ class _FriendCalendarState extends State<FriendCalendar> {
     List moviesOnDay = [];
     List movies = [];
 
-    Future<void> onDaySelected(DateTime selectedDay, DateTime focusedDay) async {
+    Future<void> onDaySelected(
+        DateTime selectedDay, DateTime focusedDay) async {
       String month = '${selectedDay.month}';
       String day = '${selectedDay.day}';
       if (selectedDay.month < 10) {
@@ -147,151 +149,142 @@ class _FriendCalendarState extends State<FriendCalendar> {
                           child: ListView(
                             scrollDirection: Axis.horizontal,
                             children: [
-                              ...movies
-                                  .map(
-                                    (event) => Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8.0),
-                                      child: Column(
-                                        children: [
-                                          GestureDetector(
-                                            onTap: () {
-                                              var tempMedia = event.containsKey(
-                                                      "title")
-                                                  ? Movie(
-                                                      id: event["id"]
-                                                          .toString(),
-                                                      title: event['title'],
-                                                      coverPhoto: event[
-                                                              "poster_path"] ??
+                              ...movies.map(
+                                (event) => Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8.0),
+                                  child: Column(
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () {
+                                          var tempMedia = event
+                                                  .containsKey("title")
+                                              ? Movie(
+                                                  id: event["id"].toString(),
+                                                  title: event['title'],
+                                                  coverPhoto:
+                                                      event["poster_path"] ??
                                                           UNKNOWN_COVER)
-                                                  : TVShow(
-                                                      id: event["id"]
-                                                          .toString(),
-                                                      title: event['name'],
-                                                      coverPhoto: event[
-                                                              "poster_path"] ??
+                                              : TVShow(
+                                                  id: event["id"].toString(),
+                                                  title: event['name'],
+                                                  coverPhoto:
+                                                      event["poster_path"] ??
                                                           UNKNOWN_COVER);
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      event.containsKey("title")
-                                                          ? MovieResult(
-                                                              movie: tempMedia
-                                                                  as Movie)
-                                                          : TVShowResult(
-                                                              tvshow: tempMedia
-                                                                  as TVShow),
-                                                ),
-                                              );
-                                            },
-                                            child: Stack(
-                                              children: [
-                                                ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            30),
-                                                    child: getItemContainer(
-                                                        context, event, "media",
-                                                        widthPercentage: 0.32,
-                                                        heightPercentage: 0.2,
-                                                        mediaPair:
-                                                            mediaPairForData(
-                                                                event))),
-                                                if (event
-                                                    .containsKey("friends"))
-                                                  Positioned(
-                                                    bottom: 8,
-                                                    left: 8,
-                                                    right: 8,
-                                                    child: Row(
-                                                      children: [
-                                                        Expanded(
-                                                          child: FutureBuilder<
-                                                              List<String>>(
-                                                            future: FirebaseUtils
-                                                                .getProfilePhotos(
-                                                                    event[
-                                                                        "friends"]),
-                                                            builder: (context,
-                                                                snapshot) {
-                                                              if (snapshot
-                                                                      .connectionState ==
-                                                                  ConnectionState
-                                                                      .waiting) {
-                                                                return const SizedBox(
-                                                                  height: 32.0,
-                                                                  child: Center(
-                                                                      child:
-                                                                          CircularProgressIndicator()),
-                                                                );
-                                                              } else if (snapshot
-                                                                  .hasError) {
-                                                                return SizedBox(
-                                                                  height: 32.0,
-                                                                  child: Center(
-                                                                      child: Text(S
-                                                                          .of(context)!
-                                                                          .errorLoadingImages)),
-                                                                );
-                                                              } else if (snapshot
-                                                                  .hasData) {
-                                                                var images =
-                                                                    snapshot
-                                                                        .data!;
-                                                                return SizedBox(
-                                                                  height: 32.0,
-                                                                  child: Stack(
-                                                                    children: List.generate(
+                                          openDetail(
+                                              context,
+                                              event.containsKey("title")
+                                                  ? MovieResult(
+                                                      movie: tempMedia as Movie)
+                                                  : TVShowResult(
+                                                      tvshow:
+                                                          tempMedia as TVShow));
+                                        },
+                                        child: Stack(
+                                          children: [
+                                            ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(30),
+                                                child: getItemContainer(
+                                                    context, event, "media",
+                                                    scale: 1.15,
+                                                    mediaPair: mediaPairForData(
+                                                        event))),
+                                            if (event.containsKey("friends"))
+                                              Positioned(
+                                                bottom: 8,
+                                                left: 8,
+                                                right: 8,
+                                                child: Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: FutureBuilder<
+                                                          List<String>>(
+                                                        future: FirebaseUtils
+                                                            .getProfilePhotos(
+                                                                event[
+                                                                    "friends"]),
+                                                        builder: (context,
+                                                            snapshot) {
+                                                          if (snapshot
+                                                                  .connectionState ==
+                                                              ConnectionState
+                                                                  .waiting) {
+                                                            return const SizedBox(
+                                                              height: 32.0,
+                                                              child: Center(
+                                                                  child:
+                                                                      CircularProgressIndicator()),
+                                                            );
+                                                          } else if (snapshot
+                                                              .hasError) {
+                                                            return SizedBox(
+                                                              height: 32.0,
+                                                              child: Center(
+                                                                  child: Text(S
+                                                                      .of(context)!
+                                                                      .errorLoadingImages)),
+                                                            );
+                                                          } else if (snapshot
+                                                              .hasData) {
+                                                            var images =
+                                                                snapshot.data!;
+                                                            return SizedBox(
+                                                              height: 32.0,
+                                                              child: Stack(
+                                                                children: List
+                                                                    .generate(
                                                                         images
                                                                             .length,
                                                                         (index) {
-                                                                      double
-                                                                          offset =
-                                                                          index *
-                                                                              10.0;
-                                                                      return Positioned(
-                                                                        left:
-                                                                            offset,
-                                                                        child:
-                                                                            ClipOval(
-                                                                          child: images[index] != ""
-                                                                              ? Image.network(
-                                                                                  images[index],
-                                                                                  height: 25,
-                                                                                  width: 25,
-                                                                                  fit: BoxFit.cover,
-                                                                                )
-                                                                              : Image.asset(
-                                                                                  'assets/main_profile.png',
-                                                                                  height: 25,
-                                                                                  width: 25,
-                                                                                  fit: BoxFit.cover,
-                                                                                ),
-                                                                        ),
-                                                                      );
-                                                                    }),
-                                                                  ),
-                                                                );
-                                                              } else {
-                                                                return const SizedBox
-                                                                    .shrink();
-                                                              }
-                                                            },
-                                                          ),
-                                                        ),
-                                                      ],
+                                                                  double
+                                                                      offset =
+                                                                      index *
+                                                                          10.0;
+                                                                  return Positioned(
+                                                                    left:
+                                                                        offset,
+                                                                    child:
+                                                                        ClipOval(
+                                                                      child: images[index] !=
+                                                                              ""
+                                                                          ? Image
+                                                                              .network(
+                                                                              images[index],
+                                                                              height: 25,
+                                                                              width: 25,
+                                                                              fit: BoxFit.cover,
+                                                                            )
+                                                                          : Image
+                                                                              .asset(
+                                                                              'assets/main_profile.png',
+                                                                              height: 25,
+                                                                              width: 25,
+                                                                              fit: BoxFit.cover,
+                                                                            ),
+                                                                    ),
+                                                                  );
+                                                                }),
+                                                              ),
+                                                            );
+                                                          } else {
+                                                            return const SizedBox
+                                                                .shrink();
+                                                          }
+                                                        },
+                                                      ),
                                                     ),
-                                                  ),
-                                              ],
-                                            ),
-                                          ),
-                                          CalendarEpisodeBadge(entry: event),
-                                        ],
+                                                  ],
+                                                ),
+                                              ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
+                                      CalendarEpisodeBadge(entry: event),
+                                    ],
                                   ),
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -308,7 +301,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
     }
 
     if (gotData) {
-      return Scaffold(
+      return AppScaffold(
         backgroundColor: const Color(0xFF121212),
         appBar: const CustomAppBar(),
         body: SingleChildScrollView(
@@ -398,7 +391,7 @@ class _FriendCalendarState extends State<FriendCalendar> {
             ],
           ),
         ),
-        bottomNavigationBar: CommonBottomAppBar(-1),
+        selectedIndex: -1,
       );
     } else {
       return const Scaffold();

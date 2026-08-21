@@ -1,5 +1,8 @@
 bool mediaPairMatches(dynamic first, dynamic second) {
-  if (first is! List || second is! List || first.length < 2 || second.length < 2) {
+  if (first is! List ||
+      second is! List ||
+      first.length < 2 ||
+      second.length < 2) {
     return false;
   }
 

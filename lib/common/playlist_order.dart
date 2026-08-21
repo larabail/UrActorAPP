@@ -27,9 +27,8 @@ List<String> orderPlaylistIds(
   Iterable<String> availableIds,
   dynamic storedOrder,
 ) {
-  final List<String> available = availableIds
-      .where((id) => id != kRecommendationsPlaylistId)
-      .toList();
+  final List<String> available =
+      availableIds.where((id) => id != kRecommendationsPlaylistId).toList();
   final Set<String> remaining = available.toSet();
 
   final List<String> ordered = [];

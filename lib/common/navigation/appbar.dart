@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../popups/settings_pop_up.dart';
 import '../../search.dart';
+import '../layout/two_pane.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CustomAppBar({super.key, this.actions = const []});
@@ -17,8 +18,18 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Inside the detail pane there is no system back gesture to fall back on
+    // -- a desktop window has neither an edge swipe nor a hardware button --
+    // so the pane draws its own way back to whatever it was stacked on.
+    final DetailPane? pane = DetailPane.maybeOf(context);
+    final bool showBack =
+        pane != null && pane.isInsidePane && Navigator.of(context).canPop();
+
     return AppBar(
       automaticallyImplyLeading: false,
+      leading: showBack
+          ? BackButton(onPressed: () => Navigator.of(context).maybePop())
+          : null,
       title: const Text(
         'UrActor',
         style: TextStyle(

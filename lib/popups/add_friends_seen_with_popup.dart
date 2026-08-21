@@ -7,7 +7,7 @@ import '../common/firebase/firestore_core.dart';
 
 class AddFriendsPopUp extends StatefulWidget {
   final Movie movie;
-  
+
   const AddFriendsPopUp({super.key, required this.movie});
 
   @override

@@ -40,8 +40,8 @@ class PlaylistJoiner {
 
   final String region;
 
-  Uri endpoint(String projectId) => Uri.parse(
-      'https://$region-$projectId.cloudfunctions.net/joinPlaylist');
+  Uri endpoint(String projectId) =>
+      Uri.parse('https://$region-$projectId.cloudfunctions.net/joinPlaylist');
 
   Future<JoinPlaylistResult> join({
     required http.Client client,
@@ -95,7 +95,9 @@ class PlaylistJoiner {
       final id = result['id'];
       final already = result['alreadyMember'] == true;
       return JoinPlaylistResult(
-        already ? JoinPlaylistOutcome.alreadyMember : JoinPlaylistOutcome.joined,
+        already
+            ? JoinPlaylistOutcome.alreadyMember
+            : JoinPlaylistOutcome.joined,
         playlistId: id is String ? id : null,
       );
     }

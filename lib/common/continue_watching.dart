@@ -103,9 +103,8 @@ class ContinueWatchingMedia {
       type: type,
       id: id,
       title: rawTitle is String && rawTitle.trim().isNotEmpty ? rawTitle : null,
-      posterPath: rawPoster is String && rawPoster.isNotEmpty
-          ? rawPoster
-          : null,
+      posterPath:
+          rawPoster is String && rawPoster.isNotEmpty ? rawPoster : null,
       seasons: isShow
           ? seasonCountsFromTmdb(json['seasons'])
           : const <SeasonEpisodeCount>[],
@@ -147,11 +146,11 @@ class ContinueWatchingMedia {
   /// @param unknownTitle The localized fallback for a title TMDB did not give.
   /// @return The item map to hand to `getItemContainer`.
   Map<String, dynamic> itemData(String unknownTitle) => <String, dynamic>{
-    'id': id,
-    'type': type,
-    'title': title ?? unknownTitle,
-    'poster_path': posterPath,
-  };
+        'id': id,
+        'type': type,
+        'title': title ?? unknownTitle,
+        'poster_path': posterPath,
+      };
 }
 
 int? _asInt(dynamic value) {

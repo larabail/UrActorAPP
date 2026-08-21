@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<!-- Everything the app shows comes over the network: titles and artwork
+	     from TMDB, and the account, lists and friends from Firebase. Without
+	     this a sandboxed build launches to a permanently empty screen, with
+	     no error a user could act on. -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<!-- Choosing a profile photo, which the picker hands over as a file the
+	     user selected rather than as arbitrary disk access. -->
+	<key>com.apple.security.files.user-selected.read-only</key>
+	<true/>
+	<!-- Firebase Auth keeps the signed in session in the macOS keychain, and a
+	     sandboxed app is refused the keychain unless it declares the group it
+	     may use. Without this, signing in fails with `keychain-error` however
+	     correct the password is, and Firebase documents the capability as
+	     required on macOS:
+	     https://firebase.google.com/docs/ios/troubleshooting-faq#macos-keychain-sharing
+
+	     A keychain access group has to be signed for, which is why the Runner
+	     target names a DEVELOPMENT_TEAM and a real signing identity rather
+	     than the ad hoc signature the Flutter template ships with. Building
+	     macOS therefore needs that Apple Developer team available locally.
+	     $(AppIdentifierPrefix) expands to the team prefix, so this stays
+	     correct if the team ever changes. -->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)com.uractor.uractormacos</string>
+	</array>
+</dict>
+</plist>

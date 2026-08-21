@@ -500,8 +500,8 @@ class PlaylistPickerModal extends StatelessWidget {
                   value: valueLeft,
                   mediaList: moviesLeft,
                   onTap: () {
-                    PlaylistService.updateList(id, keyLeft, moviesLeft,
-                        context, serviceMediaType, !moviesLeft.contains(id));
+                    PlaylistService.updateList(id, keyLeft, moviesLeft, context,
+                        serviceMediaType, !moviesLeft.contains(id));
                   },
                 ),
               if (keyRight != null)

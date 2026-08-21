@@ -115,7 +115,8 @@ class _RatingDialogState extends State<RatingDialog> {
                 ),
                 decoration: InputDecoration(
                   hintText: 'Enter your opinion',
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+                  hintStyle:
+                      TextStyle(color: Colors.white.withValues(alpha: 0.6)),
                   enabledBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(color: Colors.white),
                   ),

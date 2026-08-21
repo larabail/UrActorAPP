@@ -30,9 +30,8 @@ class CalendarProgressService {
     required List<SeasonEpisodeCount> seasons,
     DateTime? date,
   }) async {
-    final progressType = type == calendarMovieType
-        ? progressMoviesKey
-        : progressTVShowsKey;
+    final progressType =
+        type == calendarMovieType ? progressMoviesKey : progressTVShowsKey;
     final state = await ProgressService.stateFor(progressType, id);
     final intent = CalendarProgress.intentFor(
       type: type,
