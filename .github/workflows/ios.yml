@@ -1,0 +1,120 @@
+name: iOS checks
+
+# Separate from the main pull request workflow for two reasons. macOS runners
+# bill at ten times the Linux rate on a private repository, so this should run
+# only when it can tell you something; and path filters apply to a workflow
+# rather than to a job, so the filter cannot live in pr.yml alongside the
+# Linux jobs.
+#
+# The listed paths are the ones that can break the native build. A Dart-only
+# change is already covered by analyze and test on Linux at a tenth of the
+# cost, and cannot break the iOS build without also touching pubspec.
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'ios/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.github/workflows/ios.yml'
+      - '.github/actions/setup-flutter-ios/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and launch on a simulator
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    env:
+      TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-flutter-ios
+
+      # --simulator because it needs no signing: a pull request must not have
+      # access to the distribution certificate, and the branch may come from a
+      # fork. It still exercises everything that actually rots — that the pods
+      # resolve, that the deployment target clears what Firebase requires, and
+      # that every plugin compiles against the pinned SDK.
+      - name: Build for the simulator
+        run: |
+          flutter build ios --simulator --debug \
+            --dart-define=TMDB_API_KEY="$TMDB_API_KEY" \
+            --dart-define=OPENAI_API_KEY="$OPENAI_API_KEY"
+
+      # Compiling proves the code builds, not that the app can start, and the
+      # iOS-specific failure that matters most — Firebase failing to configure
+      # — happens at launch. Skipped without a TMDB key, because the app
+      # deliberately throws at startup when the define is missing and a fork's
+      # pull request has no secrets: that would report a missing secret as a
+      # broken app.
+      - name: Launch it on a simulator
+        if: env.TMDB_API_KEY != ''
+        run: |
+          set -euo pipefail
+
+          # A device created here rather than whichever ones the image happens
+          # to ship, so the check does not change meaning when the image does.
+          RUNTIME=$(xcrun simctl list runtimes --json | python3 -c "
+          import json, sys
+          runtimes = [
+              r for r in json.load(sys.stdin)['runtimes']
+              if r['isAvailable'] and 'iOS' in r['name']
+          ]
+          if not runtimes:
+              sys.exit('no available iOS runtime on this image')
+
+          def order(runtime):
+              # Compared as numbers, not as text: sorted as strings, '9.0'
+              # outranks '18.1' and the check would silently run against an
+              # ancient runtime.
+              parts = []
+              for part in runtime['version'].split('.'):
+                  parts.append(int(part) if part.isdigit() else 0)
+              return parts
+
+          print(max(runtimes, key=order)['identifier'])
+          ")
+          echo "using $RUNTIME"
+
+          DEVICE=$(xcrun simctl create ios-smoke \
+            com.apple.CoreSimulator.SimDeviceType.iPhone-16 "$RUNTIME")
+          xcrun simctl bootstatus "$DEVICE" -b
+
+          xcrun simctl install "$DEVICE" build/ios/iphonesimulator/Runner.app
+          xcrun simctl launch "$DEVICE" com.uractor.uractorios
+
+          # `simctl launch` returns as soon as the process exists, so it
+          # succeeds for an app that crashes immediately afterwards. Whether
+          # the process is still there a few seconds later is the real signal.
+          sleep 15
+
+          if xcrun simctl spawn "$DEVICE" launchctl list \
+              | grep -q com.uractor.uractorios; then
+            echo "app launched and was still running after 15s"
+          else
+            echo "::error::the app did not stay running after launch"
+            xcrun simctl spawn "$DEVICE" log show --last 3m --style compact \
+              --predicate 'processImagePath CONTAINS "Runner"' | tail -80
+            exit 1
+          fi
+
+      - name: Confirm no signing material reached the build
+        if: always()
+        run: |
+          set -euo pipefail
+          if security list-keychains | grep -q ios-signing; then
+            echo "A signing keychain must never exist on a pull request build" >&2
+            exit 1
+          fi
