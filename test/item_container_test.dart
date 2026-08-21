@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:uractor/common/constants.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/common/tab_view.dart';
 import 'package:uractor/l10n/l10n.dart';
@@ -149,6 +150,71 @@ void main() {
 
     expect(heart.dx, lessThan(bookmark.dx));
     expect(heart.dy, equals(bookmark.dy));
+  });
+
+  group('artwork for an item TMDB has no image for', () {
+    ImageProvider? tileImage(WidgetTester tester) {
+      final containers = tester.widgetList<Container>(find.byType(Container));
+      for (final container in containers) {
+        final decoration = container.decoration;
+        if (decoration is BoxDecoration && decoration.image != null) {
+          return decoration.image!.image;
+        }
+      }
+      return null;
+    }
+
+    testWidgets('a posterless media tile draws the bundled cover',
+        (tester) async {
+      await _pumpTile(
+        tester,
+        (context) => getItemContainer(
+          context,
+          {'title': 'Missing poster', 'poster_path': null},
+          'media',
+        ),
+      );
+
+      final image = tileImage(tester);
+      expect(image, isA<AssetImage>());
+      expect((image as AssetImage).assetName, UNKNOWN_COVER);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a person with no profile photo draws the bundled silhouette',
+        (tester) async {
+      await _pumpTile(
+        tester,
+        (context) => getItemContainer(
+          context,
+          {'name': 'Unphotographed Actor', 'profile_path': null},
+          'person',
+        ),
+      );
+
+      final image = tileImage(tester);
+      expect(image, isA<AssetImage>());
+      expect((image as AssetImage).assetName, UNKNOWN_PERSON);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a selectable tile with no poster draws the bundled cover',
+        (tester) async {
+      await _pumpTile(
+        tester,
+        (context) => getItemSelectableContainer(
+          context,
+          {'title': 'Missing poster', 'poster_path': null},
+          'media',
+          false,
+        ),
+      );
+
+      final image = tileImage(tester);
+      expect(image, isA<AssetImage>());
+      expect((image as AssetImage).assetName, UNKNOWN_COVER);
+      expect(tester.takeException(), isNull);
+    });
   });
 
   group('badges resolved from the media pair', () {

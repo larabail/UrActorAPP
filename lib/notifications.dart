@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uractor/common/media_image.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/movie_result.dart';
 import 'package:uractor/objects/movie.dart';
@@ -129,8 +129,8 @@ class _NotificationsState extends State<Notifications> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(27),
                               image: DecorationImage(
-                                image: CachedNetworkImageProvider(
-                                  notification["coverPhoto"],
+                                image: mediaImageProvider(
+                                  notification["coverPhoto"] as String?,
                                 ),
                                 fit: BoxFit.fitWidth,
                               ),

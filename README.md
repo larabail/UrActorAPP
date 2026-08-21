@@ -111,7 +111,7 @@ target (see [Platforms](#platforms)).
 | Flutter / Dart | The Android and iOS app |
 | `firebase_auth` | Email accounts and session restore |
 | `cloud_firestore` | Users, history, lists, reviews, friends, playlists, `Oscars` |
-| `firebase_storage` | Profile photos and fallback cover/person images |
+| `firebase_storage` | Profile photos |
 | Cloud Functions (Node 22) | Server-verified playlist joins and playlist membership sync |
 | [TMDB API v3](https://developer.themoviedb.org/docs) | Movie, TV, person, search, credits (a show's aggregated across every season), videos, watch providers, genres |
 | `table_calendar` | The watch calendar |
@@ -399,7 +399,8 @@ functions/                   Cloud Functions (Node 22): playlist join,
                              member sync, join-attempt cleanup
 firestore-tests/              Firestore rules tests against the local emulator
 tools/sync-oscars/           Firestore Oscars sync job
-assets/                      Logos, tab icons, placeholder images, oscars_api.json
+assets/                      Logos, tab icons, the cover and person
+                             placeholders, oscars_api.json
 test/                        Flutter tests
 ```
 
