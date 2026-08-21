@@ -60,18 +60,15 @@ class AppScaffold extends StatelessWidget {
     final WindowSizeClass size =
         windowSizeClassFor(MediaQuery.sizeOf(context).width);
     final NavigationStyle style = navigationStyleFor(size);
-
-    Widget content = body;
     final Widget? placeholder = detailPlaceholder;
-    if (placeholder != null && usesTwoPanes(size)) {
-      content = TwoPane(list: body, placeholder: placeholder);
-    }
 
     if (style == NavigationStyle.bottomBar) {
+      // A bottom bar only happens at compact, which never has room for two
+      // panes, so the body is the whole story here.
       return Scaffold(
         appBar: appBar,
         backgroundColor: backgroundColor,
-        body: content,
+        body: body,
         floatingActionButton: floatingActionButton,
         bottomNavigationBar: _BottomDestinations(selectedIndex: selectedIndex),
       );
@@ -94,7 +91,17 @@ class AppScaffold extends StatelessWidget {
           // a full width row of tiles overflows by exactly that much.
           Expanded(
             child: ResponsiveRegion(
-              builder: (context, size) => content,
+              builder: (context, available) {
+                // Whether there is room for two panes is decided from what is
+                // left after the rail, not from the window. A 1024 window is
+                // wide enough by the breakpoints, but not once the rail has
+                // taken its share -- deciding from the window would split a
+                // space too narrow to hold either half properly.
+                if (placeholder != null && usesTwoPanes(available)) {
+                  return TwoPane(list: body, placeholder: placeholder);
+                }
+                return body;
+              },
             ),
           ),
         ],

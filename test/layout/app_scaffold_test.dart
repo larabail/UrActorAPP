@@ -11,6 +11,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uractor/common/navigation/app_scaffold.dart';
+import 'package:uractor/common/layout/two_pane.dart';
 import 'package:uractor/common/navigation/destinations.dart';
 import 'package:uractor/l10n/l10n.dart';
 
@@ -151,6 +152,40 @@ void main() {
       // tiles sized to the window overflows by exactly the rail's width.
       expect(bodyWidth, lessThan(1400));
       expect(bodyWidth, greaterThan(1000));
+    });
+
+    testWidgets('so a window only just wide enough does not split in two',
+        (tester) async {
+      // 1024 clears the two pane breakpoint, but not once the rail has taken
+      // its share. Deciding from the window rather than from what is left
+      // would split a space too narrow to hold either half properly.
+      _useWindow(tester, const Size(1030, 900));
+
+      await tester.pumpWidget(_wrap(
+        const AppScaffold(
+          selectedIndex: 0,
+          body: SizedBox(),
+          detailPlaceholder: DetailPanePlaceholder(message: 'nothing yet'),
+        ),
+      ));
+
+      expect(find.byType(TwoPane), findsNothing);
+    });
+
+    testWidgets('and a genuinely wide window still gets both panes',
+        (tester) async {
+      _useWindow(tester, const Size(1600, 900));
+
+      await tester.pumpWidget(_wrap(
+        const AppScaffold(
+          selectedIndex: 0,
+          body: SizedBox(),
+          detailPlaceholder: DetailPanePlaceholder(message: 'nothing yet'),
+        ),
+      ));
+
+      expect(find.byType(TwoPane), findsOneWidget);
+      expect(find.text('nothing yet'), findsOneWidget);
     });
   });
 
