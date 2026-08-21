@@ -43,10 +43,10 @@ permissions:
   contents: read
 
 jobs:
-  # Same reasoning as release-production.yml: deployment protection rules are
-  # not available on private repositories on the Free plan, so authorisation is
-  # enforced here. Branch protection on master is what makes it meaningful,
-  # since anyone with write access could otherwise edit this file.
+  # Same reasoning as release-production.yml: required reviewers on the
+  # `production` environment are the real gate, and this job is the fast half
+  # that fails before the environment is reached. On its own it is weak, since
+  # anyone with write access could edit this file.
   authorize:
     name: Check who started this
     runs-on: ubuntu-latest
@@ -63,7 +63,8 @@ jobs:
           fi
 
   # Ubuntu, not macOS. Nothing here compiles anything — it is all App Store
-  # Connect API calls — so this costs a tenth of what the TestFlight build does.
+  # Connect API calls — so this finishes in a couple of minutes rather than the
+  # twenty-odd the TestFlight build takes.
   promote:
     name: ${{ inputs.action == 'release' && 'Release to the App Store' || 'Submit for review' }}
     needs: authorize

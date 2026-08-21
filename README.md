@@ -344,9 +344,9 @@ and launches it on a simulator for pull requests that touch `ios/` or either
 pubspec file, and `.github/workflows/release-testflight.yml` ships to
 TestFlight. Both run on `macos-26`, because Apple refuses uploads built with
 an SDK older than iOS 26 and the older image defaults to Xcode 16. The pull
-request check is filtered to those paths on purpose: macOS runners bill at ten
-times the Linux rate on a private repository, and a Dart-only change cannot
-break the native build without also changing pubspec. See
+request check is filtered to those paths on purpose: the macOS build takes
+around twenty-five minutes against roughly five on Linux, and a Dart-only
+change cannot break the native build without also changing pubspec. See
 [docs/releases.md](docs/releases.md).
 
 **Run `flutter clean` after any change to `ios/Podfile.lock`.** `flutter
@@ -650,14 +650,14 @@ only Markdown, docs, or `.gitignore`. The workflow has three jobs:
   with a code derived from Play and writes that code back to `master` itself.
 
 The iOS check lives in its own workflow, `.github/workflows/ios.yml`, because
-it needs a macOS runner and those bill at ten times the Linux rate on a private
-repository. It runs only for pull requests touching `ios/`, `pubspec.yaml` or
-`pubspec.lock` — a Dart-only change is already covered on Linux and cannot
-break the native build without also changing pubspec. It builds for the
-simulator with `--no-codesign`, then installs and launches the app and checks
-it is still running fifteen seconds later, because the iOS failure that
-matters most, Firebase failing to configure, happens at launch rather than at
-compile time.
+it needs a macOS runner and that build takes around twenty-five minutes against
+roughly five on Linux. It runs only for pull requests touching `ios/`,
+`pubspec.yaml` or `pubspec.lock` — a Dart-only change is already covered on
+Linux and cannot break the native build without also changing pubspec. It
+builds for the simulator with `--no-codesign`, then installs and launches the
+app and checks it is still running fifteen seconds later, because the iOS
+failure that matters most, Firebase failing to configure, happens at launch
+rather than at compile time.
 
 There is no XCTest job. `ios/RunnerTests` still contains only the empty
 `testExample` stub that `flutter create` generates, and the app has no native
@@ -730,11 +730,23 @@ would report a shipped release as a broken one.
 - [`.githooks/pre-commit`](.githooks/pre-commit) — runs analyze and the tests
   before a commit. Enable it with `git config core.hooksPath .githooks`.
 
+## Licence
+
+UrActor is **source-available, not open source**. The code is published so it
+can be read and audited; reading it grants no right to ship it. Reuse beyond
+quoting and evaluation needs written permission. See [LICENSE](LICENSE).
+
+Security reports go through [SECURITY.md](SECURITY.md), privately — not through
+a public issue.
+
 ## Contributing
 
 [AGENTS.md](AGENTS.md) is the working agreement: no commits on `master`, tests
 with new code, both `.arb` files when strings change, and the commit and pull
 request conventions. Read it before opening a pull request.
+
+Outside pull requests are not being taken. The repository is public to be read,
+and every change still goes through review by the owner.
 
 ## Known gaps
 

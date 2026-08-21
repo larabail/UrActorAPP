@@ -4,12 +4,13 @@ name: Release to TestFlight
 # master goes to internal testers, production is somebody's deliberate
 # decision elsewhere.
 #
-# One difference worth knowing before you enable it. macOS runners bill at ten
-# times the Linux rate on a private repository, and this job spends most of its
-# time compiling gRPC and Firestore from source, so a release here costs
-# something on the order of a dollar rather than nothing. If that is not worth
-# it on every merge, delete the `push` trigger and run it by hand: nothing else
-# in the workflow depends on how it was started.
+# One difference worth knowing before you enable it. This job spends most of its
+# time compiling gRPC and Firestore from source, so a release here takes 20-30
+# minutes against about five for the Android half. It costs no money -- standard
+# runners are free on a public repository -- but it is the slowest thing in the
+# release path. If that wait is not worth it on every merge, delete the `push`
+# trigger and run it by hand: nothing else in the workflow depends on how it was
+# started.
 on:
   push:
     branches: [master]

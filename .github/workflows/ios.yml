@@ -1,14 +1,17 @@
 name: iOS checks
 
-# Separate from the main pull request workflow for two reasons. macOS runners
-# bill at ten times the Linux rate on a private repository, so this should run
-# only when it can tell you something; and path filters apply to a workflow
-# rather than to a job, so the filter cannot live in pr.yml alongside the
-# Linux jobs.
+# Separate from the main pull request workflow for two reasons. The macOS build
+# takes around twenty-five minutes against roughly five for the Linux jobs, so
+# this should run only when it can tell you something; and path filters apply to
+# a workflow rather than to a job, so the filter cannot live in pr.yml alongside
+# the Linux jobs.
 #
 # The listed paths are the ones that can break the native build. A Dart-only
-# change is already covered by analyze and test on Linux at a tenth of the
-# cost, and cannot break the iOS build without also touching pubspec.
+# change is already covered by analyze and test on Linux in a fifth of the
+# time, and cannot break the iOS build without also touching pubspec.
+#
+# Runner minutes are free here because the repository is public. The filter is
+# about how long a pull request waits for a verdict, not about the bill.
 on:
   pull_request:
     branches: [master]
