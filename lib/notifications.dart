@@ -10,6 +10,7 @@ import 'package:uractor/tvshow_result.dart';
 import 'main.dart';
 import 'objects/media.dart';
 import 'common/firebase/firestore_core.dart';
+import 'common/layout/responsive.dart';
 
 class Notifications extends StatefulWidget {
   const Notifications({super.key});
@@ -125,7 +126,7 @@ class _NotificationsState extends State<Notifications> {
                           Container(
                             margin:
                                 const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                            width: MediaQuery.of(context).size.width * 0.28,
+                            width: context.posterWidth,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(27),
                               image: DecorationImage(

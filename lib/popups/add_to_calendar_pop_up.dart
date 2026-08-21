@@ -21,6 +21,7 @@ import '../main.dart';
 import '../objects/media.dart';
 import '../common/firebase/firestore_core.dart';
 import '../common/api/http_client.dart';
+import '../common/layout/responsive.dart';
 
 class CalendarAddDialogue extends StatefulWidget {
   final String dateForMap;
@@ -99,7 +100,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
         children: [
           getItemSelectableContainer(context, item, "media", isSelected),
           SizedBox(
-            width: MediaQuery.of(context).size.width * 0.28,
+            width: context.posterWidth,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Text(

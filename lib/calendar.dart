@@ -412,8 +412,7 @@ class _CalendarState extends State<Calendar> {
                                                       BorderRadius.circular(30),
                                                   child: getItemContainer(
                                                       context, event, "media",
-                                                      widthPercentage: 0.32,
-                                                      heightPercentage: 0.2,
+                                                      scale: 1.15,
                                                       mediaPair:
                                                           mediaPairForData(
                                                               event)),

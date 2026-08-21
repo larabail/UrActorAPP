@@ -30,6 +30,8 @@ import 'popups/list_edit_popup.dart';
 import 'popups/movie_add_popup.dart';
 import 'popups/tv_add_popup.dart';
 import 'common/api/http_client.dart';
+import 'common/layout/breakpoints.dart';
+import 'common/layout/responsive.dart';
 
 class ListInfoDialog extends StatefulWidget {
   final Playlist listResult;
@@ -136,17 +138,16 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                                         .collection('Watchlists')
                                         .doc(widget.listResult.id),
                                     {
-                                  'Users':
-                                      FieldValue.arrayRemove([itemToRemove]),
-                                  'memberUids':
-                                      FieldValue.arrayRemove([userData["uid"]])
-                                });
+                                      'Users': FieldValue.arrayRemove(
+                                          [itemToRemove]),
+                                      'memberUids': FieldValue.arrayRemove(
+                                          [userData["uid"]])
+                                    });
                                 await PlaylistService
                                     .refreshCurrentUserPlaylists();
                                 setState(() {
                                   widget.listResult.users = currentUser
-                                          .playlists[widget.listResult.id]
-                                      ["Users"];
+                                      .playlists[widget.listResult.id]["Users"];
                                 });
                               },
                             ),
@@ -585,15 +586,15 @@ class _ListResultState extends State<ListResult> {
         } else if (snapshot.hasError) {
           return Container(
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-              width: MediaQuery.of(context).size.width * 0.28,
-              height: MediaQuery.of(context).size.height * 0.18,
+              width: context.posterWidth,
+              height: posterHeightFor(context.posterWidth),
               child:
                   Center(child: Text(S.of(context)!.errorFailedToLoadDetails)));
         } else {
           return Container(
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-              width: MediaQuery.of(context).size.width * 0.28,
-              height: MediaQuery.of(context).size.height * 0.18,
+              width: context.posterWidth,
+              height: posterHeightFor(context.posterWidth),
               child: const Center(child: CircularProgressIndicator()));
         }
       },

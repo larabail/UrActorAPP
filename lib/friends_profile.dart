@@ -21,6 +21,8 @@ import 'movie_result.dart';
 
 import 'seen_together.dart';
 import 'tvshow_result.dart';
+import 'common/layout/breakpoints.dart';
+import 'common/layout/responsive.dart';
 
 int weekOffset = 0; // This will be used to go to previous or next weeks
 
@@ -195,8 +197,8 @@ class _FriendProfileState extends State<FriendProfile> {
                     tempDirectors, Icons.chair, "Person"));
                 break;
               case "MostSeenMovies":
-                sections.add(buildProfileContainer(
-                    S.of(context)!.favMovies, moviesTemp, Icons.movie, "Movie"));
+                sections.add(buildProfileContainer(S.of(context)!.favMovies,
+                    moviesTemp, Icons.movie, "Movie"));
                 break;
               case "Writers":
                 sections.add(buildProfileContainer(S.of(context)!.favWriters,
@@ -408,7 +410,7 @@ class _FriendProfileState extends State<FriendProfile> {
           if (content.isEmpty) const SizedBox(height: 10),
           if (content.isNotEmpty)
             SizedBox(
-              height: MediaQuery.of(context).size.height * 0.18,
+              height: posterRowHeight(context),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: content.length > 10 ? 10 : content.length,
@@ -452,13 +454,14 @@ class _FriendProfileState extends State<FriendProfile> {
                                     : mediaPairForData(snapshot.data)));
                       } else if (snapshot.hasError) {
                         return Center(
-                            child: Text(S.of(context)!.errorFailedToLoadDetails));
+                            child:
+                                Text(S.of(context)!.errorFailedToLoadDetails));
                       } else {
                         return Container(
                             margin:
                                 const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                            width: MediaQuery.of(context).size.width * 0.28,
-                            height: MediaQuery.of(context).size.height * 0.18,
+                            width: context.posterWidth,
+                            height: posterHeightFor(context.posterWidth),
                             child: const Center(
                                 child: CircularProgressIndicator()));
                       }
@@ -505,7 +508,8 @@ class _FriendProfileState extends State<FriendProfile> {
                 child: Center(
                   child: Padding(
                     padding: const EdgeInsets.all(10.0),
-                    child: Text(S.of(context)!.seeAll(content.length),
+                    child: Text(
+                      S.of(context)!.seeAll(content.length),
                       style: const TextStyle(
                         color: Colors.grey,
                         fontSize: 12,
@@ -521,7 +525,7 @@ class _FriendProfileState extends State<FriendProfile> {
           if (content.isEmpty) const SizedBox(height: 10),
           if (content.isNotEmpty)
             SizedBox(
-              height: MediaQuery.of(context).size.height * 0.18,
+              height: posterRowHeight(context),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: content.length > 10 ? 10 : content.length,
@@ -561,13 +565,14 @@ class _FriendProfileState extends State<FriendProfile> {
                                 mediaPair: mediaPairForData(snapshot.data)));
                       } else if (snapshot.hasError) {
                         return Center(
-                            child: Text(S.of(context)!.errorFailedToLoadDetails));
+                            child:
+                                Text(S.of(context)!.errorFailedToLoadDetails));
                       } else {
                         return Container(
                             margin:
                                 const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                            width: MediaQuery.of(context).size.width * 0.28,
-                            height: MediaQuery.of(context).size.height * 0.18,
+                            width: context.posterWidth,
+                            height: posterHeightFor(context.posterWidth),
                             child: const Center(
                                 child: CircularProgressIndicator()));
                       }

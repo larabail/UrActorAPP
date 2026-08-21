@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
 import 'package:uractor/l10n/l10n.dart';
 
+import 'layout/breakpoints.dart';
+import 'layout/responsive.dart';
 import 'media_pair_membership.dart';
 import 'user_media_lists.dart';
 
@@ -20,12 +22,23 @@ import 'user_media_lists.dart';
 ///
 /// [favoriteBadgeSemanticLabel] and [watchlistBadgeSemanticLabel] override the
 /// resolution entirely, for callers that already know the answer.
+///
+/// The tile is a fixed 2:3 — the shape TMDB actually serves artwork in — and
+/// takes its width in logical pixels from the size class of the space it is
+/// drawn in. It used to take a fraction of the window in each axis instead,
+/// which tied the tile's proportions to the *window's* proportions: correct on
+/// a phone held upright, and increasingly wrong as the window got wider, up to
+/// a tile four times too wide on a 1080p monitor.
+///
+/// [scale] multiplies the width for tiles that should read as larger than the
+/// standard one, and [width] overrides it outright in logical pixels. Neither
+/// affects the aspect ratio, which is not a matter of taste.
 Widget getItemContainer(
   BuildContext context,
   dynamic item,
   String type, {
-  double widthPercentage = 0.28,
-  double heightPercentage = 0.18,
+  double scale = 1.0,
+  double? width,
   String? favoriteBadgeSemanticLabel,
   String? watchlistBadgeSemanticLabel,
   List<dynamic>? mediaPair,
@@ -65,10 +78,17 @@ Widget getItemContainer(
           ? S.of(context)!.watchlistBadge
           : null);
 
+  final double tileWidth = width ?? context.posterWidth * scale;
+
   return Container(
-    margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-    width: MediaQuery.of(context).size.width * widthPercentage,
-    height: MediaQuery.of(context).size.height * heightPercentage,
+    margin: const EdgeInsets.fromLTRB(
+      kPosterTileMarginLeft,
+      kPosterTileMarginTop,
+      kPosterTileMarginRight,
+      0,
+    ),
+    width: tileWidth,
+    height: posterHeightFor(tileWidth),
     child: Stack(
       alignment: Alignment.center,
       children: [
@@ -77,7 +97,11 @@ Widget getItemContainer(
             borderRadius: BorderRadius.circular(27),
             image: DecorationImage(
               image: CachedNetworkImageProvider(imagePath),
-              fit: BoxFit.fitWidth,
+              // The tile is already the shape of a poster, so covering it
+              // fills the corners without distorting the artwork. Fitting to
+              // the width instead left a gap whenever the two disagreed, which
+              // on a wide window was most of the tile.
+              fit: BoxFit.cover,
             ),
           ),
         ),
@@ -161,11 +185,17 @@ Widget _badge({
   );
 }
 
+/// The same tile, with a selection border, for the pickers that let a title be
+/// added to a list or a calendar entry. Sized on the same rules as
+/// [getItemContainer] so a picker and the list it feeds look alike.
 Widget getItemSelectableContainer(
-    BuildContext context, dynamic item, String type, bool isSelected) {
+    BuildContext context, dynamic item, String type, bool isSelected,
+    {double scale = 1.0, double? width}) {
+  final double tileWidth = width ?? context.posterWidth * scale;
+
   return SizedBox(
-    width: MediaQuery.of(context).size.width * 0.28,
-    height: MediaQuery.of(context).size.height * 0.18,
+    width: tileWidth,
+    height: posterHeightFor(tileWidth),
     child: Stack(
       alignment: Alignment.center,
       children: [
@@ -181,7 +211,7 @@ Widget getItemSelectableContainer(
                         ? UNKNOWN_COVER
                         : UNKNOWN_PERSON,
               ),
-              fit: BoxFit.fitWidth,
+              fit: BoxFit.cover,
             ),
             border: isSelected
                 ? Border.all(

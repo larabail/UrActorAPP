@@ -14,6 +14,8 @@ import 'common/utils.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
 import 'main.dart';
+import 'common/layout/breakpoints.dart';
+import 'common/layout/responsive.dart';
 
 class Reviews extends StatefulWidget {
   const Reviews();
@@ -97,8 +99,8 @@ class _ReviewsState extends State<Reviews> {
                           : null,
                       child: Container(
                         margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                        width: MediaQuery.of(context).size.width * 0.28,
-                        height: MediaQuery.of(context).size.height * 0.15,
+                        width: context.posterWidth,
+                        height: posterHeightFor(context.posterWidth),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(27),
                           image: DecorationImage(
@@ -182,8 +184,8 @@ class _ReviewsState extends State<Reviews> {
           } else {
             return Container(
                 margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                width: MediaQuery.of(context).size.width * 0.28,
-                height: MediaQuery.of(context).size.height * 0.18,
+                width: context.posterWidth,
+                height: posterHeightFor(context.posterWidth),
                 child: const Center(child: CircularProgressIndicator()));
           }
         });

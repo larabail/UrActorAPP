@@ -7,6 +7,8 @@ import 'package:uractor/objects/person.dart';
 import 'package:uractor/person_result.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
+import 'common/layout/breakpoints.dart';
+import 'common/layout/responsive.dart';
 
 class CastCrew extends StatefulWidget {
   final Map data;
@@ -174,15 +176,15 @@ class ItemCard extends StatelessWidget {
         } else if (snapshot.hasError) {
           return Container(
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-              width: MediaQuery.of(context).size.width * 0.28,
-              height: MediaQuery.of(context).size.height * 0.18,
+              width: context.posterWidth,
+              height: posterHeightFor(context.posterWidth),
               child:
                   Center(child: Text(S.of(context)!.errorFailedToLoadDetails)));
         } else {
           return Container(
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-              width: MediaQuery.of(context).size.width * 0.28,
-              height: MediaQuery.of(context).size.height * 0.18,
+              width: context.posterWidth,
+              height: posterHeightFor(context.posterWidth),
               child: const Center(child: CircularProgressIndicator()));
         }
       },

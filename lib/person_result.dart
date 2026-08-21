@@ -11,6 +11,8 @@ import 'common/utils.dart';
 import 'main.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
+import 'common/layout/breakpoints.dart';
+import 'common/layout/responsive.dart';
 
 class PersonResult extends StatefulWidget {
   final Person personResult;
@@ -96,23 +98,20 @@ class _PersonResultState extends State<PersonResult> {
                       ),
                     ),
                   Center(
-                    child: Container(
-                      width: MediaQuery.of(context).size.width * 0.45,
-                      height: MediaQuery.of(context).size.width * 0.55,
-                      margin: const EdgeInsets.fromLTRB(30.0, 5.0, 30.0, 5.0),
-                      child: ListView.builder(
-                        scrollDirection: Axis.vertical,
-                        itemCount: 1,
-                        itemBuilder: (BuildContext context, int index) {
-                          return GestureDetector(
-                              onTap: () {
-                                //
-                              },
-                              child: getItemContainer(
-                                  context, snapshot.data, "person",
-                                  widthPercentage: 0.1,
-                                  heightPercentage: 0.25));
-                        },
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(30.0, 5.0, 30.0, 5.0),
+                      // The portrait heading the page, larger than a tile in a
+                      // row but the same shape. It used to be a one item
+                      // ListView wrapped round a tile with its own width
+                      // override, which the list's tight cross axis
+                      // constraints then discarded — so the override never did
+                      // anything and the portrait was whatever the list made
+                      // it.
+                      child: getItemContainer(
+                        context,
+                        snapshot.data,
+                        "person",
+                        scale: 1.8,
                       ),
                     ),
                   ),
@@ -504,8 +503,7 @@ class _PersonResultState extends State<PersonResult> {
 
   Stack seen(BuildContext context, movie, type, oscars) {
     if (!Utils.containsNonType(currentUser.seenMovies, [type, movie['id']]) &&
-        !Utils.containsNonType(
-            currentUser.seenTVShows, [type, movie['id']])) {
+        !Utils.containsNonType(currentUser.seenTVShows, [type, movie['id']])) {
       return Stack(
         children: [
           getItemContainer(context, movie, "media",
@@ -572,8 +570,8 @@ class _PersonResultState extends State<PersonResult> {
               mediaPair: mediaPairForData(movie, containerType: type)),
           Container(
             margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-            width: MediaQuery.of(context).size.width * 0.28,
-            height: MediaQuery.of(context).size.height * 0.18,
+            width: context.posterWidth,
+            height: posterHeightFor(context.posterWidth),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(27),
               gradient: LinearGradient(
@@ -657,8 +655,7 @@ class _PersonResultState extends State<PersonResult> {
 
   Stack seenCrew(BuildContext context, movie, type, oscars) {
     if (!Utils.containsNonType(currentUser.seenMovies, [type, movie['id']]) &&
-        !Utils.containsNonType(
-            currentUser.seenTVShows, [type, movie['id']])) {
+        !Utils.containsNonType(currentUser.seenTVShows, [type, movie['id']])) {
       return Stack(
         children: [
           getItemContainer(context, movie, "media",
@@ -725,8 +722,8 @@ class _PersonResultState extends State<PersonResult> {
               mediaPair: mediaPairForData(movie, containerType: type)),
           Container(
             margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-            width: MediaQuery.of(context).size.width * 0.28,
-            height: MediaQuery.of(context).size.height * 0.18,
+            width: context.posterWidth,
+            height: posterHeightFor(context.posterWidth),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(27),
               gradient: LinearGradient(

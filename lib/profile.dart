@@ -22,6 +22,8 @@ import 'objects/person.dart';
 import 'person_result.dart';
 import 'movie_result.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'common/layout/breakpoints.dart';
+import 'common/layout/responsive.dart';
 
 class Profile extends StatefulWidget {
   const Profile();
@@ -543,7 +545,11 @@ class _ProfileState extends State<Profile> {
                                                   color: Colors.blue),
                                               const SizedBox(width: 10),
                                               Expanded(
-                                                child: Text(S.of(context)!.currentRecordMovies(maxMovies),
+                                                child: Text(
+                                                  S
+                                                      .of(context)!
+                                                      .currentRecordMovies(
+                                                          maxMovies),
                                                   style: const TextStyle(
                                                     fontSize: 15,
                                                   ),
@@ -672,7 +678,7 @@ class _ProfileState extends State<Profile> {
           if (content.isEmpty) const SizedBox(height: 10),
           if (content.isNotEmpty)
             SizedBox(
-              height: MediaQuery.of(context).size.height * 0.18,
+              height: posterRowHeight(context),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: content.length > 10 ? 10 : content.length,
@@ -696,16 +702,19 @@ class _ProfileState extends State<Profile> {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return Container(
                           margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                          width: MediaQuery.of(context).size.width * 0.28,
-                          height: MediaQuery.of(context).size.height * 0.18,
+                          width: context.posterWidth,
+                          height: posterHeightFor(context.posterWidth),
                           child:
                               const Center(child: CircularProgressIndicator()),
                         );
                       } else if (snapshot.hasError) {
                         return Center(
-                            child: Text(S.of(context)!.errorFailedToLoadGeneralDetails));
+                            child: Text(S
+                                .of(context)!
+                                .errorFailedToLoadGeneralDetails));
                       } else if (!snapshot.hasData) {
-                        return Center(child: Text(S.of(context)!.noDataAvailable));
+                        return Center(
+                            child: Text(S.of(context)!.noDataAvailable));
                       } else {
                         return GestureDetector(
                             onTap: () {

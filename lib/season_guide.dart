@@ -14,6 +14,8 @@ import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
 import 'dart:convert';
 import 'common/api/http_client.dart';
+import 'common/layout/breakpoints.dart';
+import 'common/layout/responsive.dart';
 
 class SeasonGuide extends StatefulWidget {
   final TVShow show;
@@ -326,8 +328,8 @@ class EpisodeCard extends StatelessWidget {
             child: Row(children: [
               Container(
                 margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                width: MediaQuery.of(context).size.width * 0.28,
-                height: MediaQuery.of(context).size.height * 0.1,
+                width: context.posterWidth,
+                height: stillHeightFor(context.posterWidth),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(27),
                   image: DecorationImage(
@@ -381,8 +383,8 @@ class EpisodeCard extends StatelessWidget {
         } else {
           return Container(
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-              width: MediaQuery.of(context).size.width * 0.28,
-              height: MediaQuery.of(context).size.height * 0.1,
+              width: context.posterWidth,
+              height: stillHeightFor(context.posterWidth),
               child: const Center(child: CircularProgressIndicator()));
         }
       },

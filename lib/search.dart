@@ -15,6 +15,8 @@ import 'common/navigation/bottom_app_bar.dart';
 import 'person_result.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
+import 'common/layout/breakpoints.dart';
+import 'common/layout/responsive.dart';
 
 class Search extends StatefulWidget {
   const Search({super.key});
@@ -217,7 +219,7 @@ class _SearchResultState extends State<Search> {
             mediaPair: mediaPairForData(item, containerType: typeContainer),
           ),
           SizedBox(
-            width: MediaQuery.of(context).size.width * 0.28,
+            width: context.posterWidth,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Text(
@@ -247,28 +249,45 @@ class _SearchResultState extends State<Search> {
       return Center(child: Text(S.of(context)!.noSearchResults));
     }
 
-    final int rowCount = (_results.length / 3).ceil();
     final bool showFooter = _page < _totalPages;
 
-    return ListView.builder(
-      controller: _scrollController,
-      itemCount: rowCount + (showFooter ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index >= rowCount) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 24),
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: List.generate(3, (column) {
-            final int itemIndex = index * 3 + column;
-            if (itemIndex >= _results.length) {
-              return SizedBox(width: MediaQuery.of(context).size.width * 0.28);
+    return ResponsiveRegion(
+      builder: (context, size) {
+        // The number of columns follows the width the results have, so a
+        // tablet or a desktop window fills its rows instead of showing three
+        // stretched tiles and a wide empty margin either side.
+        final double cellWidth = context.posterWidth +
+            kPosterTileMarginLeft +
+            kPosterTileMarginRight;
+        final int columns = gridColumnsFor(
+          LayoutScope.widthOf(context),
+          targetTileWidth: cellWidth,
+          spacing: 0,
+          minColumns: 2,
+        );
+        final int rowCount = (_results.length / columns).ceil();
+
+        return ListView.builder(
+          controller: _scrollController,
+          itemCount: rowCount + (showFooter ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index >= rowCount) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator()),
+              );
             }
-            return _buildItem(context, _results[itemIndex] as Map);
-          }),
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: List.generate(columns, (column) {
+                final int itemIndex = index * columns + column;
+                if (itemIndex >= _results.length) {
+                  return SizedBox(width: cellWidth);
+                }
+                return _buildItem(context, _results[itemIndex] as Map);
+              }),
+            );
+          },
         );
       },
     );

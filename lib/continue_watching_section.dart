@@ -13,6 +13,15 @@ import 'movie_result.dart';
 import 'objects/movie.dart';
 import 'objects/tv_show.dart';
 import 'tvshow_result.dart';
+import 'common/layout/responsive.dart';
+
+/// The room a tile's caption is given under it.
+///
+/// Fixed rather than measured, so a row's height can be worked out from the
+/// tile size alone. Two lines is enough for "Season 10, Episode 12" in either
+/// language at this size, and the caption is clipped rather than allowed to
+/// push the row taller than it was told to be.
+const double _kCaptionHeight = 38;
 
 /// One resolved row: the progress entry, what TMDB says about it, and where to
 /// pick the show back up.
@@ -168,12 +177,17 @@ class _ContinueWatchingSectionState extends State<ContinueWatchingSection> {
           ),
           const SizedBox(height: 10),
           SizedBox(
-            height: MediaQuery.of(context).size.height * 0.24,
+            // Sized from the tile rather than from the window. A fraction of
+            // the window height was only ever the height of a row of posters
+            // on a phone held upright; on a short window it clipped the tiles
+            // and on a tall one it left a band of dead space beneath them.
+            height: posterRowHeight(context) + _kCaptionHeight,
             // Builds lazily, so the titles scrolled past never cost a request.
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: items.length,
-              itemBuilder: (context, index) => _buildTile(context, items[index]),
+              itemBuilder: (context, index) =>
+                  _buildTile(context, items[index]),
             ),
           ),
         ],
@@ -215,13 +229,18 @@ class _ContinueWatchingSectionState extends State<ContinueWatchingSection> {
                 ),
               ),
               if (next != null)
-                Text(
-                  S.of(context)!.nextEpisode(
-                    next.seasonNumber,
-                    next.episodeNumber,
+                SizedBox(
+                  height: _kCaptionHeight,
+                  child: Text(
+                    S.of(context)!.nextEpisode(
+                          next.seasonNumber,
+                          next.episodeNumber,
+                        ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
                   ),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.grey, fontSize: 13),
                 ),
             ],
           ),
@@ -231,11 +250,6 @@ class _ContinueWatchingSectionState extends State<ContinueWatchingSection> {
   }
 
   Widget _buildPlaceholder(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-      width: MediaQuery.of(context).size.width * 0.28,
-      height: MediaQuery.of(context).size.height * 0.18,
-      child: const Center(child: CircularProgressIndicator()),
-    );
+    return const PosterPlaceholder(child: CircularProgressIndicator());
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/common/layout/breakpoints.dart';
+import 'package:uractor/common/layout/responsive.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/media.dart';
 import 'package:uractor/objects/movie.dart';
@@ -159,22 +161,44 @@ class _SortedMediaGridState extends State<SortedMediaGrid> {
         else
           const SizedBox(height: 2),
         Expanded(
-          child: ListView.builder(
-            itemCount: (items.length / 3).ceil(),
-            itemBuilder: (context, index) {
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: List.generate(3, (i) {
-                  final itemIndex = index * 3 + i;
-                  if (itemIndex < items.length) {
-                    return ItemCard(
-                      item: items[itemIndex],
-                      showFavoriteBadge: widget.showFavoriteBadge,
-                      showWatchlistBadge: widget.showWatchlistBadge,
-                    );
-                  }
-                  return const SizedBox.shrink();
-                }),
+          child: ResponsiveRegion(
+            builder: (context, size) {
+              // How many tiles fit is decided from the width the grid has been
+              // given, not from the window: inside a two pane layout the grid
+              // occupies a fraction of a wide window, and sizing it to the
+              // window would run its rows off the edge of the pane.
+              final double tileWidth = context.posterWidth;
+              final double cellWidth =
+                  tileWidth + kPosterTileMarginLeft + kPosterTileMarginRight;
+              final int columns = gridColumnsFor(
+                LayoutScope.widthOf(context),
+                targetTileWidth: cellWidth,
+                spacing: 0,
+                minColumns: 2,
+              );
+
+              return ListView.builder(
+                itemCount: (items.length / columns).ceil(),
+                itemBuilder: (context, index) {
+                  return Row(
+                    // Rows are packed from the leading edge so that a partial
+                    // last row lines up with the rows above it. Spreading them
+                    // out instead left the final one or two tiles drifting to
+                    // the middle of a wide window.
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: List.generate(columns, (i) {
+                      final itemIndex = index * columns + i;
+                      if (itemIndex < items.length) {
+                        return ItemCard(
+                          item: items[itemIndex],
+                          showFavoriteBadge: widget.showFavoriteBadge,
+                          showWatchlistBadge: widget.showWatchlistBadge,
+                        );
+                      }
+                      return SizedBox(width: cellWidth);
+                    }),
+                  );
+                },
               );
             },
           ),
@@ -245,19 +269,11 @@ class _ItemCardState extends State<ItemCard> {
             ),
           );
         } else if (snapshot.hasError) {
-          return Container(
-            margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-            width: MediaQuery.of(context).size.width * 0.28,
-            height: MediaQuery.of(context).size.height * 0.18,
-            child: Center(child: Text(S.of(context)!.errorFailedToLoadDetails)),
+          return PosterPlaceholder(
+            child: Text(S.of(context)!.errorFailedToLoadDetails),
           );
         } else {
-          return Container(
-            margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-            width: MediaQuery.of(context).size.width * 0.28,
-            height: MediaQuery.of(context).size.height * 0.18,
-            child: const Center(child: CircularProgressIndicator()),
-          );
+          return const PosterPlaceholder(child: CircularProgressIndicator());
         }
       },
     );
