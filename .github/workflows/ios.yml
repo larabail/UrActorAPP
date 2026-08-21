@@ -30,7 +30,11 @@ permissions:
 jobs:
   build:
     name: Build and launch on a simulator
-    runs-on: macos-15
+    # macos-26 rather than macos-15, matching the release workflow. The two
+    # have to agree: macos-15 defaults to Xcode 16.4, and a pull request that
+    # passed there could still be rejected at upload for the SDK it was built
+    # with. See release-testflight.yml.
+    runs-on: macos-26
     timeout-minutes: 60
 
     env:
