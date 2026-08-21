@@ -10,6 +10,8 @@ import 'package:uractor/common/firebase/watchlist_service.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/common/media_result_widgets.dart';
 import 'package:uractor/common/mediaitembuilder.dart';
+import 'package:uractor/common/viewing_history_range.dart';
+import 'package:uractor/common/viewing_history_widgets.dart';
 import 'package:uractor/common/watch_progress_widgets.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/popups/add_friends_seen_with_popup.dart';
@@ -227,7 +229,14 @@ class _MovieResultState extends State<MovieResult> {
                   getProviders(snapshot.data!, context),
                   getTimesSeen(snapshot.data!),
                   const SizedBox(height: 10),
-                  if (widget.movie.isSeen())
+                  if (ViewingHistory.hasAnything(
+                    seenDates: snapshot.data!['seen_dates'] as List,
+                    seen: widget.movie.isSeen(),
+                    hasProgress: ViewingHistory.hasProgressEntry(
+                        currentUser.progress,
+                        progressMoviesKey,
+                        widget.movie.id),
+                  ))
                     getViewingHistory(snapshot.data!, selectedDate),
                   getCastandCrew(snapshot.data!),
                   getTrailer(snapshot.data!),
@@ -334,6 +343,13 @@ class _MovieResultState extends State<MovieResult> {
             ),
           ),
         ],
+      ),
+      subtitle: ViewingHistoryRangeLabel(
+        type: progressMoviesKey,
+        id: widget.movie.id,
+        seenDates: data['seen_dates'] as List,
+        seen: widget.movie.isSeen(),
+        refreshToken: _progressToken,
       ),
       children: [
         if ((data['seen_dates'] as List).isNotEmpty)

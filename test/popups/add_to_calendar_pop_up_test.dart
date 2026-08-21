@@ -10,6 +10,7 @@ library;
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:uractor/common/firebase/progress_service.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/movie.dart';
 import 'package:uractor/objects/tv_show.dart';
@@ -151,10 +152,13 @@ void main() {
       expect(find.text('Episode (optional)'), findsNothing);
     });
 
-    testWidgets('a show is asked which episode it was', (tester) async {
+    testWidgets('a show is asked which episode it finished', (tester) async {
       await pump(tester, dialogue(type: 'series'));
 
-      expect(find.text('Which part did you watch?'), findsOneWidget);
+      expect(find.text("What's the last episode you finished today?"),
+          findsOneWidget);
+      expect(find.text('Everything before it is marked as watched.'),
+          findsOneWidget);
       expect(find.text('Season (optional)'), findsOneWidget);
       expect(find.text('Episode (optional)'), findsOneWidget);
     });
@@ -313,6 +317,166 @@ void main() {
 
       expect(await calendarOf('test-uid'), isNull);
       expect(find.byType(CalendarAddDialogue), findsNothing);
+    });
+
+    group('what an entry does to watch progress', () {
+      /// Gives Breaking Bad the seasons TMDB really reports, so the episodes
+      /// before the one named can be filled in.
+      void withSeasons() {
+        http.on('1396-Breaking-Bad?', json: {
+          'id': 1396,
+          'seasons': [
+            {'season_number': 0, 'episode_count': 3},
+            {'season_number': 1, 'episode_count': 7},
+            {'season_number': 2, 'episode_count': 13},
+          ],
+        });
+      }
+
+      Future<void> logEpisode(WidgetTester tester,
+          {String season = '2', String episode = '4'}) async {
+        await pump(tester, dialogue(type: 'series'));
+        await searchAndPick(tester, showLabel, 'breaking bad');
+        await tester.enterText(
+            find.widgetWithText(TextField, 'Season (optional)'), season);
+        if (episode.isNotEmpty) {
+          await tester.enterText(
+              find.widgetWithText(TextField, 'Episode (optional)'), episode);
+        }
+        await tester.pumpAndSettle();
+        await accept(tester);
+      }
+
+      testWidgets('naming an episode puts the show in progress, not finished',
+          (tester) async {
+        // The bug this exists for: the entry used to mark the show seen, and
+        // anything in a Seen list reads as finished, so "I finished episode 4
+        // today" claimed the whole show was done.
+        withSeasons();
+        await logEpisode(tester);
+
+        expect(
+          await ProgressService.showState('1396'),
+          WatchProgressState.inProgress,
+        );
+        final seen = await firestore.collection('test-uid').doc('Seen').get();
+        expect(seen.data()?['TVShows'] ?? [], isEmpty);
+        expect(user.seenTVShows, isEmpty);
+      });
+
+      testWidgets('ticks the episodes before the one named', (tester) async {
+        withSeasons();
+        await logEpisode(tester);
+
+        expect(await ProgressService.watchedEpisodes('1396', 1),
+            [1, 2, 3, 4, 5, 6, 7]);
+        expect(await ProgressService.watchedEpisodes('1396', 2), [1, 2, 3, 4]);
+        expect(await ProgressService.watchedEpisodes('1396', 0), isEmpty,
+            reason: 'specials are not tracked');
+      });
+
+      testWidgets('naming only a season watches that whole season',
+          (tester) async {
+        withSeasons();
+        await logEpisode(tester, season: '1', episode: '');
+
+        expect(await ProgressService.watchedEpisodes('1396', 1),
+            [1, 2, 3, 4, 5, 6, 7]);
+        expect(
+          await ProgressService.showState('1396'),
+          WatchProgressState.inProgress,
+        );
+      });
+
+      testWidgets('records a show TMDB has no season data for', (tester) async {
+        // The stub answers without a seasons list, which is what a show TMDB
+        // knows nothing about looks like. The entry still has to be loggable.
+        await logEpisode(tester);
+
+        expect(await ProgressService.watchedEpisodes('1396', 2), [1, 2, 3, 4]);
+        expect(
+          await ProgressService.showState('1396'),
+          WatchProgressState.inProgress,
+        );
+      });
+
+      testWidgets('an entry naming no part still marks the show seen',
+          (tester) async {
+        // Unchanged behaviour, and the reason it must stay unchanged: this is
+        // the entry every installed client writes.
+        await pump(tester, dialogue(type: 'series'));
+        await searchAndPick(tester, showLabel, 'breaking bad');
+        await accept(tester);
+
+        final seen = await firestore.collection('test-uid').doc('Seen').get();
+        expect(seen.data()!['TVShows'], ['1396']);
+        expect(user.seenTVShows, [
+          ['TVShows', '1396']
+        ]);
+        expect(
+          await ProgressService.showState('1396'),
+          WatchProgressState.finished,
+        );
+      });
+
+      testWidgets('a show already finished stays finished', (tester) async {
+        user.seenTVShows = [
+          ['TVShows', '1396'],
+        ];
+        withSeasons();
+
+        await logEpisode(tester);
+
+        expect(
+          await ProgressService.showState('1396'),
+          WatchProgressState.finished,
+        );
+        expect(await ProgressService.watchedEpisodes('1396', 2), isEmpty);
+        final day = (await calendarOf('test-uid'))!['2024-03-09'] as List;
+        expect(day.single['episode'], 4,
+            reason: 'the day is still logged, it just changes nothing');
+      });
+
+      testWidgets('a tagged friend is not told they finished the show',
+          (tester) async {
+        // A friend's progress cannot be written from here -- the rules allow a
+        // client to write its own Progress document and nobody else's -- so
+        // the entry says nothing about their state rather than overstating it.
+        await addFriend('friend-a', 'Ana');
+        withSeasons();
+
+        await pump(tester, dialogue(type: 'series'));
+        await searchAndPick(tester, showLabel, 'breaking bad');
+        await tester.enterText(
+            find.widgetWithText(TextField, 'Season (optional)'), '2');
+        await tester.enterText(
+            find.widgetWithText(TextField, 'Episode (optional)'), '4');
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(CheckboxListTile, 'Ana'));
+        await tester.pumpAndSettle();
+        await accept(tester);
+
+        final seen = await firestore.collection('friend-a').doc('Seen').get();
+        expect(seen.data()?['TVShows'] ?? [], isEmpty);
+
+        final theirs = (await calendarOf('friend-a'))!['2024-03-09'] as List;
+        expect(theirs.single['episode'], 4,
+            reason: 'they still get the entry, and their own history with it');
+      });
+
+      testWidgets('a tagged friend is still marked seen for a whole show',
+          (tester) async {
+        await addFriend('friend-a', 'Ana');
+
+        await pump(tester, dialogue(type: 'series'));
+        await searchAndPick(tester, showLabel, 'breaking bad');
+        await tester.tap(find.widgetWithText(CheckboxListTile, 'Ana'));
+        await tester.pumpAndSettle();
+        await accept(tester);
+
+        final seen = await firestore.collection('friend-a').doc('Seen').get();
+        expect(seen.data()!['TVShows'], ['1396']);
+      });
     });
   });
 

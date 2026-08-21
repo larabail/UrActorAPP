@@ -3,10 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/async_action.dart';
 import 'package:uractor/common/calendar_episode.dart';
+import 'package:uractor/common/firebase/calendar_progress_service.dart';
 import 'package:uractor/common/firebase/calendar_service.dart';
+import 'package:uractor/common/firebase/progress_service.dart';
 import 'package:uractor/common/firebase/social_service.dart';
 import 'package:uractor/common/firebase/watched_service.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/common/watch_progress_view.dart';
 import 'package:uractor/objects/movie.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/tv_show.dart';
@@ -113,8 +116,18 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
   }
 
   Future<void> addMovieSubmit(String id, String title, int runtime, double rating,
-      Map friendsWatchedWith, CalendarEpisode? episode) async {
+      Map friendsWatchedWith, CalendarEpisode? episode,
+      [List<SeasonEpisodeCount> seasons = const <SeasonEpisodeCount>[]]) async {
     String key = widget.type == "movie" ? "Movies" : "TVShows";
+    // What this entry means for tracking, decided before anything is written.
+    // An entry naming an episode records progress instead of claiming the
+    // whole show was finished, which is what it used to do.
+    final intent = await CalendarProgressService.apply(
+      type: widget.type,
+      id: id.toString(),
+      episode: episode,
+      seasons: seasons,
+    );
     Map myObject = {
       'id': id,
       'title': title,
@@ -151,7 +164,13 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
         }
         await CalendarService.updateCalendar(
             widget.dateRange, friend, myObject, widget.dateForMap);
-        await WatchedService.updateSeen(key, friend, id);
+        // A friend's progress cannot be written from here -- the rules let a
+        // client write its own Progress document and nobody else's -- so an
+        // entry naming one episode says nothing about their state rather than
+        // claiming they finished the show.
+        if (intent.marksFriendsSeen) {
+          await WatchedService.updateSeen(key, friend, id);
+        }
         await SocialService.updateSeenWith(friend, friendsWatchedWith, id, key);
         if (widget.type == "movie") {
           await WatchedService.updateRewatched(friend, id, "movie");
@@ -172,7 +191,8 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
         currentUser.rewatchedMovies[id] = 1;
       }
       await WatchedService.updateCurrentUserRewatched();
-      if (!Utils.containsList(currentUser.seenMovies, ["Movies", id])) {
+      if (intent.marksSelfSeen &&
+          !Utils.containsList(currentUser.seenMovies, ["Movies", id])) {
         id = id.toString();
         await WatchedService.updateSeen(key, currentUser.uid, id);
         currentUser.seenMovies += [
@@ -183,7 +203,8 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
         ];
       }
     } else {
-      if (!Utils.containsList(currentUser.seenTVShows, ["TVShows", id])) {
+      if (intent.marksSelfSeen &&
+          !Utils.containsList(currentUser.seenTVShows, ["TVShows", id])) {
         id = id.toString();
         await WatchedService.updateSeen(key, currentUser.uid, id);
         currentUser.seenTVShows += [
@@ -458,7 +479,9 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
                               movieData["runtime"] ?? 0,
                               double.parse(movieData["imdb_rating"]),
                               selectedFriends,
-                              _episode);
+                              _episode,
+                              WatchProgressView.seasonCounts(
+                                  movieData["seasons"] as List?));
                         },
                         S.of(context)!.genericAuthError,
                       );
@@ -714,7 +737,9 @@ class _AddToCalendarState extends State<AddToCalendar> {
                               data["runtime"] ?? 0,
                               double.parse(data["imdb_rating"]),
                               selectedFriends,
-                              widget.type);
+                              widget.type,
+                              WatchProgressView.seasonCounts(
+                                  data["seasons"] as List?));
                         }
                       },
                       S.of(context)!.genericAuthError,
@@ -754,7 +779,16 @@ class _AddToCalendarState extends State<AddToCalendar> {
   }
 
   Future<bool> modifyCalendarEntry(String id, String title, int runtime,
-      double rating, Map friendsMap, String type) async {
+      double rating, Map friendsMap, String type,
+      [List<SeasonEpisodeCount> seasons = const <SeasonEpisodeCount>[]]) async {
+    // Adding an episode to an entry that never had one is the same statement
+    // as recording it in the first place, so it drives tracking the same way.
+    await CalendarProgressService.apply(
+      type: type,
+      id: id.toString(),
+      episode: _episode,
+      seasons: seasons,
+    );
     List watchedWithList =
         friendsMap.keys.where((key) => friendsMap[key] == true).toList();
     List oldFriends = [];
@@ -931,6 +965,12 @@ class _EpisodeFields extends StatelessWidget {
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
+          ),
+          // The answer ticks everything before it, which is right far more
+          // often than not but is not something to spring on someone.
+          Text(
+            S.of(context)!.calendarEpisodeBackfillNote,
+            style: TextStyle(fontSize: 12, color: Colors.grey[400]),
           ),
           Row(
             children: [

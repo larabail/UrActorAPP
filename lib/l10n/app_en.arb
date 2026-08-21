@@ -227,6 +227,27 @@
     }
   },
   "viewingHistory": "Viewing History",
+  "viewingHistoryRange": "{start} – {end}",
+  "@viewingHistoryRange": {
+    "description": "When watching a title started and finished",
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "viewingHistoryRangeOpen": "{start} – present",
+  "@viewingHistoryRangeOpen": {
+    "description": "When watching a title started, for one still being watched",
+    "placeholders": {
+      "start": {
+        "type": "String"
+      }
+    }
+  },
   "noViewingHistory": "No viewing history available",
   "noReviews": "Haven't reviewed any movies yet",
   "peopleWatchedwith": "People watched with",
@@ -385,7 +406,8 @@
       }
     }
   },
-  "calendarEpisodeSectionTitle": "Which part did you watch?",
+  "calendarEpisodeSectionTitle": "What's the last episode you finished today?",
+  "calendarEpisodeBackfillNote": "Everything before it is marked as watched.",
   "calendarSeasonFieldLabel": "Season (optional)",
   "calendarEpisodeFieldLabel": "Episode (optional)",
   "calendarEpisodeNeedsSeason": "Add a season number to record an episode.",
