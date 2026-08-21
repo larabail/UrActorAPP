@@ -300,13 +300,15 @@ jobs:
         env:
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OMDB_API_KEY: ${{ secrets.OMDB_API_KEY }}
         run: |
           flutter build ipa --release \
             --build-name="${{ steps.version.outputs.name }}" \
             --build-number="${{ steps.version.outputs.build }}" \
             --export-options-plist="$RUNNER_TEMP/ExportOptions.plist" \
             --dart-define=TMDB_API_KEY="$TMDB_API_KEY" \
-            --dart-define=OPENAI_API_KEY="$OPENAI_API_KEY"
+            --dart-define=OPENAI_API_KEY="$OPENAI_API_KEY" \
+            --dart-define=OMDB_API_KEY="$OMDB_API_KEY"
 
       # altool rather than the App Store Connect API: the API has no endpoint
       # that accepts a binary. `--upload-package` rather than `--upload-app`,
