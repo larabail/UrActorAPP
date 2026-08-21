@@ -488,8 +488,10 @@ class _MovieResultState extends State<MovieResult> {
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  // Friend rows: as many columns as fit, rather than two
+                  // stretched across whatever width the page has.
+                  maxCrossAxisExtent: 320,
                   childAspectRatio: 3 / 1,
                 ),
                 itemCount: snapshot.data!.length,

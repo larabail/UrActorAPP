@@ -509,8 +509,11 @@ class _MyHomePageState extends State<MyHomePage> {
     return GridView.builder(
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        // A ceiling on card width rather than a fixed count: the grid fits as
+        // many as the width allows, so a wide window gains columns instead of
+        // stretching two cards across the whole of it.
+        maxCrossAxisExtent: 360,
         childAspectRatio: 2.75,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,

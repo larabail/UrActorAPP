@@ -601,25 +601,35 @@ class _ListResultState extends State<ListResult> {
 
   Widget buildMediaList(
       List mediaList, String mediaType, BuildContext context) {
-    return ListView.builder(
-      itemCount: (mediaList.length / 3).ceil(),
-      itemBuilder: (context, index) {
-        final leftIndex = index * 3;
-        final middleIndex = index * 3 + 1;
-        final rightIndex = index * 3 + 2;
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            if (leftIndex < mediaList.length)
-              buildMediaItem(
-                  mediaList[leftIndex].toString(), mediaType, context),
-            if (middleIndex < mediaList.length)
-              buildMediaItem(
-                  mediaList[middleIndex].toString(), mediaType, context),
-            if (rightIndex < mediaList.length)
-              buildMediaItem(
-                  mediaList[rightIndex].toString(), mediaType, context),
-          ],
+    return ResponsiveRegion(
+      builder: (context, size) {
+        // Column count follows the width the list has, so a playlist opened in
+        // a detail pane fills it instead of showing three tiles and a gap.
+        final double cellWidth = context.posterWidth +
+            kPosterTileMarginLeft +
+            kPosterTileMarginRight;
+        final int columns = gridColumnsFor(
+          LayoutScope.widthOf(context),
+          targetTileWidth: cellWidth,
+          spacing: 0,
+          minColumns: 2,
+        );
+
+        return ListView.builder(
+          itemCount: (mediaList.length / columns).ceil(),
+          itemBuilder: (context, index) {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                for (int column = 0; column < columns; column++)
+                  if (index * columns + column < mediaList.length)
+                    buildMediaItem(
+                        mediaList[index * columns + column].toString(),
+                        mediaType,
+                        context),
+              ],
+            );
+          },
         );
       },
     );

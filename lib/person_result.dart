@@ -13,6 +13,7 @@ import 'tvshow_result.dart';
 import 'common/layout/breakpoints.dart';
 import 'common/layout/responsive.dart';
 import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 class PersonResult extends StatefulWidget {
   final Person personResult;
@@ -81,15 +82,14 @@ class _PersonResultState extends State<PersonResult> {
                   if (snapshot.data!['num_oscars'] != 0)
                     Center(
                       child: SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.06,
+                        height: context.posterWidth * 0.28,
                         child: Center(
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: List.generate(
                               snapshot.data!['num_oscars'],
                               (index) => SizedBox(
-                                height:
-                                    MediaQuery.of(context).size.height * 0.06,
+                                height: context.posterWidth * 0.28,
                                 child: Image.asset("assets/oscar2.png"),
                               ),
                             ),
@@ -311,34 +311,38 @@ class _PersonResultState extends State<PersonResult> {
     );
   }
 
+  /// One row of a filmography, [columns] wide.
+  ///
+  /// The count is passed in rather than fixed at three, because this page is
+  /// as likely to be shown in a detail pane occupying half a wide window as
+  /// it is to have the whole screen. Three tiles sized for a phone left most
+  /// of a desktop pane empty; sizing them from the window instead overflowed
+  /// the pane, which is the same mistake in the other direction.
   Widget buildMediaRow(BuildContext context, List<dynamic> mediaList, int index,
-      String mediaType, bool isCrew, Map oscars) {
-    int leftIndex = index * 3;
-    int middleIndex = index * 3 + 1;
-    int rightIndex = index * 3 + 2;
-
+      String mediaType, bool isCrew, Map oscars,
+      {required int columns}) {
     Widget buildMediaItem(dynamic media) {
-      if (media == null || media["poster_path"] == null) return Container();
+      if (media == null || media["poster_path"] == null) {
+        return SizedBox(width: context.posterWidth);
+      }
 
       return GestureDetector(
         onTap: () {
-          MaterialPageRoute route;
+          Widget page;
           if (mediaType == 'Movies') {
             var tempMovie = Movie(
                 id: media['id'].toString(),
                 title: media['title'],
                 coverPhoto: media['poster_path'] ?? "");
-            route = MaterialPageRoute(
-                builder: (context) => MovieResult(movie: tempMovie));
+            page = MovieResult(movie: tempMovie);
           } else {
             var tempTvShow = TVShow(
                 id: media['id'].toString(),
                 title: media['name'],
                 coverPhoto: media['poster_photo'] ?? "");
-            route = MaterialPageRoute(
-                builder: (context) => TVShowResult(tvshow: tempTvShow));
+            page = TVShowResult(tvshow: tempTvShow);
           }
-          Navigator.push(context, route);
+          openDetail(context, page);
         },
         child: isCrew
             ? seenCrew(context, media, mediaType, oscars)
@@ -347,14 +351,50 @@ class _PersonResultState extends State<PersonResult> {
     }
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      // Packed from the leading edge so a partial last row lines up with the
+      // rows above it rather than drifting to the middle.
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        if (leftIndex < mediaList.length) buildMediaItem(mediaList[leftIndex]),
-        if (middleIndex < mediaList.length)
-          buildMediaItem(mediaList[middleIndex]),
-        if (rightIndex < mediaList.length)
-          buildMediaItem(mediaList[rightIndex]),
+        for (int column = 0; column < columns; column++)
+          if (index * columns + column < mediaList.length)
+            buildMediaItem(mediaList[index * columns + column]),
       ],
+    );
+  }
+
+  /// A filmography list that lays itself out for the width it is given.
+  Widget buildMediaList(
+    List<dynamic> media,
+    String mediaType,
+    bool isCrew,
+    Map oscars,
+  ) {
+    return ResponsiveRegion(
+      builder: (context, size) {
+        final double cellWidth = context.posterWidth +
+            kPosterTileMarginLeft +
+            kPosterTileMarginRight;
+        final int columns = gridColumnsFor(
+          LayoutScope.widthOf(context),
+          targetTileWidth: cellWidth,
+          spacing: 0,
+          minColumns: 2,
+        );
+
+        return ListView.builder(
+          scrollDirection: Axis.vertical,
+          itemCount: (media.length / columns).ceil(),
+          itemBuilder: (context, index) => buildMediaRow(
+            context,
+            media,
+            index,
+            mediaType,
+            isCrew,
+            oscars,
+            columns: columns,
+          ),
+        );
+      },
     );
   }
 
@@ -385,12 +425,8 @@ class _PersonResultState extends State<PersonResult> {
       });
 
       tabs.add(Tab(text: S.of(context)!.movies));
-      tabViews.add(ListView.builder(
-        scrollDirection: Axis.vertical,
-        itemCount: (data['movie_credits_cast'].length / 3).ceil(),
-        itemBuilder: (context, index) => buildMediaRow(context,
-            data['movie_credits_cast'], index, "Movies", false, data["oscars"]),
-      ));
+      tabViews.add(buildMediaList(
+          data['movie_credits_cast'], "Movies", false, data["oscars"]));
     }
     if (data['tv_credits_cast'].length > 0) {
       data['tv_credits_cast'].sort((a, b) {
@@ -407,12 +443,8 @@ class _PersonResultState extends State<PersonResult> {
         return dateB.compareTo(dateA);
       });
       tabs.add(Tab(text: S.of(context)!.tvShows));
-      tabViews.add(ListView.builder(
-        scrollDirection: Axis.vertical,
-        itemCount: (data['tv_credits_cast'].length / 3).ceil(),
-        itemBuilder: (context, index) => buildMediaRow(context,
-            data['tv_credits_cast'], index, "TVShows", false, data["oscars"]),
-      ));
+      tabViews.add(buildMediaList(
+          data['tv_credits_cast'], "TVShows", false, data["oscars"]));
     }
 
     return DefaultTabController(
@@ -453,12 +485,8 @@ class _PersonResultState extends State<PersonResult> {
         return dateB.compareTo(dateA);
       });
       tabs.add(Tab(text: S.of(context)!.movies));
-      tabViews.add(ListView.builder(
-        scrollDirection: Axis.vertical,
-        itemCount: (data['movie_credits_crew'].length / 3).ceil(),
-        itemBuilder: (context, index) => buildMediaRow(context,
-            data['movie_credits_crew'], index, "Movies", true, data["oscars"]),
-      ));
+      tabViews.add(buildMediaList(
+          data['movie_credits_crew'], "Movies", true, data["oscars"]));
     }
     if (data['tv_credits_crew'].length > 0) {
       data['tv_credits_crew'].sort((a, b) {
@@ -475,12 +503,8 @@ class _PersonResultState extends State<PersonResult> {
         return dateB.compareTo(dateA);
       });
       tabs.add(Tab(text: S.of(context)!.tvShows));
-      tabViews.add(ListView.builder(
-        scrollDirection: Axis.vertical,
-        itemCount: (data['tv_credits_crew'].length / 3).ceil(),
-        itemBuilder: (context, index) => buildMediaRow(context,
-            data['tv_credits_crew'], index, "TVShows", true, data["oscars"]),
-      ));
+      tabViews.add(buildMediaList(
+          data['tv_credits_crew'], "TVShows", true, data["oscars"]));
     }
 
     return DefaultTabController(
@@ -514,14 +538,14 @@ class _PersonResultState extends State<PersonResult> {
               alignment: Alignment.bottomCenter,
               child: Center(
                 child: SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.06,
+                  height: context.posterWidth * 0.28,
                   child: Center(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(
                         oscars[movie["title"].toLowerCase()].length,
                         (index) => SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.06,
+                          height: context.posterWidth * 0.28,
                           child: Image.asset("assets/oscar2.png"),
                         ),
                       ),
@@ -535,13 +559,13 @@ class _PersonResultState extends State<PersonResult> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.2,
+                  height: posterHeightFor(context.posterWidth) * 0.72,
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
                   child: SizedBox(
                     height: 20.0,
-                    width: MediaQuery.of(context).size.width * 0.26,
+                    width: context.posterWidth,
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
@@ -590,14 +614,14 @@ class _PersonResultState extends State<PersonResult> {
               alignment: Alignment.bottomCenter,
               child: Center(
                 child: SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.06,
+                  height: context.posterWidth * 0.28,
                   child: Center(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(
                         oscars[movie["title"].toLowerCase()].length,
                         (index) => SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.06,
+                          height: context.posterWidth * 0.28,
                           child: Image.asset("assets/oscar2.png"),
                         ),
                       ),
@@ -612,8 +636,8 @@ class _PersonResultState extends State<PersonResult> {
               children: [
                 Container(
                   margin: const EdgeInsets.fromLTRB(54.0, 10.0, 5.0, 0),
-                  width: MediaQuery.of(context).size.width * 0.15,
-                  height: MediaQuery.of(context).size.height * 0.05,
+                  width: context.posterWidth * 0.55,
+                  height: context.posterWidth * 0.26,
                   decoration: const BoxDecoration(
                     image: DecorationImage(
                       image: AssetImage('assets/seen_after.png'),
@@ -622,13 +646,13 @@ class _PersonResultState extends State<PersonResult> {
                   ),
                 ),
                 SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.14,
+                  height: posterHeightFor(context.posterWidth) * 0.52,
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
                   child: SizedBox(
                     height: 20.0,
-                    width: MediaQuery.of(context).size.width * 0.26,
+                    width: context.posterWidth,
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
@@ -666,14 +690,14 @@ class _PersonResultState extends State<PersonResult> {
               alignment: Alignment.bottomCenter,
               child: Center(
                 child: SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.06,
+                  height: context.posterWidth * 0.28,
                   child: Center(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(
                         oscars[movie["title"].toLowerCase()].length,
                         (index) => SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.06,
+                          height: context.posterWidth * 0.28,
                           child: Image.asset("assets/oscar2.png"),
                         ),
                       ),
@@ -687,13 +711,13 @@ class _PersonResultState extends State<PersonResult> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.2,
+                  height: posterHeightFor(context.posterWidth) * 0.72,
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
                   child: SizedBox(
                     height: 20.0,
-                    width: MediaQuery.of(context).size.width * 0.26,
+                    width: context.posterWidth,
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
@@ -742,14 +766,14 @@ class _PersonResultState extends State<PersonResult> {
               alignment: Alignment.bottomCenter,
               child: Center(
                 child: SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.06,
+                  height: context.posterWidth * 0.28,
                   child: Center(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(
                         oscars[movie["title"].toLowerCase()].length,
                         (index) => SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.06,
+                          height: context.posterWidth * 0.28,
                           child: Image.asset("assets/oscar2.png"),
                         ),
                       ),
@@ -764,8 +788,8 @@ class _PersonResultState extends State<PersonResult> {
               children: [
                 Container(
                   margin: const EdgeInsets.fromLTRB(54.0, 10.0, 5.0, 0),
-                  width: MediaQuery.of(context).size.width * 0.15,
-                  height: MediaQuery.of(context).size.height * 0.05,
+                  width: context.posterWidth * 0.55,
+                  height: context.posterWidth * 0.26,
                   decoration: const BoxDecoration(
                     image: DecorationImage(
                       image: AssetImage('assets/seen_after.png'),
@@ -774,13 +798,13 @@ class _PersonResultState extends State<PersonResult> {
                   ),
                 ),
                 SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.14,
+                  height: posterHeightFor(context.posterWidth) * 0.52,
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
                   child: SizedBox(
                     height: 20.0,
-                    width: MediaQuery.of(context).size.width * 0.26,
+                    width: context.posterWidth,
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
