@@ -23,6 +23,7 @@ import 'tvshow_result.dart';
 import 'common/layout/breakpoints.dart';
 import 'common/layout/responsive.dart';
 import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 int weekOffset = 0; // This will be used to go to previous or next weeks
 
@@ -434,18 +435,15 @@ class _FriendProfileState extends State<FriendProfile> {
                       if (snapshot.hasData) {
                         return GestureDetector(
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => type == "Person"
+                              openDetail(
+                                  context,
+                                  type == "Person"
                                       ? PersonResult(
                                           personResult: item as Person)
                                       : type == "Movie"
                                           ? MovieResult(movie: item as Movie)
                                           : TVShowResult(
-                                              tvshow: item as TVShow),
-                                ),
-                              );
+                                              tvshow: item as TVShow));
                             },
                             child: getItemContainer(context, snapshot.data,
                                 type == "Person" ? "person" : "media",
@@ -549,16 +547,13 @@ class _FriendProfileState extends State<FriendProfile> {
                       if (snapshot.hasData) {
                         return GestureDetector(
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => content.reversed
-                                                .toList()[index][0] ==
-                                            "Movies"
-                                        ? MovieResult(movie: tempMedia as Movie)
-                                        : TVShowResult(
-                                            tvshow: tempMedia as TVShow)),
-                              );
+                              openDetail(
+                                  context,
+                                  content.reversed.toList()[index][0] ==
+                                          "Movies"
+                                      ? MovieResult(movie: tempMedia as Movie)
+                                      : TVShowResult(
+                                          tvshow: tempMedia as TVShow));
                             },
                             child: getItemContainer(
                                 context, snapshot.data, "media",

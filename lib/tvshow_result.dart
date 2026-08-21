@@ -29,6 +29,7 @@ import 'person_result.dart';
 
 import 'popups/add_to_calendar_pop_up.dart';
 import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 String _imageProviderSeen = 'assets/seen_before.png';
 String _imageProviderWatchlist = 'assets/watchlist_before.png';
@@ -597,13 +598,8 @@ class _TVShowResultState extends State<TVShowResult> {
 
                         friendUid = querySnapshot.docs.first.data()['uid'];
 
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                FriendProfile(friendUid: friendUid),
-                          ),
-                        );
+                        openDetail(
+                            context, FriendProfile(friendUid: friendUid));
                       },
                       child: Container(
                         margin: const EdgeInsets.all(7),
@@ -892,13 +888,11 @@ class _TVShowResultState extends State<TVShowResult> {
                         name: person["name"].toString(),
                         data: person);
 
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => PersonResult(
-                                personResult: personResult,
-                              )),
-                    );
+                    openDetail(
+                        context,
+                        PersonResult(
+                          personResult: personResult,
+                        ));
                   },
                   child: Column(
                     children: <Widget>[
@@ -937,13 +931,11 @@ class _TVShowResultState extends State<TVShowResult> {
                           name: data['created_by'][index]["name"].toString(),
                           data: data['created_by'][index]);
 
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => PersonResult(
-                                  personResult: personResult,
-                                )),
-                      );
+                      openDetail(
+                          context,
+                          PersonResult(
+                            personResult: personResult,
+                          ));
                     },
                     child: Text(
                       "${S.of(context)!.createdBy} ${data['created_by'][index]['name']}",

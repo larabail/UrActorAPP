@@ -25,6 +25,7 @@ import 'common/layout/breakpoints.dart';
 import 'common/layout/responsive.dart';
 import 'common/navigation/app_scaffold.dart';
 import 'common/platform/capabilities.dart';
+import 'common/layout/two_pane.dart';
 
 class Profile extends StatefulWidget {
   const Profile();
@@ -727,18 +728,15 @@ class _ProfileState extends State<Profile> {
                       } else {
                         return GestureDetector(
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => type == "Person"
+                              openDetail(
+                                  context,
+                                  type == "Person"
                                       ? PersonResult(
                                           personResult: item as Person)
                                       : type == "Movie"
                                           ? MovieResult(movie: item as Movie)
                                           : TVShowResult(
-                                              tvshow: item as TVShow),
-                                ),
-                              );
+                                              tvshow: item as TVShow));
                             },
                             child: getItemContainer(
                                 context,

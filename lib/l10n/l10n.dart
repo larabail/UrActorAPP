@@ -1392,6 +1392,12 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Watch the trailer on YouTube'**
   String get watchTrailerOnYoutube;
+
+  /// Shown in the empty half of the two pane layout, before anything in the list beside it has been opened.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick something to see it here'**
+  String get detailPanePlaceholder;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

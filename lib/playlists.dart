@@ -14,6 +14,7 @@ import 'objects/playlist.dart';
 import 'popups/list_add_popup.dart';
 import 'popups/list_join_popup.dart';
 import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 class Playlists extends StatefulWidget {
   const Playlists({super.key});
@@ -76,6 +77,9 @@ class _PlaylistsState extends State<Playlists> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
+      detailPlaceholder: DetailPanePlaceholder(
+        message: S.of(context)!.detailPanePlaceholder,
+      ),
       appBar: CustomAppBar(
         actions: [
           if (_orderedIds.length > 1) ...[
@@ -169,14 +173,11 @@ class _PlaylistsState extends State<Playlists> {
                       users: [
                         currentUser.uid,
                       ]);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ListResult(
+                  openDetail(
+                      context,
+                      ListResult(
                         listResult: listResult,
-                      ),
-                    ),
-                  );
+                      ));
                 },
                 child: Container(
                   padding:
@@ -224,14 +225,11 @@ class _PlaylistsState extends State<Playlists> {
                               users: [
                                 currentUser.uid,
                               ]);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ListResult(
+                          openDetail(
+                              context,
+                              ListResult(
                                 listResult: listResult,
-                              ),
-                            ),
-                          );
+                              ));
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -334,14 +332,11 @@ class _PlaylistsState extends State<Playlists> {
                                 tvshows: tvshows,
                                 accesscode: accessCode.toString(),
                                 users: currentUser.playlists[key]["Users"]);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ListResult(
+                            openDetail(
+                                context,
+                                ListResult(
                                   listResult: listResult,
-                                ),
-                              ),
-                            );
+                                ));
                           },
                           child: Container(
                             margin: const EdgeInsets.fromLTRB(

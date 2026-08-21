@@ -38,6 +38,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/l10n.dart';
 import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 List idsExplorePage = [];
 bool gotData = false;
@@ -212,6 +213,9 @@ class _MyHomePageState extends State<MyHomePage> {
     int selectedIndex = 0;
     if (gotData) {
       return AppScaffold(
+        detailPlaceholder: DetailPanePlaceholder(
+          message: S.of(context)!.detailPanePlaceholder,
+        ),
         appBar: const CustomAppBar(),
         body: RefreshIndicator(
           onRefresh: _refreshMain,
@@ -420,17 +424,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                 if (snapshot.hasData) {
                                   return GestureDetector(
                                     onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) => type ==
-                                                    "Movies"
-                                                ? MovieResult(
-                                                    movie: tempMedia as Movie)
-                                                : TVShowResult(
-                                                    tvshow:
-                                                        tempMedia as TVShow)),
-                                      );
+                                      openDetail(
+                                          context,
+                                          type == "Movies"
+                                              ? MovieResult(
+                                                  movie: tempMedia as Movie)
+                                              : TVShowResult(
+                                                  tvshow: tempMedia as TVShow));
                                     },
                                     child: Column(children: [
                                       getItemContainer(
@@ -585,14 +585,11 @@ class _MyHomePageState extends State<MyHomePage> {
               accesscode: accessCode.toString(),
               users: currentUser.playlists[key]["Users"],
             );
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ListResult(
+            openDetail(
+                context,
+                ListResult(
                   listResult: listResult,
-                ),
-              ),
-            );
+                ));
           },
           child: Container(
             decoration: BoxDecoration(

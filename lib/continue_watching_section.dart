@@ -14,6 +14,7 @@ import 'objects/movie.dart';
 import 'objects/tv_show.dart';
 import 'tvshow_result.dart';
 import 'common/layout/responsive.dart';
+import 'common/layout/two_pane.dart';
 
 /// The room a tile's caption is given under it.
 ///
@@ -120,18 +121,15 @@ class _ContinueWatchingSectionState extends State<ContinueWatchingSection> {
 
   void _openDetails(ContinueWatchingMedia media, String title) {
     final cover = media.posterPath ?? '';
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => media.isShow
+    openDetail(
+        context,
+        media.isShow
             ? TVShowResult(
                 tvshow: TVShow(id: media.id, title: title, coverPhoto: cover),
               )
             : MovieResult(
                 movie: Movie(id: media.id, title: title, coverPhoto: cover),
-              ),
-      ),
-    );
+              ));
   }
 
   @override

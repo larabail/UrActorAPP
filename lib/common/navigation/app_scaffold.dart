@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 
 import '../layout/breakpoints.dart';
 import '../layout/responsive.dart';
+import '../layout/two_pane.dart';
 import 'destinations.dart';
 
 /// A [Scaffold] whose navigation adapts to the width of the window.
@@ -18,6 +19,11 @@ import 'destinations.dart';
 /// screen reached from within one — a media page, a season guide — which
 /// highlights nothing but still offers the destinations, exactly as the bottom
 /// bar always has.
+///
+/// [detailPlaceholder] opts a list screen into the two pane layout: given a
+/// window wide enough, whatever the list opens appears beside it rather than
+/// on top of it, and this is what the pane shows until something is chosen.
+/// A screen that is not a list of things to open leaves it null.
 class AppScaffold extends StatelessWidget {
   const AppScaffold({
     super.key,
@@ -26,6 +32,7 @@ class AppScaffold extends StatelessWidget {
     this.appBar,
     this.floatingActionButton,
     this.backgroundColor,
+    this.detailPlaceholder,
   });
 
   final int selectedIndex;
@@ -33,17 +40,38 @@ class AppScaffold extends StatelessWidget {
   final PreferredSizeWidget? appBar;
   final Widget? floatingActionButton;
   final Color? backgroundColor;
+  final Widget? detailPlaceholder;
 
   @override
   Widget build(BuildContext context) {
-    final NavigationStyle style = navigationStyleFor(
-        windowSizeClassFor(MediaQuery.sizeOf(context).width));
+    // A screen rendered inside a detail pane is a passenger in someone else's
+    // layout: it must not draw a second set of destinations, and it certainly
+    // must not open a pane of its own.
+    final DetailPane? pane = DetailPane.maybeOf(context);
+    if (pane != null && pane.isInsidePane) {
+      return Scaffold(
+        appBar: appBar,
+        backgroundColor: backgroundColor,
+        body: body,
+        floatingActionButton: floatingActionButton,
+      );
+    }
+
+    final WindowSizeClass size =
+        windowSizeClassFor(MediaQuery.sizeOf(context).width);
+    final NavigationStyle style = navigationStyleFor(size);
+
+    Widget content = body;
+    final Widget? placeholder = detailPlaceholder;
+    if (placeholder != null && usesTwoPanes(size)) {
+      content = TwoPane(list: body, placeholder: placeholder);
+    }
 
     if (style == NavigationStyle.bottomBar) {
       return Scaffold(
         appBar: appBar,
         backgroundColor: backgroundColor,
-        body: body,
+        body: content,
         floatingActionButton: floatingActionButton,
         bottomNavigationBar: _BottomDestinations(selectedIndex: selectedIndex),
       );
@@ -66,7 +94,7 @@ class AppScaffold extends StatelessWidget {
           // a full width row of tiles overflows by exactly that much.
           Expanded(
             child: ResponsiveRegion(
-              builder: (context, size) => body,
+              builder: (context, size) => content,
             ),
           ),
         ],

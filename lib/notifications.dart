@@ -11,6 +11,7 @@ import 'main.dart';
 import 'objects/media.dart';
 import 'common/firebase/firestore_core.dart';
 import 'common/layout/responsive.dart';
+import 'common/layout/two_pane.dart';
 
 class Notifications extends StatefulWidget {
   const Notifications({super.key});
@@ -110,14 +111,11 @@ class _NotificationsState extends State<Notifications> {
                           title: notification["title"],
                           coverPhoto: notification["coverPhoto"]);
                     }
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => notification["type"] == "movie"
+                    openDetail(
+                        context,
+                        notification["type"] == "movie"
                             ? MovieResult(movie: tempItem as Movie)
-                            : TVShowResult(tvshow: tempItem as TVShow),
-                      ),
-                    );
+                            : TVShowResult(tvshow: tempItem as TVShow));
                   },
                   child: Stack(
                     children: [

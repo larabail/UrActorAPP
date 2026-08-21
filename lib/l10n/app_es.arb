@@ -253,5 +253,6 @@
       }
     }
   },
-  "watchTrailerOnYoutube": "Ver el tráiler en YouTube"
+  "watchTrailerOnYoutube": "Ver el tráiler en YouTube",
+  "detailPanePlaceholder": "Elige algo para verlo aquí"
 }

@@ -12,6 +12,7 @@ import 'inbox.dart';
 import 'main.dart';
 import 'common/firebase/firestore_core.dart';
 import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 String friendUid = "";
 
@@ -108,12 +109,7 @@ class _FriendsState extends State<Friends> {
           ? null
           : () {
               friendUid = friend.uid;
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => FriendProfile(friendUid: friendUid),
-                ),
-              );
+              openDetail(context, FriendProfile(friendUid: friendUid));
             },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -298,6 +294,9 @@ class _FriendsState extends State<Friends> {
     }
 
     return AppScaffold(
+      detailPlaceholder: DetailPanePlaceholder(
+        message: S.of(context)!.detailPanePlaceholder,
+      ),
       appBar: CustomAppBar(
         actions: [
           if (currentUser.friends.length > 1) ...[

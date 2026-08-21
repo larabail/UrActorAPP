@@ -9,6 +9,7 @@ import 'common/navigation/appbar.dart';
 import 'common/layout/breakpoints.dart';
 import 'common/layout/responsive.dart';
 import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 class CastCrew extends StatefulWidget {
   final Map data;
@@ -41,6 +42,9 @@ class _CastCrewState extends State<CastCrew> {
     });
 
     return AppScaffold(
+      detailPlaceholder: DetailPanePlaceholder(
+        message: S.of(context)!.detailPanePlaceholder,
+      ),
       appBar: const CustomAppBar(),
       body: Column(
         children: [
@@ -133,13 +137,11 @@ class ItemCard extends StatelessWidget {
                   name: snapshot.data!["name"],
                   data: snapshot.data!);
 
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => PersonResult(
-                          personResult: tempMediaItem,
-                        )),
-              );
+              openDetail(
+                  context,
+                  PersonResult(
+                    personResult: tempMediaItem,
+                  ));
             },
             child: Row(children: [
               getItemContainer(context, snapshot.data, "person"),

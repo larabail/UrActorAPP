@@ -6,12 +6,16 @@ import 'common/navigation/appbar.dart';
 import 'main.dart';
 import 'common/tab_view.dart';
 import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 // ignore: use_key_in_widget_constructors
 class Favorites extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
+      detailPlaceholder: DetailPanePlaceholder(
+        message: S.of(context)!.detailPanePlaceholder,
+      ),
       appBar: const CustomAppBar(),
       body: Column(children: [
         Padding(

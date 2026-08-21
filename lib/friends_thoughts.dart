@@ -7,6 +7,7 @@ import 'package:uractor/l10n/l10n.dart';
 import 'common/navigation/appbar.dart';
 import 'objects/media.dart';
 import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 class FriendsThoughts extends StatefulWidget {
   final Map friends;
@@ -56,13 +57,7 @@ class _FriendsThoughtsState extends State<FriendsThoughts> {
                   String profilePath = widget.friends.values.toList()[index];
                   return GestureDetector(
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              FriendProfile(friendUid: friendUid),
-                        ),
-                      );
+                      openDetail(context, FriendProfile(friendUid: friendUid));
                     },
                     child: Column(
                       children: [

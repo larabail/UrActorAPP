@@ -16,6 +16,7 @@ import 'main.dart';
 import 'common/layout/breakpoints.dart';
 import 'common/layout/responsive.dart';
 import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 class Reviews extends StatefulWidget {
   const Reviews();
@@ -84,17 +85,15 @@ class _ReviewsState extends State<Reviews> {
                                     title: title,
                                     coverPhoto: data['poster_path'] ?? "");
                               }
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => mediaType == "Movies"
-                                        ? MovieResult(
-                                            movie: tempItem as Movie,
-                                          )
-                                        : TVShowResult(
-                                            tvshow: tempItem as TVShow,
-                                          )),
-                              );
+                              openDetail(
+                                  context,
+                                  mediaType == "Movies"
+                                      ? MovieResult(
+                                          movie: tempItem as Movie,
+                                        )
+                                      : TVShowResult(
+                                          tvshow: tempItem as TVShow,
+                                        ));
                             }
                           : null,
                       child: Container(
@@ -194,6 +193,9 @@ class _ReviewsState extends State<Reviews> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
+      detailPlaceholder: DetailPanePlaceholder(
+        message: S.of(context)!.detailPanePlaceholder,
+      ),
       appBar: const CustomAppBar(),
       body: Column(children: [
         Padding(

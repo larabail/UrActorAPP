@@ -181,6 +181,14 @@ double posterRowHeightFor(double tileWidth) =>
 /// the usual upper bound, which at this app's body size lands near here.
 const double kMaxReadableWidth = 840;
 
+/// The widest a column of form fields should get.
+///
+/// Narrower than prose, because a text field's width implies how much is
+/// expected in it. An email box stretched across a desktop monitor reads as a
+/// mistake, and the sign in form did exactly that: its column stretches its
+/// children, so with nothing to stop it every field was as wide as the screen.
+const double kMaxFormWidth = 420;
+
 /// The widest a detail pane should get before the list pane keeps the rest.
 const double kMaxDetailPaneWidth = 840;
 

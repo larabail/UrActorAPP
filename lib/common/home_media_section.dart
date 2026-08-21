@@ -9,6 +9,7 @@ import '../tvshow_result.dart';
 import 'item_container.dart';
 import 'layout/responsive.dart';
 import 'media_pair_membership.dart';
+import 'layout/two_pane.dart';
 
 /// One of the home page's list previews: watchlist, favourites or seen.
 ///
@@ -161,14 +162,12 @@ class HomeMediaSection extends StatelessWidget {
                       if (snapshot.hasData) {
                         return GestureDetector(
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => entry[0] == "Movies"
+                            openDetail(
+                                context,
+                                entry[0] == "Movies"
                                     ? MovieResult(movie: tempMedia as Movie)
-                                    : TVShowResult(tvshow: tempMedia as TVShow),
-                              ),
-                            );
+                                    : TVShowResult(
+                                        tvshow: tempMedia as TVShow));
                           },
                           child: getItemContainer(
                             context,

@@ -31,6 +31,7 @@ import 'person_result.dart';
 import 'dart:async';
 import 'common/firebase/firestore_core.dart';
 import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 class MovieResult extends StatefulWidget {
   final Movie movie;
@@ -506,13 +507,7 @@ class _MovieResultState extends State<MovieResult> {
                           .get();
 
                       friendUid = querySnapshot.docs.first.data()['uid'];
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              FriendProfile(friendUid: friendUid),
-                        ),
-                      );
+                      openDetail(context, FriendProfile(friendUid: friendUid));
                     },
                     child: Container(
                       margin: const EdgeInsets.all(7),
@@ -743,13 +738,11 @@ class _MovieResultState extends State<MovieResult> {
                         name: person["name"].toString(),
                         data: person);
 
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => PersonResult(
-                                personResult: personResult,
-                              )),
-                    );
+                    openDetail(
+                        context,
+                        PersonResult(
+                          personResult: personResult,
+                        ));
                   },
                   child: Column(
                     children: <Widget>[
@@ -817,13 +810,11 @@ class _MovieResultState extends State<MovieResult> {
             name: person["name"].toString(),
             data: person);
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => PersonResult(
-                    personResult: personResult,
-                  )),
-        );
+        openDetail(
+            context,
+            PersonResult(
+              personResult: personResult,
+            ));
       },
       child: Text(
         label,

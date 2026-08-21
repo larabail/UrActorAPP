@@ -6,6 +6,7 @@ import 'common/navigation/appbar.dart';
 import 'main.dart';
 import 'common/tab_view.dart';
 import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 class Watchlist extends StatelessWidget {
   List<Map<String, dynamic>> movies = [];
@@ -13,6 +14,9 @@ class Watchlist extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
+      detailPlaceholder: DetailPanePlaceholder(
+        message: S.of(context)!.detailPanePlaceholder,
+      ),
       appBar: const CustomAppBar(),
       body: Column(
         children: [

@@ -13,6 +13,7 @@ import 'firebase/settings_service.dart';
 import 'media_sort.dart';
 import 'media_sort_loader.dart';
 import 'utils.dart';
+import 'layout/two_pane.dart';
 
 /// The settings key holding the chosen sort, shared by every media grid so
 /// that the choice follows the user between the Seen, Watchlist, Favorites and
@@ -247,14 +248,11 @@ class _ItemCardState extends State<ItemCard> {
                   coverPhoto: snapshot.data!['poster_path'] ?? '',
                 );
               }
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => snapshot.data!['type'] == 'Movies'
+              await openDetail(
+                  context,
+                  snapshot.data!['type'] == 'Movies'
                       ? MovieResult(movie: tempMediaItem as Movie)
-                      : TVShowResult(tvshow: tempMediaItem as TVShow),
-                ),
-              );
+                      : TVShowResult(tvshow: tempMediaItem as TVShow));
               if (mounted) {
                 setState(() {});
               }

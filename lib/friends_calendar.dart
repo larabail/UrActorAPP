@@ -20,6 +20,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'tvshow_result.dart';
 import 'common/firebase/firestore_core.dart';
 import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 const String imgLink = 'https://image.tmdb.org/t/p/w500/';
 DateTime selectedDate = DateTime.now();
@@ -170,18 +171,14 @@ class _FriendCalendarState extends State<FriendCalendar> {
                                                   coverPhoto:
                                                       event["poster_path"] ??
                                                           UNKNOWN_COVER);
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => event
-                                                      .containsKey("title")
+                                          openDetail(
+                                              context,
+                                              event.containsKey("title")
                                                   ? MovieResult(
                                                       movie: tempMedia as Movie)
                                                   : TVShowResult(
                                                       tvshow:
-                                                          tempMedia as TVShow),
-                                            ),
-                                          );
+                                                          tempMedia as TVShow));
                                         },
                                         child: Stack(
                                           children: [

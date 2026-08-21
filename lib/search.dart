@@ -17,6 +17,7 @@ import 'tvshow_result.dart';
 import 'common/layout/breakpoints.dart';
 import 'common/layout/responsive.dart';
 import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 class Search extends StatefulWidget {
   const Search({super.key});
@@ -166,12 +167,11 @@ class _SearchResultState extends State<Search> {
           id: item['id'].toString(),
           title: item['title'],
           coverPhoto: item['poster_path'] ?? "");
-      Navigator.push(
+      openDetail(
           context,
-          MaterialPageRoute(
-              builder: (context) => MovieResult(
-                    movie: tempMovie,
-                  )));
+          MovieResult(
+            movie: tempMovie,
+          ));
     } else if (item.containsKey("poster_path") &&
         item.containsKey("name") &&
         typeContainer == "media") {
@@ -179,21 +179,19 @@ class _SearchResultState extends State<Search> {
           id: item['id'].toString(),
           title: item['name'],
           coverPhoto: item['poster_path'] ?? "");
-      Navigator.push(
+      openDetail(
           context,
-          MaterialPageRoute(
-              builder: (context) => TVShowResult(
-                    tvshow: tempTvShow,
-                  )));
+          TVShowResult(
+            tvshow: tempTvShow,
+          ));
     } else {
       Person personResult = Person(
           id: item["id"].toString(), name: item["name"].toString(), data: item);
-      Navigator.push(
+      openDetail(
           context,
-          MaterialPageRoute(
-              builder: (context) => PersonResult(
-                    personResult: personResult,
-                  )));
+          PersonResult(
+            personResult: personResult,
+          ));
     }
   }
 
@@ -294,6 +292,9 @@ class _SearchResultState extends State<Search> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
+      detailPlaceholder: DetailPanePlaceholder(
+        message: S.of(context)!.detailPanePlaceholder,
+      ),
       appBar: const CustomAppBar(),
       body: Column(
         children: [

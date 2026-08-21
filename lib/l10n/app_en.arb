@@ -435,5 +435,9 @@
   "watchTrailerOnYoutube": "Watch the trailer on YouTube",
   "@watchTrailerOnYoutube": {
     "description": "Offered instead of an inline player on platforms with no webview, where the trailer cannot be embedded."
+  },
+  "detailPanePlaceholder": "Pick something to see it here",
+  "@detailPanePlaceholder": {
+    "description": "Shown in the empty half of the two pane layout, before anything in the list beside it has been opened."
   }
 }

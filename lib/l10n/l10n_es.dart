@@ -746,4 +746,7 @@ class SEs extends S {
 
   @override
   String get watchTrailerOnYoutube => 'Ver el tráiler en YouTube';
+
+  @override
+  String get detailPanePlaceholder => 'Elige algo para verlo aquí';
 }

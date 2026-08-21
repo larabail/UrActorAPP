@@ -738,4 +738,7 @@ class SEn extends S {
 
   @override
   String get watchTrailerOnYoutube => 'Watch the trailer on YouTube';
+
+  @override
+  String get detailPanePlaceholder => 'Pick something to see it here';
 }

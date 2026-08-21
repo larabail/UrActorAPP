@@ -20,6 +20,7 @@ import 'movie_result.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 DateTime selectedDate = DateTime.now();
 
@@ -388,18 +389,14 @@ class _CalendarState extends State<Calendar> {
                                                     coverPhoto:
                                                         event["poster_path"] ??
                                                             UNKNOWN_COVER);
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => event
-                                                    .containsKey("title")
+                                        openDetail(
+                                            context,
+                                            event.containsKey("title")
                                                 ? MovieResult(
                                                     movie: tempMedia as Movie)
                                                 : TVShowResult(
                                                     tvshow:
-                                                        tempMedia as TVShow),
-                                          ),
-                                        );
+                                                        tempMedia as TVShow));
                                       },
                                       child: Stack(
                                         children: [

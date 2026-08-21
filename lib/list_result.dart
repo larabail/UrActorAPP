@@ -32,6 +32,7 @@ import 'common/api/http_client.dart';
 import 'common/layout/breakpoints.dart';
 import 'common/layout/responsive.dart';
 import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 class ListInfoDialog extends StatefulWidget {
   final Playlist listResult;
@@ -565,14 +566,11 @@ class _ListResultState extends State<ListResult> {
                         title: snapshot.data!['title'].toString(),
                         coverPhoto: snapshot.data!['poster_path'] ?? "",
                       );
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => mediaType == "Movies"
+                openDetail(
+                    context,
+                    mediaType == "Movies"
                         ? MovieResult(movie: tempItem as Movie)
-                        : TVShowResult(tvshow: tempItem as TVShow),
-                  ),
-                );
+                        : TVShowResult(tvshow: tempItem as TVShow));
               },
               child: getItemContainer(
                 context,
@@ -630,6 +628,9 @@ class _ListResultState extends State<ListResult> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
+      detailPlaceholder: DetailPanePlaceholder(
+        message: S.of(context)!.detailPanePlaceholder,
+      ),
       appBar: const CustomAppBar(),
       body: Column(
         children: [
