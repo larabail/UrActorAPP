@@ -67,10 +67,12 @@ jobs:
         env:
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OMDB_API_KEY: ${{ secrets.OMDB_API_KEY }}
         run: |
           flutter build appbundle --release \
             --dart-define=TMDB_API_KEY="$TMDB_API_KEY" \
-            --dart-define=OPENAI_API_KEY="$OPENAI_API_KEY"
+            --dart-define=OPENAI_API_KEY="$OPENAI_API_KEY" \
+            --dart-define=OMDB_API_KEY="$OMDB_API_KEY"
 
       - name: Confirm the bundle is not release signed
         run: |

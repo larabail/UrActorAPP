@@ -6,15 +6,12 @@ import '../constants.dart';
 import 'http_client.dart';
 
 class ApiUtils {
-  static const String _omdbApiKey = String.fromEnvironment('OMDB_API_KEY',
-      defaultValue: '768d2cf9');
-
   /// Fetches movie data from the OMDB API using the IMDb ID.
   /// @param imdbId The IMDb ID of the movie or show.
   /// @return The decoded JSON response containing OMDB metadata.
   static Future<dynamic> fetchOmdbData(String imdbId) async {
     final response = await AppHttp.client.get(
-        Uri.parse('https://www.omdbapi.com/?i=$imdbId&apikey=$_omdbApiKey'));
+        Uri.parse('https://www.omdbapi.com/?i=$imdbId&apikey=$OMDB_API_KEY'));
     if (response.statusCode != 200) {
       throw Exception('Failed to load OMDB data');
     }

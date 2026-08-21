@@ -40,6 +40,7 @@ jobs:
     env:
       TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OMDB_API_KEY: ${{ secrets.OMDB_API_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -55,7 +56,8 @@ jobs:
         run: |
           flutter build ios --simulator --debug \
             --dart-define=TMDB_API_KEY="$TMDB_API_KEY" \
-            --dart-define=OPENAI_API_KEY="$OPENAI_API_KEY"
+            --dart-define=OPENAI_API_KEY="$OPENAI_API_KEY" \
+            --dart-define=OMDB_API_KEY="$OMDB_API_KEY"
 
       # Compiling proves the code builds, not that the app can start, and the
       # iOS-specific failure that matters most — Firebase failing to configure
