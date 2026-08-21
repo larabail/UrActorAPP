@@ -1,0 +1,180 @@
+name: Release to the App Store
+
+# The iOS counterpart to release-production.yml, and deliberately a separate
+# workflow rather than another job in it. The two stores do not mean the same
+# thing by "production": Play promotes an existing build and it is live within
+# the hour, while Apple reviews every version by hand first. Sharing a workflow
+# would mean sharing a run whose two halves finish days apart.
+#
+# Manual only, and never triggered by a push. Like the Play promotion, this
+# never rebuilds: it promotes a build that TestFlight already has, so the
+# binary that reaches the App Store is the one that was tested.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'submit = send to Apple for review; release = publish a version Apple already approved'
+        required: true
+        default: 'submit'
+        type: choice
+        options: ['submit', 'release']
+      version:
+        description: 'Marketing version, e.g. 3.14.2 (must already exist in App Store Connect)'
+        required: true
+        type: string
+      build:
+        description: 'Build number to attach (submit only; blank = latest uploaded)'
+        required: false
+        type: string
+      dry_run:
+        description: 'Resolve and check everything, then stop before writing to Apple'
+        required: false
+        default: false
+        type: boolean
+
+# Shares a group with nothing else: this touches App Store Connect, which the
+# TestFlight upload also touches, but an upload during a submission is fine and
+# serialising them would block releases behind builds.
+concurrency:
+  group: appstore-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # Same reasoning as release-production.yml: deployment protection rules are
+  # not available on private repositories on the Free plan, so authorisation is
+  # enforced here. Branch protection on master is what makes it meaningful,
+  # since anyone with write access could otherwise edit this file.
+  authorize:
+    name: Check who started this
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify actor is a release manager
+        env:
+          MANAGERS: ${{ vars.RELEASE_MANAGERS || 'larabail' }}
+        run: |
+          if echo "$MANAGERS" | tr ',' '\n' | tr -d ' ' | grep -qx "$GITHUB_ACTOR"; then
+            echo "$GITHUB_ACTOR is authorised to release."
+          else
+            echo "::error::$GITHUB_ACTOR is not a release manager. Allowed: $MANAGERS"
+            exit 1
+          fi
+
+  # Ubuntu, not macOS. Nothing here compiles anything — it is all App Store
+  # Connect API calls — so this costs a tenth of what the TestFlight build does.
+  promote:
+    name: ${{ inputs.action == 'release' && 'Release to the App Store' || 'Submit for review' }}
+    needs: authorize
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    environment:
+      name: production
+      url: https://apps.apple.com/app/id6473752767
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install the App Store Connect client
+        run: pip install --quiet "pyjwt[crypto]" requests
+
+      - name: Show what Apple currently holds
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          {
+            echo '### App Store versions before this run'
+            echo ''
+            echo '```'
+            python tool/appstore.py status
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Only for a submission, and only when the caller did not name one. The
+      # latest build is the one TestFlight has just received, which is the one
+      # a release normally means.
+      - name: Resolve the build to attach
+        id: build
+        if: inputs.action == 'submit'
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+          REQUESTED: ${{ inputs.build }}
+        run: |
+          set -euo pipefail
+          if [ -n "$REQUESTED" ]; then
+            BUILD="$REQUESTED"
+          else
+            # next-build reports the number the next upload would take, so the
+            # newest build Apple actually holds is one below it.
+            NEXT=$(python tool/appstore.py next-build)
+            BUILD=$((NEXT - 1))
+            echo "no build given; using the latest Apple holds: $BUILD"
+          fi
+          echo "number=$BUILD" >> "$GITHUB_OUTPUT"
+
+      # Set to MANUAL release inside the tool, so approval leaves the version
+      # waiting rather than putting it in front of users. Releasing is the
+      # separate run below, which is the point of splitting the two.
+      - name: Submit for review
+        if: inputs.action == 'submit'
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          python tool/appstore.py submit \
+            --version "${{ inputs.version }}" \
+            --build "${{ steps.build.outputs.number }}" \
+            ${{ inputs.dry_run && '--dry-run' || '' }}
+
+      - name: Release to the App Store
+        if: inputs.action == 'release'
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          python tool/appstore.py release \
+            --version "${{ inputs.version }}" \
+            ${{ inputs.dry_run && '--dry-run' || '' }}
+
+      - name: Record what happened
+        if: always()
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          set -uo pipefail
+          {
+            echo '### After this run'
+            echo ''
+            echo "- action: \`${{ inputs.action }}\`"
+            echo "- version: \`${{ inputs.version }}\`"
+            if [ "${{ inputs.action }}" = "submit" ]; then
+              echo "- build: \`${{ steps.build.outputs.number }}\`"
+            fi
+            echo "- dry run: \`${{ inputs.dry_run }}\`"
+            echo ''
+            echo '```'
+            python tool/appstore.py status || echo '(could not read state)'
+            echo '```'
+            echo ''
+            if [ "${{ inputs.action }}" = "submit" ]; then
+              echo 'Apple reviews this on its own schedule, usually a day or two.'
+              echo 'It was submitted for **manual** release, so approval leaves it'
+              echo 'at PENDING_DEVELOPER_RELEASE rather than going live. Run this'
+              echo 'workflow again with `release` when you want users to have it.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

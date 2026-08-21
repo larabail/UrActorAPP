@@ -3,19 +3,19 @@
 Three workflows, split by risk and by store. Internal testing is automatic;
 production is not.
 
-| | Internal testing | TestFlight | Production |
-|---|---|---|---|
-| Store | Play | App Store | Play |
-| Trigger | every merge to `master` | every merge to `master` | manual only |
-| Builds? | yes | yes | no, promotes an existing build |
-| Who can run it | anyone merging | anyone merging | you, via environment approval |
-| Rollout | all testers | all testers | your choice, 5–100% |
+| | Internal testing | TestFlight | Production | App Store |
+|---|---|---|---|---|
+| Store | Play | App Store | Play | App Store |
+| Trigger | every merge to `master` | every merge to `master` | manual only | manual only |
+| Builds? | yes | yes | no, promotes an existing build | no, promotes an existing build |
+| Who can run it | anyone merging | anyone merging | you, via environment approval | you, via environment approval |
+| Rollout | all testers | all testers | your choice, 5–100% | Apple reviews, then you release |
 
 The iOS half runs on macOS runners, which are billed at ten times the Linux
 rate and are the one part of this worth a deliberate decision. See
-[Releasing to TestFlight](#releasing-to-testflight). There is no iOS
-equivalent of the production workflow yet: App Store review is a manual step
-in App Store Connect, and nothing here automates submitting for it.
+[Releasing to TestFlight](#releasing-to-testflight). Publishing to the App
+Store is [its own workflow](#releasing-to-the-app-store) and is two runs rather
+than one, because Apple reviews every version by hand before it can go live.
 
 ## How the split works
 
@@ -296,6 +296,70 @@ to `~/.appstoreconnect/private_keys`, which is one of them.
 Apple processes the build after the upload returns, on its own schedule. A
 green run means Apple accepted the binary, not that testers can install it
 yet.
+
+## Releasing to the App Store
+
+**Actions → Release to the App Store → Run workflow.**
+
+TestFlight is not the App Store. A build sitting in TestFlight is available to
+testers and nobody else; putting it in front of the public is this workflow,
+and it is deliberately two runs rather than one.
+
+| Input | Meaning |
+| --- | --- |
+| Action | `submit` sends a version to Apple for review; `release` publishes one Apple has already approved |
+| Version | Marketing version, e.g. `3.14.2`. It must already exist in App Store Connect |
+| Build | Only for `submit`. Blank uses the newest build Apple holds |
+| Dry run | Resolves and checks everything, then stops before writing |
+
+### Why it is two runs
+
+Because Apple's release model is not Play's, and pretending otherwise would
+produce a workflow that lies about what it did.
+
+| | Play production | App Store |
+| --- | --- | --- |
+| Promoting | Live within the hour | **Apple reviews first**, usually a day or two |
+| Rollout | Any of 5–100% | Phased release only: a fixed seven-day ladder |
+| Rebuild? | No, promotes the tested bundle | No, promotes the tested build |
+
+There is no call that makes a version live on demand. `submit` sets the
+version to **manual** release, so Apple's approval leaves it at
+`PENDING_DEVELOPER_RELEASE` instead of publishing it — the same shape as
+staging a Play release as `draft` rather than `inProgress`. The second run,
+`release`, is the decision to put it in front of users, and it is a human one.
+
+Run it from Ubuntu rather than macOS: nothing here compiles, it is all API
+calls, so it costs a tenth of what the TestFlight build does.
+
+### What it refuses to do
+
+The dangerous mistake is not a rejected write. It is running a promotion
+against a version that is already with Apple: editing one in review can
+withdraw it, so a mistyped version number could cancel a submission on its way
+to being approved.
+
+`tool/appstore.py` therefore checks the version's state before writing
+anything, and submits only from `PREPARE_FOR_SUBMISSION`, `REJECTED`,
+`DEVELOPER_REJECTED`, `METADATA_REJECTED` or `INVALID_BINARY`. It releases only
+from `PENDING_DEVELOPER_RELEASE`. Anything else stops the run with a message
+naming the state it found. A version number that does not exist is refused with
+a list of the ones that do, rather than being created.
+
+Apple reports each version's state twice, under an old name and a new one, and
+they disagree — a released version is `READY_FOR_SALE` in the first and
+`READY_FOR_DISTRIBUTION` in the second. Both vocabularies are accepted, because
+which one arrives is Apple's choice and not something to depend on.
+
+### What this does not do
+
+The version record itself, its screenshots, its description and its "what's
+new" text are not created or edited here. A submission fails outright if that
+metadata is incomplete, and generating store copy from commit subjects — which
+is what `release_notes.py` does for Play — is not something to do unattended
+for a listing customers read.
+
+Create the version in App Store Connect, fill it in, then run this.
 
 ## Releasing to production
 
