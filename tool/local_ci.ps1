@@ -87,9 +87,60 @@ function Invoke-Gate {
     [pscustomobject]@{
         Name    = $Name
         Ok      = $ok
+        Status  = $(if ($ok) { 'pass' } else { 'fail' })
         Seconds = $elapsed
         Tail    = ($output | Select-Object -Last $TailLines) -join "`n"
     }
+}
+
+# A gate that cannot be run on this machine is not a failing gate. Reporting an
+# environment problem as a pull request failure is worse than not running the
+# check at all: it looks identical to a real failure, and someone goes looking
+# for a bug in a branch that does not have one.
+function New-BlockedGate {
+    param([string] $Name, [string] $Reason)
+    Write-Head $Name
+    Write-Host "  -> BLOCKED: $Reason" -ForegroundColor Yellow
+    [pscustomobject]@{ Name = $Name; Ok = $true; Status = 'blocked'; Seconds = 0; Tail = $Reason }
+}
+
+function New-SkippedGate {
+    param([string] $Name, [string] $Reason)
+    [pscustomobject]@{ Name = $Name; Ok = $true; Status = 'skipped'; Seconds = 0; Tail = $Reason }
+}
+
+# The Firebase emulators bind fixed ports and do not always release them when a
+# run is interrupted. A stale emulator from hours earlier fails the next run
+# with "port taken", which reads like a broken test suite.
+function Get-StaleEmulatorPorts {
+    $ports = 4400, 4500, 4600, 5001, 8080, 8085, 9150, 9299
+    $held = @()
+    foreach ($port in $ports) {
+        $conn = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
+        if ($conn) { $held += $port }
+    }
+    $held
+}
+
+# The Cloud Functions runtime, functions/package.json and the workflow all pin
+# one Node major. firebase-functions does not load on a much newer one, and the
+# failure surfaces as an unrelated TypeError while the codebase is analysed.
+function Get-FunctionsNodeMismatch {
+    param([string] $Root)
+    $required = $null
+    try {
+        $pkg = Get-Content (Join-Path $Root 'functions/package.json') -Raw | ConvertFrom-Json
+        $required = ($pkg.engines.node -replace '[^\d].*$', '')
+    } catch { return $null }
+    if (-not $required) { return $null }
+
+    $local = (& node --version 2>$null)
+    if (-not $local) { return 'node is not on PATH' }
+    $localMajor = ($local -replace '^v', '') -replace '\..*$', ''
+    if ($localMajor -ne $required) {
+        return "functions/package.json requires Node $required and this machine has Node $localMajor. firebase-functions will not load, so the result would say nothing about the branch."
+    }
+    $null
 }
 
 function Invoke-PrChecks {
@@ -144,20 +195,28 @@ function Invoke-PrChecks {
         $results += Invoke-Gate 'Coverage floor' { & python tool/coverage_summary.py --min 68 }
 
         if ($SkipFunctions) {
-            $results += [pscustomobject]@{ Name = 'Functions'; Ok = $true; Seconds = 0; Tail = 'SKIPPED (-SkipFunctions)' }
+            $results += New-SkippedGate 'Functions' 'SKIPPED (-SkipFunctions)'
         } else {
-            $results += Invoke-Gate 'Functions' {
-                Push-Location functions
-                try {
-                    & npm ci --silent
-                    if ($LASTEXITCODE -ne 0) { return }
-                    & npm run test:emulator
-                } finally { Pop-Location }
+            $mismatch = Get-FunctionsNodeMismatch -Root $work
+            $stale = Get-StaleEmulatorPorts
+            if ($mismatch) {
+                $results += New-BlockedGate 'Functions' $mismatch
+            } elseif ($stale) {
+                $results += New-BlockedGate 'Functions' ("Firebase emulator ports already in use: $($stale -join ', '). A previous run left an emulator behind; stop it and run again.")
+            } else {
+                $results += Invoke-Gate 'Functions' {
+                    Push-Location functions
+                    try {
+                        & npm ci --silent
+                        if ($LASTEXITCODE -ne 0) { return }
+                        & npm run test:emulator
+                    } finally { Pop-Location }
+                }
             }
         }
 
         if ($SkipBuild) {
-            $results += [pscustomobject]@{ Name = 'Build app bundle'; Ok = $true; Seconds = 0; Tail = 'SKIPPED (-SkipBuild)' }
+            $results += New-SkippedGate 'Build app bundle' 'SKIPPED (-SkipBuild)'
         } else {
             $results += Invoke-Gate 'Build app bundle' {
                 & flutter build appbundle --release @placeholderDefines
@@ -176,7 +235,8 @@ function Invoke-PrChecks {
 function Format-Comment {
     param([pscustomobject] $Run)
 
-    $failed = @($Run.Results | Where-Object { -not $_.Ok })
+    $failed = @($Run.Results | Where-Object { $_.Status -eq 'fail' })
+    $blocked = @($Run.Results | Where-Object { $_.Status -eq 'blocked' })
 
     $sb = [System.Text.StringBuilder]::new()
     [void]$sb.AppendLine('## Local checks failed')
@@ -188,7 +248,12 @@ function Format-Comment {
     [void]$sb.AppendLine('| Gate | Result | Time |')
     [void]$sb.AppendLine('| --- | --- | --- |')
     foreach ($r in $Run.Results) {
-        $verdict = if ($r.Tail -like 'SKIPPED*') { 'skipped' } elseif ($r.Ok) { 'pass' } else { '**fail**' }
+        $verdict = switch ($r.Status) {
+            'fail'    { '**fail**' }
+            'blocked' { 'blocked' }
+            'skipped' { 'skipped' }
+            default   { 'pass' }
+        }
         [void]$sb.AppendLine(('| {0} | {1} | {2}s |' -f $r.Name, $verdict, $r.Seconds))
     }
     [void]$sb.AppendLine()
@@ -199,6 +264,19 @@ function Format-Comment {
         [void]$sb.AppendLine('```')
         [void]$sb.AppendLine($r.Tail)
         [void]$sb.AppendLine('```')
+        [void]$sb.AppendLine()
+    }
+
+    if ($blocked) {
+        [void]$sb.AppendLine('### Not run')
+        [void]$sb.AppendLine()
+        [void]$sb.AppendLine('These could not run on this machine. **They are not failures of this')
+        [void]$sb.AppendLine('branch** and nothing here should be read as a defect in it — they are')
+        [void]$sb.AppendLine('simply unverified.')
+        [void]$sb.AppendLine()
+        foreach ($r in $blocked) {
+            [void]$sb.AppendLine(('- **{0}** — {1}' -f $r.Name, $r.Tail))
+        }
         [void]$sb.AppendLine()
     }
 
@@ -227,7 +305,9 @@ foreach ($n in $targets) { $runs += Invoke-PrChecks -Number $n }
 Write-Head 'Summary'
 $anyFailed = $false
 foreach ($run in $runs) {
-    $failed = @($run.Results | Where-Object { -not $_.Ok })
+    $failed = @($run.Results | Where-Object { $_.Status -eq 'fail' })
+    $blocked = @($run.Results | Where-Object { $_.Status -eq 'blocked' })
+
     if ($failed.Count -gt 0) {
         $anyFailed = $true
         Write-Host ("#{0} FAILED: {1}" -f $run.Number, (($failed | ForEach-Object { $_.Name }) -join ', ')) -ForegroundColor Red
@@ -236,7 +316,14 @@ foreach ($run in $runs) {
             Write-Host ("  commented on #{0}" -f $run.Number)
         }
     } else {
-        Write-Host ("#{0} passed every gate" -f $run.Number) -ForegroundColor Green
+        Write-Host ("#{0} passed every gate that ran" -f $run.Number) -ForegroundColor Green
+    }
+
+    # Reported whether or not anything failed, and never as a failure. An
+    # unverified gate is worth knowing about before merging.
+    if ($blocked.Count -gt 0) {
+        Write-Host ("  not run: {0}" -f (($blocked | ForEach-Object { $_.Name }) -join ', ')) -ForegroundColor Yellow
+        foreach ($b in $blocked) { Write-Host ("    {0}: {1}" -f $b.Name, $b.Tail) -ForegroundColor DarkYellow }
     }
 }
 
