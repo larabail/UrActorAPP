@@ -735,4 +735,7 @@ class SEn extends S {
   String calendarSeasonBadge(int season) {
     return 'S$season';
   }
+
+  @override
+  String get watchTrailerOnYoutube => 'Watch the trailer on YouTube';
 }

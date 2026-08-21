@@ -1386,6 +1386,12 @@ abstract class S {
   /// In en, this message translates to:
   /// **'S{season}'**
   String calendarSeasonBadge(int season);
+
+  /// Offered instead of an inline player on platforms with no webview, where the trailer cannot be embedded.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch the trailer on YouTube'**
+  String get watchTrailerOnYoutube;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

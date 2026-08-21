@@ -27,14 +27,15 @@ class DefaultFirebaseOptions {
       case TargetPlatform.macOS:
         return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        // The Windows SDK reads the same registration the web app uses -- the
+        // desktop build is not a separate app in the Firebase console. Running
+        // `flutterfire configure` again and choosing Windows will replace this
+        // with a generated `windows` entry.
+        return web;
       case TargetPlatform.linux:
         throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for linux - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
+          'Firebase has no Linux plugin, so the app is not built for Linux. '
+          'See the Platforms section of README.md.',
         );
       default:
         throw UnsupportedError(

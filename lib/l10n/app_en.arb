@@ -431,5 +431,9 @@
         "type": "int"
       }
     }
+  },
+  "watchTrailerOnYoutube": "Watch the trailer on YouTube",
+  "@watchTrailerOnYoutube": {
+    "description": "Offered instead of an inline player on platforms with no webview, where the trailer cannot be embedded."
   }
 }

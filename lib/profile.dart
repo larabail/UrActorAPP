@@ -24,6 +24,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'common/layout/breakpoints.dart';
 import 'common/layout/responsive.dart';
 import 'common/navigation/app_scaffold.dart';
+import 'common/platform/capabilities.dart';
 
 class Profile extends StatefulWidget {
   const Profile();
@@ -110,28 +111,36 @@ class _ProfileState extends State<Profile> {
 
       if (image == null) return "";
 
-      // Crop the image
-      CroppedFile? croppedFile = await ImageCropper().cropImage(
-        sourcePath: image.path,
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'Cropper',
-            toolbarColor: Colors.deepOrange,
-            toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.original,
-            lockAspectRatio: false,
-          ),
-          IOSUiSettings(
-            title: 'Cropper',
-          ),
-        ],
-        aspectRatio:
-            CropAspectRatio(ratioX: 1, ratioY: 1), // Use this for aspect ratio
-      );
+      String sourcePath = image.path;
 
-      if (croppedFile == null) return "";
+      // Cropping is Android, iOS and web only. On desktop the picker still
+      // works, so the photo is uploaded as chosen rather than the whole
+      // feature being withdrawn there.
+      if (Capabilities.cropsImages) {
+        CroppedFile? croppedFile = await ImageCropper().cropImage(
+          sourcePath: image.path,
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: 'Cropper',
+              toolbarColor: Colors.deepOrange,
+              toolbarWidgetColor: Colors.white,
+              initAspectRatio: CropAspectRatioPreset.original,
+              lockAspectRatio: false,
+            ),
+            IOSUiSettings(
+              title: 'Cropper',
+            ),
+          ],
+          aspectRatio: CropAspectRatio(
+              ratioX: 1, ratioY: 1), // Use this for aspect ratio
+        );
+
+        if (croppedFile == null) return "";
+        sourcePath = croppedFile.path;
+      }
+
       String fileName = DateTime.now().millisecondsSinceEpoch.toString();
-      File fileToUpload = File(croppedFile.path);
+      File fileToUpload = File(sourcePath);
 
       FirebaseStorage storage = FirebaseStorage.instance;
       Reference ref = storage.ref().child("profile_images").child(fileName);

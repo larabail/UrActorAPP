@@ -252,5 +252,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "watchTrailerOnYoutube": "Ver el tráiler en YouTube"
 }
