@@ -11,9 +11,11 @@ import 'package:uractor/common/watch_progress_widgets.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/tv_show.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'dart:convert';
 import 'common/api/http_client.dart';
+import 'common/layout/breakpoints.dart';
+import 'common/layout/responsive.dart';
+import 'common/navigation/app_scaffold.dart';
 
 class SeasonGuide extends StatefulWidget {
   final TVShow show;
@@ -51,7 +53,7 @@ class _SeasonGuideState extends State<SeasonGuide> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
       appBar: const CustomAppBar(),
       body: Column(
         children: [
@@ -64,7 +66,7 @@ class _SeasonGuideState extends State<SeasonGuide> {
           ),
         ],
       ),
-      bottomNavigationBar: CommonBottomAppBar(-1),
+      selectedIndex: -1,
     );
   }
 }
@@ -213,7 +215,7 @@ class EpisodeGuide extends StatefulWidget {
 class _EpisodeGuideState extends State<EpisodeGuide> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
       appBar: const CustomAppBar(),
       body: Column(
         children: [
@@ -226,7 +228,7 @@ class _EpisodeGuideState extends State<EpisodeGuide> {
           ),
         ],
       ),
-      bottomNavigationBar: CommonBottomAppBar(-1),
+      selectedIndex: -1,
     );
   }
 }
@@ -326,8 +328,8 @@ class EpisodeCard extends StatelessWidget {
             child: Row(children: [
               Container(
                 margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                width: MediaQuery.of(context).size.width * 0.28,
-                height: MediaQuery.of(context).size.height * 0.1,
+                width: context.posterWidth,
+                height: stillHeightFor(context.posterWidth),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(27),
                   image: DecorationImage(
@@ -381,8 +383,8 @@ class EpisodeCard extends StatelessWidget {
         } else {
           return Container(
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-              width: MediaQuery.of(context).size.width * 0.28,
-              height: MediaQuery.of(context).size.height * 0.1,
+              width: context.posterWidth,
+              height: stillHeightFor(context.posterWidth),
               child: const Center(child: CircularProgressIndicator()));
         }
       },

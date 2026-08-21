@@ -13,7 +13,6 @@ import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/tv_show.dart';
 import 'package:uractor/popups/grant_access_dialogue.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'common/sorted_media_grid.dart';
 import 'common/utils.dart';
 import 'objects/media.dart';
@@ -30,6 +29,10 @@ import 'popups/list_edit_popup.dart';
 import 'popups/movie_add_popup.dart';
 import 'popups/tv_add_popup.dart';
 import 'common/api/http_client.dart';
+import 'common/layout/breakpoints.dart';
+import 'common/layout/responsive.dart';
+import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 class ListInfoDialog extends StatefulWidget {
   final Playlist listResult;
@@ -136,17 +139,16 @@ class _ListInfoDialogState extends State<ListInfoDialog> {
                                         .collection('Watchlists')
                                         .doc(widget.listResult.id),
                                     {
-                                  'Users':
-                                      FieldValue.arrayRemove([itemToRemove]),
-                                  'memberUids':
-                                      FieldValue.arrayRemove([userData["uid"]])
-                                });
+                                      'Users': FieldValue.arrayRemove(
+                                          [itemToRemove]),
+                                      'memberUids': FieldValue.arrayRemove(
+                                          [userData["uid"]])
+                                    });
                                 await PlaylistService
                                     .refreshCurrentUserPlaylists();
                                 setState(() {
                                   widget.listResult.users = currentUser
-                                          .playlists[widget.listResult.id]
-                                      ["Users"];
+                                      .playlists[widget.listResult.id]["Users"];
                                 });
                               },
                             ),
@@ -564,14 +566,11 @@ class _ListResultState extends State<ListResult> {
                         title: snapshot.data!['title'].toString(),
                         coverPhoto: snapshot.data!['poster_path'] ?? "",
                       );
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => mediaType == "Movies"
+                openDetail(
+                    context,
+                    mediaType == "Movies"
                         ? MovieResult(movie: tempItem as Movie)
-                        : TVShowResult(tvshow: tempItem as TVShow),
-                  ),
-                );
+                        : TVShowResult(tvshow: tempItem as TVShow));
               },
               child: getItemContainer(
                 context,
@@ -585,15 +584,15 @@ class _ListResultState extends State<ListResult> {
         } else if (snapshot.hasError) {
           return Container(
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-              width: MediaQuery.of(context).size.width * 0.28,
-              height: MediaQuery.of(context).size.height * 0.18,
+              width: context.posterWidth,
+              height: posterHeightFor(context.posterWidth),
               child:
                   Center(child: Text(S.of(context)!.errorFailedToLoadDetails)));
         } else {
           return Container(
               margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-              width: MediaQuery.of(context).size.width * 0.28,
-              height: MediaQuery.of(context).size.height * 0.18,
+              width: context.posterWidth,
+              height: posterHeightFor(context.posterWidth),
               child: const Center(child: CircularProgressIndicator()));
         }
       },
@@ -602,25 +601,35 @@ class _ListResultState extends State<ListResult> {
 
   Widget buildMediaList(
       List mediaList, String mediaType, BuildContext context) {
-    return ListView.builder(
-      itemCount: (mediaList.length / 3).ceil(),
-      itemBuilder: (context, index) {
-        final leftIndex = index * 3;
-        final middleIndex = index * 3 + 1;
-        final rightIndex = index * 3 + 2;
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            if (leftIndex < mediaList.length)
-              buildMediaItem(
-                  mediaList[leftIndex].toString(), mediaType, context),
-            if (middleIndex < mediaList.length)
-              buildMediaItem(
-                  mediaList[middleIndex].toString(), mediaType, context),
-            if (rightIndex < mediaList.length)
-              buildMediaItem(
-                  mediaList[rightIndex].toString(), mediaType, context),
-          ],
+    return ResponsiveRegion(
+      builder: (context, size) {
+        // Column count follows the width the list has, so a playlist opened in
+        // a detail pane fills it instead of showing three tiles and a gap.
+        final double cellWidth = context.posterWidth +
+            kPosterTileMarginLeft +
+            kPosterTileMarginRight;
+        final int columns = gridColumnsFor(
+          LayoutScope.widthOf(context),
+          targetTileWidth: cellWidth,
+          spacing: 0,
+          minColumns: 2,
+        );
+
+        return ListView.builder(
+          itemCount: (mediaList.length / columns).ceil(),
+          itemBuilder: (context, index) {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                for (int column = 0; column < columns; column++)
+                  if (index * columns + column < mediaList.length)
+                    buildMediaItem(
+                        mediaList[index * columns + column].toString(),
+                        mediaType,
+                        context),
+              ],
+            );
+          },
         );
       },
     );
@@ -628,7 +637,10 @@ class _ListResultState extends State<ListResult> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
+      detailPlaceholder: DetailPanePlaceholder(
+        message: S.of(context)!.detailPanePlaceholder,
+      ),
       appBar: const CustomAppBar(),
       body: Column(
         children: [
@@ -922,7 +934,7 @@ class _ListResultState extends State<ListResult> {
             ),
         ],
       ),
-      bottomNavigationBar: CommonBottomAppBar(-1),
+      selectedIndex: -1,
     );
   }
 }

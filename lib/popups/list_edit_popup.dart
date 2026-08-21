@@ -41,8 +41,7 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
         Map docData = doc.data() as Map;
         if (originalListName == (docData["Name"])) {
           if (docData["AccessCode"] == originalAccessCode) {
-            var userDoc =
-                FirestoreCore.db.collection("Watchlists").doc(doc.id);
+            var userDoc = FirestoreCore.db.collection("Watchlists").doc(doc.id);
             await FirestoreCore.mergeInto(userDoc, {"Name": listName});
             await FirestoreCore.mergeInto(userDoc, {"CoverPhoto": cover});
             await FirestoreCore.mergeInto(userDoc, {"AccessCode": accessCode});

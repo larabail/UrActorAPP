@@ -252,5 +252,10 @@
         "type": "int"
       }
     }
-  }
+  },
+  "watchTrailerOnYoutube": "Ver el tráiler en YouTube",
+  "detailPanePlaceholder": "Elige algo para verlo aquí",
+  "userDisabledError": "Esa cuenta ha sido deshabilitada.",
+  "tooManyRequestsError": "Demasiados intentos. Espera un momento y vuelve a intentarlo.",
+  "networkError": "No se pudo conectar con el servidor. Comprueba tu conexión."
 }

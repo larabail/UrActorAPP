@@ -9,7 +9,6 @@ import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/media.dart';
 import 'package:uractor/objects/tv_show.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'common/utils.dart';
 import 'friends.dart';
 import 'friends_calendar.dart';
@@ -21,6 +20,10 @@ import 'movie_result.dart';
 
 import 'seen_together.dart';
 import 'tvshow_result.dart';
+import 'common/layout/breakpoints.dart';
+import 'common/layout/responsive.dart';
+import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 int weekOffset = 0; // This will be used to go to previous or next weeks
 
@@ -195,8 +198,8 @@ class _FriendProfileState extends State<FriendProfile> {
                     tempDirectors, Icons.chair, "Person"));
                 break;
               case "MostSeenMovies":
-                sections.add(buildProfileContainer(
-                    S.of(context)!.favMovies, moviesTemp, Icons.movie, "Movie"));
+                sections.add(buildProfileContainer(S.of(context)!.favMovies,
+                    moviesTemp, Icons.movie, "Movie"));
                 break;
               case "Writers":
                 sections.add(buildProfileContainer(S.of(context)!.favWriters,
@@ -213,7 +216,7 @@ class _FriendProfileState extends State<FriendProfile> {
         return sections;
       }
 
-      return Scaffold(
+      return AppScaffold(
         appBar: const CustomAppBar(),
         body: SingleChildScrollView(
           child: Column(
@@ -373,7 +376,7 @@ class _FriendProfileState extends State<FriendProfile> {
             ],
           ),
         ),
-        bottomNavigationBar: CommonBottomAppBar(-1),
+        selectedIndex: -1,
       );
     } else {
       return const Scaffold();
@@ -408,7 +411,7 @@ class _FriendProfileState extends State<FriendProfile> {
           if (content.isEmpty) const SizedBox(height: 10),
           if (content.isNotEmpty)
             SizedBox(
-              height: MediaQuery.of(context).size.height * 0.18,
+              height: posterRowHeight(context),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: content.length > 10 ? 10 : content.length,
@@ -432,18 +435,15 @@ class _FriendProfileState extends State<FriendProfile> {
                       if (snapshot.hasData) {
                         return GestureDetector(
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => type == "Person"
+                              openDetail(
+                                  context,
+                                  type == "Person"
                                       ? PersonResult(
                                           personResult: item as Person)
                                       : type == "Movie"
                                           ? MovieResult(movie: item as Movie)
                                           : TVShowResult(
-                                              tvshow: item as TVShow),
-                                ),
-                              );
+                                              tvshow: item as TVShow));
                             },
                             child: getItemContainer(context, snapshot.data,
                                 type == "Person" ? "person" : "media",
@@ -452,13 +452,14 @@ class _FriendProfileState extends State<FriendProfile> {
                                     : mediaPairForData(snapshot.data)));
                       } else if (snapshot.hasError) {
                         return Center(
-                            child: Text(S.of(context)!.errorFailedToLoadDetails));
+                            child:
+                                Text(S.of(context)!.errorFailedToLoadDetails));
                       } else {
                         return Container(
                             margin:
                                 const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                            width: MediaQuery.of(context).size.width * 0.28,
-                            height: MediaQuery.of(context).size.height * 0.18,
+                            width: context.posterWidth,
+                            height: posterHeightFor(context.posterWidth),
                             child: const Center(
                                 child: CircularProgressIndicator()));
                       }
@@ -505,7 +506,8 @@ class _FriendProfileState extends State<FriendProfile> {
                 child: Center(
                   child: Padding(
                     padding: const EdgeInsets.all(10.0),
-                    child: Text(S.of(context)!.seeAll(content.length),
+                    child: Text(
+                      S.of(context)!.seeAll(content.length),
                       style: const TextStyle(
                         color: Colors.grey,
                         fontSize: 12,
@@ -521,7 +523,7 @@ class _FriendProfileState extends State<FriendProfile> {
           if (content.isEmpty) const SizedBox(height: 10),
           if (content.isNotEmpty)
             SizedBox(
-              height: MediaQuery.of(context).size.height * 0.18,
+              height: posterRowHeight(context),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: content.length > 10 ? 10 : content.length,
@@ -545,29 +547,27 @@ class _FriendProfileState extends State<FriendProfile> {
                       if (snapshot.hasData) {
                         return GestureDetector(
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => content.reversed
-                                                .toList()[index][0] ==
-                                            "Movies"
-                                        ? MovieResult(movie: tempMedia as Movie)
-                                        : TVShowResult(
-                                            tvshow: tempMedia as TVShow)),
-                              );
+                              openDetail(
+                                  context,
+                                  content.reversed.toList()[index][0] ==
+                                          "Movies"
+                                      ? MovieResult(movie: tempMedia as Movie)
+                                      : TVShowResult(
+                                          tvshow: tempMedia as TVShow));
                             },
                             child: getItemContainer(
                                 context, snapshot.data, "media",
                                 mediaPair: mediaPairForData(snapshot.data)));
                       } else if (snapshot.hasError) {
                         return Center(
-                            child: Text(S.of(context)!.errorFailedToLoadDetails));
+                            child:
+                                Text(S.of(context)!.errorFailedToLoadDetails));
                       } else {
                         return Container(
                             margin:
                                 const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                            width: MediaQuery.of(context).size.width * 0.28,
-                            height: MediaQuery.of(context).size.height * 0.18,
+                            width: context.posterWidth,
+                            height: posterHeightFor(context.posterWidth),
                             child: const Center(
                                 child: CircularProgressIndicator()));
                       }

@@ -6,12 +6,13 @@ import 'package:uractor/l10n/l10n.dart';
 import 'common/async_action.dart';
 import 'common/firebase/friends_service.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'common/reorder_toggle.dart';
 import 'friends_profile.dart';
 import 'inbox.dart';
 import 'main.dart';
 import 'common/firebase/firestore_core.dart';
+import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 String friendUid = "";
 
@@ -108,12 +109,7 @@ class _FriendsState extends State<Friends> {
           ? null
           : () {
               friendUid = friend.uid;
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => FriendProfile(friendUid: friendUid),
-                ),
-              );
+              openDetail(context, FriendProfile(friendUid: friendUid));
             },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -183,10 +179,8 @@ class _FriendsState extends State<Friends> {
   }
 
   Future<void> _refreshFriends() async {
-    var friendsDoc = await FirestoreCore.db
-        .collection(currentUser.uid)
-        .doc("Friends")
-        .get();
+    var friendsDoc =
+        await FirestoreCore.db.collection(currentUser.uid).doc("Friends").get();
     Map<String, dynamic> data = friendsDoc.data() as Map<String, dynamic>;
     currentUser.friends = data["friends"];
     FriendsService.clearCache();
@@ -299,7 +293,10 @@ class _FriendsState extends State<Friends> {
           });
     }
 
-    return Scaffold(
+    return AppScaffold(
+      detailPlaceholder: DetailPanePlaceholder(
+        message: S.of(context)!.detailPanePlaceholder,
+      ),
       appBar: CustomAppBar(
         actions: [
           if (currentUser.friends.length > 1) ...[
@@ -328,7 +325,7 @@ class _FriendsState extends State<Friends> {
           size: 30,
         ),
       ),
-      bottomNavigationBar: CommonBottomAppBar(2),
+      selectedIndex: 2,
     );
   }
 }

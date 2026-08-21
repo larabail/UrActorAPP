@@ -25,8 +25,8 @@ class Person {
   final lang = currentUser.settings['language'] ?? 'en';
 
   Future<Map> getSimpleData() async {
-    final response =
-        await AppHttp.client.get(Uri.parse('$PERSON_LINK$id$API_KEY&language=$lang'));
+    final response = await AppHttp.client
+        .get(Uri.parse('$PERSON_LINK$id$API_KEY&language=$lang'));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       return json;
@@ -99,8 +99,7 @@ class Person {
   }
 
   Future<int> updateStatsDoc(int score, AppUser currentUser, docName) async {
-    var ActorDoc =
-        FirestoreCore.db.collection(currentUser.uid).doc(docName);
+    var ActorDoc = FirestoreCore.db.collection(currentUser.uid).doc(docName);
     Map<Object, Object?> actorStats = {};
     actorStats[id.toString()] = score;
     await FirestoreCore.updateDocument(currentUser.uid, docName, actorStats);

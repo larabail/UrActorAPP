@@ -19,7 +19,6 @@ import 'package:uractor/common/watch_progress_widgets.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/season_guide.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'friends.dart';
 import 'friends_profile.dart';
 import 'package:intl/intl.dart' as intl;
@@ -29,6 +28,8 @@ import 'objects/tv_show.dart';
 import 'person_result.dart';
 
 import 'popups/add_to_calendar_pop_up.dart';
+import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 String _imageProviderSeen = 'assets/seen_before.png';
 String _imageProviderWatchlist = 'assets/watchlist_before.png';
@@ -158,7 +159,7 @@ class _TVShowResultState extends State<TVShowResult> {
     });
     check();
 
-    return Scaffold(
+    return AppScaffold(
       appBar: const CustomAppBar(),
       body: FutureBuilder<Map>(
         future: widget.tvshow.getExtendedData(),
@@ -236,7 +237,7 @@ class _TVShowResultState extends State<TVShowResult> {
           }
         },
       ),
-      bottomNavigationBar: CommonBottomAppBar(-1),
+      selectedIndex: -1,
     );
   }
 
@@ -383,11 +384,8 @@ class _TVShowResultState extends State<TVShowResult> {
   /// together. Used both when recording the current user's own
   /// "seen with" friends and when writing the corresponding entry into
   /// each selected friend's own `SeenWith` document.
-  Future<void> _updateSeenWithTransaction(
-      FirebaseFirestore firestore,
-      DocumentReference userDoc2,
-      String id,
-      List<dynamic> watchedWithList) {
+  Future<void> _updateSeenWithTransaction(FirebaseFirestore firestore,
+      DocumentReference userDoc2, String id, List<dynamic> watchedWithList) {
     return firestore.runTransaction((transaction) async {
       DocumentSnapshot snapshot = await transaction.get(userDoc2);
 
@@ -579,8 +577,10 @@ class _TVShowResultState extends State<TVShowResult> {
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  // Friend rows: as many columns as fit, rather than two
+                  // stretched across whatever width the page has.
+                  maxCrossAxisExtent: 320,
                   childAspectRatio: 3 / 1,
                 ),
                 itemCount: snapshot.data!.length,
@@ -600,13 +600,8 @@ class _TVShowResultState extends State<TVShowResult> {
 
                         friendUid = querySnapshot.docs.first.data()['uid'];
 
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                FriendProfile(friendUid: friendUid),
-                          ),
-                        );
+                        openDetail(
+                            context, FriendProfile(friendUid: friendUid));
                       },
                       child: Container(
                         margin: const EdgeInsets.all(7),
@@ -768,15 +763,15 @@ class _TVShowResultState extends State<TVShowResult> {
                           child: Text(S.of(context)!.apply),
                           onPressed: () async {
                             String id = widget.tvshow.id.toString();
-                            FirebaseFirestore firestore =
-                                FirestoreCore.db;
+                            FirebaseFirestore firestore = FirestoreCore.db;
                             for (String friend
                                 in selectedFriends.keys.toList()) {
                               await FirestoreCore.updateDocument(
                                   friend, "TVShows", {
                                 'Seen': FieldValue.arrayUnion([id])
                               });
-                              await FirestoreCore.updateDocument(friend, "Seen", {
+                              await FirestoreCore.updateDocument(
+                                  friend, "Seen", {
                                 'TVShows': FieldValue.arrayUnion([id])
                               });
                               if (currentUser.seenWith.containsKey(friend) &&
@@ -895,13 +890,11 @@ class _TVShowResultState extends State<TVShowResult> {
                         name: person["name"].toString(),
                         data: person);
 
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => PersonResult(
-                                personResult: personResult,
-                              )),
-                    );
+                    openDetail(
+                        context,
+                        PersonResult(
+                          personResult: personResult,
+                        ));
                   },
                   child: Column(
                     children: <Widget>[
@@ -940,13 +933,11 @@ class _TVShowResultState extends State<TVShowResult> {
                           name: data['created_by'][index]["name"].toString(),
                           data: data['created_by'][index]);
 
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => PersonResult(
-                                  personResult: personResult,
-                                )),
-                      );
+                      openDetail(
+                          context,
+                          PersonResult(
+                            personResult: personResult,
+                          ));
                     },
                     child: Text(
                       "${S.of(context)!.createdBy} ${data['created_by'][index]['name']}",

@@ -1,4 +1,3 @@
-
 import '../../main.dart';
 import 'firestore_core.dart';
 
@@ -77,10 +76,8 @@ class FriendsService {
 
     await Future.wait(missing.map((uid) async {
       try {
-        final doc = await FirestoreCore.db
-            .collection(uid)
-            .doc('Settings')
-            .get();
+        final doc =
+            await FirestoreCore.db.collection(uid).doc('Settings').get();
         final data = doc.data();
         _profileCache[uid] = FriendProfileSummary(
           uid: uid,

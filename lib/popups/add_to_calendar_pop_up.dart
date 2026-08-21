@@ -21,6 +21,7 @@ import '../main.dart';
 import '../objects/media.dart';
 import '../common/firebase/firestore_core.dart';
 import '../common/api/http_client.dart';
+import '../common/layout/responsive.dart';
 
 class CalendarAddDialogue extends StatefulWidget {
   final String dateForMap;
@@ -99,7 +100,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
         children: [
           getItemSelectableContainer(context, item, "media", isSelected),
           SizedBox(
-            width: MediaQuery.of(context).size.width * 0.28,
+            width: context.posterWidth,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Text(
@@ -115,8 +116,8 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
     );
   }
 
-  Future<void> addMovieSubmit(String id, String title, int runtime, double rating,
-      Map friendsWatchedWith, CalendarEpisode? episode,
+  Future<void> addMovieSubmit(String id, String title, int runtime,
+      double rating, Map friendsWatchedWith, CalendarEpisode? episode,
       [List<SeasonEpisodeCount> seasons = const <SeasonEpisodeCount>[]]) async {
     String key = widget.type == "movie" ? "Movies" : "TVShows";
     // What this entry means for tracking, decided before anything is written.

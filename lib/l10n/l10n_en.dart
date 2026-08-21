@@ -735,4 +735,21 @@ class SEn extends S {
   String calendarSeasonBadge(int season) {
     return 'S$season';
   }
+
+  @override
+  String get watchTrailerOnYoutube => 'Watch the trailer on YouTube';
+
+  @override
+  String get detailPanePlaceholder => 'Pick something to see it here';
+
+  @override
+  String get userDisabledError => 'That account has been disabled.';
+
+  @override
+  String get tooManyRequestsError =>
+      'Too many attempts. Wait a moment and try again.';
+
+  @override
+  String get networkError =>
+      'Could not reach the server. Check your connection.';
 }

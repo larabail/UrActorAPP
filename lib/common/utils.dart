@@ -93,14 +93,14 @@ class Utils {
     String id = element['id'];
     String name = element['title'];
     if (sanitizeName) {
-      name = name
-          .replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-')
-          .replaceAll(" ", "-");
+      name =
+          name.replaceAll(RegExp(r'[^a-zA-Z0-9 ]'), '-').replaceAll(" ", "-");
     }
     final String link = element.containsKey("type")
         ? (element["type"] == "movie" ? MOVIE_LINK : TV_SHOW_LINK)
         : MOVIE_LINK;
-    final response = await AppHttp.client.get(Uri.parse('$link$id-$name$API_KEY'));
+    final response =
+        await AppHttp.client.get(Uri.parse('$link$id-$name$API_KEY'));
     if (response.statusCode == 200) {
       dynamic json = jsonDecode(response.body);
       if (element.containsKey("friends")) {
@@ -121,5 +121,3 @@ class Utils {
     }
   }
 }
-
-

@@ -4,9 +4,10 @@ import 'package:uractor/common/firebase/social_service.dart';
 import 'package:uractor/friends_profile.dart';
 import 'package:uractor/l10n/l10n.dart';
 
-import 'common/navigation/bottom_app_bar.dart';
 import 'common/navigation/appbar.dart';
 import 'objects/media.dart';
+import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 class FriendsThoughts extends StatefulWidget {
   final Map friends;
@@ -28,7 +29,7 @@ class FriendsThoughts extends StatefulWidget {
 class _FriendsThoughtsState extends State<FriendsThoughts> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
       appBar: const CustomAppBar(),
       body: Column(
         children: [
@@ -56,13 +57,7 @@ class _FriendsThoughtsState extends State<FriendsThoughts> {
                   String profilePath = widget.friends.values.toList()[index];
                   return GestureDetector(
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              FriendProfile(friendUid: friendUid),
-                        ),
-                      );
+                      openDetail(context, FriendProfile(friendUid: friendUid));
                     },
                     child: Column(
                       children: [
@@ -114,7 +109,9 @@ class _FriendsThoughtsState extends State<FriendsThoughts> {
                                   } else if (snapshot.hasError) {
                                     return SizedBox(
                                       height: 32.0,
-                                      child: Text(S.of(context)!.errorFailedToLoadFavorites),
+                                      child: Text(S
+                                          .of(context)!
+                                          .errorFailedToLoadFavorites),
                                     );
                                   } else if (snapshot.hasData) {
                                     if (snapshot.data! == true) {
@@ -155,15 +152,16 @@ class _FriendsThoughtsState extends State<FriendsThoughts> {
                               return SizedBox(
                                 height: 32.0,
                                 child: Center(
-                                    child: Text(S.of(context)!.friendLeftNoReview(friendUsername))),
+                                    child: Text(S
+                                        .of(context)!
+                                        .friendLeftNoReview(friendUsername))),
                               );
                             } else if (snapshot.hasData) {
                               String opinion = snapshot
                                   .data![widget.mediaItem.id]["Opinion"];
                               String rating =
                                   snapshot.data![widget.mediaItem.id]["Rating"];
-                              return Text(
-                                  "'$opinion. $rating / 10'");
+                              return Text("'$opinion. $rating / 10'");
                             } else {
                               return const SizedBox.shrink();
                             }
@@ -178,7 +176,7 @@ class _FriendsThoughtsState extends State<FriendsThoughts> {
           ),
         ],
       ),
-      bottomNavigationBar: CommonBottomAppBar(-1),
+      selectedIndex: -1,
     );
   }
 }

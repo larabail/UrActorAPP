@@ -143,8 +143,8 @@ class ApiUtils {
   /// The episodes a person appears in, preferring TMDB's own total: it counts
   /// an episode once where a person credited twice would be counted twice.
   static int _totalEpisodes(Map entry, List<Map> credits) {
-    final int? declared = int.tryParse(
-        (entry['total_episode_count'] ?? '').toString());
+    final int? declared =
+        int.tryParse((entry['total_episode_count'] ?? '').toString());
     if (declared != null) return declared;
     return credits.fold<int>(
         0, (sum, credit) => sum + _episodesOf(credit, 'episode_count'));
@@ -433,8 +433,7 @@ class ApiUtils {
     final List<dynamic> sorted = List<dynamic>.from(results);
     final Map<int, double> scores = {
       for (final item in sorted)
-        identityHashCode(item):
-            item is Map ? relevanceScore(item, query) : 0.0,
+        identityHashCode(item): item is Map ? relevanceScore(item, query) : 0.0,
     };
     mergeSortByScore(sorted, scores);
     return sorted;
@@ -493,12 +492,35 @@ class ApiUtils {
   }
 
   static const Map<String, String> _accents = {
-    'á': 'a', 'à': 'a', 'â': 'a', 'ä': 'a', 'ã': 'a', 'å': 'a',
-    'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
-    'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i',
-    'ó': 'o', 'ò': 'o', 'ô': 'o', 'ö': 'o', 'õ': 'o', 'ø': 'o',
-    'ú': 'u', 'ù': 'u', 'û': 'u', 'ü': 'u',
-    'ñ': 'n', 'ç': 'c', 'ß': 'ss', 'æ': 'ae', 'œ': 'oe',
+    'á': 'a',
+    'à': 'a',
+    'â': 'a',
+    'ä': 'a',
+    'ã': 'a',
+    'å': 'a',
+    'é': 'e',
+    'è': 'e',
+    'ê': 'e',
+    'ë': 'e',
+    'í': 'i',
+    'ì': 'i',
+    'î': 'i',
+    'ï': 'i',
+    'ó': 'o',
+    'ò': 'o',
+    'ô': 'o',
+    'ö': 'o',
+    'õ': 'o',
+    'ø': 'o',
+    'ú': 'u',
+    'ù': 'u',
+    'û': 'u',
+    'ü': 'u',
+    'ñ': 'n',
+    'ç': 'c',
+    'ß': 'ss',
+    'æ': 'ae',
+    'œ': 'oe',
   };
 
   /// Searches for movies based on a term in the current language.

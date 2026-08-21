@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'common/firebase/playlist_service.dart';
 import 'common/firebase/settings_service.dart';
 import 'common/playlist_order.dart';
@@ -14,6 +13,8 @@ import 'list_result.dart';
 import 'objects/playlist.dart';
 import 'popups/list_add_popup.dart';
 import 'popups/list_join_popup.dart';
+import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 class Playlists extends StatefulWidget {
   const Playlists({super.key});
@@ -75,7 +76,10 @@ class _PlaylistsState extends State<Playlists> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
+      detailPlaceholder: DetailPanePlaceholder(
+        message: S.of(context)!.detailPanePlaceholder,
+      ),
       appBar: CustomAppBar(
         actions: [
           if (_orderedIds.length > 1) ...[
@@ -169,14 +173,11 @@ class _PlaylistsState extends State<Playlists> {
                       users: [
                         currentUser.uid,
                       ]);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ListResult(
+                  openDetail(
+                      context,
+                      ListResult(
                         listResult: listResult,
-                      ),
-                    ),
-                  );
+                      ));
                 },
                 child: Container(
                   padding:
@@ -224,14 +225,11 @@ class _PlaylistsState extends State<Playlists> {
                               users: [
                                 currentUser.uid,
                               ]);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ListResult(
+                          openDetail(
+                              context,
+                              ListResult(
                                 listResult: listResult,
-                              ),
-                            ),
-                          );
+                              ));
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -272,7 +270,8 @@ class _PlaylistsState extends State<Playlists> {
                                           mainAxisAlignment:
                                               MainAxisAlignment.center,
                                           children: [
-                                            Text(S.of(context)!.handpicked,
+                                            Text(
+                                              S.of(context)!.handpicked,
                                               style: TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 16,
@@ -333,14 +332,11 @@ class _PlaylistsState extends State<Playlists> {
                                 tvshows: tvshows,
                                 accesscode: accessCode.toString(),
                                 users: currentUser.playlists[key]["Users"]);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ListResult(
+                            openDetail(
+                                context,
+                                ListResult(
                                   listResult: listResult,
-                                ),
-                              ),
-                            );
+                                ));
                           },
                           child: Container(
                             margin: const EdgeInsets.fromLTRB(
@@ -436,7 +432,7 @@ class _PlaylistsState extends State<Playlists> {
           ],
         ),
       ),
-      bottomNavigationBar: CommonBottomAppBar(1),
+      selectedIndex: 1,
     );
   }
 }

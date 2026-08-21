@@ -11,6 +11,8 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../objects/media.dart';
 import '../objects/movie.dart';
 import 'constants.dart';
+import 'platform/capabilities.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 Widget getCover(Map data, context, MediaItem mediaItem, String type) {
   return Container(
@@ -318,7 +320,8 @@ Widget getProviders(Map data, BuildContext context) {
           children: [
             Icon(Icons.play_circle_fill, color: Colors.white),
             SizedBox(width: 10),
-            Text(S.of(context)!.whereToWatch,
+            Text(
+              S.of(context)!.whereToWatch,
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.white,
@@ -394,33 +397,53 @@ class _Trailer extends StatefulWidget {
 }
 
 class _TrailerState extends State<_Trailer> {
-  late final YoutubePlayerController _controller;
+  YoutubePlayerController? _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = YoutubePlayerController.fromVideoId(
-      videoId: widget.videoId,
-      autoPlay: false,
-      params: const YoutubePlayerParams(
-        mute: false,
-        showControls: true,
-        showFullscreenButton: true,
-      ),
-    );
+    // The player is a webview underneath, and there is no webview on Windows
+    // or Linux. Building the controller there throws, so it is not built and
+    // the trailer becomes a link out to YouTube instead.
+    if (Capabilities.playsEmbeddedVideo) {
+      _controller = YoutubePlayerController.fromVideoId(
+        videoId: widget.videoId,
+        autoPlay: false,
+        params: const YoutubePlayerParams(
+          mute: false,
+          showControls: true,
+          showFullscreenButton: true,
+        ),
+      );
+    }
   }
 
   @override
   void dispose() {
-    _controller.close();
+    _controller?.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final controller = _controller;
+    if (controller == null) {
+      return Container(
+        margin: const EdgeInsets.fromLTRB(20.0, 5.0, 20.0, 20.0),
+        child: OutlinedButton.icon(
+          onPressed: () => launchUrl(
+            Uri.parse('https://www.youtube.com/watch?v=${widget.videoId}'),
+            mode: LaunchMode.externalApplication,
+          ),
+          icon: const Icon(Icons.open_in_new),
+          label: Text(S.of(context)!.watchTrailerOnYoutube),
+        ),
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.fromLTRB(20.0, 5.0, 20.0, 20.0),
-      child: YoutubePlayer(controller: _controller),
+      child: YoutubePlayer(controller: controller),
     );
   }
 }

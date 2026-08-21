@@ -7,6 +7,9 @@ import 'package:uractor/l10n/l10n.dart';
 import 'signup.dart';
 import 'main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'common/layout/breakpoints.dart';
+import 'common/layout/responsive.dart';
+import 'common/auth_error.dart';
 
 class Login extends StatelessWidget {
   const Login({super.key});
@@ -20,7 +23,8 @@ class Login extends StatelessWidget {
         GlobalKey<_PasswordFieldState>();
     String email = "";
 
-    Future<void> resetPassword(BuildContext context, String emailAddress) async {
+    Future<void> resetPassword(
+        BuildContext context, String emailAddress) async {
       if (emailAddress == "") {
         await showDialog(
           context: context,
@@ -90,110 +94,116 @@ class Login extends StatelessWidget {
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: AutofillGroup(
-              child: Form(
-                key: formKey,
-                child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  TextFormField(
-                    autofillHints: const [AutofillHints.email, AutofillHints.username],
-                    textInputAction: TextInputAction.next,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      labelText: S.of(context)!.email,
-                      hintText: S.of(context)!.yourEmail,
-                      hintStyle:
-                          const TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
-                      enabledBorder: const OutlineInputBorder(
-                        borderSide: BorderSide(width: 1.0),
+            // The form's column stretches its children, so without a ceiling
+            // every field is as wide as the window -- across a desktop monitor
+            // an email box the width of the screen reads as a mistake.
+            child: ReadableWidth(
+              maxWidth: kMaxFormWidth,
+              alignment: Alignment.center,
+              child: AutofillGroup(
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      TextFormField(
+                        autofillHints: const [
+                          AutofillHints.email,
+                          AutofillHints.username
+                        ],
+                        textInputAction: TextInputAction.next,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          labelText: S.of(context)!.email,
+                          hintText: S.of(context)!.yourEmail,
+                          hintStyle: const TextStyle(
+                              color: Color.fromARGB(130, 255, 255, 255)),
+                          enabledBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(width: 1.0),
+                          ),
+                          focusedBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(width: 2.0),
+                          ),
+                        ),
+                        validator: (String? value) {
+                          if (value == null || value.isEmpty) {
+                            return S.of(context)!.enterEmail;
+                          }
+                          return null;
+                        },
+                        onChanged: (String? value) {
+                          email = value!;
+                        },
                       ),
-                      focusedBorder: const OutlineInputBorder(
-                        borderSide: BorderSide(width: 2.0),
+                      const SizedBox(height: 16.0),
+                      PasswordField(key: passwordFieldKey),
+                      const SizedBox(height: 16.0),
+                      ElevatedButton(
+                        child: Text(S.of(context)!.login),
+                        onPressed: () async {
+                          if (formKey.currentState!.validate()) {
+                            formKey.currentState!.save();
+                            final String password =
+                                passwordFieldKey.currentState!.password;
+                            try {
+                              await FirebaseAuth.instance
+                                  .signInWithEmailAndPassword(
+                                      email: email, password: password);
+                              if (!context.mounted) return;
+                              TextInput.finishAutofillContext();
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const MyApp()),
+                              );
+                            } catch (error, stackTrace) {
+                              // Everything is caught, not just the two codes
+                              // this used to name. Any other failure fell
+                              // through both branches and the button appeared
+                              // to do nothing at all, which is the least
+                              // useful thing it could do.
+                              debugPrint('Sign in failed: $error\n$stackTrace');
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(authFailureMessage(
+                                      context, classifyAuthError(error))),
+                                ),
+                              );
+                            } finally {
+                              passwordFieldKey.currentState?.clear();
+                            }
+                          }
+                        },
                       ),
-                    ),
-                    validator: (String? value) {
-                      if (value == null || value.isEmpty) {
-                        return S.of(context)!.enterEmail;
-                      }
-                      return null;
-                    },
-                    onChanged: (String? value) {
-                      email = value!;
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-                  PasswordField(key: passwordFieldKey),
-                  const SizedBox(height: 16.0),
-                  ElevatedButton(
-                    child: Text(S.of(context)!.login),
-                    onPressed: () async {
-                      if (formKey.currentState!.validate()) {
-                        formKey.currentState!.save();
-                        final String password =
-                            passwordFieldKey.currentState!.password;
-                        try {
-                          await FirebaseAuth.instance
-                              .signInWithEmailAndPassword(
-                                  email: email, password: password)
-                              .then((_) {
-                            TextInput.finishAutofillContext();
-                            Navigator.pushReplacement(
+                      const SizedBox(height: 16.0),
+                      GestureDetector(
+                        child: Text(
+                          S.of(context)!.noAccountSignUp,
+                        ),
+                        onTap: () {
+                          Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => const MyApp()),
-                            );
-                          });
-                        } on FirebaseAuthException catch (e) {
-                          if (!context.mounted) return;
-                          if (e.code == 'user-not-found') {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content:
-                                    Text(S.of(context)!.noUserFoundError),
-                              ),
-                            );
-                          } else if (e.code == 'wrong-password') {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    S.of(context)!.wrongPasswordError),
-                              ),
-                            );
-                          }
-                        } finally {
-                          passwordFieldKey.currentState?.clear();
-                        }
-                      }
-                    },
+                                  builder: (context) => const SignUp()));
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      GestureDetector(
+                        child: Text(
+                          S.of(context)!.forgotPassword,
+                        ),
+                        onTap: () async {
+                          await runVisibleAsyncAction(
+                            context,
+                            () => resetPassword(context, email),
+                            S.of(context)!.genericAuthError,
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16.0),
-                  GestureDetector(
-                    child: Text(
-                      S.of(context)!.noAccountSignUp,
-                    ),
-                    onTap: () {
-                      Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const SignUp()));
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  GestureDetector(
-                    child: Text(
-                      S.of(context)!.forgotPassword,
-                    ),
-                    onTap: () async {
-                      await runVisibleAsyncAction(
-                        context,
-                        () => resetPassword(context, email),
-                        S.of(context)!.genericAuthError,
-                      );
-                    },
-                  ),
-                ],
                 ),
               ),
             ),

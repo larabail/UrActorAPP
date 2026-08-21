@@ -7,7 +7,9 @@ import '../objects/movie.dart';
 import '../objects/tv_show.dart';
 import '../tvshow_result.dart';
 import 'item_container.dart';
+import 'layout/responsive.dart';
 import 'media_pair_membership.dart';
+import 'layout/two_pane.dart';
 
 /// One of the home page's list previews: watchlist, favourites or seen.
 ///
@@ -85,9 +87,8 @@ class HomeMediaSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<dynamic> preview = content.reversed
-        .take(previewLimit)
-        .toList(growable: false);
+    final List<dynamic> preview =
+        content.reversed.take(previewLimit).toList(growable: false);
 
     return Container(
       decoration: BoxDecoration(
@@ -136,7 +137,7 @@ class HomeMediaSection extends StatelessWidget {
           if (preview.isEmpty) const SizedBox(height: 10),
           if (preview.isNotEmpty)
             SizedBox(
-              height: MediaQuery.of(context).size.height * 0.18,
+              height: posterRowHeight(context),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: preview.length,
@@ -161,14 +162,12 @@ class HomeMediaSection extends StatelessWidget {
                       if (snapshot.hasData) {
                         return GestureDetector(
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => entry[0] == "Movies"
+                            openDetail(
+                                context,
+                                entry[0] == "Movies"
                                     ? MovieResult(movie: tempMedia as Movie)
-                                    : TVShowResult(tvshow: tempMedia as TVShow),
-                              ),
-                            );
+                                    : TVShowResult(
+                                        tvshow: tempMedia as TVShow));
                           },
                           child: getItemContainer(
                             context,
@@ -184,13 +183,8 @@ class HomeMediaSection extends StatelessWidget {
                           child: Text(S.of(context)!.errorFailedToLoadDetails),
                         );
                       } else {
-                        return Container(
-                          margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-                          width: MediaQuery.of(context).size.width * 0.28,
-                          height: MediaQuery.of(context).size.height * 0.18,
-                          child: const Center(
-                            child: CircularProgressIndicator(),
-                          ),
+                        return const PosterPlaceholder(
+                          child: CircularProgressIndicator(),
                         );
                       }
                     },

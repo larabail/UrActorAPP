@@ -22,7 +22,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' as intl;
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'friends.dart';
 import 'friends_profile.dart';
 import 'main.dart';
@@ -31,6 +30,8 @@ import 'objects/person.dart';
 import 'person_result.dart';
 import 'dart:async';
 import 'common/firebase/firestore_core.dart';
+import 'common/navigation/app_scaffold.dart';
+import 'common/layout/two_pane.dart';
 
 class MovieResult extends StatefulWidget {
   final Movie movie;
@@ -173,7 +174,7 @@ class _MovieResultState extends State<MovieResult> {
     });
 
     DateTime selectedDate = DateTime.now();
-    return Scaffold(
+    return AppScaffold(
       appBar: const CustomAppBar(),
       body: FutureBuilder<Map>(
         future: widget.movie.getExtendedData(),
@@ -254,7 +255,7 @@ class _MovieResultState extends State<MovieResult> {
           }
         },
       ),
-      bottomNavigationBar: CommonBottomAppBar(-1),
+      selectedIndex: -1,
     );
   }
 
@@ -487,8 +488,10 @@ class _MovieResultState extends State<MovieResult> {
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  // Friend rows: as many columns as fit, rather than two
+                  // stretched across whatever width the page has.
+                  maxCrossAxisExtent: 320,
                   childAspectRatio: 3 / 1,
                 ),
                 itemCount: snapshot.data!.length,
@@ -506,13 +509,7 @@ class _MovieResultState extends State<MovieResult> {
                           .get();
 
                       friendUid = querySnapshot.docs.first.data()['uid'];
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              FriendProfile(friendUid: friendUid),
-                        ),
-                      );
+                      openDetail(context, FriendProfile(friendUid: friendUid));
                     },
                     child: Container(
                       margin: const EdgeInsets.all(7),
@@ -743,13 +740,11 @@ class _MovieResultState extends State<MovieResult> {
                         name: person["name"].toString(),
                         data: person);
 
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => PersonResult(
-                                personResult: personResult,
-                              )),
-                    );
+                    openDetail(
+                        context,
+                        PersonResult(
+                          personResult: personResult,
+                        ));
                   },
                   child: Column(
                     children: <Widget>[
@@ -780,8 +775,10 @@ class _MovieResultState extends State<MovieResult> {
                   data['crew'],
                   (job) =>
                       job.split('/').any((role) => role.trim() == "Director"));
-              final Map? writer = ApiUtils.findCrewMember(data['crew'],
-                  (job) => job.contains('Writer') || job.contains('Screenplay'));
+              final Map? writer = ApiUtils.findCrewMember(
+                  data['crew'],
+                  (job) =>
+                      job.contains('Writer') || job.contains('Screenplay'));
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -815,13 +812,11 @@ class _MovieResultState extends State<MovieResult> {
             name: person["name"].toString(),
             data: person);
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => PersonResult(
-                    personResult: personResult,
-                  )),
-        );
+        openDetail(
+            context,
+            PersonResult(
+              personResult: personResult,
+            ));
       },
       child: Text(
         label,
