@@ -235,4 +235,117 @@ void main() {
       expect(WatchProgressView.isReopenable(progressMoviesKey), isFalse);
     });
   });
+
+  group('episodesThrough', () {
+    const seasons = [
+      SeasonEpisodeCount(seasonNumber: 0, episodeCount: 3),
+      SeasonEpisodeCount(seasonNumber: 1, episodeCount: 4),
+      SeasonEpisodeCount(seasonNumber: 2, episodeCount: 6),
+      SeasonEpisodeCount(seasonNumber: 3, episodeCount: 5),
+    ];
+
+    test('fills earlier seasons and truncates the one named', () {
+      // "I finished S2E5 today" almost always means the earlier episodes are
+      // watched too, and recording only E5 leaves the next unwatched episode
+      // at S1E1.
+      final through = WatchProgressView.episodesThrough(
+        seasons: seasons,
+        season: 2,
+        episode: 5,
+      );
+
+      expect(through[1], [1, 2, 3, 4]);
+      expect(through[2], [1, 2, 3, 4, 5]);
+    });
+
+    test('leaves later seasons out entirely, so applying it cannot undo one',
+        () {
+      final through = WatchProgressView.episodesThrough(
+        seasons: seasons,
+        season: 2,
+        episode: 5,
+      );
+
+      expect(through.containsKey(3), isFalse);
+    });
+
+    test('skips specials', () {
+      final through = WatchProgressView.episodesThrough(
+        seasons: seasons,
+        season: 2,
+        episode: 1,
+      );
+
+      expect(through.containsKey(0), isFalse);
+    });
+
+    test('clamps an episode past the end of its season', () {
+      // TMDB corrects season lengths, so a stale record must not claim more
+      // episodes than the season has.
+      final through = WatchProgressView.episodesThrough(
+        seasons: seasons,
+        season: 1,
+        episode: 99,
+      );
+
+      expect(through[1], [1, 2, 3, 4]);
+    });
+
+    test('records a season TMDB has no count for', () {
+      // The calendar deliberately accepts shows TMDB knows nothing about.
+      final through = WatchProgressView.episodesThrough(
+        seasons: seasons,
+        season: 9,
+        episode: 3,
+      );
+
+      expect(through[9], [1, 2, 3]);
+      expect(through[1], [1, 2, 3, 4]);
+    });
+
+    test('records the first episode of a show with no metadata at all', () {
+      final through = WatchProgressView.episodesThrough(
+        seasons: const [],
+        season: 1,
+        episode: 1,
+      );
+
+      expect(through, {
+        1: [1],
+      });
+    });
+
+    test('skips a known season that has no episodes yet', () {
+      final through = WatchProgressView.episodesThrough(
+        seasons: const [
+          SeasonEpisodeCount(seasonNumber: 1, episodeCount: 0),
+          SeasonEpisodeCount(seasonNumber: 2, episodeCount: 3),
+        ],
+        season: 2,
+        episode: 2,
+      );
+
+      expect(through.containsKey(1), isFalse);
+      expect(through[2], [1, 2]);
+    });
+
+    test('records nothing for a nonsensical pointer', () {
+      expect(
+        WatchProgressView.episodesThrough(
+          seasons: seasons,
+          season: 0,
+          episode: 1,
+        ),
+        isEmpty,
+      );
+      expect(
+        WatchProgressView.episodesThrough(
+          seasons: seasons,
+          season: 1,
+          episode: 0,
+        ),
+        isEmpty,
+      );
+    });
+  });
 }

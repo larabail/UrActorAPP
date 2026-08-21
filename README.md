@@ -25,15 +25,27 @@ target (see [Platforms](#platforms)).
 - Rate a title and write a review. Movie and TV reviews are stored separately
   (`lib/reviews.dart`, `lib/popups/rating_popup.dart`).
 - Log what you watched on a calendar — a single date or a date range. A show
-  entry can also record which season and episode it was, which is optional and
-  shown on both your own calendar and a friend's (`lib/calendar.dart`,
+  entry can also record the last episode you finished that day, which drives
+  tracking rather than just being written down: the show moves into progress
+  and every episode up to that point is ticked off. An entry that names no
+  season still means the whole title was watched, which is what every entry
+  meant before episodes were recordable (`lib/calendar.dart`,
   `lib/friends_calendar.dart`, `lib/popups/add_to_calendar_pop_up.dart`,
-  `lib/common/calendar_episode.dart`).
+  `lib/common/calendar_episode.dart`, `lib/common/calendar_progress.dart`).
 - Track what you are part way through. A movie or show is not started, being
   watched, or finished, and the control for moving between those states sits in
   the icon row on each detail page (`lib/common/watch_progress_widgets.dart`,
   `lib/common/firebase/progress_service.dart`). A finished show can be picked
   up again; a finished movie cannot, since rewatches are counted separately.
+  A movie is set to being watched from that control and nowhere else — a
+  calendar entry records a day you watched something, which for a film is a
+  completed act, so the calendar always means finished there.
+- See when you watched something. A title's viewing history is headed with the
+  range it covers: the first day recorded through to the day it was finished,
+  or through to the present while it is still being watched. The dates come
+  from the calendar, so an account that predates watch progress keeps the
+  history it always had (`lib/common/viewing_history_range.dart`,
+  `lib/common/viewing_history_widgets.dart`).
 - Tick episodes and whole seasons off in the season guide. Watching the last
   episode finishes the show on its own (`lib/season_guide.dart`,
   `lib/common/watch_progress_controller.dart`). Specials (season 0) are not
@@ -339,6 +351,9 @@ lib/
     watch_progress_view.dart        Pure watch-progress rules
     watch_progress_controller.dart  Per-show episode tick state
     watch_progress_widgets.dart     The season, episode and detail controls
+    calendar_progress.dart          What a calendar entry means for tracking
+    viewing_history_range.dart      When a title was started and finished
+    viewing_history_widgets.dart    The range shown above a viewing history
     api/apiutils.dart        All TMDB HTTP calls; a show's credits come from
                              aggregate_credits and are flattened to the shape
                              /credits returns
@@ -436,7 +451,7 @@ npm install
 npm test
 ```
 
-`flutter test` currently runs 586 tests with no emulator, credentials or
+`flutter test` currently runs 655 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
 `FirestoreCore.db` and `AppHttp.client` — which default to the real
 implementations and are pointed at fakes by the tests.
@@ -444,6 +459,7 @@ implementations and are pointed at fakes by the tests.
 The Flutter suite covers pure logic, TMDB/OMDB request parsing with a stubbed
 HTTP client, auth/session helpers, search and playlist ordering, playlist join
 handling, settings, inbox, calendar/list services, calendar episode detail,
+what a calendar entry does to watch progress, viewing history ranges,
 in-memory Firestore service behaviour, watch-progress rules and controls, the
 media and person data objects, every popup under `lib/popups` except the
 profile section editor, and the reviews and Continue watching screens.
@@ -564,3 +580,4 @@ Things that are true today and worth knowing before you start:
 | iOS Firebase config is partial | There is no `ios/Runner/GoogleService-Info.plist`, and `firebase_options.dart` declares `iosBundleId: 'com.example.uractor'` while Xcode builds `com.uractor.uractorios`. Neither stops an iOS build or a sign in, because Firebase is configured from Dart, but APNs, `firebase_messaging` and App Check would all need the plist. |
 | iOS is not released to the App Store automatically | `.github/workflows/release-testflight.yml` uploads to TestFlight, but submitting for App Store review is still done by hand in App Store Connect. There is no iOS equivalent of the production promotion workflow. |
 | Coverage is uneven | The API layer, the data objects and the popups are covered; the full screens under `lib/` still have very few widget tests. See [Tests](#tests). |
+| A friend's watch progress cannot be set from your device | Tagging a friend on a calendar entry writes to their calendar and seen-with records, but `firestore.rules` lets a client write its own `Progress` document and nobody else's. So an entry naming an episode no longer marks the show fully seen for them — which would be a lie — but it cannot record them as part way through it either, and the show reads as not started on their side until they log it themselves. Closing this needs the write to move behind a Cloud Function. |

@@ -13,12 +13,13 @@ import 'package:uractor/common/firebase/watchlist_service.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/common/media_result_widgets.dart';
 import 'package:uractor/common/mediaitembuilder.dart';
+import 'package:uractor/common/viewing_history_range.dart';
+import 'package:uractor/common/viewing_history_widgets.dart';
 import 'package:uractor/common/watch_progress_widgets.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/season_guide.dart';
 import 'common/navigation/appbar.dart';
 import 'common/navigation/bottom_app_bar.dart';
-import 'common/utils.dart';
 import 'friends.dart';
 import 'friends_profile.dart';
 import 'package:intl/intl.dart' as intl;
@@ -210,8 +211,14 @@ class _TVShowResultState extends State<TVShowResult> {
                   getProviders(snapshot.data!, context),
                   getTimesSeen(snapshot.data!),
                   const SizedBox(height: 10),
-                  if (Utils.containsNonType(
-                      currentUser.seenTVShows, ['TVShows', widget.tvshow.id]))
+                  if (ViewingHistory.hasAnything(
+                    seenDates: snapshot.data!['seen_dates'] as List,
+                    seen: widget.tvshow.isSeen(),
+                    hasProgress: ViewingHistory.hasProgressEntry(
+                        currentUser.progress,
+                        progressTVShowsKey,
+                        widget.tvshow.id),
+                  ))
                     getViewingHistory(snapshot.data!),
                   getCastandCrew(snapshot.data!),
                   getTrailer(snapshot.data!),
@@ -438,6 +445,15 @@ class _TVShowResultState extends State<TVShowResult> {
             ),
           ),
         ],
+      ),
+      // A show being watched has no finish date, so the range stays open
+      // rather than being closed with a date nobody recorded.
+      subtitle: ViewingHistoryRangeLabel(
+        type: progressTVShowsKey,
+        id: widget.tvshow.id,
+        seenDates: data['seen_dates'] as List,
+        seen: widget.tvshow.isSeen(),
+        refreshToken: _progressToken,
       ),
       children: [
         if ((data['seen_dates'] as List).isNotEmpty)

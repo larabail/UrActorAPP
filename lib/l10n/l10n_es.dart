@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'l10n.dart';
 
 // ignore_for_file: type=lint
@@ -331,6 +332,16 @@ class SEs extends S {
 
   @override
   String get viewingHistory => 'Historial de Visualización';
+
+  @override
+  String viewingHistoryRange(String start, String end) {
+    return '$start – $end';
+  }
+
+  @override
+  String viewingHistoryRangeOpen(String start) {
+    return '$start – presente';
+  }
 
   @override
   String get noViewingHistory => 'No hay historial de visualización';
@@ -707,7 +718,12 @@ class SEs extends S {
   }
 
   @override
-  String get calendarEpisodeSectionTitle => '¿Qué parte viste?';
+  String get calendarEpisodeSectionTitle =>
+      '¿Cuál es el último episodio que terminaste hoy?';
+
+  @override
+  String get calendarEpisodeBackfillNote =>
+      'Todo lo anterior se marca como visto.';
 
   @override
   String get calendarSeasonFieldLabel => 'Temporada (opcional)';
