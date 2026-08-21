@@ -97,20 +97,43 @@ jobs:
           xcrun simctl bootstatus "$DEVICE" -b
 
           xcrun simctl install "$DEVICE" build/ios/iphonesimulator/Runner.app
-          xcrun simctl launch "$DEVICE" com.uractor.uractorios
+          # Captured so the launch console is available when the app dies
+          # before anything reaches the system log.
+          xcrun simctl launch --console-pty "$DEVICE" com.uractor.uractorios \
+            > launch-console.txt 2>&1 &
+          LAUNCH_PID=$!
 
           # `simctl launch` returns as soon as the process exists, so it
           # succeeds for an app that crashes immediately afterwards. Whether
           # the process is still there a few seconds later is the real signal.
           sleep 15
+          kill "$LAUNCH_PID" 2>/dev/null || true
 
           if xcrun simctl spawn "$DEVICE" launchctl list \
               | grep -q com.uractor.uractorios; then
             echo "app launched and was still running after 15s"
           else
             echo "::error::the app did not stay running after launch"
+
+            # An uncaught exception in main() — a missing --dart-define is the
+            # usual one — is printed by the app and never reaches the system
+            # log, so this is the part that actually names the cause.
+            echo "===== launch console ====="
+            cat launch-console.txt || true
+
+            # `process == "Runner"` rather than a substring match on the
+            # executable path. "Runner" is a substring of the simulator's own
+            # BackgroundShortcutRunner, and matching loosely buries the app's
+            # few interesting lines under thousands from a daemon that has
+            # nothing to do with this build.
+            echo "===== Runner system log ====="
             xcrun simctl spawn "$DEVICE" log show --last 3m --style compact \
-              --predicate 'processImagePath CONTAINS "Runner"' | tail -80
+              --predicate 'process == "Runner"' | tail -60 || true
+
+            echo "===== crash reports ====="
+            find ~/Library/Logs/DiagnosticReports -name 'Runner*' -newermt '-10 minutes' \
+              -exec sh -c 'echo "--- $1 ---"; head -40 "$1"' _ {} \; 2>/dev/null || true
+
             exit 1
           fi
 
