@@ -31,6 +31,24 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    # The one job here that is not limited to testers. `release` below uploads
+    # to Play's internal track, which reaches the handful of people on it; this
+    # deploys to the live Firebase project that every installed app talks to,
+    # including everyone on the App Store and on Play production. A bad deploy
+    # here is felt by users who never opted into testing anything.
+    #
+    # So it waits for an approval, the same way promoting to production does.
+    # Review on the pull request already stops unreviewed code reaching master;
+    # this stops an approved-but-wrong change reaching real users the moment it
+    # merges, which is the failure the review cannot catch.
+    #
+    # The cost is one click per merge that touches functions/. If that becomes
+    # tiresome, the honest fix is a path filter on this job rather than removing
+    # the gate.
+    environment:
+      name: functions
+      url: https://console.firebase.google.com/project/actordb-cf981/functions
+
     steps:
       - uses: actions/checkout@v4
 

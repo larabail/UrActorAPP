@@ -84,6 +84,43 @@ required reviewers, keeping write access limited, and protecting `master`.
 
 Deployments are recorded against the `production` environment either way.
 
+## The Cloud Functions deploy is gated too
+
+`release-internal.yml` runs on every merge to `master`, and two of its three
+jobs are limited to people who opted in: `release` uploads to Play's internal
+track, and the TestFlight workflow does the same on iOS. The `functions` job is
+not. It deploys to the live `actordb-cf981` project that every installed app
+talks to, including everyone on the App Store and on Play production, so a bad
+deploy there is felt by users who never signed up to test anything.
+
+It therefore targets a `functions` environment with the same required reviewer,
+and a merge waits for an approval before the server side moves. Review on the
+pull request already stops unreviewed code reaching `master`; this is the
+second gate, for the approved-but-wrong change that review did not catch.
+
+Order still matters when it is approved: functions deploy before the app is
+uploaded, because a build that reaches testers expecting a callable that is not
+deployed yet fails on the device.
+
+The cost is one approval per merge. If that becomes tiresome, put a path filter
+on the job so it only runs when `functions/` changed, rather than removing the
+gate.
+
+## The build number is no longer written back
+
+The `record` job used to push the Play-assigned build number to `master`.
+Branch protection now requires a pull request for every push to `master`, and
+`github-actions[bot]` is not a bypass actor, so that push is refused.
+
+Nothing about a release depends on it. The workflow asks Play for the next free
+code on every run, so the number in `pubspec.yaml` was only ever a record of the
+last build that reached testers, never an input. The step was already written so
+that it cannot fail a run that has already shipped, so it reports the refusal in
+the run summary and stops there.
+
+The consequence is that the `+BUILD` suffix on `master` now goes stale. Read the
+run summary, not `pubspec.yaml`, for the code a build actually shipped with.
+
 > Repository secrets are readable by any workflow that runs. Treat write access
 > to this repo as equivalent to holding the signing key.
 
