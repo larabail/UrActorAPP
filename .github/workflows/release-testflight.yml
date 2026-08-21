@@ -87,7 +87,12 @@ jobs:
     name: Build and upload to TestFlight
     needs: preflight
     if: needs.preflight.outputs.configured == 'true'
-    runs-on: macos-15
+    # macos-26, not macos-15. Apple refuses any upload built against an SDK
+    # older than iOS 26, and macos-15 defaults to Xcode 16.4, which carries the
+    # iOS 18.5 SDK. That rejection arrives from App Store Connect as a 409
+    # after the archive has already been built and uploaded, so the runner
+    # image is what decides whether a release is possible at all.
+    runs-on: macos-26
     timeout-minutes: 90
 
     env:
@@ -107,6 +112,31 @@ jobs:
 
       - name: Install the App Store Connect client
         run: pip install --quiet "pyjwt[crypto]" requests
+
+      # Checked before anything expensive happens. Apple refuses an upload
+      # built against an SDK older than iOS 26, and it refuses it at the very
+      # end — a 409 from App Store Connect after the archive is built and
+      # sent, roughly fifteen minutes in. Reading the SDK off the selected
+      # Xcode turns that into a failure in the first few seconds, with a
+      # message that says which Xcode was chosen.
+      #
+      # Apple raises this floor roughly once a year, a few months after each
+      # iOS release. When it moves, raise MINIMUM_IOS_SDK and, if the image
+      # default is behind, select a newer Xcode from /Applications.
+      - name: Check the iOS SDK is new enough to upload
+        env:
+          MINIMUM_IOS_SDK: 26
+        run: |
+          set -euo pipefail
+
+          echo "Xcode: $(xcodebuild -version | head -1) at $(xcode-select -p)"
+          SDK=$(xcrun --sdk iphoneos --show-sdk-version)
+          echo "iOS SDK: $SDK"
+
+          if [ "${SDK%%.*}" -lt "$MINIMUM_IOS_SDK" ]; then
+            echo "::error::Built against the iOS $SDK SDK, but App Store Connect requires iOS $MINIMUM_IOS_SDK or later. Available Xcodes: $(ls -d /Applications/Xcode*.app 2>/dev/null | tr '\n' ' ')"
+            exit 1
+          fi
 
       # A failing build must not reach testers, exactly as on the Android side.
       # These are platform independent and already ran on Linux for the pull

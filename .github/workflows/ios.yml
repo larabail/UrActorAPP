@@ -30,7 +30,11 @@ permissions:
 jobs:
   build:
     name: Build and launch on a simulator
-    runs-on: macos-15
+    # macos-26 rather than macos-15, matching the release workflow. The two
+    # have to agree: macos-15 defaults to Xcode 16.4, and a pull request that
+    # passed there could still be rejected at upload for the SDK it was built
+    # with. See release-testflight.yml.
+    runs-on: macos-26
     timeout-minutes: 60
 
     env:
@@ -95,20 +99,43 @@ jobs:
           xcrun simctl bootstatus "$DEVICE" -b
 
           xcrun simctl install "$DEVICE" build/ios/iphonesimulator/Runner.app
-          xcrun simctl launch "$DEVICE" com.uractor.uractorios
 
-          # `simctl launch` returns as soon as the process exists, so it
-          # succeeds for an app that crashes immediately afterwards. Whether
-          # the process is still there a few seconds later is the real signal.
+          # `simctl launch` prints "<bundle id>: <pid>" and returns as soon as
+          # the process exists, so its own success says nothing about an app
+          # that dies a moment later. The pid it reports is a host pid —
+          # simulator apps are ordinary processes on the host — so whether the
+          # app is still alive can be asked directly.
+          LAUNCH=$(xcrun simctl launch "$DEVICE" com.uractor.uractorios)
+          echo "$LAUNCH"
+          APP_PID=${LAUNCH##*: }
+
           sleep 15
 
-          if xcrun simctl spawn "$DEVICE" launchctl list \
-              | grep -q com.uractor.uractorios; then
-            echo "app launched and was still running after 15s"
+          # `ps -p`, not `launchctl list`. The launchd job listing is not a
+          # stable interface across simulator runtimes, and reported a healthy
+          # app as gone: the run that produced that verdict logged a fully
+          # realised UIWindowScene, no exception and no crash report. A pid
+          # either exists or it does not.
+          if ps -p "$APP_PID" > /dev/null 2>&1; then
+            echo "app launched (pid $APP_PID) and was still running after 15s"
           else
-            echo "::error::the app did not stay running after launch"
+            echo "::error::the app did not stay running after launch (pid $APP_PID)"
+
+            # `process == "Runner"` rather than a substring match on the
+            # executable path. "Runner" is a substring of the simulator's own
+            # BackgroundShortcutRunner, and matching loosely buries the app's
+            # few interesting lines under thousands from a daemon that has
+            # nothing to do with this build. An uncaught Dart exception in
+            # main() reaches this log, which is where a missing --dart-define
+            # shows up.
+            echo "===== Runner system log ====="
             xcrun simctl spawn "$DEVICE" log show --last 3m --style compact \
-              --predicate 'processImagePath CONTAINS "Runner"' | tail -80
+              --predicate 'process == "Runner"' | tail -60 || true
+
+            echo "===== crash reports ====="
+            find ~/Library/Logs/DiagnosticReports -name 'Runner*' -newermt '-10 minutes' \
+              -exec sh -c 'echo "--- $1 ---"; head -40 "$1"' _ {} \; 2>/dev/null || true
+
             exit 1
           fi
 

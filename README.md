@@ -232,10 +232,12 @@ has to be signed in to Xcode.
 CI covers this on macOS runners. `.github/workflows/ios.yml` builds the app
 and launches it on a simulator for pull requests that touch `ios/` or either
 pubspec file, and `.github/workflows/release-testflight.yml` ships to
-TestFlight. The pull request check is filtered to those paths on purpose:
-macOS runners bill at ten times the Linux rate on a private repository, and a
-Dart-only change cannot break the native build without also changing pubspec.
-See [docs/releases.md](docs/releases.md).
+TestFlight. Both run on `macos-26`, because Apple refuses uploads built with
+an SDK older than iOS 26 and the older image defaults to Xcode 16. The pull
+request check is filtered to those paths on purpose: macOS runners bill at ten
+times the Linux rate on a private repository, and a Dart-only change cannot
+break the native build without also changing pubspec. See
+[docs/releases.md](docs/releases.md).
 
 **Run `flutter clean` after any change to `ios/Podfile.lock`.** `flutter
 build` will not do it for you, and a stale `build/` directory holding the

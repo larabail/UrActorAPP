@@ -137,6 +137,38 @@ If that is not worth paying on every merge, delete the `push` trigger from
 `.github/workflows/release-testflight.yml` and run it by hand. Nothing else in
 the workflow depends on how it was started.
 
+### The runner image decides whether a release is possible
+
+Both iOS workflows run on **`macos-26`**, and that is not incidental. Apple
+refuses any upload built against an SDK older than iOS 26, and `macos-15`
+defaults to Xcode 16.4, which carries the iOS 18.5 SDK. Nothing local catches
+it: the archive builds, the IPA is signed correctly, altool authenticates and
+transfers the whole binary, and only then does App Store Connect answer
+
+```
+Validation failed (409) SDK version issue. This app was built with the iOS
+18.5 SDK. All iOS and iPadOS apps must be built with the iOS 26 SDK or later.
+```
+
+roughly fifteen minutes in. The workflow therefore reads the SDK version off
+the selected Xcode before it builds anything and fails in the first few
+seconds instead.
+
+Apple raises this floor about once a year, a few months after each iOS
+release. When it moves, raise `MINIMUM_IOS_SDK` in the workflow; if the image
+default is behind by then, select a newer Xcode out of `/Applications`.
+
+The same rule applies to your own machine. Xcode 16 can build, run and archive
+the app perfectly well, and can still produce an IPA that Apple will not
+accept — check with:
+
+```bash
+xcrun --sdk iphoneos --show-sdk-version
+```
+
+The pull request check runs on `macos-26` for the same reason, so that a green
+pull request means the release can actually ship.
+
 ### Secrets
 
 | Secret | What it is |
