@@ -113,9 +113,8 @@ class WatchProgressView {
     }
     // A season can shrink when TMDB corrects its data, so an episode number
     // past the end of the season is clamped rather than recorded as watched.
-    final count = targetCount > 0 && episode > targetCount
-        ? targetCount
-        : episode;
+    final count =
+        targetCount > 0 && episode > targetCount ? targetCount : episode;
     through[season] = _upTo(count);
     return through;
   }
@@ -175,7 +174,8 @@ class WatchProgressView {
   static WatchProgressActions actionsForType(
     WatchProgressState state,
     String type,
-  ) => actionsFor(state, reopenable: isReopenable(type));
+  ) =>
+      actionsFor(state, reopenable: isReopenable(type));
 
   static int? _asInt(Object? value) {
     if (value is int) return value;

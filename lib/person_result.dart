@@ -6,13 +6,13 @@ import 'package:uractor/objects/movie.dart';
 import 'package:uractor/objects/person.dart';
 import 'package:uractor/objects/tv_show.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'common/utils.dart';
 import 'main.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
 import 'common/layout/breakpoints.dart';
 import 'common/layout/responsive.dart';
+import 'common/navigation/app_scaffold.dart';
 
 class PersonResult extends StatefulWidget {
   final Person personResult;
@@ -49,7 +49,7 @@ class _PersonResultState extends State<PersonResult> {
   @override
   Widget build(BuildContext context) {
     Map stats = widget.personResult.personStats;
-    return Scaffold(
+    return AppScaffold(
       appBar: const CustomAppBar(),
       body: FutureBuilder<Map>(
         future: widget.personResult.getPersonData(currentUser, oscars),
@@ -307,7 +307,7 @@ class _PersonResultState extends State<PersonResult> {
           }
         },
       ),
-      bottomNavigationBar: CommonBottomAppBar(-1),
+      selectedIndex: -1,
     );
   }
 

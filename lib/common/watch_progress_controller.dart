@@ -14,7 +14,7 @@ import 'watch_progress_view.dart';
 
 class ShowProgressController extends ChangeNotifier {
   ShowProgressController({required String showId, required this.seasons})
-    : showId = showId.toString();
+      : showId = showId.toString();
 
   final String showId;
   final List<SeasonEpisodeCount> seasons;
@@ -51,9 +51,9 @@ class ShowProgressController extends ChangeNotifier {
   }
 
   int watchedCountOf(int seasonNumber) => WatchProgressView.watchedInSeason(
-    episodeCount: episodeCountOf(seasonNumber),
-    watched: watchedIn(seasonNumber),
-  );
+        episodeCount: episodeCountOf(seasonNumber),
+        watched: watchedIn(seasonNumber),
+      );
 
   SeasonTickState seasonTickState(int seasonNumber) =>
       WatchProgressView.seasonTickState(
@@ -130,7 +130,8 @@ class ShowProgressController extends ChangeNotifier {
     _watched
       ..clear()
       ..addEntries(
-        bySeason.entries.map((entry) => MapEntry(entry.key, entry.value.toSet())),
+        bySeason.entries
+            .map((entry) => MapEntry(entry.key, entry.value.toSet())),
       );
     _state = await ProgressService.showState(showId);
   }

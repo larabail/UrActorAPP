@@ -11,12 +11,12 @@ import 'package:uractor/objects/movie.dart';
 import 'package:uractor/objects/person.dart';
 import 'package:uractor/objects/tv_show.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'person_result.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
 import 'common/layout/breakpoints.dart';
 import 'common/layout/responsive.dart';
+import 'common/navigation/app_scaffold.dart';
 
 class Search extends StatefulWidget {
   const Search({super.key});
@@ -187,9 +187,7 @@ class _SearchResultState extends State<Search> {
                   )));
     } else {
       Person personResult = Person(
-          id: item["id"].toString(),
-          name: item["name"].toString(),
-          data: item);
+          id: item["id"].toString(), name: item["name"].toString(), data: item);
       Navigator.push(
           context,
           MaterialPageRoute(
@@ -295,7 +293,7 @@ class _SearchResultState extends State<Search> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
       appBar: const CustomAppBar(),
       body: Column(
         children: [
@@ -326,7 +324,7 @@ class _SearchResultState extends State<Search> {
           Expanded(child: _buildResults(context)),
         ],
       ),
-      bottomNavigationBar: CommonBottomAppBar(-1),
+      selectedIndex: -1,
     );
   }
 }

@@ -31,8 +31,8 @@ Future<void> writeInitialProfile(String uid) async {
 
   batch.set(users.doc("Movies"), const <String, dynamic>{"Seen": []});
   batch.set(users.doc("TVShows"), const <String, dynamic>{"Seen": []});
-  batch.set(users.doc("Seen"),
-      const <String, dynamic>{"Movies": [], "TVShows": []});
+  batch.set(
+      users.doc("Seen"), const <String, dynamic>{"Movies": [], "TVShows": []});
   batch.set(users.doc("SeenWith"),
       const <String, dynamic>{"Movies": {}, "TVShows": {}});
   batch.set(users.doc("Reviews"),
@@ -155,190 +155,196 @@ class SignUp extends StatelessWidget {
               child: Form(
                 key: formKey,
                 child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  TextFormField(
-                    autofillHints: const [AutofillHints.email, AutofillHints.username],
-                    textInputAction: TextInputAction.next,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      hintText: 'Your Email',
-                      hintStyle:
-                          TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(width: 1.0),
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    TextFormField(
+                      autofillHints: const [
+                        AutofillHints.email,
+                        AutofillHints.username
+                      ],
+                      textInputAction: TextInputAction.next,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        hintText: 'Your Email',
+                        hintStyle: TextStyle(
+                            color: Color.fromARGB(130, 255, 255, 255)),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(width: 1.0),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(width: 2.0),
+                        ),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(width: 2.0),
-                      ),
+                      validator: (String? value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your email';
+                        }
+                        return null;
+                      },
+                      onSaved: (String? value) {
+                        email = value!;
+                      },
                     ),
-                    validator: (String? value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      return null;
-                    },
-                    onSaved: (String? value) {
-                      email = value!;
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-                  TextFormField(
-                    autofillHints: const [AutofillHints.newPassword],
-                    textInputAction: TextInputAction.next,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      hintText: 'Your Password',
-                      hintStyle:
-                          TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(width: 1.0),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      autofillHints: const [AutofillHints.newPassword],
+                      textInputAction: TextInputAction.next,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Password',
+                        hintText: 'Your Password',
+                        hintStyle: TextStyle(
+                            color: Color.fromARGB(130, 255, 255, 255)),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(width: 1.0),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(width: 2.0),
+                        ),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(width: 2.0),
-                      ),
+                      validator: (String? value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your password';
+                        }
+                        return null;
+                      },
+                      onSaved: (String? value) {
+                        password = value!;
+                      },
+                      onChanged: (String? value) {
+                        password = value!;
+                      },
                     ),
-                    validator: (String? value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      return null;
-                    },
-                    onSaved: (String? value) {
-                      password = value!;
-                    },
-                    onChanged: (String? value) {
-                      password = value!;
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-                  TextFormField(
-                    autofillHints: const [AutofillHints.newPassword],
-                    textInputAction: TextInputAction.done,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Repeat Password',
-                      hintText: 'Your Password',
-                      hintStyle:
-                          TextStyle(color: Color.fromARGB(130, 255, 255, 255)),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(width: 1.0),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      autofillHints: const [AutofillHints.newPassword],
+                      textInputAction: TextInputAction.done,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Repeat Password',
+                        hintText: 'Your Password',
+                        hintStyle: TextStyle(
+                            color: Color.fromARGB(130, 255, 255, 255)),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(width: 1.0),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(width: 2.0),
+                        ),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(width: 2.0),
-                      ),
+                      validator: (String? value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please reenter your password';
+                        }
+                        if (value != password) {
+                          return 'The passwords do not match.';
+                        }
+                        return null;
+                      },
+                      onSaved: (String? value) {},
                     ),
-                    validator: (String? value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please reenter your password';
-                      }
-                      if (value != password) {
-                        return 'The passwords do not match.';
-                      }
-                      return null;
-                    },
-                    onSaved: (String? value) {},
-                  ),
-                  const SizedBox(height: 16.0),
-                  ElevatedButton(
-                    child: const Text('SignUp'),
-                    onPressed: () async {
-                      if (formKey.currentState!.validate()) {
-                        formKey.currentState!.save();
-                        try {
-                          final credential = await FirebaseAuth.instance
-                              .createUserWithEmailAndPassword(
-                                  email: email, password: password);
-
+                    const SizedBox(height: 16.0),
+                    ElevatedButton(
+                      child: const Text('SignUp'),
+                      onPressed: () async {
+                        if (formKey.currentState!.validate()) {
+                          formKey.currentState!.save();
                           try {
-                            await writeInitialProfile(credential.user!.uid);
-                          } catch (e, stackTrace) {
-                            final rollbackResult =
-                                await rollbackCreatedAuthAccountAfterProfileFailure(
-                              deleteAccount: credential.user == null
-                                  ? null
-                                  : () => credential.user!.delete(),
-                              profileError: e,
-                              profileStackTrace: stackTrace,
-                            );
-                            if (!context.mounted) return;
-                            final errorMessage = rollbackResult ==
-                                    CreatedAuthAccountRollbackResult.deleted
-                                ? S.of(context)!.profileSetupFailedError
-                                : S
-                                    .of(context)!
-                                    .profileSetupRollbackFailedError;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(errorMessage)),
-                            );
-                            return;
-                          }
-
-                          try {
-                            await FirebaseAuth.instance
-                                .signInWithEmailAndPassword(
+                            final credential = await FirebaseAuth.instance
+                                .createUserWithEmailAndPassword(
                                     email: email, password: password);
-                            if (!context.mounted) return;
-                            TextInput.finishAutofillContext();
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const MyApp()),
-                            );
+
+                            try {
+                              await writeInitialProfile(credential.user!.uid);
+                            } catch (e, stackTrace) {
+                              final rollbackResult =
+                                  await rollbackCreatedAuthAccountAfterProfileFailure(
+                                deleteAccount: credential.user == null
+                                    ? null
+                                    : () => credential.user!.delete(),
+                                profileError: e,
+                                profileStackTrace: stackTrace,
+                              );
+                              if (!context.mounted) return;
+                              final errorMessage = rollbackResult ==
+                                      CreatedAuthAccountRollbackResult.deleted
+                                  ? S.of(context)!.profileSetupFailedError
+                                  : S
+                                      .of(context)!
+                                      .profileSetupRollbackFailedError;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(errorMessage)),
+                              );
+                              return;
+                            }
+
+                            try {
+                              await FirebaseAuth.instance
+                                  .signInWithEmailAndPassword(
+                                      email: email, password: password);
+                              if (!context.mounted) return;
+                              TextInput.finishAutofillContext();
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const MyApp()),
+                              );
+                            } on FirebaseAuthException catch (e) {
+                              if (!context.mounted) return;
+                              if (e.code == 'user-not-found') {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content:
+                                        Text(S.of(context)!.noUserFoundError),
+                                  ),
+                                );
+                              } else if (e.code == 'wrong-password') {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content:
+                                        Text(S.of(context)!.wrongPasswordError),
+                                  ),
+                                );
+                              }
+                            }
                           } on FirebaseAuthException catch (e) {
                             if (!context.mounted) return;
-                            if (e.code == 'user-not-found') {
+                            if (e.code == 'weak-password') {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content:
-                                      Text(S.of(context)!.noUserFoundError),
+                                      Text(S.of(context)!.weakPasswordError),
                                 ),
                               );
-                            } else if (e.code == 'wrong-password') {
+                            } else if (e.code == 'email-already-in-use') {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                      S.of(context)!.wrongPasswordError),
+                                      S.of(context)!.emailAlreadyInUseError),
+                                ),
+                              );
+                            } else if (e.code == 'invalid-email') {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content:
+                                      Text(S.of(context)!.invalidEmailError),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content:
+                                      Text(S.of(context)!.genericAuthError),
                                 ),
                               );
                             }
                           }
-                        } on FirebaseAuthException catch (e) {
-                          if (!context.mounted) return;
-                          if (e.code == 'weak-password') {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(S.of(context)!.weakPasswordError),
-                              ),
-                            );
-                          } else if (e.code == 'email-already-in-use') {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    S.of(context)!.emailAlreadyInUseError),
-                              ),
-                            );
-                          } else if (e.code == 'invalid-email') {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(S.of(context)!.invalidEmailError),
-                              ),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(S.of(context)!.genericAuthError),
-                              ),
-                            );
-                          }
                         }
-                      }
-                    },
-                  ),
-                ],
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),

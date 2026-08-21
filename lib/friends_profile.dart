@@ -9,7 +9,6 @@ import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/media.dart';
 import 'package:uractor/objects/tv_show.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'common/utils.dart';
 import 'friends.dart';
 import 'friends_calendar.dart';
@@ -23,6 +22,7 @@ import 'seen_together.dart';
 import 'tvshow_result.dart';
 import 'common/layout/breakpoints.dart';
 import 'common/layout/responsive.dart';
+import 'common/navigation/app_scaffold.dart';
 
 int weekOffset = 0; // This will be used to go to previous or next weeks
 
@@ -215,7 +215,7 @@ class _FriendProfileState extends State<FriendProfile> {
         return sections;
       }
 
-      return Scaffold(
+      return AppScaffold(
         appBar: const CustomAppBar(),
         body: SingleChildScrollView(
           child: Column(
@@ -375,7 +375,7 @@ class _FriendProfileState extends State<FriendProfile> {
             ],
           ),
         ),
-        bottomNavigationBar: CommonBottomAppBar(-1),
+        selectedIndex: -1,
       );
     } else {
       return const Scaffold();

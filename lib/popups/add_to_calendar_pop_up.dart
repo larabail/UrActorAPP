@@ -116,8 +116,8 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
     );
   }
 
-  Future<void> addMovieSubmit(String id, String title, int runtime, double rating,
-      Map friendsWatchedWith, CalendarEpisode? episode,
+  Future<void> addMovieSubmit(String id, String title, int runtime,
+      double rating, Map friendsWatchedWith, CalendarEpisode? episode,
       [List<SeasonEpisodeCount> seasons = const <SeasonEpisodeCount>[]]) async {
     String key = widget.type == "movie" ? "Movies" : "TVShows";
     // What this entry means for tracking, decided before anything is written.

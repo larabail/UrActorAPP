@@ -384,8 +384,7 @@ class ProgressService {
     String today,
   ) async {
     await _removeSeen(progressTVShowsKey, showId.toString());
-    final existing =
-        await _entry(progressTVShowsKey, showId.toString()) ??
+    final existing = await _entry(progressTVShowsKey, showId.toString()) ??
         <String, dynamic>{};
     return <String, dynamic>{
       ...existing,
@@ -420,9 +419,8 @@ class ProgressService {
     Map<String, dynamic> entry,
   ) async {
     _requireType(type);
-    final progressDoc = FirestoreCore.db
-        .collection(currentUser.uid)
-        .doc('Progress');
+    final progressDoc =
+        FirestoreCore.db.collection(currentUser.uid).doc('Progress');
     await FirestoreCore.mergeInto(progressDoc, {
       type: {id: entry},
     });

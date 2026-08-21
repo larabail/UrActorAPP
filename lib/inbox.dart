@@ -66,7 +66,8 @@ class FriendRequestsPage extends StatefulWidget {
 }
 
 class _FriendRequestsPageState extends State<FriendRequestsPage> {
-  Future<void> acceptFriendRequest(String recipientUID, String senderUID) async {
+  Future<void> acceptFriendRequest(
+      String recipientUID, String senderUID) async {
     try {
       await acceptFriendRequestWrites(recipientUID, senderUID);
 
@@ -81,7 +82,8 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
     }
   }
 
-  Future<void> rejectFriendRequest(String recipientUID, String senderUID) async {
+  Future<void> rejectFriendRequest(
+      String recipientUID, String senderUID) async {
     try {
       await rejectFriendRequestWrite(recipientUID, senderUID);
     } catch (e) {

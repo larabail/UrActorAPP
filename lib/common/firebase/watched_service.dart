@@ -59,8 +59,7 @@ class WatchedService {
     });
     if (type == "Movies") {
       final today = DateTime.now();
-      final snapshot =
-          await FirestoreCore.db.collection(currentUser.uid).get();
+      final snapshot = await FirestoreCore.db.collection(currentUser.uid).get();
       if (!context.mounted) return true;
       for (var doc in snapshot.docs) {
         if (doc.id == 'Calendar') {
@@ -98,7 +97,8 @@ class WatchedService {
         uid, type == "movie" ? "Rewatched" : "RewatchedTV");
     Map data = info["data"];
     if (data.containsKey(id)) {
-      await FirestoreCore.updateDocument(uid,
+      await FirestoreCore.updateDocument(
+          uid,
           type == "movie" ? "Rewatched" : "RewatchedTV",
           {id: FieldValue.increment(1)});
     } else {

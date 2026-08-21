@@ -6,12 +6,12 @@ import 'package:uractor/l10n/l10n.dart';
 import 'common/async_action.dart';
 import 'common/firebase/friends_service.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'common/reorder_toggle.dart';
 import 'friends_profile.dart';
 import 'inbox.dart';
 import 'main.dart';
 import 'common/firebase/firestore_core.dart';
+import 'common/navigation/app_scaffold.dart';
 
 String friendUid = "";
 
@@ -183,10 +183,8 @@ class _FriendsState extends State<Friends> {
   }
 
   Future<void> _refreshFriends() async {
-    var friendsDoc = await FirestoreCore.db
-        .collection(currentUser.uid)
-        .doc("Friends")
-        .get();
+    var friendsDoc =
+        await FirestoreCore.db.collection(currentUser.uid).doc("Friends").get();
     Map<String, dynamic> data = friendsDoc.data() as Map<String, dynamic>;
     currentUser.friends = data["friends"];
     FriendsService.clearCache();
@@ -299,7 +297,7 @@ class _FriendsState extends State<Friends> {
           });
     }
 
-    return Scaffold(
+    return AppScaffold(
       appBar: CustomAppBar(
         actions: [
           if (currentUser.friends.length > 1) ...[
@@ -328,7 +326,7 @@ class _FriendsState extends State<Friends> {
           size: 30,
         ),
       ),
-      bottomNavigationBar: CommonBottomAppBar(2),
+      selectedIndex: 2,
     );
   }
 }

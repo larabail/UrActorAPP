@@ -16,7 +16,6 @@ import 'common/constants.dart';
 import 'common/firebase/settings_service.dart';
 import 'common/home_media_section.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'common/playlist_order.dart';
 import 'calendar.dart';
 import 'continue_watching_section.dart';
@@ -38,6 +37,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/l10n.dart';
+import 'common/navigation/app_scaffold.dart';
 
 List idsExplorePage = [];
 bool gotData = false;
@@ -211,7 +211,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     int selectedIndex = 0;
     if (gotData) {
-      return Scaffold(
+      return AppScaffold(
         appBar: const CustomAppBar(),
         body: RefreshIndicator(
           onRefresh: _refreshMain,
@@ -451,8 +451,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                   );
                                 } else if (snapshot.hasError) {
                                   return Center(
-                                      child:
-                                          Text(S.of(context)!.errorFailedToLoadDetails));
+                                      child: Text(S
+                                          .of(context)!
+                                          .errorFailedToLoadDetails));
                                 } else {
                                   return Container(
                                       margin: const EdgeInsets.fromLTRB(
@@ -476,7 +477,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ]),
           ),
         ),
-        bottomNavigationBar: CommonBottomAppBar(selectedIndex),
+        selectedIndex: selectedIndex,
       );
     } else {
       return Scaffold(
@@ -557,7 +558,9 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                       ),
                       Text(
-                        S.of(context)!.playlistCount(currentUser.playlists.length),
+                        S
+                            .of(context)!
+                            .playlistCount(currentUser.playlists.length),
                         style: const TextStyle(
                           color: Colors.grey,
                           fontSize: 12,
@@ -679,9 +682,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 },
                               ),
                               Text(
-                                S
-                                    .of(context)!
-                                    .totalContent(totalContent),
+                                S.of(context)!.totalContent(totalContent),
                                 style: const TextStyle(
                                   color: Colors.grey,
                                   fontSize: 12,
@@ -701,5 +702,4 @@ class _MyHomePageState extends State<MyHomePage> {
       },
     );
   }
-
 }

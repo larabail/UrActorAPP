@@ -22,9 +22,9 @@ class CalendarEpisodeBadge extends StatelessWidget {
     if (episode == null) return const SizedBox.shrink();
     final String label = episode.hasEpisode
         ? S.of(context)!.calendarSeasonEpisodeBadge(
-            episode.season,
-            episode.episode!,
-          )
+              episode.season,
+              episode.episode!,
+            )
         : S.of(context)!.calendarSeasonBadge(episode.season);
     return Padding(
       key: const ValueKey('calendarEpisodeBadge'),

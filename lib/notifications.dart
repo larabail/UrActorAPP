@@ -44,9 +44,8 @@ class _NotificationsState extends State<Notifications> {
       for (var notificationKey in currentUser.notifications.keys) {
         var notification = currentUser.notifications[notificationKey];
         if (!notification['read']) {
-          DocumentReference notificationRef = FirestoreCore.db
-              .collection(currentUser.uid)
-              .doc("Notifications");
+          DocumentReference notificationRef =
+              FirestoreCore.db.collection(currentUser.uid).doc("Notifications");
           var notificationsData = await notificationRef.get();
           var notifications = notificationsData.data() as Map<String, dynamic>;
           notifications[notificationKey]["read"] = true;
@@ -66,7 +65,8 @@ class _NotificationsState extends State<Notifications> {
       if (!mounted) return;
       final message = '${S.of(context)!.errorNotification}: $e';
       debugPrint(message);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
     }
   }
 

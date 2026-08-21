@@ -37,8 +37,7 @@ class SeasonWatchToggle extends StatelessWidget {
       builder: (context, _) {
         final tick = controller.seasonTickState(seasonNumber);
         final complete = tick == SeasonTickState.all;
-        final enabled =
-            !controller.loading &&
+        final enabled = !controller.loading &&
             !controller.busy &&
             controller.episodeCountOf(seasonNumber) > 0;
         return _ToggleButton(
@@ -56,9 +55,8 @@ class SeasonWatchToggle extends StatelessWidget {
           tooltip: complete
               ? S.of(context)!.watchProgressUnmarkSeason
               : S.of(context)!.watchProgressMarkSeason,
-          onPressed: enabled
-              ? () => controller.toggleSeason(seasonNumber)
-              : null,
+          onPressed:
+              enabled ? () => controller.toggleSeason(seasonNumber) : null,
         );
       },
     );

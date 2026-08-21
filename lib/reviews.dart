@@ -9,13 +9,13 @@ import '/objects/media.dart';
 import '/objects/movie.dart';
 import '/objects/tv_show.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'common/utils.dart';
 import 'movie_result.dart';
 import 'tvshow_result.dart';
 import 'main.dart';
 import 'common/layout/breakpoints.dart';
 import 'common/layout/responsive.dart';
+import 'common/navigation/app_scaffold.dart';
 
 class Reviews extends StatefulWidget {
   const Reviews();
@@ -193,7 +193,7 @@ class _ReviewsState extends State<Reviews> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
       appBar: const CustomAppBar(),
       body: Column(children: [
         Padding(
@@ -323,7 +323,7 @@ class _ReviewsState extends State<Reviews> {
           ),
         )
       ]),
-      bottomNavigationBar: CommonBottomAppBar(-1),
+      selectedIndex: -1,
     );
   }
 }

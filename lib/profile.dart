@@ -15,7 +15,6 @@ import 'package:uractor/objects/tv_show.dart';
 import 'package:uractor/popups/profile_sections_popup.dart';
 import 'package:uractor/tvshow_result.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'objects/movie.dart';
 import 'main.dart';
 import 'objects/person.dart';
@@ -24,6 +23,7 @@ import 'movie_result.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'common/layout/breakpoints.dart';
 import 'common/layout/responsive.dart';
+import 'common/navigation/app_scaffold.dart';
 
 class Profile extends StatefulWidget {
   const Profile();
@@ -304,7 +304,7 @@ class _ProfileState extends State<Profile> {
       S.of(context)!.december,
     ];
 
-    return Scaffold(
+    return AppScaffold(
       appBar: const CustomAppBar(),
       body: Stack(
         children: [
@@ -646,7 +646,7 @@ class _ProfileState extends State<Profile> {
           ),
         ],
       ),
-      bottomNavigationBar: CommonBottomAppBar(3),
+      selectedIndex: 3,
     );
   }
 

@@ -318,7 +318,8 @@ Widget getProviders(Map data, BuildContext context) {
           children: [
             Icon(Icons.play_circle_fill, color: Colors.white),
             SizedBox(width: 10),
-            Text(S.of(context)!.whereToWatch,
+            Text(
+              S.of(context)!.whereToWatch,
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.white,

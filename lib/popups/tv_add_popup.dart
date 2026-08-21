@@ -130,18 +130,17 @@ class _TvAddDialogueState extends State<TvAddDialogue> {
                           Map<String, dynamic> item = snapshot.data?[index];
                           return GridTile(
                             child: GestureDetector(
-                              onTap: () async {
-                                _movie = item["id"].toString();
-                                await runVisibleAsyncAction(
-                                  context,
-                                  addTvSubmit,
-                                  S.of(context)!.genericAuthError,
-                                );
-                              },
-                              child: getItemContainer(context, item, "media",
-                                  mediaPair: mediaPairForData(item,
-                                      containerType: "TVShows"))
-                            ),
+                                onTap: () async {
+                                  _movie = item["id"].toString();
+                                  await runVisibleAsyncAction(
+                                    context,
+                                    addTvSubmit,
+                                    S.of(context)!.genericAuthError,
+                                  );
+                                },
+                                child: getItemContainer(context, item, "media",
+                                    mediaPair: mediaPairForData(item,
+                                        containerType: "TVShows"))),
                           );
                         },
                       );

@@ -70,7 +70,8 @@ class DefaultFirebaseOptions {
     projectId: 'actordb-cf981',
     databaseURL: 'https://actordb-cf981-default-rtdb.firebaseio.com',
     storageBucket: 'actordb-cf981.appspot.com',
-    iosClientId: '805906181872-ai2a1k4rqe3n4ab5fr0pb5ujig4uad2k.apps.googleusercontent.com',
+    iosClientId:
+        '805906181872-ai2a1k4rqe3n4ab5fr0pb5ujig4uad2k.apps.googleusercontent.com',
     iosBundleId: 'com.example.uractor',
   );
 
@@ -81,7 +82,8 @@ class DefaultFirebaseOptions {
     projectId: 'actordb-cf981',
     databaseURL: 'https://actordb-cf981-default-rtdb.firebaseio.com',
     storageBucket: 'actordb-cf981.appspot.com',
-    iosClientId: '805906181872-ai2a1k4rqe3n4ab5fr0pb5ujig4uad2k.apps.googleusercontent.com',
+    iosClientId:
+        '805906181872-ai2a1k4rqe3n4ab5fr0pb5ujig4uad2k.apps.googleusercontent.com',
     iosBundleId: 'com.example.uractor',
   );
 }

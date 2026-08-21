@@ -86,9 +86,8 @@ class HomeMediaSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<dynamic> preview = content.reversed
-        .take(previewLimit)
-        .toList(growable: false);
+    final List<dynamic> preview =
+        content.reversed.take(previewLimit).toList(growable: false);
 
     return Container(
       decoration: BoxDecoration(

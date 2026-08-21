@@ -6,9 +6,9 @@ import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/person.dart';
 import 'package:uractor/person_result.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'common/layout/breakpoints.dart';
 import 'common/layout/responsive.dart';
+import 'common/navigation/app_scaffold.dart';
 
 class CastCrew extends StatefulWidget {
   final Map data;
@@ -40,7 +40,7 @@ class _CastCrewState extends State<CastCrew> {
       return indexA.compareTo(indexB);
     });
 
-    return Scaffold(
+    return AppScaffold(
       appBar: const CustomAppBar(),
       body: Column(
         children: [
@@ -80,7 +80,7 @@ class _CastCrewState extends State<CastCrew> {
           )
         ],
       ),
-      bottomNavigationBar: CommonBottomAppBar(-1),
+      selectedIndex: -1,
     );
   }
 }

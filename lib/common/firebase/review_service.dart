@@ -13,7 +13,8 @@ class ReviewService {
   /// @param type The media type.
   /// @param context The UI context.
   /// @return A Future indicating if the dialog was completed.
-  static Future<bool> writeReview(dynamic id, String type, BuildContext context) {
+  static Future<bool> writeReview(
+      dynamic id, String type, BuildContext context) {
     reviewId = id.toString();
     reviewType = type;
     Completer<bool> completer = Completer();
@@ -31,7 +32,8 @@ class ReviewService {
   /// @param type The media type.
   /// @param context The UI context.
   /// @return A Future indicating if the dialog was completed.
-  static Future<bool> editReview(dynamic id, String type, BuildContext context) {
+  static Future<bool> editReview(
+      dynamic id, String type, BuildContext context) {
     reviewId = id.toString();
     reviewType = type;
 
@@ -56,7 +58,8 @@ class ReviewService {
   /// @param type The media type.
   /// @param context The UI context.
   /// @return True if the review was successfully deleted.
-  static Future<bool> deleteReview(dynamic id, String type, BuildContext context) async {
+  static Future<bool> deleteReview(
+      dynamic id, String type, BuildContext context) async {
     reviewInfo = {};
     reviewed = false;
     await FirestoreCore.db

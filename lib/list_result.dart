@@ -13,7 +13,6 @@ import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/tv_show.dart';
 import 'package:uractor/popups/grant_access_dialogue.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'common/sorted_media_grid.dart';
 import 'common/utils.dart';
 import 'objects/media.dart';
@@ -32,6 +31,7 @@ import 'popups/tv_add_popup.dart';
 import 'common/api/http_client.dart';
 import 'common/layout/breakpoints.dart';
 import 'common/layout/responsive.dart';
+import 'common/navigation/app_scaffold.dart';
 
 class ListInfoDialog extends StatefulWidget {
   final Playlist listResult;
@@ -629,7 +629,7 @@ class _ListResultState extends State<ListResult> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
       appBar: const CustomAppBar(),
       body: Column(
         children: [
@@ -923,7 +923,7 @@ class _ListResultState extends State<ListResult> {
             ),
         ],
       ),
-      bottomNavigationBar: CommonBottomAppBar(-1),
+      selectedIndex: -1,
     );
   }
 }

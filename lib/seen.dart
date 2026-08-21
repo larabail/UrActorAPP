@@ -3,14 +3,14 @@
 import 'package:flutter/material.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'main.dart';
 import 'common/tab_view.dart';
+import 'common/navigation/app_scaffold.dart';
 
 class Seen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
       appBar: const CustomAppBar(),
       body: Column(
         children: [
@@ -55,7 +55,7 @@ class Seen extends StatelessWidget {
           )
         ],
       ),
-      bottomNavigationBar: CommonBottomAppBar(-1),
+      selectedIndex: -1,
     );
   }
 }

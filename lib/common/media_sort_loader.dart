@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-
 import '../main.dart';
 import 'api/apiutils.dart';
 import 'constants.dart';
@@ -71,7 +70,8 @@ class MediaSortLoader {
     try {
       if (entry == null) {
         final String link = isShow ? TV_SHOW_LINK : MOVIE_LINK;
-        final response = await AppHttp.client.get(Uri.parse('$link$id$API_KEY'));
+        final response =
+            await AppHttp.client.get(Uri.parse('$link$id$API_KEY'));
         if (response.statusCode != 200) return;
         final Map json = jsonDecode(response.body) as Map;
 
@@ -112,8 +112,8 @@ class MediaSortLoader {
   /// from the external ids endpoint.
   static Future<String?> _fetchImdbId(String type, String id) async {
     if (type != "TVShows") return null;
-    final response =
-        await AppHttp.client.get(Uri.parse('$TV_SHOW_LINK$id$EXTERNAL_IDS_LINK'));
+    final response = await AppHttp.client
+        .get(Uri.parse('$TV_SHOW_LINK$id$EXTERNAL_IDS_LINK'));
     if (response.statusCode != 200) return null;
     return (jsonDecode(response.body) as Map)['imdb_id']?.toString();
   }

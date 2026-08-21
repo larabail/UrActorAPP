@@ -22,7 +22,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' as intl;
 import 'common/navigation/appbar.dart';
-import 'common/navigation/bottom_app_bar.dart';
 import 'friends.dart';
 import 'friends_profile.dart';
 import 'main.dart';
@@ -31,6 +30,7 @@ import 'objects/person.dart';
 import 'person_result.dart';
 import 'dart:async';
 import 'common/firebase/firestore_core.dart';
+import 'common/navigation/app_scaffold.dart';
 
 class MovieResult extends StatefulWidget {
   final Movie movie;
@@ -173,7 +173,7 @@ class _MovieResultState extends State<MovieResult> {
     });
 
     DateTime selectedDate = DateTime.now();
-    return Scaffold(
+    return AppScaffold(
       appBar: const CustomAppBar(),
       body: FutureBuilder<Map>(
         future: widget.movie.getExtendedData(),
@@ -254,7 +254,7 @@ class _MovieResultState extends State<MovieResult> {
           }
         },
       ),
-      bottomNavigationBar: CommonBottomAppBar(-1),
+      selectedIndex: -1,
     );
   }
 
@@ -780,8 +780,10 @@ class _MovieResultState extends State<MovieResult> {
                   data['crew'],
                   (job) =>
                       job.split('/').any((role) => role.trim() == "Director"));
-              final Map? writer = ApiUtils.findCrewMember(data['crew'],
-                  (job) => job.contains('Writer') || job.contains('Screenplay'));
+              final Map? writer = ApiUtils.findCrewMember(
+                  data['crew'],
+                  (job) =>
+                      job.contains('Writer') || job.contains('Screenplay'));
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

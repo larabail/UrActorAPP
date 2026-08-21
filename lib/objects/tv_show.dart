@@ -1,4 +1,3 @@
-
 import '../common/constants.dart';
 import '../common/utils.dart';
 import '../common/api/apiutils.dart';
@@ -16,7 +15,8 @@ class TVShow extends MediaItem {
   });
   @override
   Future<Map> getData() async {
-    final response = await AppHttp.client.get(Uri.parse('$TV_SHOW_LINK$id$API_KEY'));
+    final response =
+        await AppHttp.client.get(Uri.parse('$TV_SHOW_LINK$id$API_KEY'));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       return json as Map;
@@ -67,15 +67,15 @@ class TVShow extends MediaItem {
 
   Future<Map> getSeasonsData(int season) async {
     final String showId = id.toString();
-    final response =
-        await AppHttp.client.get(Uri.parse('$TV_SHOW_LINK$showId/season/$season$API_KEY'));
+    final response = await AppHttp.client
+        .get(Uri.parse('$TV_SHOW_LINK$showId/season/$season$API_KEY'));
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       return json as Map;
     }
     return {};
   }
-  
+
   Future removeFriend(String friendUid, List friendsWatchedWith) async {
     var userDoc = await FirestoreCore.db
         .collection(currentUser.uid)
@@ -90,10 +90,8 @@ class TVShow extends MediaItem {
         currentUser.uid, "SeenWith", {"TVShows": movieMap});
     currentUser.seenWith[friendUid]["TVShows"].remove(id);
 
-    var friendsDoc = await FirestoreCore.db
-        .collection(friendUid)
-        .doc("SeenWith")
-        .get();
+    var friendsDoc =
+        await FirestoreCore.db.collection(friendUid).doc("SeenWith").get();
     docData = friendsDoc.data() as Map;
     movieMap = docData["TVShows"];
     friendsList = movieMap[id]["friends"];
