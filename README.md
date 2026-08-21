@@ -641,6 +641,28 @@ code beyond an `AppDelegate` that registers plugins, so running it would spend
 macOS minutes asserting nothing. If real Swift is ever added to `ios/Runner`,
 that is the point to wire `xcodebuild test` into the iOS workflow.
 
+Xcode Cloud archives the app as well, and reports on pull requests as
+`uractorapp | Default | Archive - iOS`. It is configured in App Store Connect
+rather than in this repository, and it runs `xcodebuild` against
+`ios/Runner.xcworkspace` on a bare clone, knowing nothing about Flutter. What
+makes that work is
+[`ios/ci_scripts/ci_post_clone.sh`](ios/ci_scripts/ci_post_clone.sh), which
+Xcode Cloud runs after cloning: it installs the pinned Flutter SDK, resolves
+packages, writes `ios/Flutter/Generated.xcconfig` through
+`flutter build ios --config-only`, and installs the pods. None of those are
+committed, so without the script the archive fails on the missing files rather
+than on anything in the change. The directory and file names are fixed by Xcode
+Cloud, and the file has to stay executable in git; renamed, moved, or
+non-executable, it is skipped with no explanation and the build fails exactly
+as it did before. Its Flutter version is pinned to the same one as
+`.github/actions/setup-flutter-ios`, and the two are meant to move together.
+
+The three API keys reach that build as Xcode Cloud environment variables set on
+the workflow in App Store Connect, not as GitHub Actions secrets. The script
+warns instead of failing when one is missing, because an archive built without
+them is still a valid archive — it is the app that throws at startup, and
+failing the build there would report an unset workflow variable as broken code.
+
 Every merge to `master` that is not docs-only runs
 `.github/workflows/release-internal.yml`. It deploys Cloud Functions to
 `actordb-cf981` first, then analyzes, tests with coverage, builds a signed app
