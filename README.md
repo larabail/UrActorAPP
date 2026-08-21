@@ -410,27 +410,24 @@ depend on it.
 ### OMDB API key
 
 The IMDb rating shown on a title, and the "sort by IMDb rating" option, come
-from OMDB, which needs its own key:
-
-```dart
-const String OMDB_API_KEY = String.fromEnvironment('OMDB_API_KEY');
-```
+from OMDB, which needs its own key. Unlike the TMDB and OpenAI keys, this key is
+not a Flutter build input and is never compiled into the app. It lives only in
+the Cloud Functions environment:
 
 ```bash
-flutter run --dart-define=OMDB_API_KEY=... --dart-define=TMDB_API_KEY=...
+firebase functions:secrets:set OMDB_API_KEY
 ```
 
-Like the TMDB key and unlike the OpenAI one, this is **required**: startup calls
-`assertOmdbApiKey()` and fails loudly without it. That is deliberate. There is no
-skip path around OMDB the way there is around the recommendation call, so a
-missing key does not disable a feature — it makes every rating read `0.0`, which
-looks like data rather than a misconfiguration.
+The app calls the authenticated `omdbLookup` Cloud Function with an IMDb id, and
+the function returns only the rating and year the UI consumes. If the user is
+signed out or the function cannot reach OMDB, ratings degrade to `0.0` and the
+year to `None` rather than blocking the screen.
 
 > This key was committed as a hardcoded `defaultValue` in the source and
 > therefore reached every build shipped to Play.
 > **A key compiled into an app is extractable by anyone who downloads it**, and
-> it remains in git history regardless of the working tree. Revoke and reissue it
-> at <https://www.omdbapi.com/apikey.aspx>, then supply the new one by define.
+> it remains in git history regardless of the working tree. The replacement key
+> must stay in the Firebase secret, not in Dart source or CI build defines.
 
 ### Storing the keys locally
 
@@ -481,7 +478,7 @@ lib/
 
   objects/                   Media, Movie, TVShow, Person, Playlist, User
   common/
-    constants.dart           TMDB and OMDB endpoints; both keys read from
+    constants.dart           TMDB endpoints; the TMDB key is read from
                              --dart-define
     utils.dart
     continue_watching.dart   Continue watching ordering and TMDB derivations
@@ -501,16 +498,16 @@ lib/
                              two_pane.dart (list-and-detail, openDetail)
     platform/capabilities.dart  What each platform's plugins can do
     firebase/                One service per domain: calendar, favorites,
-                             playlist, progress, recommendation, review,
-                             social, watched, watchlist, plus firestore_core
-                             and firebaseutils
+                             OMDB lookup, playlist, progress,
+                             recommendation, review, social, watched,
+                             watchlist, plus firestore_core and firebaseutils
   popups/                    Dialogs: add to calendar, add friends seen with,
                              rating, share, settings, list add/edit/join,
                              grant access, movie add, tv add, profile sections
   l10n/                      app_en.arb, app_es.arb and their generated output
 
-functions/                   Cloud Functions (Node 22): playlist join,
-                             member sync, join-attempt cleanup
+functions/                   Cloud Functions (Node 22): OMDB lookup,
+                             playlist join, member sync, join-attempt cleanup
 firestore-tests/              Firestore rules tests against the local emulator
 tools/sync-oscars/           Firestore Oscars sync job
 assets/                      Logos, tab icons, the cover and person
@@ -520,9 +517,12 @@ test/                        Flutter tests
 
 ## Cloud Functions
 
-`functions/` holds three gen 2 Cloud Functions for project `actordb-cf981`, all
+`functions/` holds four gen 2 Cloud Functions for project `actordb-cf981`, all
 running on Node 22 in `us-central1`:
 
+- `omdbLookup` is a callable function. It requires auth, accepts only a narrow
+  IMDb id (`tt` plus digits), calls OMDB with the `OMDB_API_KEY` Firebase
+  secret, and returns only `imdbRating`, `Year` and `Response`.
 - `joinPlaylist` is a callable function. It requires auth, normalizes the list
   name and access code, throttles repeated misses in `JoinAttempts`, queries
   `Watchlists` by `Name`, compares the submitted code on the server, and adds
@@ -540,6 +540,7 @@ Firebase project:
 
 ```bash
 npm install
+firebase functions:secrets:set OMDB_API_KEY
 npm test
 npm run deploy
 ```
@@ -596,8 +597,9 @@ npm test
 
 `flutter test` currently runs 658 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
-`FirestoreCore.db` and `AppHttp.client` — which default to the real
-implementations and are pointed at fakes by the tests.
+`FirestoreCore.db` and `AppHttp.client` — and callable context through
+`CallableContext`. They default to the real implementations and are pointed at
+fakes by the tests.
 `test/support/harness.dart` installs those fakes and restores them afterwards.
 The Flutter suite covers pure logic, TMDB/OMDB request parsing with a stubbed
 HTTP client, auth/session helpers, search and playlist ordering, playlist join
@@ -607,8 +609,8 @@ in-memory Firestore service behaviour, watch-progress rules and controls, the
 media and person data objects, every popup under `lib/popups` except the
 profile section editor, and the reviews and Continue watching screens.
 
-`npm test` in `functions/` runs the Node 22 unit tests for the playlist
-membership and join-throttle helpers. It currently reports 21 passing tests.
+`npm test` in `functions/` runs the Node 22 unit tests for the playlist and
+OMDB helper modules.
 
 `npm test` in `firestore-tests/` starts the Firestore emulator with
 `firebase emulators:exec` and runs the rules suite. It currently reports 76
@@ -638,8 +640,7 @@ only Markdown, docs, or `.gitignore`. The workflow has three jobs:
 - **Analyze, test and build** installs Flutter 3.47.1 plus the pinned Android
   NDK through `.github/actions/setup-flutter-android`, then runs
   `flutter analyze`, `flutter test --coverage`, the coverage floor, and a
-  release app bundle build using `TMDB_API_KEY`, `OPENAI_API_KEY` and
-  `OMDB_API_KEY` from
+  release app bundle build using `TMDB_API_KEY` and `OPENAI_API_KEY` from
   GitHub Actions secrets. Pull request bundles use debug signing and are
   checked to ensure no release signing material is present.
 - **Functions** installs Node 22 dependencies in `functions/`, runs `npm test`,

@@ -18,11 +18,13 @@ void main() {
   setUp(() {
     installTestUser();
     http = installHttpStub();
+    installFakeCallableContext();
   });
 
   group('fetchOmdbData', () {
     test('decodes a successful response', () async {
-      http.on('omdbapi.com', json: {'imdbRating': '8.8', 'Year': '2010'});
+      http.on('omdbLookup',
+          json: {'result': {'imdbRating': '8.8', 'Year': '2010'}});
 
       final data = await ApiUtils.fetchOmdbData('tt1375666');
 
@@ -31,20 +33,30 @@ void main() {
     });
 
     test('sends the imdb id it was given', () async {
-      http.on('omdbapi.com', json: {});
+      http.on('omdbLookup', json: {'result': {}});
 
       await ApiUtils.fetchOmdbData('tt1375666');
 
-      expect(http.requests.single.toString(), contains('i=tt1375666'));
+      expect(http.requests.single.toString(), contains('omdbLookup'));
+      expect(http.requestBodies.single, contains('"imdbId":"tt1375666"'));
     });
 
-    test('throws when the request fails', () async {
-      http.on('omdbapi.com', status: 500, body: 'nope');
+    test('falls back when the request fails', () async {
+      http.on('omdbLookup',
+          status: 503, json: {'error': {'status': 'UNAVAILABLE'}});
 
-      expect(
-        () => ApiUtils.fetchOmdbData('tt1375666'),
-        throwsA(isA<Exception>()),
-      );
+      final data = await ApiUtils.fetchOmdbData('tt1375666');
+
+      expect(data['imdbRating'], 'N/A');
+    });
+
+    test('falls back without calling the proxy when signed out', () async {
+      installFakeCallableContext(idToken: null);
+
+      final data = await ApiUtils.fetchOmdbData('tt1375666');
+
+      expect(data['imdbRating'], 'N/A');
+      expect(http.countFor('omdbLookup'), 0);
     });
   });
 
@@ -476,7 +488,8 @@ void main() {
     });
 
     test('takes the imdb rating and year from omdb', () async {
-      http.on('omdbapi.com', json: {'imdbRating': '8.8', 'Year': '2010'});
+      http.on('omdbLookup',
+          json: {'result': {'imdbRating': '8.8', 'Year': '2010'}});
 
       final data = await ApiUtils.fetchAdditionalMovieData(
           {'imdb_id': 'tt1375666'}, '27205', 'Inception', 'movie');
@@ -488,7 +501,8 @@ void main() {
     test('treats an omdb rating of N/A as unrated', () async {
       // OMDB returns the string "N/A" rather than omitting the field, and
       // showing that verbatim next to a score would look like a bug.
-      http.on('omdbapi.com', json: {'imdbRating': 'N/A', 'Year': '2010'});
+      http.on('omdbLookup',
+          json: {'result': {'imdbRating': 'N/A', 'Year': '2010'}});
 
       final data = await ApiUtils.fetchAdditionalMovieData(
           {'imdb_id': 'tt1375666'}, '27205', 'Inception', 'movie');
@@ -502,14 +516,15 @@ void main() {
 
       expect(data['imdb_rating'], '0.0');
       expect(data['year'], 'None');
-      expect(http.countFor('omdbapi.com'), 0);
+      expect(http.countFor('omdbLookup'), 0);
     });
 
     test('looks up the imdb id separately for a tv show', () async {
       // Only movie details carry an imdb_id, so a show needs the external ids
       // endpoint first or it would always come back unrated.
       http.on('external_ids', json: {'imdb_id': 'tt0944947'});
-      http.on('omdbapi.com', json: {'imdbRating': '9.2', 'Year': '2011'});
+      http.on('omdbLookup',
+          json: {'result': {'imdbRating': '9.2', 'Year': '2011'}});
 
       final data = await ApiUtils.fetchAdditionalMovieData(
           {}, '1399', 'Thrones', 'tv');
@@ -525,12 +540,13 @@ void main() {
           {}, '1399', 'Thrones', 'tv');
 
       expect(data['imdb_rating'], '0.0');
-      expect(http.countFor('omdbapi.com'), 0);
+      expect(http.countFor('omdbLookup'), 0);
     });
 
     test('asks for providers in the country on the user profile', () async {
       currentUser.country = 'ES';
-      http.on('omdbapi.com', json: {'imdbRating': '8.8', 'Year': '2010'});
+      http.on('omdbLookup',
+          json: {'result': {'imdbRating': '8.8', 'Year': '2010'}});
 
       await ApiUtils.fetchAdditionalMovieData(
           {'imdb_id': 'tt1375666'}, '27205', 'Inception', 'movie');

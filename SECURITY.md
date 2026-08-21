@@ -49,7 +49,17 @@ further than the file claims is still worth sending.
 
 ## History
 
-This repository was private until 2026 and its history contains three API keys
-that were committed and later removed. All three were rotated before the
-repository was made public, so the values in history are dead. Reporting them
-back is not necessary.
+This repository was private until 2026, and three API keys were committed to it
+between 2023 and 2025 and later removed from the source. Removing them from the
+source did not remove them from history, so each was dealt with before the
+repository was made public:
+
+- **TMDB** and **OpenAI** were rotated. The values reachable in history are
+  dead.
+- **OMDB** could not be rotated -- the key is tied to a paid subscription and
+  the provider issues one per account -- so it was stripped from history
+  instead, and the app no longer holds it at all. Lookups now go through the
+  `omdbLookup` Cloud Function, which keeps the key server side.
+
+Reporting any of them back is not necessary. If you find a *fourth* one, that is
+worth a report.

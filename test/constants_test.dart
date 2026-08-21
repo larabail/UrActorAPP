@@ -30,30 +30,6 @@ void main() {
     });
   });
 
-  group('assertOmdbApiKey', () {
-    test('throws when the key is empty', () {
-      expect(() => assertOmdbApiKey(''), throwsStateError);
-    });
-
-    test('passes when a key is supplied', () {
-      expect(() => assertOmdbApiKey('a-key'), returnsNormally);
-    });
-
-    // The regression this guards. OMDB_API_KEY used to be declared with a
-    // hardcoded `defaultValue`, so a build with no define still worked and
-    // shipped a live key inside the bundle. With no default the constant is
-    // empty unless one is passed, which is what makes the omission detectable
-    // at all. The suite runs without the define, so this asserts the real
-    // constant rather than a stand-in.
-    test('has no compiled-in fallback when the define is absent', () {
-      expect(
-        const bool.hasEnvironment('OMDB_API_KEY') || OMDB_API_KEY.isEmpty,
-        isTrue,
-        reason: 'OMDB_API_KEY must not fall back to a key written in source',
-      );
-    });
-  });
-
   group('TMDB endpoints', () {
     test('API_KEY is built from the TMDB_API_KEY define', () {
       expect(API_KEY, equals('?api_key=$TMDB_API_KEY'));

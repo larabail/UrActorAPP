@@ -23,6 +23,7 @@ void main() {
 
   setUp(() {
     user = installTestUser();
+    installFakeCallableContext();
     app.reviewed = false;
   });
 
@@ -110,7 +111,8 @@ void main() {
         'imdb_id': 'tt1375666',
         'backdrop_path': '/backdrop.jpg',
       });
-      http.on('omdbapi.com', json: {'imdbRating': '8.8', 'Year': '2010'});
+      http.on('omdbLookup',
+          json: {'result': {'imdbRating': '8.8', 'Year': '2010'}});
       http.on('watch/providers', json: {'results': <String, dynamic>{}});
       http.on('/credits?', json: {'cast': [], 'crew': []});
       http.on('/videos?', json: {'results': []});

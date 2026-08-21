@@ -256,7 +256,8 @@ when you genuinely need to commit something that does not build.
   change.
 - `.gitattributes` normalizes line endings to LF. CRLF warnings on commit under
   Windows are expected and harmless.
-- API keys are supplied with `--dart-define` and are compiled into the binary,
-  not encrypted. Never commit one, and never assume a shipped key is private.
+- Flutter build-time API keys are supplied with `--dart-define` and are compiled
+  into the binary, not encrypted. Never commit one, and never assume a shipped
+  key is private. Server-only keys, such as OMDB, belong in Firebase secrets.
 - Secrets used by CI live in GitHub Actions secrets. See
   [docs/releases.md](docs/releases.md).

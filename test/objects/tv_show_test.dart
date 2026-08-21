@@ -22,6 +22,7 @@ void main() {
 
   setUp(() {
     user = installTestUser();
+    installFakeCallableContext();
     app.reviewed = false;
   });
 
@@ -128,7 +129,8 @@ void main() {
         'backdrop_path': '/backdrop.jpg',
       });
       http.on('/external_ids', json: {'imdb_id': 'tt0903747'});
-      http.on('omdbapi.com', json: {'imdbRating': '9.5', 'Year': '2008–2013'});
+      http.on('omdbLookup',
+          json: {'result': {'imdbRating': '9.5', 'Year': '2008–2013'}});
       http.on('watch/providers', json: {'results': <String, dynamic>{}});
       // A show's credits come from `/aggregate_credits`, since `/credits`
       // returns the newest season's regulars alone.

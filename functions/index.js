@@ -1,6 +1,7 @@
 const {onCall, HttpsError} = require('firebase-functions/v2/https');
 const {onDocumentWritten} = require('firebase-functions/v2/firestore');
 const {onSchedule} = require('firebase-functions/v2/scheduler');
+const {defineSecret} = require('firebase-functions/params');
 const logger = require('firebase-functions/logger');
 const admin = require('firebase-admin');
 const {FieldValue} = require('firebase-admin/firestore');
@@ -14,11 +15,73 @@ const {
   throttleState,
   FAILURE_WINDOW_MS,
 } = require('./playlist_members');
+const {
+  normalizeImdbId,
+  buildOmdbUrl,
+  trimOmdbResponse,
+} = require('./omdb');
 
 admin.initializeApp();
 
 const db = admin.firestore();
 const REGION = 'us-central1';
+const OMDB_API_KEY = defineSecret('OMDB_API_KEY');
+
+// Looking up IMDb ratings through OMDB.
+//
+// The client used to call OMDB directly with a build-time `OMDB_API_KEY`. That
+// put a non-rotatable Patreon key into every app binary, where anyone could
+// extract it once the repository or an APK/IPA was public. The app now sends
+// only a validated IMDb id, and the server keeps the key in a Firebase secret.
+//
+// Authentication is required because an unauthenticated callable would still be
+// a public proxy for the same key. The id is deliberately narrow too: accepting
+// only `tt` plus digits prevents callers from turning this into an arbitrary
+// OMDB query proxy.
+exports.omdbLookup = onCall(
+  {region: REGION, secrets: [OMDB_API_KEY]},
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Sign in before looking up OMDB.');
+    }
+
+    const parsed = normalizeImdbId(request.data?.imdbId);
+    if (!parsed.ok) {
+      throw new HttpsError('invalid-argument', 'Provide a valid IMDb id.');
+    }
+
+    try {
+      const apiKey = OMDB_API_KEY.value();
+      if (!apiKey) {
+        logger.error('OMDB secret is not configured');
+        throw new HttpsError('unavailable', 'OMDB is unavailable.');
+      }
+
+      const response = await fetch(buildOmdbUrl(parsed.id, apiKey));
+      if (!response.ok) {
+        logger.warn('OMDB lookup returned a non-200 response', {
+          imdbId: parsed.id,
+          status: response.status,
+        });
+        throw new HttpsError('unavailable', 'OMDB is unavailable.');
+      }
+
+      const trimmed = trimOmdbResponse(await response.json());
+      if (trimmed.Response === 'False') {
+        throw new HttpsError('not-found', 'No OMDB title matches that IMDb id.');
+      }
+      return trimmed;
+    } catch (error) {
+      if (error instanceof HttpsError) throw error;
+      logger.warn('OMDB lookup failed', {
+        imdbId: parsed.id,
+        message: error?.message,
+      });
+      throw new HttpsError('unavailable', 'OMDB is unavailable.');
+    }
+  },
+);
 
 // Joining a playlist by access code.
 //

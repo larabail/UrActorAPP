@@ -100,7 +100,12 @@ Set these under **Settings → Secrets and variables → Actions**.
 | `ANDROID_KEY_ALIAS` | `keyAlias` |
 | `TMDB_API_KEY` | TMDB key |
 | `OPENAI_API_KEY` | OpenAI key |
-| `OMDB_API_KEY` | OMDB key, for IMDb ratings |
+
+OMDB is not a build input. Store it as a Firebase Functions secret instead:
+
+```bash
+firebase functions:secrets:set OMDB_API_KEY
+```
 
 Encode the keystore with:
 

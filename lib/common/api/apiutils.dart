@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import '../../main.dart';
 import '../constants.dart';
+import '../firebase/callable_context.dart';
+import '../firebase/omdb_lookup.dart';
 import 'http_client.dart';
 
 class ApiUtils {
@@ -10,13 +12,24 @@ class ApiUtils {
   /// @param imdbId The IMDb ID of the movie or show.
   /// @return The decoded JSON response containing OMDB metadata.
   static Future<dynamic> fetchOmdbData(String imdbId) async {
-    final response = await AppHttp.client.get(
-        Uri.parse('https://www.omdbapi.com/?i=$imdbId&apikey=$OMDB_API_KEY'));
-    if (response.statusCode != 200) {
-      throw Exception('Failed to load OMDB data');
+    try {
+      final idToken = await CallableContext.idToken();
+      if (idToken == null) return _emptyOmdbData;
+
+      final result = await const OmdbLookup().lookup(
+        client: AppHttp.client,
+        projectId: CallableContext.projectId(),
+        idToken: idToken,
+        imdbId: imdbId,
+      );
+      if (!result.isSuccess) return _emptyOmdbData;
+      return result.data;
+    } catch (_) {
+      return _emptyOmdbData;
     }
-    return jsonDecode(response.body);
   }
+
+  static const Map<String, dynamic> _emptyOmdbData = {'imdbRating': 'N/A'};
 
   /// Fetches watch provider data for a specific movie or TV show.
   /// @param movieId The TMDb movie/TV ID.
