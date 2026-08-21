@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
+import 'package:uractor/common/media_image.dart';
 import 'package:uractor/l10n/l10n.dart';
 
 import 'layout/breakpoints.dart';
@@ -96,7 +96,7 @@ Widget getItemContainer(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(27),
             image: DecorationImage(
-              image: CachedNetworkImageProvider(imagePath),
+              image: mediaImageProvider(imagePath),
               // The tile is already the shape of a poster, so covering it
               // fills the corners without distorting the artwork. Fitting to
               // the width instead left a gap whenever the two disagreed, which
@@ -204,7 +204,7 @@ Widget getItemSelectableContainer(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(27),
             image: DecorationImage(
-              image: CachedNetworkImageProvider(
+              image: mediaImageProvider(
                 item!["poster_path"] != null
                     ? IMG_LINK + item!["poster_path"]
                     : type == "media"

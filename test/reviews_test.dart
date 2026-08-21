@@ -65,7 +65,7 @@ void main() {
       final decoration = widget.decoration;
       if (decoration is! BoxDecoration) return false;
       final image = decoration.image?.image;
-      return image != null && (image as dynamic).url == UNKNOWN_COVER;
+      return image is AssetImage && image.assetName == UNKNOWN_COVER;
     }), findsOneWidget);
   });
 

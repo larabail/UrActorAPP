@@ -1,9 +1,9 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers, use_key_in_widget_constructors, must_be_immutable, non_constant_identifier_names
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/firebase/review_service.dart';
 import 'package:uractor/common/constants.dart';
+import 'package:uractor/common/media_image.dart';
 import 'package:uractor/l10n/l10n.dart';
 import '/objects/media.dart';
 import '/objects/movie.dart';
@@ -103,7 +103,7 @@ class _ReviewsState extends State<Reviews> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(27),
                           image: DecorationImage(
-                            image: CachedNetworkImageProvider(_posterUrl(data)),
+                            image: mediaImageProvider(_posterUrl(data)),
                             fit: BoxFit.fitWidth,
                           ),
                         ),
