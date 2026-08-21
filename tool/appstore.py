@@ -42,6 +42,26 @@ CREDENTIAL_VARS = (
     "APP_STORE_CONNECT_PRIVATE_KEY",
 )
 
+# Apple reports a version's state twice, under an old name and a new one, and
+# the two vocabularies disagree: a released version is READY_FOR_SALE in the
+# first and READY_FOR_DISTRIBUTION in the second. Both are accepted everywhere
+# below rather than picking one, because which arrives is Apple's choice.
+
+# States where the version is still ours to change. Anything else is either
+# with Apple or already published, and editing it is either refused by the API
+# or — worse — quietly withdraws it from review.
+SUBMITTABLE_STATES = frozenset({
+    "PREPARE_FOR_SUBMISSION",
+    "DEVELOPER_REJECTED",
+    "REJECTED",
+    "METADATA_REJECTED",
+    "INVALID_BINARY",
+})
+
+# Approved, and waiting for someone to decide it goes live. This is the state a
+# MANUAL release type produces, and the only one a release request applies to.
+RELEASABLE_STATES = frozenset({"PENDING_DEVELOPER_RELEASE"})
+
 # Apple rejects a token minted for longer than twenty minutes. Ten is plenty
 # for a handful of requests and leaves room for a slow runner clock.
 TOKEN_LIFETIME = datetime.timedelta(minutes=10)
@@ -96,6 +116,83 @@ def select_app_id(payload: dict, bundle_id: str = BUNDLE_ID) -> str:
             "cannot bring one into existence."
         )
     return data[0]["id"]
+
+
+def state_of(version: dict) -> str:
+    """The state of one appStoreVersions record, under either vocabulary."""
+    attributes = version.get("attributes") or {}
+    return (
+        attributes.get("appVersionState")
+        or attributes.get("appStoreState")
+        or "UNKNOWN"
+    )
+
+
+def select_version(payload: dict, version_string: str) -> dict:
+    """The version record for a marketing version, or a refusal.
+
+    Matched here rather than with `filter[versionString]` so the caller can
+    report what does exist when the requested one does not. A release stopped
+    by a typo should say which versions Apple actually holds.
+    """
+    for version in payload.get("data") or []:
+        if (version.get("attributes") or {}).get("versionString") == version_string:
+            return version
+    known = ", ".join(
+        (v.get("attributes") or {}).get("versionString", "?")
+        for v in (payload.get("data") or [])[:8]
+    )
+    raise AppStoreError(
+        f"no App Store version {version_string!r}. "
+        f"Apple holds: {known or 'nothing'}. "
+        "Create the version in App Store Connect first — this promotes an "
+        "existing version record, it does not invent one."
+    )
+
+
+def select_build_id(payload: dict, build_number: str) -> str:
+    """The id of one build, by the build number Apple shows.
+
+    Compared as text after stripping, because the caller has usually just read
+    the number off a workflow summary or typed it into a dispatch form.
+    """
+    wanted = str(build_number).strip()
+    for build in payload.get("data") or []:
+        if str((build.get("attributes") or {}).get("version", "")).strip() == wanted:
+            return build["id"]
+    raise AppStoreError(
+        f"no build {wanted!r} for this app. It has to be uploaded and finished "
+        "processing before a version can be promoted with it."
+    )
+
+
+def check_submittable(state: str, version_string: str) -> None:
+    """Refuse to touch a version that is not ours to change.
+
+    The dangerous case is not a rejected write. It is a version already with
+    Apple: editing one in review can withdraw it, so a promotion run started
+    against the wrong version number would cancel a submission that was on its
+    way to being approved.
+    """
+    if state in SUBMITTABLE_STATES:
+        return
+    raise AppStoreError(
+        f"version {version_string} is {state}, which is not a state this can "
+        "submit from. Submitting is only safe from "
+        f"{', '.join(sorted(SUBMITTABLE_STATES))}. A version already with "
+        "Apple has to be withdrawn in App Store Connect first, deliberately."
+    )
+
+
+def check_releasable(state: str, version_string: str) -> None:
+    if state in RELEASABLE_STATES:
+        return
+    raise AppStoreError(
+        f"version {version_string} is {state}, not "
+        f"{', '.join(sorted(RELEASABLE_STATES))}. Only a version Apple has "
+        "approved and is holding for manual release can be released. If it is "
+        "still WAITING_FOR_REVIEW or IN_REVIEW, Apple has not finished yet."
+    )
 
 
 def missing_credentials(env: Mapping[str, str]) -> list[str]:
@@ -167,6 +264,40 @@ def get(path: str, params: dict | None = None) -> dict:
     return response.json()
 
 
+def send(method: str, path: str, payload: dict | None = None) -> dict:
+    """One writing request against the API.
+
+    Kept separate from `get` because these change something at Apple's end and
+    are not safe to retry blindly. Apple answers a rejected write with a JSON
+    body naming the field it disliked, which is printed rather than swallowed.
+    """
+    bearer = token()
+
+    try:
+        import requests  # noqa: PLC0415 - see the module docstring
+    except ImportError:
+        sys.exit("requests is needed to reach App Store Connect: pip install requests")
+
+    response = requests.request(
+        method,
+        f"{API}{path}",
+        json=payload,
+        headers={
+            "Authorization": f"Bearer {bearer}",
+            "Content-Type": "application/json",
+        },
+        timeout=60,
+    )
+    # 200 returns a body, 201 created one, 204 says it worked and said nothing.
+    if response.status_code not in (200, 201, 204):
+        print(f"{method} {path} failed: HTTP {response.status_code}", file=sys.stderr)
+        print(response.text[:1500], file=sys.stderr)
+        raise SystemExit(1)
+    if response.status_code == 204 or not response.content:
+        return {}
+    return response.json()
+
+
 def app_id() -> str:
     return select_app_id(get("/apps", {"filter[bundleId]": BUNDLE_ID}))
 
@@ -205,6 +336,165 @@ def cmd_next_build(args) -> None:
     print(next_build_number(build_versions(app)))
 
 
+def app_versions(app: str) -> dict:
+    return get(
+        f"/apps/{app}/appStoreVersions",
+        {
+            "limit": 20,
+            "fields[appStoreVersions]":
+                "versionString,appStoreState,appVersionState,releaseType,platform",
+        },
+    )
+
+
+def find_build(app: str, build_number: str) -> str:
+    payload = get(
+        f"/apps/{app}/builds",
+        {"limit": 200, "fields[builds]": "version,processingState"},
+    )
+    return select_build_id(payload, build_number)
+
+
+def cmd_status(args) -> None:
+    """Report what Apple currently holds. Read only, and safe to run anytime."""
+    app = args.app_id or app_id()
+    payload = app_versions(app)
+    rows = (payload.get("data") or [])[:8]
+    if not rows:
+        print("no App Store versions")
+        return
+    for version in rows:
+        attributes = version.get("attributes") or {}
+        print(
+            f"{attributes.get('versionString'):<10} "
+            f"{state_of(version):<28} "
+            f"releaseType={attributes.get('releaseType')}"
+        )
+
+
+def cmd_submit(args) -> None:
+    """Attach a build to a version and send it to Apple for review.
+
+    Set to MANUAL release, so approval leaves it waiting rather than putting it
+    in front of users. `release` is the separate, deliberate second step.
+    """
+    app = args.app_id or app_id()
+    version = select_version(app_versions(app), args.version)
+    version_id = version["id"]
+    state = state_of(version)
+
+    # Before anything is written. The whole point is to be refused loudly
+    # rather than to half-modify a version that was already with Apple.
+    check_submittable(state, args.version)
+
+    build_id = find_build(app, args.build)
+    print(f"version {args.version} ({state}) id={version_id}")
+    print(f"build {args.build} id={build_id}")
+
+    if args.dry_run:
+        print("dry run: nothing was sent to Apple")
+        return
+
+    send(
+        "PATCH",
+        f"/appStoreVersions/{version_id}",
+        {
+            "data": {
+                "type": "appStoreVersions",
+                "id": version_id,
+                "attributes": {"releaseType": "MANUAL"},
+            }
+        },
+    )
+    print("release type set to MANUAL")
+
+    send(
+        "PATCH",
+        f"/appStoreVersions/{version_id}/relationships/build",
+        {"data": {"type": "builds", "id": build_id}},
+    )
+    print(f"build {args.build} attached")
+
+    submission = send(
+        "POST",
+        "/reviewSubmissions",
+        {
+            "data": {
+                "type": "reviewSubmissions",
+                "attributes": {"platform": "IOS"},
+                "relationships": {
+                    "app": {"data": {"type": "apps", "id": app}}
+                },
+            }
+        },
+    )
+    submission_id = submission["data"]["id"]
+
+    send(
+        "POST",
+        "/reviewSubmissionItems",
+        {
+            "data": {
+                "type": "reviewSubmissionItems",
+                "relationships": {
+                    "reviewSubmission": {
+                        "data": {"type": "reviewSubmissions", "id": submission_id}
+                    },
+                    "appStoreVersion": {
+                        "data": {"type": "appStoreVersions", "id": version_id}
+                    },
+                },
+            }
+        },
+    )
+
+    # Creating the submission and adding to it changes nothing on Apple's side
+    # until this flips it. Up to here the run is still abandonable.
+    send(
+        "PATCH",
+        f"/reviewSubmissions/{submission_id}",
+        {
+            "data": {
+                "type": "reviewSubmissions",
+                "id": submission_id,
+                "attributes": {"submitted": True},
+            }
+        },
+    )
+    print(f"submitted for review (submission {submission_id})")
+
+
+def cmd_release(args) -> None:
+    """Release a version Apple has approved and is holding."""
+    app = args.app_id or app_id()
+    version = select_version(app_versions(app), args.version)
+    version_id = version["id"]
+    state = state_of(version)
+
+    check_releasable(state, args.version)
+    print(f"version {args.version} ({state}) id={version_id}")
+
+    if args.dry_run:
+        print("dry run: nothing was sent to Apple")
+        return
+
+    send(
+        "POST",
+        "/appStoreVersionReleaseRequests",
+        {
+            "data": {
+                "type": "appStoreVersionReleaseRequests",
+                "relationships": {
+                    "appStoreVersion": {
+                        "data": {"type": "appStoreVersions", "id": version_id}
+                    }
+                },
+            }
+        },
+    )
+    print(f"{args.version} released to the App Store")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -222,6 +512,33 @@ def main() -> None:
         help="skip the lookup when the caller already resolved it",
     )
     nb.set_defaults(func=cmd_next_build)
+
+    st = sub.add_parser("status", help="show the App Store versions and their states")
+    st.add_argument("--app-id")
+    st.set_defaults(func=cmd_status)
+
+    sb = sub.add_parser(
+        "submit", help="attach a build to a version and submit it for review"
+    )
+    sb.add_argument("--version", required=True, help="marketing version, e.g. 3.14.2")
+    sb.add_argument("--build", required=True, help="build number to attach")
+    sb.add_argument("--app-id")
+    sb.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="resolve and check everything, then stop before writing",
+    )
+    sb.set_defaults(func=cmd_submit)
+
+    rl = sub.add_parser("release", help="release a version Apple has approved")
+    rl.add_argument("--version", required=True, help="marketing version, e.g. 3.14.2")
+    rl.add_argument("--app-id")
+    rl.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="resolve and check everything, then stop before writing",
+    )
+    rl.set_defaults(func=cmd_release)
 
     args = parser.parse_args()
     try:

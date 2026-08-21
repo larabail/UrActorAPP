@@ -17,9 +17,14 @@ import unittest
 
 from appstore import (
     AppStoreError,
+    check_releasable,
+    check_submittable,
     missing_credentials,
     next_build_number,
     select_app_id,
+    select_build_id,
+    select_version,
+    state_of,
 )
 
 
@@ -114,6 +119,122 @@ class MissingCredentials(unittest.TestCase):
             "APP_STORE_CONNECT_ISSUER_ID",
             "APP_STORE_CONNECT_PRIVATE_KEY",
         ])
+
+
+class StateOf(unittest.TestCase):
+    def test_prefers_the_current_vocabulary(self):
+        # Apple reports both, and they disagree: a released version is
+        # READY_FOR_SALE under the old name and READY_FOR_DISTRIBUTION under
+        # the new one.
+        version = {"attributes": {
+            "appVersionState": "READY_FOR_DISTRIBUTION",
+            "appStoreState": "READY_FOR_SALE",
+        }}
+        self.assertEqual(state_of(version), "READY_FOR_DISTRIBUTION")
+
+    def test_falls_back_to_the_old_vocabulary(self):
+        self.assertEqual(
+            state_of({"attributes": {"appStoreState": "READY_FOR_SALE"}}),
+            "READY_FOR_SALE",
+        )
+
+    def test_never_returns_none(self):
+        # A state of None would compare unequal to every guarded state and read
+        # as "not submittable", which is safe, but "UNKNOWN" says why.
+        self.assertEqual(state_of({}), "UNKNOWN")
+
+
+class CheckSubmittable(unittest.TestCase):
+    def test_allows_a_version_being_prepared(self):
+        check_submittable("PREPARE_FOR_SUBMISSION", "3.14.2")
+
+    def test_allows_resubmitting_after_a_rejection(self):
+        check_submittable("REJECTED", "3.14.2")
+        check_submittable("DEVELOPER_REJECTED", "3.14.2")
+
+    def test_refuses_a_version_already_waiting_for_review(self):
+        # The case that matters. Editing a version that is with Apple can
+        # withdraw it, so a run started against the wrong version number would
+        # cancel a submission on its way to approval.
+        with self.assertRaises(AppStoreError) as caught:
+            check_submittable("WAITING_FOR_REVIEW", "3.14.0")
+        self.assertIn("WAITING_FOR_REVIEW", str(caught.exception))
+        self.assertIn("3.14.0", str(caught.exception))
+
+    def test_refuses_a_version_in_review(self):
+        with self.assertRaises(AppStoreError):
+            check_submittable("IN_REVIEW", "3.14.0")
+
+    def test_refuses_a_version_already_live(self):
+        with self.assertRaises(AppStoreError):
+            check_submittable("READY_FOR_DISTRIBUTION", "3.5.1")
+
+    def test_refuses_an_unknown_state(self):
+        # A state this code has never seen is not a licence to write.
+        with self.assertRaises(AppStoreError):
+            check_submittable("UNKNOWN", "3.14.2")
+
+
+class CheckReleasable(unittest.TestCase):
+    def test_allows_an_approved_version_being_held(self):
+        check_releasable("PENDING_DEVELOPER_RELEASE", "3.14.2")
+
+    def test_refuses_a_version_apple_has_not_finished_with(self):
+        for state in ("WAITING_FOR_REVIEW", "IN_REVIEW"):
+            with self.subTest(state=state):
+                with self.assertRaises(AppStoreError):
+                    check_releasable(state, "3.14.2")
+
+    def test_refuses_a_version_already_live(self):
+        with self.assertRaises(AppStoreError):
+            check_releasable("READY_FOR_DISTRIBUTION", "3.5.1")
+
+
+class SelectVersion(unittest.TestCase):
+    PAYLOAD = {"data": [
+        {"id": "aaa", "attributes": {"versionString": "3.14.0"}},
+        {"id": "bbb", "attributes": {"versionString": "3.5.1"}},
+    ]}
+
+    def test_finds_the_requested_version(self):
+        self.assertEqual(select_version(self.PAYLOAD, "3.5.1")["id"], "bbb")
+
+    def test_lists_what_exists_when_the_version_does_not(self):
+        # A promotion stopped by a typo should say what Apple actually holds.
+        with self.assertRaises(AppStoreError) as caught:
+            select_version(self.PAYLOAD, "9.9.9")
+        message = str(caught.exception)
+        self.assertIn("9.9.9", message)
+        self.assertIn("3.14.0", message)
+
+    def test_does_not_match_on_a_prefix(self):
+        # "3.14" must not silently promote "3.14.0".
+        with self.assertRaises(AppStoreError):
+            select_version(self.PAYLOAD, "3.14")
+
+    def test_handles_an_empty_payload(self):
+        with self.assertRaises(AppStoreError):
+            select_version({"data": []}, "3.14.2")
+
+
+class SelectBuildId(unittest.TestCase):
+    PAYLOAD = {"data": [
+        {"id": "b41", "attributes": {"version": "41"}},
+        {"id": "b40", "attributes": {"version": "40"}},
+    ]}
+
+    def test_finds_the_build(self):
+        self.assertEqual(select_build_id(self.PAYLOAD, "41"), "b41")
+
+    def test_accepts_an_integer(self):
+        self.assertEqual(select_build_id(self.PAYLOAD, 40), "b40")
+
+    def test_tolerates_whitespace_from_a_dispatch_form(self):
+        self.assertEqual(select_build_id(self.PAYLOAD, " 41 "), "b41")
+
+    def test_refuses_a_build_that_is_not_there(self):
+        with self.assertRaises(AppStoreError):
+            select_build_id(self.PAYLOAD, "99")
 
 
 if __name__ == "__main__":
