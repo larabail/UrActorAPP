@@ -1,9 +1,9 @@
 // ignore_for_file: use_key_in_widget_constructors, must_be_immutable
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/cast_and_crew.dart';
 import 'package:uractor/common/constants.dart';
+import 'package:uractor/common/media_image.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/common/watch_progress_controller.dart';
 import 'package:uractor/common/watch_progress_view.dart';
@@ -331,7 +331,7 @@ class EpisodeCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(27),
                   image: DecorationImage(
-                    image: CachedNetworkImageProvider(
+                    image: mediaImageProvider(
                         snapshot.data!["still_path"] != null
                             ? IMG_LINK + snapshot.data!['still_path']
                             : UNKNOWN_COVER),

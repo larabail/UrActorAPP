@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/constants.dart';
+import 'package:uractor/common/media_image.dart';
 import 'package:uractor/l10n/l10n.dart';
 
 import 'media_pair_membership.dart';
@@ -76,7 +76,7 @@ Widget getItemContainer(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(27),
             image: DecorationImage(
-              image: CachedNetworkImageProvider(imagePath),
+              image: mediaImageProvider(imagePath),
               fit: BoxFit.fitWidth,
             ),
           ),
@@ -174,7 +174,7 @@ Widget getItemSelectableContainer(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(27),
             image: DecorationImage(
-              image: CachedNetworkImageProvider(
+              image: mediaImageProvider(
                 item!["poster_path"] != null
                     ? IMG_LINK + item!["poster_path"]
                     : type == "media"
