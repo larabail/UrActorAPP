@@ -749,4 +749,15 @@ class SEs extends S {
 
   @override
   String get detailPanePlaceholder => 'Elige algo para verlo aquí';
+
+  @override
+  String get userDisabledError => 'Esa cuenta ha sido deshabilitada.';
+
+  @override
+  String get tooManyRequestsError =>
+      'Demasiados intentos. Espera un momento y vuelve a intentarlo.';
+
+  @override
+  String get networkError =>
+      'No se pudo conectar con el servidor. Comprueba tu conexión.';
 }

@@ -1398,6 +1398,24 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Pick something to see it here'**
   String get detailPanePlaceholder;
+
+  /// Shown when signing in to an account an administrator has disabled.
+  ///
+  /// In en, this message translates to:
+  /// **'That account has been disabled.'**
+  String get userDisabledError;
+
+  /// Shown when Firebase has temporarily locked out sign in after repeated failures.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Wait a moment and try again.'**
+  String get tooManyRequestsError;
+
+  /// Shown when a sign in attempt could not reach Firebase at all.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reach the server. Check your connection.'**
+  String get networkError;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

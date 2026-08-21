@@ -9,6 +9,7 @@ import 'main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'common/layout/breakpoints.dart';
 import 'common/layout/responsive.dart';
+import 'common/auth_error.dart';
 
 class Login extends StatelessWidget {
   const Login({super.key});
@@ -148,32 +149,28 @@ class Login extends StatelessWidget {
                             try {
                               await FirebaseAuth.instance
                                   .signInWithEmailAndPassword(
-                                      email: email, password: password)
-                                  .then((_) {
-                                TextInput.finishAutofillContext();
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => const MyApp()),
-                                );
-                              });
-                            } on FirebaseAuthException catch (e) {
+                                      email: email, password: password);
                               if (!context.mounted) return;
-                              if (e.code == 'user-not-found') {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content:
-                                        Text(S.of(context)!.noUserFoundError),
-                                  ),
-                                );
-                              } else if (e.code == 'wrong-password') {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content:
-                                        Text(S.of(context)!.wrongPasswordError),
-                                  ),
-                                );
-                              }
+                              TextInput.finishAutofillContext();
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const MyApp()),
+                              );
+                            } catch (error, stackTrace) {
+                              // Everything is caught, not just the two codes
+                              // this used to name. Any other failure fell
+                              // through both branches and the button appeared
+                              // to do nothing at all, which is the least
+                              // useful thing it could do.
+                              debugPrint('Sign in failed: $error\n$stackTrace');
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(authFailureMessage(
+                                      context, classifyAuthError(error))),
+                                ),
+                              );
                             } finally {
                               passwordFieldKey.currentState?.clear();
                             }
