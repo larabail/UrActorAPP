@@ -297,6 +297,31 @@ depend on it.
 > been revoked at <https://platform.openai.com/api-keys>**, so the one in
 > history no longer works. Supply the current key by define only.
 
+### OMDB API key
+
+The IMDb rating shown on a title, and the "sort by IMDb rating" option, come
+from OMDB, which needs its own key:
+
+```dart
+const String OMDB_API_KEY = String.fromEnvironment('OMDB_API_KEY');
+```
+
+```bash
+flutter run --dart-define=OMDB_API_KEY=... --dart-define=TMDB_API_KEY=...
+```
+
+Like the TMDB key and unlike the OpenAI one, this is **required**: startup calls
+`assertOmdbApiKey()` and fails loudly without it. That is deliberate. There is no
+skip path around OMDB the way there is around the recommendation call, so a
+missing key does not disable a feature — it makes every rating read `0.0`, which
+looks like data rather than a misconfiguration.
+
+> This key was committed as a hardcoded `defaultValue` in the source and
+> therefore reached every build shipped to Play.
+> **A key compiled into an app is extractable by anyone who downloads it**, and
+> it remains in git history regardless of the working tree. Revoke and reissue it
+> at <https://www.omdbapi.com/apikey.aspx>, then supply the new one by define.
+
 ### Storing the keys locally
 
 Rather than retyping the defines on every command, keep them in a file:
@@ -346,7 +371,8 @@ lib/
 
   objects/                   Media, Movie, TVShow, Person, Playlist, User
   common/
-    constants.dart           TMDB endpoints; API key read from --dart-define
+    constants.dart           TMDB and OMDB endpoints; both keys read from
+                             --dart-define
     utils.dart
     continue_watching.dart   Continue watching ordering and TMDB derivations
     item_container.dart  mediaitembuilder.dart  tabView.dart
@@ -453,7 +479,7 @@ npm install
 npm test
 ```
 
-`flutter test` currently runs 655 tests with no emulator, credentials or
+`flutter test` currently runs 658 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
 `FirestoreCore.db` and `AppHttp.client` — which default to the real
 implementations and are pointed at fakes by the tests.
@@ -497,7 +523,8 @@ only Markdown, docs, or `.gitignore`. The workflow has three jobs:
 - **Analyze, test and build** installs Flutter 3.47.1 plus the pinned Android
   NDK through `.github/actions/setup-flutter-android`, then runs
   `flutter analyze`, `flutter test --coverage`, the coverage floor, and a
-  release app bundle build using `TMDB_API_KEY` and `OPENAI_API_KEY` from
+  release app bundle build using `TMDB_API_KEY`, `OPENAI_API_KEY` and
+  `OMDB_API_KEY` from
   GitHub Actions secrets. Pull request bundles use debug signing and are
   checked to ensure no release signing material is present.
 - **Functions** installs Node 22 dependencies in `functions/`, runs `npm test`,
