@@ -690,12 +690,14 @@ failing the build there would report an unset workflow variable as broken code.
 
 Every merge to `master` that is not docs-only runs
 `.github/workflows/release-internal.yml`. It deploys Cloud Functions to
-`actordb-cf981` first, then analyzes, tests with coverage, builds a signed app
-bundle with a Play-derived version code, generates release notes, uploads to
-Play internal testing, and keeps the bundle and coverage report as artifacts.
-Internal builds are not tagged; the run summary records the version code and
-the commit, which is what a production promotion is given. Production promotion
-is separate and manual.
+`actordb-cf981` first — behind an approval, because that project serves every
+installed app rather than only testers — then analyzes, tests with coverage,
+builds a signed app bundle with a Play-derived version code, generates release
+notes, uploads to Play internal testing, and keeps the bundle and coverage
+report as artifacts. Internal builds are not tagged; the run summary records the
+version code and the commit, which is what a production promotion is given.
+Production promotion is separate and manual. See
+[docs/releases.md](docs/releases.md).
 
 The same merge also runs `.github/workflows/release-testflight.yml`, which
 builds a signed IPA on a macOS runner and uploads it to TestFlight. Its build
