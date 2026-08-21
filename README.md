@@ -174,6 +174,29 @@ that the answer for Windows can be tested from a machine that is not Windows.
   app uses, which is what the desktop SDK reads. Re-running `flutterfire
   configure` and choosing Windows will replace that with a generated entry.
 
+### Building macOS needs the Apple Developer team
+
+Unlike Android and Windows, a macOS build is signed with a real identity
+rather than ad hoc, and the machine building it has to be registered for a Mac
+development profile in team `Q8XY8276AC`.
+
+This is not incidental. Firebase Auth keeps the signed in session in the
+keychain, and a sandboxed macOS app is refused the keychain unless it declares
+a [`keychain-access-groups`
+entitlement](https://firebase.google.com/docs/ios/troubleshooting-faq#macos-keychain-sharing).
+That entitlement can only be granted by a real signing identity, so without it
+the app builds and runs but **nobody can sign in** — every attempt fails with
+`firebase_auth/keychain-error` regardless of the password.
+
+The first build on a new machine fails with "Device … isn't registered in your
+developer account". Open `macos/Runner.xcworkspace`, select the Runner target,
+go to **Signing & Capabilities** and click **Register Device**.
+
+If you are changing this, three things that look like fixes are not: turning
+the sandbox off, signing ad hoc with a team set, and matching the bundle
+identifier to the one in `FirebaseOptions`. All three were tried; the keychain
+access group is the actual requirement.
+
 ## Layout
 
 The app lays itself out from the width of the window rather than from the
