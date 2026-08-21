@@ -27,40 +27,6 @@ void assertTmdbApiKey([String key = TMDB_API_KEY]) {
 
 const String API_KEY = "?api_key=$TMDB_API_KEY";
 
-/// The OMDB API key, supplied at build time the same way as [TMDB_API_KEY]:
-///
-/// ```
-///   flutter run   --dart-define=OMDB_API_KEY=<key>
-///   flutter build --dart-define=OMDB_API_KEY=<key>
-/// ```
-///
-/// This deliberately has no default. It previously fell back to a key written
-/// into the source, which put a live credential in the repository, in every
-/// commit that touched it, and in every bundle shipped to Play — a key compiled
-/// into an app is extractable by anyone who downloads it.
-const String OMDB_API_KEY = String.fromEnvironment('OMDB_API_KEY');
-
-/// Throws a [StateError] when no OMDB key was supplied at build time.
-///
-/// Checked once at startup rather than inside the request, which is what
-/// [assertTmdbApiKey] does and for the same reason: a per-request check fires
-/// in tests that legitimately stub OMDB, before the stub can answer.
-///
-/// OMDB backs only the IMDb rating, so a missing key does not break a screen —
-/// it makes every rating quietly read 0.0, which is precisely the silent
-/// failure worth refusing to ship.
-///
-/// The parameter exists so the check can be tested directly; callers in the
-/// app should use the default.
-void assertOmdbApiKey([String key = OMDB_API_KEY]) {
-  if (key.isNotEmpty) return;
-  throw StateError(
-    'OMDB_API_KEY is empty. Pass the key at build time, for example:\n'
-    '  flutter run --dart-define=OMDB_API_KEY=<your key>\n'
-    'See the Configuration section of README.md.',
-  );
-}
-
 const String IMG_LINK = 'https://image.tmdb.org/t/p/w500/';
 const String MOVIE_LINK = "https://api.themoviedb.org/3/movie/";
 const String TV_SHOW_LINK = "https://api.themoviedb.org/3/tv/";

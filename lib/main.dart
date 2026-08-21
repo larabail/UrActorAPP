@@ -53,7 +53,6 @@ bool reviewed = false;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   assertTmdbApiKey();
-  assertOmdbApiKey();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );

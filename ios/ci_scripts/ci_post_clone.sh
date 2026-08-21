@@ -94,7 +94,7 @@ flutter gen-l10n
 # A missing one is deliberately not fatal: the archive is still valid, it is
 # the app that throws at startup, and failing here would report an unset
 # workflow variable as a broken app. This warning is what tells the two apart.
-for key in TMDB_API_KEY OPENAI_API_KEY OMDB_API_KEY; do
+for key in TMDB_API_KEY OPENAI_API_KEY; do
   eval "value=\${$key:-}"
   if [ -z "$value" ]; then
     echo "WARNING: $key is not set on this Xcode Cloud workflow." >&2
@@ -110,8 +110,7 @@ done
 echo "==> Writing the Flutter build configuration"
 flutter build ios --config-only --release \
   --dart-define=TMDB_API_KEY="${TMDB_API_KEY:-}" \
-  --dart-define=OPENAI_API_KEY="${OPENAI_API_KEY:-}" \
-  --dart-define=OMDB_API_KEY="${OMDB_API_KEY:-}"
+  --dart-define=OPENAI_API_KEY="${OPENAI_API_KEY:-}"
 
 # Repeated deliberately. The step above already triggers one `pod install`, but
 # that is an implementation detail of `flutter build`, and the whole point of

@@ -1,0 +1,26 @@
+# Every change needs review from the owner.
+#
+# This file only has teeth when branch protection requires review from code
+# owners; on its own it requests a review, it does not enforce one. The rule on
+# master is what enforces it. See docs/releases.md.
+#
+# The last matching pattern wins, so the catch-all comes first and the narrower
+# paths below it are there to survive anyone adding a later pattern.
+
+* @larabail
+
+# Release, signing and CI configuration: a change here can ship a build or leak
+# a secret without touching a line of application code.
+/.github/ @larabail
+/android/ @larabail
+/ios/ @larabail
+/tool/ @larabail
+
+# Security rules and the tests that hold them.
+/firestore.rules @larabail
+/firestore-tests/ @larabail
+/functions/ @larabail
+
+# The working agreement and the licence.
+/AGENTS.md @larabail
+/LICENSE @larabail

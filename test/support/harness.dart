@@ -16,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:uractor/common/api/http_client.dart';
+import 'package:uractor/common/firebase/callable_context.dart';
 import 'package:uractor/common/firebase/firestore_core.dart';
 import 'package:uractor/main.dart' as app;
 import 'package:uractor/objects/user.dart';
@@ -54,6 +55,7 @@ class HttpStub {
   /// Every URL requested, in order, so a test can assert on what was called
   /// and how many times without the stub having to predict it.
   final List<Uri> requests = [];
+  final List<String> requestBodies = [];
 
   /// Registers a response for any URL containing [urlContains].
   ///
@@ -83,6 +85,7 @@ class HttpStub {
   http.Client build() {
     return MockClient((request) async {
       requests.add(request.url);
+      requestBodies.add(request.body);
       final url = request.url.toString();
       for (final route in _routes) {
         if (url.contains(route.urlContains)) {
@@ -116,6 +119,16 @@ HttpStub installHttpStub([HttpStub? stub]) {
   AppHttp.client = active.build();
   addTearDown(AppHttp.reset);
   return active;
+}
+
+/// Points callable wrappers at a fake Firebase project and signed-in user.
+void installFakeCallableContext({
+  String projectId = 'test-project',
+  String? idToken = 'test-token',
+}) {
+  CallableContext.projectId = () => projectId;
+  CallableContext.idToken = () async => idToken;
+  addTearDown(CallableContext.reset);
 }
 
 /// Gives the current test a phone-shaped window.

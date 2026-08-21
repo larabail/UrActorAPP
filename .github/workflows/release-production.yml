@@ -35,13 +35,15 @@ permissions:
   contents: write
 
 jobs:
-  # Deployment protection rules (required reviewers) are not available on
-  # private repositories on the Free plan, so authorisation is enforced here
-  # instead. Set the RELEASE_MANAGERS repository variable to a comma-separated
-  # list of logins to change who may release.
+  # Belt and braces. Required reviewers on the `production` environment are the
+  # real gate and cannot be edited away in a pull request; this job is the
+  # cheap, fast half that states the intent in the file and fails before the
+  # environment is ever reached. Set the RELEASE_MANAGERS repository variable to
+  # a comma-separated list of logins to change who may release.
   #
-  # This is weaker than required reviewers: anyone with write access could edit
-  # this file. Branch protection on master is what makes it meaningful.
+  # On its own this is weak: anyone with write access could edit this file.
+  # Required reviewers and branch protection on master are what make it
+  # meaningful.
   authorize:
     name: Check who started this
     runs-on: ubuntu-latest

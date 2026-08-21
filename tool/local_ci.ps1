@@ -53,8 +53,7 @@ $repoRoot = $repoRoot -replace '/', '\'
 # does not build.
 $placeholderDefines = @(
     '--dart-define=TMDB_API_KEY=local-ci-placeholder',
-    '--dart-define=OPENAI_API_KEY=local-ci-placeholder',
-    '--dart-define=OMDB_API_KEY=local-ci-placeholder'
+    '--dart-define=OPENAI_API_KEY=local-ci-placeholder'
 )
 
 function Write-Head([string] $text) {

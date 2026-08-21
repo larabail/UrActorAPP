@@ -28,6 +28,7 @@ void main() {
     firestore = installFakeFirestore();
     user = installTestUser();
     http = installHttpStub();
+    installFakeCallableContext();
     // The seen-with record is read inside a transaction that refuses to
     // create it, so an account that has never tagged anyone must still have
     // the document. Every real account does.
@@ -50,7 +51,8 @@ void main() {
         json: {'id': 27205, 'imdb_id': 'tt1375666', 'runtime': 148});
     http.on('1396-Breaking-Bad?', json: {'id': 1396});
     http.on('/external_ids', json: {'imdb_id': 'tt0903747'});
-    http.on('omdbapi.com', json: {'imdbRating': '8.8', 'Year': '2010'});
+    http.on('omdbLookup',
+        json: {'result': {'imdbRating': '8.8', 'Year': '2010'}});
     http.on('watch/providers', json: {'results': <String, dynamic>{}});
     http.on('/credits?', json: {'cast': [], 'crew': []});
     // A show reaches for `/aggregate_credits` instead, which spans every

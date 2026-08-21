@@ -51,7 +51,34 @@ app.*.map.json
 /android/.gradle/
 
 # security related
+#
+# The repository is public, so anything matched here is one `git add -A` away
+# from being world readable and unrevokable. Patterns are unanchored on purpose:
+# a keystore is just as fatal in android/app as it is at the root.
 /signingkey
+
+# Signing material. Android keystores, Apple certificates, App Store Connect
+# keys and provisioning profiles.
+*.jks
+*.keystore
+*.p12
+*.p8
+*.cer
+*.certSigningRequest
+*.mobileprovision
+key.properties
+
+# Service account credentials. The Play publisher and Firebase admin keys are
+# JSON, and a leaked one is account takeover rather than a rate-limited key.
+service-account*.json
+*-service-account.json
+google-services-account*.json
+firebase-adminsdk*.json
+
+# Environment files.
+.env
+.env.*
+!.env.example
 
 # Local API keys, passed via --dart-define-from-file.
 # Copy dart_defines.example.json to dart_defines.json and fill it in.

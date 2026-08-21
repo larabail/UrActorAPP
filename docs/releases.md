@@ -11,8 +11,8 @@ production is not.
 | Who can run it | anyone merging | anyone merging | you, via environment approval | you, via environment approval |
 | Rollout | all testers | all testers | your choice, 5–100% | Apple reviews, then you release |
 
-The iOS half runs on macOS runners, which are billed at ten times the Linux
-rate and are the one part of this worth a deliberate decision. See
+The iOS half runs on macOS runners, which are slower than Linux by roughly five
+to one and are the one part of this worth a deliberate decision. See
 [Releasing to TestFlight](#releasing-to-testflight). Publishing to the App
 Store is [its own workflow](#releasing-to-the-app-store) and is two runs rather
 than one, because Apple reviews every version by hand before it can go live.
@@ -62,24 +62,27 @@ in either release workflow that a token can write to the repository:
 
 ## Restricting production to you
 
-Deployment protection rules — the **Required reviewers** setting — are not
-available for private repositories on the Free plan, so that section does not
-appear under **Settings → Environments → production**.
+Two independent controls, and it is worth knowing which one is load bearing.
 
-Authorisation is enforced in the workflow instead. A first job checks the login
-that started the run against the `RELEASE_MANAGERS` repository variable,
-defaulting to `larabail`, and fails before anything reaches Play. Set the
-variable under **Settings → Secrets and variables → Actions → Variables** to
-change who may release.
+**Required reviewers** on the `production` environment are the real gate. They
+became available when this repository was made public — deployment protection
+rules are not offered on private repositories on the Free plan — and they are
+configured under **Settings → Environments → production → Required reviewers**.
+A run that targets the environment stops and waits for an approval in the UI.
+Editing a workflow file does not get past it.
 
-Be clear about how strong this is: anyone with write access could edit the
-workflow to remove the check. It stops mistakes and casual runs, not someone
+**The `authorize` job** runs first and checks the login that started the run
+against the `RELEASE_MANAGERS` repository variable, defaulting to `larabail`.
+Set the variable under **Settings → Secrets and variables → Actions →
+Variables** to change who may release.
+
+The second is kept because it fails fast and states the intent in the file, but
+be clear about how strong it is on its own: anyone with write access could edit
+the workflow to remove it. It stops mistakes and casual runs, not someone
 determined who already has write access. The controls that actually matter are
-keeping write access limited and protecting `master`.
+required reviewers, keeping write access limited, and protecting `master`.
 
-The job still targets a `production` environment, so deployments are recorded
-and required reviewers apply automatically if this repository ever moves to a
-plan that offers them, with no change to the workflow.
+Deployments are recorded against the `production` environment either way.
 
 > Repository secrets are readable by any workflow that runs. Treat write access
 > to this repo as equivalent to holding the signing key.
@@ -97,7 +100,12 @@ Set these under **Settings → Secrets and variables → Actions**.
 | `ANDROID_KEY_ALIAS` | `keyAlias` |
 | `TMDB_API_KEY` | TMDB key |
 | `OPENAI_API_KEY` | OpenAI key |
-| `OMDB_API_KEY` | OMDB key, for IMDb ratings |
+
+OMDB is not a build input. Store it as a Firebase Functions secret instead:
+
+```bash
+firebase functions:secrets:set OMDB_API_KEY
+```
 
 Encode the keystore with:
 
@@ -126,14 +134,17 @@ while you are still gathering credentials.
 
 ### What it costs
 
-This is the one real difference from Android, and it is worth deciding
-deliberately. macOS runners bill at **ten times** the Linux rate on a private
-repository, and most of the job is spent compiling gRPC and Firestore from
-source. Expect roughly 150–250 billed minutes per release, against a 2,000
-minute monthly allowance — so about one free release a month, then on the
-order of a dollar each.
+Nothing, in money. Standard GitHub-hosted runners — macOS included — are free
+on public repositories, and this repository is public. While it was private the
+same job billed at ten times the Linux rate and worked out at roughly one free
+release a month, which is why the path filters and the concurrency groups
+elsewhere in this repo exist.
 
-If that is not worth paying on every merge, delete the `push` trigger from
+What it still costs is time. Most of the job is spent compiling gRPC and
+Firestore from source, so expect 20–30 minutes per release against about five
+for the Android half.
+
+If that wait is not worth it on every merge, delete the `push` trigger from
 `.github/workflows/release-testflight.yml` and run it by hand. Nothing else in
 the workflow depends on how it was started.
 
@@ -330,7 +341,8 @@ staging a Play release as `draft` rather than `inProgress`. The second run,
 `release`, is the decision to put it in front of users, and it is a human one.
 
 Run it from Ubuntu rather than macOS: nothing here compiles, it is all API
-calls, so it costs a tenth of what the TestFlight build does.
+calls, so it finishes in a couple of minutes rather than the twenty-odd the
+TestFlight build takes.
 
 ### What it refuses to do
 
