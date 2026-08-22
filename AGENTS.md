@@ -296,7 +296,18 @@ when you genuinely need to commit something that does not build.
   happen to any commit touching any file — a feature branch whose author was
   documenting the trap is the likeliest place for it. It is tempting to
   remember it as "changing a workflow file skips the release", because the one
-  commit it happened to did both; nothing establishes that half.
+  commit it happened to did both. There is now a counterexample: the merge that
+  added `check-release-gap.yml` (`5612c18`) added a workflow file and produced
+  a release run normally. Touching `.github/workflows/` is therefore not
+  sufficient to suppress anything.
+
+  That counterexample comes with one qualification, because the difference
+  matters. `5612c18` was merged with a personal access token. GitHub's
+  documented rule is about *integration* tokens — `GITHUB_TOKEN` and GitHub
+  Apps — so it may still hold for the merge button, and nothing here tests
+  that. What can be said with evidence: **the marker in a commit message is the
+  only confirmed cause**, and if credential-based suppression exists it depends
+  on how the push was made, not on what the diff contained.
 
   And note *where* it bites. A pull request that touches only workflow files
   still gets its checks, and those checks run the edited definitions, because

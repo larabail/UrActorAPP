@@ -1011,10 +1011,23 @@ is no run to be red.
 workflow files still gets its checks, and they run the edited definitions: the
 workflow above has no path filter, and a pull request is evaluated from its own
 merge commit. Workflow changes are self-verifying at review time. It is the
-push to `master` that can silently produce nothing — from a message carrying
-the marker, which is confirmed, or from integration-token suppression, which is
-documented in general but is not what the evidence here isolates. Green checks
-say the workflow is right; they say nothing about whether merging it releases.
+push to `master` that can silently produce nothing. Green checks say the
+workflow is right; they say nothing about whether merging it releases.
+
+**What is actually known about the cause**, since it is easy to learn the wrong
+lesson here:
+
+- **Confirmed:** a commit message mentioning the marker anywhere suppresses
+  every workflow. That is what happened to `7347803`, whose body explains the
+  marker while using it.
+- **Not the cause on its own:** touching `.github/workflows/`. The merge that
+  added this very watchdog (`5612c18`) added a workflow file and produced a
+  release run normally.
+- **Undetermined:** GitHub does document that pushes made with an *integration*
+  token — `GITHUB_TOKEN` or a GitHub App — create no run. `5612c18` was merged
+  with a personal access token, which is not one, so it neither demonstrates
+  nor refutes that path for the merge button. If it applies, it depends on the
+  credential that pushed, not on what the diff touched.
 
 One consequence worth knowing: **`release-internal.yml` cannot verify a change
 to itself.** Its merge is exactly the push that may produce no run, and its
