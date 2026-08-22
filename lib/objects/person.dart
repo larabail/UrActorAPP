@@ -1,13 +1,12 @@
 // ignore: file_names
 // ignore_for_file: non_constant_identifier_names
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/main.dart';
 import 'package:uractor/objects/user.dart';
 import 'dart:convert';
 
 import '../common/constants.dart';
-import '../common/firebase/firestore_core.dart';
+import '../common/people_ranking.dart';
 import '../common/utils.dart';
 import '../common/api/http_client.dart';
 
@@ -96,63 +95,6 @@ class Person {
       }
     }
     return json;
-  }
-
-  Future<int> updateStatsDoc(int score, AppUser currentUser, docName) async {
-    var ActorDoc = FirestoreCore.db.collection(currentUser.uid).doc(docName);
-    Map<Object, Object?> actorStats = {};
-    actorStats[id.toString()] = score;
-    await FirestoreCore.updateDocument(currentUser.uid, docName, actorStats);
-    var doc = await ActorDoc.get();
-    Map info = doc.data() as Map;
-    List actrs = [];
-    info.forEach((key, value) {
-      List item = [value, key];
-      actrs.add(item);
-    });
-    actrs.sort((a, b) => a[0].compareTo(b[0]));
-    actrs = actrs.reversed.toList();
-    int num = 0;
-    for (var act in actrs) {
-      num++;
-      if (act[1].toString() == id.toString()) {
-        break;
-      }
-    }
-    return num;
-  }
-
-  Future<void> fetchNewStats(AppUser currentUser) async {
-    currentUser.favActors = [];
-    currentUser.favDirectors = [];
-    currentUser.favWriters = [];
-    await FirestoreCore.db
-        .collection(currentUser.uid)
-        .get()
-        .then((QuerySnapshot querySnapshot) {
-      for (var doc in querySnapshot.docs) {
-        if (doc.id == "FavActors" && currentUser.favActors.isEmpty) {
-          Map tempFavActors = doc.data() as Map;
-          currentUser.favActors = tempFavActors.entries
-              .map((entry) => [entry.value, entry.key])
-              .toList();
-          currentUser.favActors.sort((a, b) => b[0].compareTo(a[0]));
-        } else if (doc.id == "FavDirectors" &&
-            currentUser.favDirectors.isEmpty) {
-          Map tempFavDirectors = doc.data() as Map;
-          currentUser.favDirectors = tempFavDirectors.entries
-              .map((entry) => [entry.value, entry.key])
-              .toList();
-          currentUser.favDirectors.sort((a, b) => b[0].compareTo(a[0]));
-        } else if (doc.id == "FavWriters" && currentUser.favWriters.isEmpty) {
-          Map tempFavWriters = doc.data() as Map;
-          currentUser.favWriters = tempFavWriters.entries
-              .map((entry) => [entry.value, entry.key])
-              .toList();
-          currentUser.favWriters.sort((a, b) => b[0].compareTo(a[0]));
-        }
-      }
-    });
   }
 
   List getCastStats(AppUser currentUser, List cast, String type) {
@@ -284,6 +226,24 @@ class Person {
     ];
   }
 
+  /// Everything the person page shows: their filmography, how much of it the
+  /// viewer has seen, and where they place among the viewer's favourites.
+  ///
+  /// Read-only. This used to also SAVE the scores it worked out, and being the
+  /// only thing that ever did so made the favourites list a record of whose
+  /// page had been opened rather than of what had been watched: an actor
+  /// nobody tapped never appeared, and a score already stored stayed frozen at
+  /// the moment of that visit. `recomputePeopleScores` in
+  /// `functions/index.js` now derives all three lists from the library itself,
+  /// so this only has to read the standing they already have.
+  ///
+  /// The score computed here is still the one the ranking uses, because it is
+  /// the only one that accounts for a title marked seen since the server last
+  /// ran. Both apply the same weights, so they agree the rest of the time --
+  /// with one exception worth knowing about: the server only counts the top
+  /// of a title's billing, and this works from a filmography that carries no
+  /// billing at all, so a character actor can read a point or two higher here
+  /// than the profile list has them.
   Future<Map> getPersonData(AppUser currentUser, Map oscars) async {
     int scoreActor = 0;
     int scoreDirector = 0;
@@ -343,20 +303,18 @@ class Person {
       json["oscars"] = {};
     }
 
-    int tempNum = await updateStatsDoc(
-        scoreDirector + tempScoreCrew, currentUser, "FavDirectors");
+    int tempNum = rankOf(currentUser.favDirectors, id.toString(),
+        scoreDirector + tempScoreCrew);
     json["director_ranking"] = tempNum;
     json["allDirMovies"] = allDirMovies;
 
-    tempNum = await updateStatsDoc(
-        scoreActor + tempScoreActor, currentUser, "FavActors");
+    tempNum =
+        rankOf(currentUser.favActors, id.toString(), scoreActor + tempScoreActor);
     json["actor_ranking"] = tempNum;
 
-    tempNum = await updateStatsDoc(
-        scoreWriter + tempScoreWriter, currentUser, "FavWriters");
+    tempNum = rankOf(
+        currentUser.favWriters, id.toString(), scoreWriter + tempScoreWriter);
     json["writer_ranking"] = tempNum;
-
-    await fetchNewStats(currentUser);
 
     personStats["scoreActor"] = scoreActor + tempScoreActor;
     personStats["scoreDirector"] = scoreDirector + tempScoreCrew;

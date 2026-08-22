@@ -254,6 +254,17 @@ OMDB is not a build input. Store it as a Firebase Functions secret instead:
 firebase functions:secrets:set OMDB_API_KEY
 ```
 
+TMDB needs both. The app compiles its key in from the build define above, and
+`recomputePeopleScores` reads credits server side, so the same key also has to
+exist as a Firebase secret:
+
+```bash
+firebase functions:secrets:set TMDB_API_KEY
+```
+
+Without it the function logs that the secret is not configured and returns,
+leaving everyone's favourite actors, directors and writers as they were.
+
 Encode the keystore with:
 
 ```bash

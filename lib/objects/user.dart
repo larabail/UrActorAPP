@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../common/firebase/playlist_service.dart';
+import '../common/firebase/people_scores_service.dart';
 import '../main.dart';
 import '../common/firebase/firestore_core.dart';
 
@@ -210,6 +211,7 @@ class AppUser {
       }
     });
     playlists = await PlaylistService.fetchPlaylists(uid);
+    await PeopleScoresService.requestInitialBuild(uid);
     await FirestoreCore.db
         .collection("Oscars")
         .get()

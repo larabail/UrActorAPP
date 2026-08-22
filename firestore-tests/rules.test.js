@@ -836,3 +836,77 @@ describe('I. Oscars', () => {
     await assertFails(deleteDoc(doc(bob, 'Oscars/2024')));
   });
 });
+
+describe('J. Cached credits', () => {
+  beforeEach(async () => {
+    await seed(async (db) => {
+      await setDoc(doc(db, 'Credits/Movies_550'), { cast: ['287'] });
+    });
+  });
+
+  it('does not let a signed-in user read cached credits', async () => {
+    // Filled and read only by recomputePeopleScores, which uses admin
+    // credentials. Nothing in the app reads it, so nothing needs access.
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(getDoc(doc(bob, 'Credits/Movies_550')));
+  });
+
+  it('does not let a signed-in user write cached credits', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(setDoc(doc(bob, 'Credits/Movies_807'), { cast: ['1'] }));
+    await assertFails(updateDoc(doc(bob, 'Credits/Movies_550'), { cast: [] }));
+    await assertFails(deleteDoc(doc(bob, 'Credits/Movies_550')));
+  });
+});
+
+describe('K. People score jobs', () => {
+  it('lets a user mark their own scores as needing a recompute', async () => {
+    const alice = ctxFor(ALICE).firestore();
+    await assertSucceeds(setDoc(doc(alice, `PeopleScoreJobs/${ALICE}`), {
+      dirty: true, dirtyAt: new Date(),
+    }));
+    await assertSucceeds(getDoc(doc(alice, `PeopleScoreJobs/${ALICE}`)));
+  });
+
+  it('lets a user re-mark an existing job the worker has already run', async () => {
+    await seed(async (db) => {
+      await setDoc(doc(db, `PeopleScoreJobs/${ALICE}`), {
+        dirty: false, dirtyAt: new Date(), lastRunAt: new Date(), lastError: null,
+      });
+    });
+    const alice = ctxFor(ALICE).firestore();
+    await assertSucceeds(updateDoc(doc(alice, `PeopleScoreJobs/${ALICE}`), {
+      dirty: true, dirtyAt: new Date(),
+    }));
+  });
+
+  it('does not let a user clear their own job', async () => {
+    // Only the worker may say the work is done; otherwise a client could make
+    // itself be skipped and never be rescored.
+    await seed(async (db) => {
+      await setDoc(doc(db, `PeopleScoreJobs/${ALICE}`), {
+        dirty: true, dirtyAt: new Date(),
+      });
+    });
+    const alice = ctxFor(ALICE).firestore();
+    await assertFails(updateDoc(doc(alice, `PeopleScoreJobs/${ALICE}`), {
+      dirty: false,
+    }));
+    await assertFails(deleteDoc(doc(alice, `PeopleScoreJobs/${ALICE}`)));
+  });
+
+  it('does not let a user forge the bookkeeping the worker writes', async () => {
+    const alice = ctxFor(ALICE).firestore();
+    await assertFails(setDoc(doc(alice, `PeopleScoreJobs/${ALICE}`), {
+      dirty: true, dirtyAt: new Date(), lastRunAt: new Date(),
+    }));
+  });
+
+  it('does not let a user touch anyone else\'s job', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(setDoc(doc(bob, `PeopleScoreJobs/${ALICE}`), {
+      dirty: true, dirtyAt: new Date(),
+    }));
+    await assertFails(getDoc(doc(bob, `PeopleScoreJobs/${ALICE}`)));
+  });
+});

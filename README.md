@@ -107,6 +107,11 @@ window rather than the device it is on (see [Platforms](#platforms) and
 - Set a profile photo — pick from the device, crop it, upload to Firebase
   Storage (`lib/profile.dart`).
 - Viewing stats rendered as charts (`fl_chart`, in `lib/profile.dart`).
+- Favourite actors, directors and writers, worked out from what you have
+  watched, favourited and rewatched rather than from whose page you happened
+  to open. A scheduled Cloud Function walks your library whenever it changes
+  and rewrites the three lists, so someone you have never looked up still
+  ranks (`functions/people_scores.js`, `lib/profile.dart`).
 - English and Spanish, switchable at runtime from settings
   (`lib/popups/settings_pop_up.dart`).
 
@@ -504,6 +509,18 @@ naming the flag. That is deliberate — without it, every TMDB request comes bac
 `test/constants_test.dart` asserts that no endpoint hardcodes a key, so a
 regression fails the test suite rather than reaching a release.
 
+The same key is also needed **server side**, as a Firebase secret, because
+`recomputePeopleScores` fetches credits without a device involved:
+
+```bash
+firebase functions:secrets:set TMDB_API_KEY
+```
+
+Unlike OMDB this one is genuinely both: the app cannot route every TMDB request
+through a function, so the build define stays. Without the secret the function
+logs that it is not configured and returns, and the favourite people lists stop
+updating while the rest of the app carries on.
+
 > A key was previously committed to this repository and is still reachable in
 > git history. **That key has since been revoked and reissued at TMDB**, so the
 > one in history is dead. Keep passing the live key by define — never commit
@@ -644,7 +661,7 @@ test/                        Flutter tests
 
 ## Cloud Functions
 
-`functions/` holds four gen 2 Cloud Functions for project `actordb-cf981`, all
+`functions/` holds six gen 2 Cloud Functions for project `actordb-cf981`, all
 running on Node 22 in `us-central1`:
 
 - `omdbLookup` is a callable function. It requires auth, accepts only a narrow
@@ -661,6 +678,15 @@ running on Node 22 in `us-central1`:
   the projection is already current to avoid recursion.
 - `cleanupJoinAttempts` is a scheduled function that runs every 24 hours and
   deletes stale join-throttle documents.
+- `markPeopleScoresDirty` is a Firestore `onDocumentWritten` trigger on
+  `{uid}/{docId}`. Every user owns a top-level collection named after their
+  uid, so it has to watch the whole database and filter; a write to one of the
+  six library documents sets a flag in `PeopleScoreJobs/{uid}` and everything
+  else returns without touching Firestore.
+- `recomputePeopleScores` is a scheduled function that runs every five minutes
+  and rebuilds `FavActors`, `FavDirectors` and `FavWriters` for the users
+  flagged since the last run. See
+  [Favourite actors, directors and writers](#favourite-actors-directors-and-writers).
 
 Deploy from `functions/` with the Firebase CLI after authenticating to the
 Firebase project:
@@ -668,9 +694,64 @@ Firebase project:
 ```bash
 npm install
 firebase functions:secrets:set OMDB_API_KEY
+firebase functions:secrets:set TMDB_API_KEY
 npm test
 npm run deploy
 ```
+
+### Favourite actors, directors and writers
+
+The three lists on your profile used to be written by the person page: opening
+someone's profile fetched their filmography, intersected it with your library
+and saved the score. That made the ranking a record of whose page you had
+opened rather than of what you had watched. An actor you never tapped never
+appeared however many of their films you had seen, a score you did have stayed
+frozen at the moment of that visit, and unfavouriting a film never took the
+points back.
+
+`recomputePeopleScores` runs it the other way round, over your own library, so
+every person who could rank is reached whether or not anyone ever looked them
+up:
+
+1. `markPeopleScoresDirty` flags you when `Movies`, `TVShows`, `Favorites`,
+   `Watchlist`, `Rewatched` or `RewatchedTV` changes — including when a friend
+   marks something seen for you.
+2. Every five minutes the worker takes the oldest flagged users and reads each
+   library in one round trip. The flag is cleared only once the scores are
+   stored, and only when nothing re-flagged the user in the meantime — so a
+   run killed by its timeout leaves the user queued rather than marked done,
+   and a write that lands mid-run is picked up next time rather than lost.
+3. Each title's cast and crew is resolved through `Credits/{type}_{id}`, a
+   cache shared by every user: a title is fetched from TMDB once, ever. Shows
+   use `/aggregate_credits`, since `/tv/{id}/credits` only answers for the
+   newest season. An id TMDB does not recognise is cached as missing so it is
+   not asked about again, and one that keeps failing for some other reason is
+   written off after five attempts — nothing is stored until every title
+   resolves, so a single broken id would otherwise hold a whole library back
+   forever. A rejected key is the one failure never blamed on a title: it
+   stops the run and is logged as an error, because it would otherwise write
+   off every title in the database.
+4. Every title scores as it always did — 2 for having seen it, or the rewatch
+   count when higher, 3 more when it is a favourite, 1 when it is only on the
+   watchlist — and those points go to everyone the title credits.
+5. The three documents are written whole, not merged, so someone who has
+   dropped out of your library loses their score instead of keeping the one
+   they last had.
+
+A library too large to resolve in one run is not written at all: the run banks
+the credits it fetched, leaves you flagged, and the next run finishes from a
+warmer cache. A ranking computed from half a library would be wrong rather than
+incomplete.
+
+The person page still computes its own score locally, because that is the only
+value that accounts for a film marked seen since the worker last ran, and ranks
+against the stored lists (`lib/common/people_ranking.dart`). It no longer
+writes anything.
+
+Accounts that predate all this have scores from the old person page and no job
+record, so `PeopleScoresService` asks for one rebuild the first time such an
+account loads (`lib/common/firebase/people_scores_service.dart`). The job
+record's existence is the marker, so it happens exactly once per account.
 
 Push notifications are not implemented. The old friend-request notification
 trigger was removed because the app never registers an FCM token and the legacy
@@ -725,7 +806,7 @@ cd ..
 node --test web/downloads/*.test.js
 ```
 
-`flutter test` currently runs 823 tests with no emulator, credentials or
+`flutter test` currently runs 847 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
 `FirestoreCore.db` and `AppHttp.client` — and callable context through
 `CallableContext`. They default to the real implementations and are pointed at
@@ -740,11 +821,15 @@ media and person data objects, every popup under `lib/popups` except the
 profile section editor, the reviews and Continue watching screens, and the
 pre-commit hook itself.
 
-`npm test` in `functions/` runs the Node 22 unit tests for the playlist and
-OMDB helper modules.
+`npm test` in `functions/` runs the Node 22 unit tests for the playlist, OMDB
+and people-score helper modules. `npm run test:emulator` additionally runs the
+end-to-end suite against the Firestore, Functions and Pub/Sub emulators, which
+needs a JDK on the PATH. That run stands a stub in front of TMDB and points the
+functions at it with `TMDB_API_BASE_URL`, so nothing in CI touches the real,
+rate-limited API.
 
 `npm test` in `firestore-tests/` starts the Firestore emulator with
-`firebase emulators:exec` and runs the rules suite. It currently reports 76
+`firebase emulators:exec` and runs the rules suite. It currently reports 84
 passing tests. If port 8080 is already held by an emulator you started
 separately, run `npx mocha rules.test.js --timeout 20000` from
 `firestore-tests/` instead.
