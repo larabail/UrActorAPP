@@ -57,9 +57,9 @@ combination neither branch tested on its own — so they are repeated, on the
 runner where they cost five minutes rather than being paid three times over on
 two macOS runners and a Windows one.
 
-The Cloud Functions deploy waits on `verify` too, and every platform stage waits
+The backend deploy waits on `verify` too, and every platform stage waits
 on the deploy. See
-[The Cloud Functions deploy](#the-cloud-functions-deploy-only-runs-when-the-functions-change).
+[The Firebase backend deploy](#the-firebase-backend-deploy-only-runs-when-the-backend-changes).
 
 Every release runs inside a Play *edit transaction*: open, change, commit.
 Nothing is visible on Play until the commit succeeds, so a failed run cannot
@@ -181,7 +181,7 @@ required reviewers, keeping write access limited, and protecting `master`.
 
 Deployments are recorded against the `production` environment either way.
 
-## The Cloud Functions deploy only runs when the functions change
+## The Firebase backend deploy only runs when the backend changes
 
 `release-internal.yml` runs on every merge to `master`, and its three platform
 stages are limited to people who opted in: Play's internal track, TestFlight, or
@@ -189,24 +189,76 @@ downloading an installer from the run. The `functions` job is not. It deploys to
 the live `actordb-cf981` project that every installed app talks to, including
 everyone on the App Store and on Play production.
 
+It deploys three things in one command — the Cloud Functions, `firestore.rules`
+and `firestore.indexes.json`:
+
+```
+firebase deploy --only functions,firestore:rules,firestore:indexes
+```
+
+For most of this pipeline's life it deployed only the first. The other two were
+in the repository, reviewed like any other file, and shipped by nobody: no
+workflow read them and no Firebase project ever received them. Nothing reports
+that, because a rule and an index have no build step to fail — the first sign
+is production behaving as though the file does not exist, which is exactly what
+it does. `recomputePeopleScores` was merged together with the composite index
+its `dirty`/`dirtyAt` query needs, and then failed on every five-minute run
+with `9 FAILED_PRECONDITION: The query requires an index` until someone pushed
+the index by hand. The live ruleset had drifted the same way: when this was
+found it was several days behind `firestore.rules`, missing blocks that had
+been merged well before.
+
+One command rather than three sequential ones. `firebase deploy` orders a
+combined deploy itself and puts rules and indexes ahead of functions, which is
+the order that matters: a function that reaches the project before its index
+fails until the index catches up, never the reverse. Two hand-written steps
+would only add a way to get that wrong.
+
+The job key is still `functions`, although the job is no longer only about
+them. Four platform stages name it in `needs:`, each with a comment about the
+expression below, and this file quotes it too; renaming it buys a more accurate
+word in nine places nobody reads, for nine chances to leave a reference
+dangling. Its display name says what it does.
+
+The job now runs the `firestore-tests/` rules suite before deploying, alongside
+the functions tests it already ran, on the same reasoning: a merge commit is a
+combination neither branch tested alone, and this job pushes the result at the
+live project. It is also the only place that suite runs — `pr.yml` has no job
+for it — so a rules change gets its one automated check on the way out of the
+door. The suite needs a JDK for the Firestore emulator, which is why the job
+sets up Temurin 21 to match the pull request workflow.
+
+### Indexes are accepted, not finished
+
+`firebase deploy` returns once Firestore has accepted an index definition, not
+once the index is READY, and building one over a large collection takes
+minutes. A function deployed in the same run can therefore fail for a few
+minutes afterwards with the same `FAILED_PRECONDITION` a missing index gives.
+Check the Firestore console before concluding the file never shipped. The
+workflow does not poll for READY: that wait has no upper bound, and holding
+every platform stage behind something that resolves itself would cost the whole
+release.
+
+### The path filter
+
 It used to wait for a manual approval on every merge. That was one click per
-merge whether or not the merge had anything to do with the functions, and most
-do not — so the click became routine, and a gate people click through without
+merge whether or not the merge had anything to do with the backend, and most do
+not — so the click became routine, and a gate people click through without
 reading is not a gate.
 
 The approval has been replaced by the path filter the previous version of this
 section recommended. `preflight` compares the push against the commit `master`
 was on before it, and the deploy simply does not happen unless something under
-`functions/` changed. That removes the noise rather than the caution: the
-deploys that do run are the ones worth watching, and there are far fewer of
-them.
+`functions/`, `firestore.rules` or `firestore.indexes.json` changed. That
+removes the noise rather than the caution: the deploys that do run are the ones
+worth watching, and there are far fewer of them.
 
 A run that cannot work out what changed — a manual `workflow_dispatch`, a first
 push, or a `before` commit missing from the clone — deploys rather than
 skipping. Guessing wrong in that direction costs a redundant deploy; guessing
 wrong the other way silently withholds a change somebody asked for.
 
-Order still matters when it does run: functions deploy before **any** app is
+Order still matters when it does run: the backend deploys before **any** app is
 uploaded, because a build that reaches testers expecting a callable that is not
 deployed yet fails on the device — as true on iOS and on the desktop as it is on
 Android. All three stages therefore wait on it, where previously only the
@@ -216,7 +268,7 @@ Waiting on a job that is usually skipped needs saying out loud, because the
 obvious way to write it is wrong. GitHub skips every job that `needs` a skipped
 one unless the dependent job names a status check function, so with the plain
 default the path filter above would have skipped the whole release on every
-merge that left `functions/` alone — which is most of them. The platform stages
+merge that left the backend alone — which is most of them. The platform stages
 therefore carry:
 
 ```yaml

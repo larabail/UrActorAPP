@@ -718,6 +718,18 @@ npm test
 npm run deploy
 ```
 
+That command deploys only the functions. `firestore.rules` and
+`firestore.indexes.json` are deployed from the repository root, and a release
+now ships all three together — see
+[CI and releases](#ci-and-releases). Deploying a function that queries a
+collection without the index its query needs leaves it failing on every run
+with `FAILED_PRECONDITION`, so deploy the whole backend rather than the
+functions alone:
+
+```bash
+firebase deploy --only functions,firestore:rules,firestore:indexes
+```
+
 ### Favourite actors, directors and writers
 
 The three lists on your profile used to be written by the person page: opening
@@ -848,10 +860,12 @@ functions at it with `TMDB_API_BASE_URL`, so nothing in CI touches the real,
 rate-limited API.
 
 `npm test` in `firestore-tests/` starts the Firestore emulator with
-`firebase emulators:exec` and runs the rules suite. It currently reports 84
-passing tests. If port 8080 is already held by an emulator you started
-separately, run `npx mocha rules.test.js --timeout 20000` from
-`firestore-tests/` instead.
+`firebase emulators:exec` and runs the rules suite. It currently reports 83
+passing tests, and needs a JDK on the PATH like the functions emulator suite
+does. If port 8080 is already held by an emulator you started separately, run
+`npx mocha rules.test.js --timeout 20000` from `firestore-tests/` instead. No
+pull request check runs this suite; the release pipeline does, immediately
+before it deploys the rules.
 
 `node --test web/downloads/*.test.js` runs the downloads page's release logic — which
 installer belongs to which platform, which of two versions is newer, and what
@@ -950,8 +964,9 @@ itself.
 Every merge to `master` that is not docs-only runs
 `.github/workflows/release-internal.yml`, the one pipeline that puts a build in
 front of testers on all three platforms. It analyzes and tests once, on Linux,
-then deploys Cloud Functions to `actordb-cf981`, and only then starts the three
-platform stages:
+then deploys the Firebase backend to `actordb-cf981` — the Cloud Functions,
+`firestore.rules` and `firestore.indexes.json`, in one `firebase deploy` — and
+only then starts the three platform stages:
 
 1. **Android** builds a signed app bundle with a Play-derived version code,
    generates release notes and uploads to Play internal testing.
@@ -969,6 +984,24 @@ The numbering is the order they are reported in, not the order they run in: all
 three start together, so a release costs roughly twenty-five minutes rather than
 the fifty-five they would add up to. A stage whose secrets are missing is
 skipped rather than failed, and the run summary states which platforms shipped.
+
+The rules and the indexes ship with the functions because until this was fixed
+they shipped with nothing. `firebase deploy --only functions` never read either
+file, so a security rule or a composite index could be written, reviewed and
+merged and still not exist in the project, with nothing to say so — neither
+file has a build step it can fail. It is not hypothetical: a scheduled function
+was merged alongside the composite index its query needs, and failed on every
+five-minute run with `FAILED_PRECONDITION` until the index was deployed by
+hand. The deploy stage still does nothing at all unless the push changed
+`functions/`, `firestore.rules` or `firestore.indexes.json`, and it now runs
+the `firestore-tests/` rules suite as well as the functions tests first, since
+a mistake in the rules reaches every installed app rather than one screen.
+
+Worth knowing when reading a failure shortly after a release: `firebase deploy`
+returns once Firestore has accepted an index, not once the index is built, and
+building one over a large collection takes minutes. A `FAILED_PRECONDITION`
+naming a required index, in the first few minutes after a deploy that added
+one, is usually that index still building rather than a missing one.
 
 Internal builds are not tagged; that summary records the version code and the
 commit, which is what a production promotion is given. Production is a separate,
