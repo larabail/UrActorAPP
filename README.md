@@ -724,6 +724,12 @@ would report a shipped release as a broken one.
 
 - [`tool/play.py`](tool/play.py) — Google Play release helper used by the
   release workflows and runnable by hand. See [Releasing](docs/releases.md).
+- [`tool/generate_desktop_icons.py`](tool/generate_desktop_icons.py) — derives
+  the macOS and Windows app icons from the iOS one. `flutter create` writes a
+  Flutter logo into `macos/` and `windows/` and nothing replaces it, so both
+  desktop builds shipped with the toolchain placeholder until this existed. Run
+  it after changing the iOS icon; it needs `pip3 install --user Pillow` and is
+  deliberately not wired into CI, because the icons it produces are committed.
 - [`tools/sync-oscars`](tools/sync-oscars/README.md) — a standalone Node 18+
   script (no npm dependencies) that populates the Firestore `Oscars`
   collection from the UrActor API, resolving winners to TMDB ids. It has its
