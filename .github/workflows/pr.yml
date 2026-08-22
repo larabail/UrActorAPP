@@ -29,8 +29,42 @@ permissions:
   contents: read
 
 jobs:
+  # What the rest of the workflow is allowed to skip.
+  #
+  # `web/downloads/` is a static site deployed to Firebase Hosting. The Flutter
+  # build never reads it and no release packages it, so analyzing, testing and
+  # building the app to check a change to a web page spends about nine minutes
+  # proving something already known.
+  #
+  # This is a job rather than a `paths-ignore:` on the workflow, and the jobs
+  # below still run and report with their real work skipped, because
+  # "Analyze, test and build", "Functions" and "Version" are required checks on
+  # `master`. A workflow filtered out by paths reports nothing at all, and a
+  # required check that never reports can never be satisfied -- the pull
+  # request is then blocked forever with nothing to click. The iOS workflow was
+  # already bitten by exactly this and the reasoning is in the README.
+  scope:
+    name: Scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      app: ${{ steps.scope.outputs.app }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The comparison is against the merge base, which a shallow clone
+          # does not have.
+          fetch-depth: 0
+
+      - id: scope
+        uses: ./.github/actions/changed-scope
+        with:
+          base-sha: ${{ github.event.pull_request.base.sha }}
+          head-sha: ${{ github.event.pull_request.head.sha }}
+
   verify:
     name: Analyze, test and build
+    needs: scope
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -57,17 +91,21 @@ jobs:
           ./actionlint -shellcheck= -color
 
       - uses: ./.github/actions/setup-flutter-android
+        if: needs.scope.outputs.app == 'true'
 
       - name: Analyze
+        if: needs.scope.outputs.app == 'true'
         run: flutter analyze
 
       - name: Test
+        if: needs.scope.outputs.app == 'true'
         run: flutter test --coverage
 
       # The floor is enforced here rather than only on the release workflow so
       # that a change which drops coverage is blocked before it merges, not
       # reported once it is already on master.
       - name: Coverage summary
+        if: needs.scope.outputs.app == 'true'
         run: |
           # pipefail matters here: without it tee returns 0 and the coverage
           # floor below would never fail the build.
@@ -78,7 +116,7 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload coverage
-        if: always()
+        if: always() && needs.scope.outputs.app == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: coverage
@@ -91,6 +129,7 @@ jobs:
       # signing, which cannot be published but still proves the release build
       # compiles, packages and resolves its native dependencies.
       - name: Build app bundle
+        if: needs.scope.outputs.app == 'true'
         env:
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -100,6 +139,7 @@ jobs:
             --dart-define=OPENAI_API_KEY="$OPENAI_API_KEY"
 
       - name: Confirm the bundle is not release signed
+        if: needs.scope.outputs.app == 'true'
         run: |
           set -euo pipefail
           if [ -f android/key.properties ] || [ -f android/app/upload-keystore.jks ]; then
@@ -107,12 +147,29 @@ jobs:
             exit 1
           fi
 
+      # The job still reports, which is the point: it is a required check, and
+      # a check that does not report cannot be satisfied.
+      - name: Say why nothing was built
+        if: needs.scope.outputs.app != 'true'
+        run: |
+          set -euo pipefail
+          {
+            echo '### Nothing the app could notice'
+            echo ''
+            echo 'Only `web/downloads/` changed, which is a static site served'
+            echo 'by Firebase Hosting. No Flutter build reads it and no release'
+            echo 'packages it, so analyze, the tests and the bundle would prove'
+            echo 'something already known. The page has its own job, and its'
+            echo 'own tests.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
   # The functions are deployed straight from this directory, so a syntax error
   # or a failing helper would only show up at release time otherwise. Kept as a
   # separate job because it shares nothing with the Flutter build and finishes
   # in a fraction of the time.
   functions:
     name: Functions
+    needs: scope
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -122,21 +179,25 @@ jobs:
       # Matches the "engines" field in functions/package.json, which is also
       # the runtime Cloud Functions gives the deployed code.
       - uses: actions/setup-node@v4
+        if: needs.scope.outputs.app == 'true'
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: functions/package-lock.json
 
       - uses: actions/setup-java@v4
+        if: needs.scope.outputs.app == 'true'
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Install
+        if: needs.scope.outputs.app == 'true'
         working-directory: functions
         run: npm ci
 
       - name: Test
+        if: needs.scope.outputs.app == 'true'
         working-directory: functions
         run: npm run test:emulator
 
@@ -144,6 +205,7 @@ jobs:
       # loads index.js to discover the exported functions, and anything that
       # throws on load fails the deploy after the app has already been built.
       - name: Confirm the entrypoint loads
+        if: needs.scope.outputs.app == 'true'
         working-directory: functions
         run: node -e "require('./index.js')"
 
@@ -238,8 +300,20 @@ jobs:
   # That is about five minutes, in parallel with a macOS build that was already
   # running on them, so in wall-clock terms it is free. Runner minutes are free
   # on a public repository.
+  #
+  # The one exception is the `if:` below, which is a condition on the job rather
+  # than a filter on the workflow. That difference is the whole point: a job
+  # skipped by an `if:` still reports a conclusion, so branch protection stays
+  # satisfiable, while a workflow skipped by paths reports nothing and blocks.
   ios:
     name: Build and launch on a simulator
+    needs: scope
+    # Skipped whole rather than run with its steps disabled, unlike the
+    # required Linux jobs above, because this one holds a macOS runner:
+    # starting one to skip everything on it costs a scarce minute to prove
+    # nothing. A skipped job still reports, so this stays safe if the check is
+    # ever made required.
+    if: needs.scope.outputs.app == 'true'
     # macos-26 rather than macos-15, matching the release pipeline. The two
     # have to agree: macos-15 defaults to Xcode 16.4, and a pull request that
     # passed there could still be rejected at upload for the SDK it was built
