@@ -85,21 +85,19 @@ class Seasons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // One season per row, so the card is the list item itself. Wrapping it in
+    // a Row first — a leftover from when this was a one-column grid — handed
+    // the card an unbounded width, because a Row measures a non-flexible child
+    // against infinity. The card's own Row has an Expanded in it, which cannot
+    // be laid out against an infinite width, so every season threw during
+    // layout and the whole guide came up blank.
     return ListView.builder(
-      itemCount: (items.reversed.toList().length / 1).ceil(),
-      itemBuilder: (context, index) {
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: List.generate(1, (i) {
-            final itemIndex = index * 1 + i;
-            if (itemIndex < items.length) {
-              final item = items[itemIndex] as Map;
-              return ItemCard(info: item, show: show, progress: progress);
-            }
-            return const SizedBox.shrink(); // Return an empty widget if no item
-          }),
-        );
-      },
+      itemCount: items.length,
+      itemBuilder: (context, index) => ItemCard(
+        info: items[index] as Map,
+        show: show,
+        progress: progress,
+      ),
     );
   }
 }
@@ -247,25 +245,17 @@ class Episodes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The same shape, and the same reason, as [Seasons] above: the card is the
+    // list item, so it is measured against the width of the list rather than
+    // against infinity.
     return ListView.builder(
-      itemCount: (seasonData["episode_count"] / 1).ceil(),
-      itemBuilder: (context, index) {
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: List.generate(1, (i) {
-            final itemIndex = index * 1 + i;
-            if (itemIndex < seasonData["episode_count"]) {
-              return EpisodeCard(
-                seasonInfo: seasonData,
-                show: show,
-                episode: itemIndex + 1,
-                progress: progress,
-              );
-            }
-            return const SizedBox.shrink();
-          }),
-        );
-      },
+      itemCount: (seasonData["episode_count"] as num? ?? 0).toInt(),
+      itemBuilder: (context, index) => EpisodeCard(
+        seasonInfo: seasonData,
+        show: show,
+        episode: index + 1,
+        progress: progress,
+      ),
     );
   }
 }
