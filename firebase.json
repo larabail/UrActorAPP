@@ -36,7 +36,9 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "**/*.test.js",
+      "**/package.json"
     ],
     "headers": [
       {
@@ -45,6 +47,15 @@
           {
             "key": "Cache-Control",
             "value": "public, max-age=300"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(html|js)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=600"
           }
         ]
       }

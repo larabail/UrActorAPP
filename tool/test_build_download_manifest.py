@@ -1,31 +1,23 @@
 #!/usr/bin/env python3
-"""Tests for the downloads site generator.
+"""Tests for the update manifest written at release time.
 
 Run with: python -m unittest discover -s tool -p "test_*.py"
 
-The thing worth pinning down is that the page and the manifest agree. They are
-read by different audiences -- a person and a running copy of the app -- and if
-they disagree the app either never mentions a release that exists or points at
-a file that does not.
+The manifest has two readers that never meet: a running copy of the app, which
+uses it to decide whether to offer an update, and the downloads page, which
+falls back to it when the GitHub API cannot be reached. Neither is exercised by
+anything else in CI, and a manifest either of them cannot read fails silently
+-- the app simply never mentions that a release happened.
 """
 
 import json
 import unittest
 
-from build_downloads_site import (
+from build_download_manifest import (
     DOWNLOADS_URL,
     asset_urls,
     build_manifest,
-    render_page,
 )
-
-TEMPLATE = """<html>
-<p>{{VERSION}} on {{DATE}}</p>
-<a href="{{MACOS_URL}}">mac</a>
-<a href="{{WINDOWS_URL}}">win</a>
-<a href="{{CHECKSUMS_URL}}">sums</a>
-<p>{{NOTES}}</p>
-</html>"""
 
 
 class AssetUrlTests(unittest.TestCase):
@@ -75,33 +67,23 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(len(decoded["version"].split(".")), 3)
         self.assertTrue(decoded["downloadUrl"].startswith("https://"))
 
+    def test_is_the_shape_the_downloads_page_falls_back_to(self):
+        # Mirrors manifestRelease in web/downloads/releases.js. It needs a
+        # version, a date, and per-platform installer links -- and it drops
+        # any link it cannot classify, which is what would happen if the
+        # extensions here ever stopped matching the ones the page knows.
+        manifest = build_manifest("3.16.0", None, "2026-08-21")
+        self.assertEqual(manifest["published"], "2026-08-21")
 
-class PageTests(unittest.TestCase):
-    def test_fills_every_placeholder(self):
-        page = render_page(TEMPLATE, "3.16.0", "Notes here", "2026-08-21")
-        self.assertNotIn("{{", page)
-
-    def test_refuses_to_ship_an_unfilled_placeholder(self):
-        # A field added to the template that this script does not know about
-        # would otherwise appear as literal braces on a public page.
-        with self.assertRaises(SystemExit):
-            render_page(TEMPLATE + "{{NEW_FIELD}}", "3.16.0", None,
-                        "2026-08-21")
-
-    def test_falls_back_to_a_sentence_when_there_are_no_notes(self):
-        page = render_page(TEMPLATE, "3.16.0", None, "2026-08-21")
-        self.assertIn("release notes", page)
-
-    def test_page_and_manifest_advertise_the_same_version(self):
-        version = "3.16.0"
-        page = render_page(TEMPLATE, version, None, "2026-08-21")
-        manifest = build_manifest(version, None, "2026-08-21")
-
-        self.assertIn(version, page)
-        self.assertEqual(manifest["version"], version)
-        # And the page links the very files the manifest names.
-        for url in manifest["assets"].values():
-            self.assertIn(url, page)
+        assets = manifest["assets"]
+        self.assertEqual(sorted(assets), ["macos", "windows"])
+        self.assertTrue(assets["macos"].endswith(".dmg"))
+        self.assertTrue(assets["windows"].endswith(".exe"))
+        for url in assets.values():
+            self.assertTrue(url.startswith("https://"), url)
+            # The page reads the filename back off the end of the URL, so a
+            # URL ending in a slash would leave the fallback nameless.
+            self.assertTrue(url.rsplit("/", 1)[-1])
 
 
 if __name__ == "__main__":

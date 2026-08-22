@@ -167,6 +167,55 @@ that the answer for Windows can be tested from a machine that is not Windows.
 | Cropping a profile photo | `image_cropper` is Android, iOS and web only | The picked photo is uploaded uncropped |
 | Playing a trailer inline | the player is a webview, and there is none on Windows | A link out to YouTube |
 
+### The downloads site
+
+[downloads.uractor.com](https://downloads.uractor.com) is the whole of
+`web/downloads/`, deployed to Firebase Hosting. Three files, no build step:
+`index.html` is served exactly as it is committed, `releases.js` decides what
+to offer and `page.js` puts it on the page.
+
+It asks the GitHub releases API for the answer when someone opens it, rather
+than being generated during a release. A generated page can only describe the
+version that was current the last time the release workflow ran, and only that
+one: re-tagging a build, deleting a bad release or publishing a hotfix by hand
+all left it advertising something untrue with no way to correct it short of
+running another release. Reading the API means the page shows what is actually
+downloadable, and every earlier version comes along in the same response, so it
+can offer those too.
+
+The installers are not hosted here. They are GitHub release assets, because
+Firebase Hosting bills per gigabyte past its free tier and these files are over
+a hundred megabytes each.
+
+Three things it does that are worth knowing before changing it:
+
+- It leads with the platform the visitor is on, and with neither on a phone —
+  an iPhone's user agent says "like Mac OS X", so a careless match offers a
+  150MB disk image to a device that cannot open it.
+- Each platform falls back to the newest release that actually carries its
+  installer. macOS and Windows are built by separate jobs on separate runners,
+  so a release can exist with only one of them attached.
+- When the API cannot be read — it allows sixty requests an hour per address,
+  shared by everyone behind it — the page falls back to `version.json`, which
+  is written at release time by
+  [`tool/build_download_manifest.py`](tool/build_download_manifest.py) and
+  served from the same origin. That covers the current version only, and the
+  page says so rather than pretending the older ones do not exist. With both
+  gone, every button still leads to the GitHub releases page.
+
+The page is English only, unlike the app. That is a real gap rather than an
+oversight: it is a single page of prose with no localization machinery behind
+it, and wiring up `.arb` files for a static page is a larger change than adding
+Spanish text to it.
+
+Because nothing generates it, it does not need a release to be correct.
+`.github/workflows/deploy-downloads.yml` publishes it on any push to `master`
+that touches `web/downloads/` or `firebase.json`, and can be run by hand from
+the Actions tab. That workflow rebuilds `version.json` before deploying — a
+Hosting deploy replaces the whole site, and the manifest is not in the
+repository, so deploying a page change without it would delete the file every
+running desktop copy polls for updates.
+
 ### Notes on the desktop builds
 
 - macOS builds through CocoaPods, as iOS does. This is pinned in
@@ -543,6 +592,9 @@ functions/                   Cloud Functions (Node 22): OMDB lookup,
                              playlist join, member sync, join-attempt cleanup
 firestore-tests/              Firestore rules tests against the local emulator
 tools/sync-oscars/           Firestore Oscars sync job
+web/downloads/               downloads.uractor.com: a static page that lists
+                             the macOS and Windows installers by reading the
+                             GitHub releases API in the browser
 assets/                      Logos, tab icons, the cover and person
                              placeholders, oscars_api.json
 test/                        Flutter tests
@@ -614,7 +666,7 @@ To add a language:
 
 ## Tests
 
-The repo has three local suites:
+The repo has four local suites:
 
 ```bash
 flutter test
@@ -626,6 +678,9 @@ npm test
 cd ../firestore-tests
 npm install
 npm test
+
+cd ..
+node --test web/downloads/*.test.js
 ```
 
 `flutter test` currently runs 658 tests with no emulator, credentials or
@@ -651,6 +706,12 @@ passing tests. If port 8080 is already held by an emulator you started
 separately, run `npx mocha rules.test.js --timeout 20000` from
 `firestore-tests/` instead.
 
+`node --test web/downloads/*.test.js` runs the downloads page's release logic — which
+installer belongs to which platform, which of two versions is newer, and what
+the page falls back to when the GitHub API cannot be reached. No dependencies
+and no browser: it uses Node's own test runner against the same module the
+page loads.
+
 For coverage:
 
 ```bash
@@ -668,7 +729,7 @@ regression signal is not diluted by UI code that still lacks widget tests.
 ## CI and releases
 
 Pull requests to `master` run `.github/workflows/pr.yml` unless the change is
-only Markdown, docs, or `.gitignore`. The workflow has three jobs:
+only Markdown, docs, or `.gitignore`. The workflow has four jobs:
 
 - **Analyze, test and build** installs Flutter 3.47.1 plus the pinned Android
   NDK through `.github/actions/setup-flutter-android`, then runs
@@ -678,6 +739,9 @@ only Markdown, docs, or `.gitignore`. The workflow has three jobs:
   checked to ensure no release signing material is present.
 - **Functions** installs Node 22 dependencies in `functions/`, runs `npm test`,
   and confirms `index.js` loads.
+- **Downloads site** runs `node --test web/downloads/*.test.js`. The page at
+  `downloads.uractor.com` is served exactly as it is committed, so nothing else
+  in CI would notice its script breaking.
 - **Version** runs the unit tests under `tool/` and then enforces the version
   policy from [AGENTS.md](AGENTS.md#versioning) against the pull request title
   and commits. Do not edit the `+BUILD` suffix: the release workflow builds
@@ -754,6 +818,16 @@ Internal builds are not tagged; that summary records the version code and the
 commit, which is what a production promotion is given. Production is a separate,
 manual pipeline. See [docs/releases.md](docs/releases.md).
 
+`.github/workflows/deploy-downloads.yml` publishes
+[the downloads site](#the-downloads-site) on any push to `master` touching
+`web/downloads/` or `firebase.json`, and can be run by hand from the Actions
+tab. It is separate from the release pipelines because the page is static and
+has nothing to do with a release, and because it was previously deployable only
+by running a full production release — which also tags, publishes a GitHub
+release and ships to both stores. It creates the Hosting site if it is missing,
+and rebuilds `version.json` before deploying, since a Hosting deploy replaces
+the whole site and that file is not in the repository.
+
 Once the Android upload succeeds, a last job records the version code that
 shipped in `pubspec.yaml`, so the `+BUILD` suffix in the repository matches the
 newest build on the internal track. It arrives as a pull request from
@@ -778,6 +852,11 @@ then, and failing would report a shipped release as a broken one. See
   desktop builds shipped with the toolchain placeholder until this existed. Run
   it after changing the iOS icon; it needs `pip3 install --user Pillow` and is
   deliberately not wired into CI, because the icons it produces are committed.
+- [`tool/build_download_manifest.py`](tool/build_download_manifest.py) — writes
+  `web/downloads/version.json` during a production release. That file is what a
+  running desktop copy polls to discover it is out of date, and what the
+  downloads page falls back to when the GitHub API is rate limited. It does not
+  generate the page; see [the downloads site](#the-downloads-site).
 - [`tools/sync-oscars`](tools/sync-oscars/README.md) — a standalone Node 18+
   script (no npm dependencies) that populates the Firestore `Oscars`
   collection from the UrActor API, resolving winners to TMDB ids. It has its
