@@ -11,6 +11,19 @@
   Everything below the fold degrades: with no JavaScript, and with GitHub
   unreachable, the download buttons still lead to the releases page, which is
   where the installers live in either case.
+
+  The design is "The Reel", shared with uractor.com -- the page presents itself
+  as a film print, and the two are meant to read as one site rather than two
+  projects that happen to share a name. The tokens below are the contract
+  between them and must not drift. Contrast, against --black:
+
+    --bone    17.3    --prose  12.2    --gold  10.4
+    --prose-2  9.3    --dim     5.6    --edge   3.1  (borders of controls)
+    --faint    1.8    decorative rules only, never a control edge
+
+  Every id and class here that page.js reaches for is load bearing. There is a
+  test -- markup.test.js -- that fails if one goes missing, because a restyle
+  that drops an id leaves a page that looks finished and lists nothing.
 -->
 <html lang="en">
 <head>
@@ -22,208 +35,441 @@
 <meta property="og:title" content="Download UrActor">
 <meta property="og:description" content="UrActor for macOS and Windows.">
 <meta property="og:url" content="https://downloads.uractor.com/">
+<meta property="og:image" content="https://downloads.uractor.com/assets/mark-512.png">
 <meta property="og:type" content="website">
-<!-- Inline so the page needs no second request to have an icon, and so there
-     is no copy of a logo here to drift from the one in assets/. -->
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23121212'/><path d='M9 8v10a7 7 0 0 0 14 0V8' fill='none' stroke='%23e0be4e' stroke-width='3.4' stroke-linecap='round'/></svg>">
+<meta name="theme-color" content="#08090A">
+
+<!-- The real app icon, byte for byte the one uractor.com serves. It replaced
+     an inline SVG that was drawn to avoid a second request but was not the
+     logo: a page wearing a different mark reads as somebody else's site. -->
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32">
+<link rel="icon" href="/assets/mark-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="/assets/mark-192.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;600;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
 <style>
   :root {
     color-scheme: dark;
-    --bg: #121212;
-    --panel: #1c1c1c;
-    --line: #2a2a2a;
-    --text: #ffffff;
-    --muted: #9a9a9a;
-    --dim: #6f6f6f;
-    --accent: #e0be4e;
+
+    --black:  #08090A;
+    --film:   #101113;
+    --bone:   #F2EFE6;
+    --prose:  #CFCAC0;
+    --prose-2:#B6B1A8;
+    --dim:    #8C8880;
+    --edge:   #5C5E62;
+    --faint:  #2E3033;
+    --gold:   #E4B462;
+
+    --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --disp: 'Big Shoulders Display', 'Arial Narrow', Impact, sans-serif;
   }
-  * { box-sizing: border-box; }
+  *, *::before, *::after { box-sizing: border-box; }
+  * { margin: 0; padding: 0; }
+
   /* The `hidden` attribute is how this page keeps a section back until it has
      something to put in it, and a class further down that sets `display`
      outranks the browser's own rule for it. Without this, the "Yours" badge
      appears on both platforms at once. */
   [hidden] { display: none !important; }
+
   body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    display: flex;
-    justify-content: center;
-    padding: 56px 20px 80px;
+    background: var(--black);
+    color: var(--bone);
+    font-family: var(--sans);
+    font-weight: 300;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
-  main { width: 100%; max-width: 760px; }
-  a { color: var(--accent); }
+  a { color: inherit; text-decoration: none; }
+  img { display: block; max-width: 100%; }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
 
-  h1 { font-size: 42px; margin: 0 0 10px; letter-spacing: -0.6px; }
-  .lede { color: var(--muted); margin: 0 0 28px; max-width: 46ch; }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus {
+    left: 12px; top: 12px; z-index: 200;
+    background: var(--gold); color: var(--black); padding: 12px 18px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: .1em;
+    text-transform: uppercase;
+  }
 
-  /* --- the lead download ------------------------------------------------ */
+  /* --- the film column --------------------------------------------------- */
 
-  .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-  .hero-meta { color: var(--dim); font-size: 13.5px; margin: 14px 0 0; min-height: 1.6em; }
+  .reel { position: relative; max-width: 940px; margin: 0 auto; padding: 0 62px; }
+  .reel::before, .reel::after {
+    content: ""; position: absolute; top: 0; bottom: 0; width: 26px;
+    background-image: repeating-linear-gradient(
+      to bottom, var(--bone) 0 14px, transparent 14px 42px);
+    opacity: .13; pointer-events: none;
+  }
+  .reel::before { left: 14px; }
+  .reel::after  { right: 14px; }
+  @media (max-width: 900px) {
+    .reel { padding: 0 24px; }
+    .reel::before, .reel::after { display: none; }
+  }
+
+  /* --- masthead ---------------------------------------------------------- */
+
+  .bar {
+    position: fixed; inset: 0 0 auto 0; z-index: 50;
+    background: rgba(8, 9, 10, .92);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--faint);
+  }
+  .bar > div {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    max-width: 940px; margin: 0 auto; padding: 0 26px; height: 56px;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 9px; flex: none;
+    font-family: var(--disp); font-size: 21px; font-weight: 800;
+    letter-spacing: .02em; text-transform: uppercase;
+  }
+  .brand img { width: 22px; height: 22px; border-radius: 5px; }
+  /* One flex item, so the container gap cannot open a space inside the name. */
+  .brand .name { white-space: nowrap; }
+  .brand .name i { font-style: normal; color: var(--gold); }
+  .bar nav {
+    display: flex; gap: 20px; overflow-x: auto; scrollbar-width: none;
+    color: var(--dim); font-family: var(--mono); font-size: 11px;
+    letter-spacing: .12em; text-transform: uppercase;
+  }
+  .bar nav::-webkit-scrollbar { display: none; }
+  .bar nav a { white-space: nowrap; padding: 4px 0; }
+  .bar nav a:hover { color: var(--bone); }
+  @media (max-width: 620px) {
+    .bar > div { padding: 0 18px; gap: 12px; }
+    .bar nav { gap: 15px; font-size: 10px; }
+    .brand { font-size: 18px; }
+  }
+
+  /* --- the opening frame -------------------------------------------------- */
+
+  .frame { margin-top: 56px; padding: 74px 0 56px; border-bottom: 1px solid var(--faint); }
+  .slate {
+    display: flex; flex-wrap: wrap; gap: 20px;
+    padding-bottom: 12px; margin-bottom: 44px; border-bottom: 1px solid var(--faint);
+    color: var(--dim); font-family: var(--mono); font-size: 10.5px;
+    letter-spacing: .24em; text-transform: uppercase;
+  }
+  .slate b { color: var(--gold); font-weight: 500; }
+
+  .leader { position: relative; display: grid; place-items: center;
+            width: 96px; height: 96px; margin-bottom: 30px; }
+  .leader img { width: 96px; height: 96px; border-radius: 22px; }
+  .leader::before {
+    content: ""; position: absolute; inset: -14px;
+    border: 1px solid var(--faint); border-radius: 50%;
+  }
+  .leader::after {
+    content: ""; position: absolute; inset: -14px; border-radius: 50%;
+    background: conic-gradient(var(--gold) 0 25%, transparent 25% 100%);
+    mask: radial-gradient(circle, transparent 63%, #000 64%);
+    -webkit-mask: radial-gradient(circle, transparent 63%, #000 64%);
+    opacity: .55;
+  }
+
+  h1 {
+    font-family: var(--disp); font-weight: 800; text-transform: uppercase;
+    font-size: clamp(48px, 9.5vw, 108px); line-height: .84; letter-spacing: -.01em;
+  }
+  h1 em { font-style: normal; color: var(--gold); display: block; }
+  .lede { max-width: 46ch; margin-top: 26px; color: var(--prose); font-size: 18px; line-height: 1.66; }
+
+  /* --- the lead download -------------------------------------------------- */
+
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 34px; }
+  .hero-meta {
+    margin-top: 16px; min-height: 1.6em;
+    color: var(--dim); font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em;
+  }
   .status {
-    margin: 14px 0 0; padding: 12px 14px; border-radius: 10px;
-    background: #241f10; border: 1px solid #4a3c14; color: #e8d79a;
-    font-size: 14px;
+    margin-top: 16px; padding: 13px 16px;
+    border: 1px solid var(--edge); border-left: 2px solid var(--gold);
+    background: var(--film); color: var(--prose);
+    font-size: 14.5px;
   }
+  .status a { color: var(--gold); border-bottom: 1px solid var(--faint); }
+  .status a:hover { border-color: var(--gold); }
 
   a.button {
     display: inline-block; text-align: center;
-    background: var(--accent); color: #111;
-    font-weight: 700; text-decoration: none;
-    padding: 13px 22px; border-radius: 10px;
+    padding: 15px 26px; border: 1px solid var(--gold);
+    background: var(--gold); color: var(--black);
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    letter-spacing: .14em; text-transform: uppercase;
+    transition: background .16s, color .16s, border-color .16s;
   }
-  a.button:hover { background: #ecca5c; }
+  a.button:hover { background: var(--bone); border-color: var(--bone); }
   a.button.secondary {
-    background: transparent; color: var(--text);
-    border: 1px solid #3a3a3a; font-weight: 600;
+    background: transparent; color: var(--bone); border-color: var(--edge); font-weight: 500;
   }
-  a.button.secondary:hover { border-color: #555; background: #1a1a1a; }
+  a.button.secondary:hover { background: var(--film); color: var(--gold); border-color: var(--gold); }
   a.button[aria-disabled="true"] {
-    background: var(--line); color: #777; pointer-events: none; font-weight: 500;
+    background: transparent; border-color: var(--faint); color: var(--dim);
+    pointer-events: none; font-weight: 400;
   }
 
-  /* --- one card per platform -------------------------------------------- */
+  /* --- chapters ----------------------------------------------------------- */
 
-  .cards {
-    display: grid; gap: 16px; grid-template-columns: 1fr; margin-top: 44px;
+  .chapter { padding: 64px 0; border-bottom: 1px solid var(--faint); }
+  .chead { display: flex; align-items: baseline; gap: 16px; margin-bottom: 32px; }
+  .chead .no { color: var(--gold); font-family: var(--mono); font-size: 11px; letter-spacing: .18em; }
+  .chead h2 {
+    font-family: var(--disp); font-weight: 600; text-transform: uppercase;
+    font-size: clamp(26px, 4.2vw, 42px); line-height: .95;
   }
-  @media (min-width: 640px) { .cards { grid-template-columns: 1fr 1fr; } }
-  .card {
-    background: var(--panel); border: 1px solid var(--line);
-    border-radius: 14px; padding: 24px; display: flex; flex-direction: column;
+  .chead .rule { flex: 1; height: 1px; background: var(--faint); }
+
+  /* --- one card per platform ---------------------------------------------- */
+
+  .cards { display: grid; grid-template-columns: 1fr; border: 1px solid var(--edge); }
+  @media (min-width: 760px) { .cards { grid-template-columns: 1fr 1fr; } }
+  .card { display: flex; flex-direction: column; padding: 34px 30px 32px; }
+  .card + .card { border-top: 1px solid var(--edge); }
+  @media (min-width: 760px) {
+    .card + .card { border-top: 0; border-left: 1px solid var(--edge); }
   }
   /* The platform someone is on comes first, so the button they want is the
      one under their thumb on a narrow screen. */
-  .card.yours { border-color: #4a4128; order: -1; }
-  .card h2 { margin: 0 0 4px; font-size: 19px; }
-  .card .meta { color: #8a8a8a; font-size: 13px; margin: 0 0 16px; }
+  .card.yours { order: -1; background: var(--film); }
+  .card h3 {
+    font-family: var(--disp); font-weight: 800; text-transform: uppercase;
+    font-size: 40px; line-height: .94;
+  }
+  .card .meta {
+    margin: 6px 0 22px; color: var(--dim);
+    font-family: var(--mono); font-size: 11px; letter-spacing: .08em;
+  }
   .card .button { margin-top: auto; }
   .card .asset {
-    color: var(--dim); font-size: 12.5px; margin: 10px 0 0;
-    overflow-wrap: anywhere; min-height: 1.5em;
+    margin-top: 12px; min-height: 1.5em; overflow-wrap: anywhere;
+    color: var(--dim); font-family: var(--mono); font-size: 11px; letter-spacing: .04em;
   }
   .badge {
-    display: inline-block; margin-left: 8px; padding: 2px 8px;
-    border-radius: 999px; background: #2c2617; color: var(--accent);
-    font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
-    text-transform: uppercase; vertical-align: 2px;
+    display: inline-block; margin-left: 10px; padding: 3px 9px;
+    border: 1px solid var(--gold); background: rgba(228, 180, 98, .12);
+    color: var(--gold); font-family: var(--mono); font-size: 10px;
+    font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
+    vertical-align: 6px;
   }
-  details {
-    margin-top: 16px; border-top: 1px solid var(--line); padding-top: 14px;
-    font-size: 13.5px; color: #b0b0b0;
-  }
-  summary { cursor: pointer; color: var(--accent); }
-  details p { margin: 10px 0 0; }
 
-  /* --- notes and history ------------------------------------------------- */
-
-  section.panel {
-    margin-top: 40px; background: var(--panel); border: 1px solid var(--line);
-    border-radius: 14px; padding: 22px 24px;
+  details { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--faint); }
+  summary {
+    cursor: pointer; color: var(--gold); font-family: var(--mono);
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
   }
-  section.panel > h2 {
-    font-size: 13px; margin: 0 0 14px; text-transform: uppercase;
-    letter-spacing: 0.09em; color: var(--muted); font-weight: 700;
-  }
-  #notes-body { margin: 0; white-space: pre-wrap; }
-  #notes-link { display: inline-block; margin-top: 14px; font-size: 13.5px; }
+  summary::marker { color: var(--edge); }
+  details p { margin-top: 12px; color: var(--prose-2); font-size: 14.5px; line-height: 1.7; }
+  details p strong { color: var(--bone); font-weight: 500; }
+  details a { color: var(--gold); border-bottom: 1px solid var(--faint); }
+  details a:hover { border-color: var(--gold); }
 
-  ol.history { list-style: none; margin: 0; padding: 0; }
+  /* --- notes and history --------------------------------------------------- */
+
+  #notes-body { white-space: pre-wrap; color: var(--prose); font-size: 16.5px; line-height: 1.78; }
+  #notes-link {
+    display: inline-block; margin-top: 18px; color: var(--gold);
+    font-family: var(--mono); font-size: 12px; letter-spacing: .1em;
+    border-bottom: 1px solid var(--faint);
+  }
+  #notes-link:hover { border-color: var(--gold); }
+
+  ol.history { list-style: none; border-top: 1px solid var(--faint); }
   ol.history li {
-    display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline;
-    padding: 12px 0; border-top: 1px solid var(--line);
+    display: flex; flex-wrap: wrap; gap: 6px 20px; align-items: baseline;
+    padding: 15px 0; border-bottom: 1px solid var(--faint);
+    font-family: var(--mono); font-size: 12.5px;
   }
-  ol.history li:first-child { border-top: 0; padding-top: 0; }
-  .history .ver { font-weight: 700; min-width: 5.5em; }
-  .history .when { color: var(--dim); font-size: 13px; flex: 1 1 8em; }
-  .history .links { display: flex; gap: 14px; font-size: 13.5px; }
-  .history .links span { color: #555; }
+  .history .ver { min-width: 5.5em; color: var(--gold); font-weight: 500; }
+  .history .when { flex: 1 1 8em; color: var(--dim); font-size: 11.5px; letter-spacing: .06em; }
+  .history .links { display: flex; gap: 16px; }
+  .history .links a { border-bottom: 1px solid var(--faint); }
+  .history .links a:hover { color: var(--gold); border-color: var(--gold); }
+  .history .links span { color: var(--faint); }
 
-  footer { margin-top: 44px; color: var(--dim); font-size: 13px; }
-  footer a { color: var(--muted); }
-  footer p { margin: 0 0 8px; }
   .skeleton { color: var(--dim); }
+
+  /* --- end credits ---------------------------------------------------------- */
+
+  footer { padding: 62px 0 70px; }
+  footer h2 {
+    margin-bottom: 32px; color: var(--dim); font-family: var(--disp);
+    font-weight: 600; font-size: 15px; letter-spacing: .34em;
+    text-transform: uppercase; text-align: center;
+  }
+  .crow {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px 34px;
+    max-width: 620px; margin: 0 auto; font-family: var(--mono); font-size: 12.5px;
+  }
+  .crow dt {
+    text-align: right; color: var(--dim); font-size: 11px;
+    letter-spacing: .16em; text-transform: uppercase;
+  }
+  .crow dd { text-align: left; }
+  .crow dd a { border-bottom: 1px solid var(--faint); }
+  .crow dd a:hover { color: var(--gold); border-color: var(--gold); }
+  .fin {
+    margin-top: 48px; color: var(--edge); font-family: var(--disp);
+    font-size: 13px; letter-spacing: .4em; text-transform: uppercase; text-align: center;
+  }
+  @media (max-width: 520px) {
+    .crow { grid-template-columns: 1fr; gap: 4px; text-align: center; }
+    .crow dt { text-align: center; margin-top: 12px; }
+    .crow dd { text-align: center; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .001ms !important;
+      transition-duration: .001ms !important;
+    }
+  }
 </style>
 </head>
 <body>
-<main>
-  <h1>Download UrActor</h1>
-  <p class="lede">Track what you watch, on your computer. The same account,
-     lists and friends as the phone app.</p>
 
-  <div class="hero-actions" id="hero-actions">
-    <a class="button" id="hero-button"
-       href="https://github.com/larabail/UrActorAPP/releases">Download UrActor</a>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="bar">
+  <div>
+    <a class="brand" href="https://uractor.com">
+      <img src="/assets/mark-192.png" alt="" width="22" height="22">
+      <span class="name">Ur<i>Actor</i></span>
+    </a>
+    <nav aria-label="Primary">
+      <a href="https://uractor.com">uractor.com</a>
+      <a href="#builds">Builds</a>
+      <a href="#notes">What's new</a>
+      <a href="https://developer.uractor.com">API</a>
+    </nav>
   </div>
-  <p class="hero-meta" id="hero-meta">Finding the latest release&hellip;</p>
-  <p class="status" id="status" role="status" hidden></p>
+</header>
 
-  <noscript>
-    <p class="status">This page lists the builds with JavaScript. Without it,
-       every installer is on the
-       <a href="https://github.com/larabail/UrActorAPP/releases">releases
-       page</a>.</p>
-  </noscript>
+<main id="main" class="reel">
 
-  <div class="cards">
-    <section class="card" id="card-macos">
-      <h2>macOS<span class="badge" id="badge-macos" hidden>Yours</span></h2>
-      <p class="meta">Apple silicon and Intel &middot; macOS 10.15 or later</p>
-      <a class="button" id="button-macos"
-         href="https://github.com/larabail/UrActorAPP/releases">Download for macOS</a>
-      <p class="asset" id="asset-macos"><span class="skeleton">Checking&hellip;</span></p>
-      <details>
-        <summary>Installing</summary>
-        <p>Open the download and drag UrActor into Applications.</p>
-        <p>The app is signed with an Apple Developer ID and notarized by
-           Apple, so it opens without a warning.</p>
-      </details>
-    </section>
+  <section class="frame">
+    <p class="slate">
+      <span>Reel <b>02</b></span>
+      <span>Format <b>Desktop</b></span>
+      <span>macOS <b>&amp;</b> Windows</span>
+      <span>Cert <b>Free</b></span>
+    </p>
 
-    <section class="card" id="card-windows">
-      <h2>Windows<span class="badge" id="badge-windows" hidden>Yours</span></h2>
-      <p class="meta">Windows 10 or later &middot; 64-bit</p>
-      <a class="button" id="button-windows"
-         href="https://github.com/larabail/UrActorAPP/releases">Download for Windows</a>
-      <p class="asset" id="asset-windows"><span class="skeleton">Checking&hellip;</span></p>
-      <details>
-        <summary>Windows will warn you &mdash; here is why</summary>
-        <p>This installer is not yet code signed, so Windows shows
-           <strong>&ldquo;Windows protected your PC&rdquo;</strong> the first
-           time you run it.</p>
-        <p>Click <strong>More info</strong>, then
-           <strong>Run anyway</strong>.</p>
-        <p>The warning means Windows has not seen this file often enough to
-           recognise it &mdash; not that anything is wrong with it. You can
-           confirm you have the real file by checking its SHA-256 against the
-           checksum published beside it on the
-           <a id="checksums-link"
-              href="https://github.com/larabail/UrActorAPP/releases">release
-           page</a>.</p>
-      </details>
-    </section>
-  </div>
+    <div class="leader">
+      <img src="/assets/mark-512.png" alt="UrActor" width="96" height="96">
+    </div>
 
-  <section class="panel" id="notes" hidden>
-    <h2 id="notes-heading">What&rsquo;s new</h2>
-    <p id="notes-body"></p>
-    <a id="notes-link" href="https://github.com/larabail/UrActorAPP/releases">Full release notes on GitHub</a>
+    <h1>Take it<em>to the desktop.</em></h1>
+
+    <p class="lede">Track what you watch, on your computer. The same account,
+       lists and friends as the phone app.</p>
+
+    <div class="hero-actions" id="hero-actions">
+      <a class="button" id="hero-button"
+         href="https://github.com/larabail/UrActorAPP/releases">Download UrActor</a>
+    </div>
+    <p class="hero-meta" id="hero-meta">Finding the latest release&hellip;</p>
+    <p class="status" id="status" role="status" hidden></p>
+
+    <noscript>
+      <p class="status">This page lists the builds with JavaScript. Without it,
+         every installer is on the
+         <a href="https://github.com/larabail/UrActorAPP/releases">releases
+         page</a>.</p>
+    </noscript>
   </section>
 
-  <section class="panel" id="history" hidden>
-    <h2>Every version</h2>
+  <section class="chapter" id="builds">
+    <div class="chead">
+      <span class="no">01</span>
+      <h2>Two prints</h2>
+      <span class="rule" aria-hidden="true"></span>
+    </div>
+
+    <div class="cards">
+      <section class="card" id="card-macos">
+        <h3>macOS<span class="badge" id="badge-macos" hidden>Yours</span></h3>
+        <p class="meta">Apple silicon and Intel &middot; macOS 10.15 or later</p>
+        <a class="button" id="button-macos"
+           href="https://github.com/larabail/UrActorAPP/releases">Download for macOS</a>
+        <p class="asset" id="asset-macos"><span class="skeleton">Checking&hellip;</span></p>
+        <details>
+          <summary>Installing</summary>
+          <p>Open the download and drag UrActor into Applications.</p>
+          <p>The app is signed with an Apple Developer ID and notarized by
+             Apple, so it opens without a warning.</p>
+        </details>
+      </section>
+
+      <section class="card" id="card-windows">
+        <h3>Windows<span class="badge" id="badge-windows" hidden>Yours</span></h3>
+        <p class="meta">Windows 10 or later &middot; 64-bit</p>
+        <a class="button" id="button-windows"
+           href="https://github.com/larabail/UrActorAPP/releases">Download for Windows</a>
+        <p class="asset" id="asset-windows"><span class="skeleton">Checking&hellip;</span></p>
+        <details>
+          <summary>Windows will warn you &mdash; here is why</summary>
+          <p>This installer is not yet code signed, so Windows shows
+             <strong>&ldquo;Windows protected your PC&rdquo;</strong> the first
+             time you run it.</p>
+          <p>Click <strong>More info</strong>, then
+             <strong>Run anyway</strong>.</p>
+          <p>The warning means Windows has not seen this file often enough to
+             recognise it &mdash; not that anything is wrong with it. You can
+             confirm you have the real file by checking its SHA-256 against the
+             checksum published beside it on the
+             <a id="checksums-link"
+                href="https://github.com/larabail/UrActorAPP/releases">release
+             page</a>.</p>
+        </details>
+      </section>
+    </div>
+  </section>
+
+  <section class="chapter" id="notes" hidden>
+    <div class="chead">
+      <span class="no">02</span>
+      <h2 id="notes-heading">What&rsquo;s new</h2>
+      <span class="rule" aria-hidden="true"></span>
+    </div>
+    <p id="notes-body"></p>
+    <a id="notes-link" href="https://github.com/larabail/UrActorAPP/releases">Full release notes on GitHub &rarr;</a>
+  </section>
+
+  <section class="chapter" id="history" hidden>
+    <div class="chead">
+      <span class="no">03</span>
+      <h2>Every version</h2>
+      <span class="rule" aria-hidden="true"></span>
+    </div>
     <ol class="history" id="history-list"></ol>
   </section>
 
   <footer>
-    <p>Looking for the phone app? UrActor is on the
-       <a href="https://play.google.com/store/apps/details?id=com.uractor.uractorapp">Play Store</a>
-       and the <a href="https://apps.apple.com/app/uractor/id6503330070">App Store</a>.</p>
-    <p>Every build, with its SHA-256 checksum, is on
-       <a href="https://github.com/larabail/UrActorAPP/releases">GitHub</a>.</p>
+    <h2>End credits</h2>
+    <dl class="crow">
+      <dt>On a phone</dt>
+      <dd><a href="https://apps.apple.com/app/uractor/id6503330070">App Store</a> &middot;
+          <a href="https://play.google.com/store/apps/details?id=com.uractor.uractorapp">Play Store</a></dd>
+      <dt>Every build</dt>
+      <dd><a href="https://github.com/larabail/UrActorAPP/releases">GitHub releases, with checksums</a></dd>
+      <dt>The site</dt>
+      <dd><a href="https://uractor.com">uractor.com</a></dd>
+      <dt>Developers</dt>
+      <dd><a href="https://developer.uractor.com">developer.uractor.com</a></dd>
+      <dt>Metadata</dt>
+      <dd>TMDB / OMDb</dd>
+    </dl>
+    <p class="fin">Fin</p>
   </footer>
+
 </main>
 <script type="module" src="page.js"></script>
 </body>
