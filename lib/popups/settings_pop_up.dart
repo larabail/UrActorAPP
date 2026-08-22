@@ -375,7 +375,7 @@ class _AlertButtonDialogueState extends State<AlertButtonDialogue> {
             await user.reauthenticateWithCredential(credential);
 
             await user.delete();
-            AuthSession.clearPerUserCaches();
+            await AuthSession.clearPerUserCaches();
 
             if (!context.mounted) return;
             navigator.pop();
