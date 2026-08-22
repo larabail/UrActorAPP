@@ -209,6 +209,50 @@ jobs:
         working-directory: functions
         run: node -e "require('./index.js')"
 
+  # The rules decide who can read and write every document in the database, and
+  # they are deployed by the release workflow on merge. Until now nothing ran
+  # their suite: the pull request template asks for matching tests in
+  # `firestore-tests/` and the only thing checking that box was the author.
+  #
+  # Not a required status check on `master` yet -- that is configured in the
+  # repository settings, not here -- so it reports without blocking until
+  # someone makes it required.
+  rules:
+    name: Firestore rules
+    needs: scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        if: needs.scope.outputs.app == 'true'
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: firestore-tests/package-lock.json
+
+      # The Firestore emulator is a Java process.
+      - uses: actions/setup-java@v4
+        if: needs.scope.outputs.app == 'true'
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install
+        if: needs.scope.outputs.app == 'true'
+        working-directory: firestore-tests
+        run: npm ci
+
+      # `test:ci` rather than `test` because the documented local command
+      # expects `firebase` already on PATH, which a runner does not have. Same
+      # pinned CLI the functions job uses.
+      - name: Test
+        if: needs.scope.outputs.app == 'true'
+        working-directory: firestore-tests
+        run: npm run test:ci
+
   # The downloads page is served exactly as it is committed -- nothing builds
   # it -- so a mistake in its script is invisible until someone opens
   # downloads.uractor.com and finds no download on it. Node's own test runner,

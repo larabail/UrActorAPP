@@ -62,10 +62,15 @@ service cloud.firestore {
       ];
     }
 
+    // The single element is the media id being marked seen, which every write
+    // path stringifies before sending. Checking it here is only possible
+    // because a create carries exactly one: on update the added element is
+    // reachable only as a Set, which cannot be indexed.
     function createsListFieldOnly(field) {
       return request.resource.data.keys().hasOnly([field])
         && request.resource.data[field] is list
-        && request.resource.data[field].size() == 1;
+        && request.resource.data[field].size() == 1
+        && request.resource.data[field][0] is string;
     }
 
     function updatesListFieldOnly(field) {
@@ -88,6 +93,21 @@ service cloud.firestore {
 
     function createsOneDynamicFieldOnly() {
       return request.resource.data.keys().size() == 1;
+    }
+
+    // A rewatch document maps a media id to the number of times it has been
+    // watched. A friend creating one is recording the first shared viewing, so
+    // the only honest value is a positive count -- the client writes a literal
+    // 1, and an increment on a missing key resolves to 1 as well.
+    //
+    // keys() returns a LIST, which rules can index, so the single key of a
+    // create can be named and the value under it read. That is what makes the
+    // create path checkable where the update path is not.
+    function createsOneRewatchOnly() {
+      let id = request.resource.data.keys()[0];
+      return createsOneDynamicFieldOnly()
+        && request.resource.data[id] is int
+        && request.resource.data[id] > 0;
     }
 
     function updatesOneDynamicFieldOnly() {
@@ -113,6 +133,21 @@ service cloud.firestore {
             || entry.episode is int && entry.episode > 0 && 'season' in entry);
     }
 
+    // A friend writing into someone else's calendar is saying "we watched this
+    // together", and the client says so by naming everyone present -- itself
+    // included -- in `friends`. Requiring the writer to appear there is the
+    // closest a rule gets to proving the entry was agreed to rather than
+    // invented: a friend can no longer drop a viewing into your calendar that
+    // does not admit who put it there.
+    //
+    // Only checked for a friend's write. The owner writes their own calendar
+    // wholesale and their entries carry no `friends` key at all.
+    function validFriendCalendarEntry(entry) {
+      return validCalendarEntry(entry)
+        && entry.friends is list
+        && request.auth.uid in entry.friends;
+    }
+
     // Rules cannot iterate a list, so only the first entry of the day can be
     // reached. That is enough on create: a friend's first write to a calendar
     // is an arrayUnion of the single entry being shared, so the first element
@@ -120,7 +155,7 @@ service cloud.firestore {
     function validCalendarDay(day) {
       return request.resource.data[day] is list
         && (request.resource.data[day].size() == 0
-            || validCalendarEntry(request.resource.data[day][0]));
+            || validFriendCalendarEntry(request.resource.data[day][0]));
     }
 
     function createsOneCalendarDayOnly() {
@@ -139,9 +174,27 @@ service cloud.firestore {
         && changed.removedKeys().size() == 0;
     }
 
+    // SeenWith maps a media id to the people it was watched with. On create the
+    // whole document is one type holding one media id, so both the key and the
+    // value under it can be named -- keys() is a list, and a list can be
+    // indexed. The value has to be the record the app writes and nothing else,
+    // and it has to name the writer, for the same reason a calendar entry does.
+    //
+    // Worth knowing: no shipped client reaches this path. Every friend-targeted
+    // SeenWith write runs in a transaction that throws unless the document
+    // already exists (social_service.dart, add_friends_seen_with_popup.dart,
+    // tvshow_result.dart), so a create here only ever comes from something that
+    // is not the app. Tightening it costs a legitimate write nothing.
     function createsSeenWithTypeOnly(type) {
+      let media = request.resource.data[type];
+      let id = media.keys()[0];
       return request.resource.data.keys().hasOnly([type])
-        && request.resource.data[type] is map;
+        && media is map
+        && media.keys().size() == 1
+        && media[id] is map
+        && media[id].keys().hasOnly(['friends'])
+        && media[id].friends is list
+        && request.auth.uid in media[id].friends;
     }
 
     function updatesSeenWithTypeOnly(type) {
@@ -166,11 +219,42 @@ service cloud.firestore {
         || updatesSeenWithTypeOnly('TVShows');
     }
 
+    // A recommendation. Every field here is what the client sends; `sender` is
+    // the one that matters, because until now it was entirely the writer's
+    // word. Pinning `sender.uid` to the authenticated caller is what stops a
+    // friend putting a recommendation in your inbox under someone else's name.
+    //
+    // `read` must start false: marking it read is the recipient's business, and
+    // a notification that arrives already read is one you never see.
+    function validNotification(entry) {
+      return entry is map
+        && entry.sender is map
+        && entry.sender.uid == request.auth.uid
+        && entry.read == false
+        && entry.type is string
+        && entry.id is string
+        && entry.title is string
+        && entry.timestamp is timestamp;
+    }
+
+    // The appended notification can be reached, which the rest of this file
+    // cannot manage for a dynamic key, because THIS key is not arbitrary: the
+    // client appends at `String(number of keys already there)`, so the key a
+    // legitimate write adds is always the current size rendered as a string.
+    // Reconstructing it turns an unnameable Set member into an index.
+    //
+    // A write that collides with an existing key -- which is what a sparse
+    // document would produce -- changes a key rather than adding one, and was
+    // already refused by the changedKeys check below. So nothing that used to
+    // succeed stops succeeding here.
     function appendsOneNotificationOnly() {
       let changed = request.resource.data.diff(resource.data);
+      let appended = string(resource.data.keys().size());
       return changed.addedKeys().size() == 1
         && changed.changedKeys().size() == 0
-        && changed.removedKeys().size() == 0;
+        && changed.removedKeys().size() == 0
+        && changed.addedKeys().hasOnly([appended])
+        && validNotification(request.resource.data[appended]);
     }
 
     function validProgressDocument() {
@@ -190,8 +274,8 @@ service cloud.firestore {
         || docId == 'Seen' && createsSeenDocOnly()
         || docId == 'SeenWith' && createsSeenWithDocOnly()
         || docId == 'Calendar' && createsOneCalendarDayOnly()
-        || docId == 'Rewatched' && createsOneDynamicFieldOnly()
-        || docId == 'RewatchedTV' && createsOneDynamicFieldOnly();
+        || docId == 'Rewatched' && createsOneRewatchOnly()
+        || docId == 'RewatchedTV' && createsOneRewatchOnly();
     }
 
     function validFriendUpdate(docId) {
@@ -445,26 +529,53 @@ service cloud.firestore {
 //    and restricting read breaks them the moment it ships. It is gated on
 //    Play Console adoption of a client that uses the function.
 //
-// 2. Friend writes are now constrained to the coarse shape today's installed
+// 2. Friend writes are constrained to the coarse shape today's installed
 //    clients already send: watched lists may only grow their known list fields,
 //    SeenWith may only touch one Movies/TVShows media entry, Calendar and
 //    rewatch documents may only touch one dynamic key, and Notifications may
-//    only append one new key to an existing document. The remaining hole is the
-//    dynamic value inside those keys: rules cannot prove a Calendar entry or
-//    notification was agreed to, or that a rewatch/media id is meaningful,
-//    without either changing the client to write narrower verifiable fields or
-//    moving those writes behind a function.
+//    only append one new key to an existing document.
 //
-//    Calendar goes one step further than the rest on CREATE only. A friend's
-//    first write to a calendar is an arrayUnion of the single entry being
-//    shared, so the day's first element is the entry they wrote and its
-//    optional season/episode can be type-checked there. On UPDATE the same
-//    check is not expressible: diff() returns the affected key as a Set, rules
-//    cannot index a Set, and so the day that changed cannot be named. A friend
-//    updating an existing calendar can still put anything inside the entry,
-//    including a nonsense season. Closing that needs the entry to move behind
-//    a function, or the day to be written as a subcollection document whose id
-//    the rule can see.
+//    The value inside those keys is now checked wherever the key can be NAMED,
+//    which is what the rest of this note is about. Rules can index a List but
+//    not a Set, and diff() hands back affected keys as a Set -- so what is
+//    reachable is decided by whether a key can be reconstructed some other way.
+//
+//    Reachable, and therefore closed:
+//
+//    - A notification's key is not arbitrary. The client appends at
+//      `String(number of keys already present)`, so the rule rebuilds it as
+//      string(resource.data.keys().size()) and reads the value there. That
+//      pins `sender.uid` to the authenticated caller, which is what stops a
+//      friend filing a recommendation in your inbox under someone else's name,
+//      and requires `read` to start false.
+//    - On CREATE the whole document is the one key being written, and keys()
+//      is a List, so it can be indexed. A calendar entry must name its writer
+//      in `friends`, a SeenWith record must be {friends: [...]} naming its
+//      writer, a rewatch counter must be a positive int, and a watched list
+//      must hold a media id string.
+//
+//    Still open, and not fixable in rules:
+//
+//    - The UPDATE path for Calendar and SeenWith. The day or media id that
+//      changed is only ever a Set member, so it cannot be named and what
+//      landed there cannot be read. A friend updating an existing calendar can
+//      still put anything inside the entry, including a nonsense season, and a
+//      friend updating an existing SeenWith can still write an arbitrary
+//      record for a media id.
+//    - Whether the values MEAN anything: that a media id is real, that a
+//      rewatch count is plausible, that the two people actually watched it.
+//      Rules cannot cross-check a value against a document they were not
+//      given.
+//
+//    Closing those needs the write to move behind a Cloud Function, which can
+//    read both users' documents and, more usefully, perform the whole
+//    both-sides fan-out itself so reciprocity is structural rather than
+//    checked. joinPlaylist is the precedent. Once a client that writes through
+//    such a function has Play Console adoption, the friend branches of
+//    `allow create` and `allow update` above -- and every helper they need --
+//    can be deleted outright, and this file gets shorter rather than longer.
+//    That is the same staging as gaps 1 and 3, and for the same reason:
+//    merging a rules change deploys it to every phone at once.
 //
 // 3. A user can still write their own FavActors, FavDirectors and FavWriters.
 //
