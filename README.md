@@ -685,7 +685,7 @@ cd ..
 node --test web/downloads/*.test.js
 ```
 
-`flutter test` currently runs 658 tests with no emulator, credentials or
+`flutter test` currently runs 793 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
 `FirestoreCore.db` and `AppHttp.client` — and callable context through
 `CallableContext`. They default to the real implementations and are pointed at
@@ -697,7 +697,8 @@ handling, settings, inbox, calendar/list services, calendar episode detail,
 what a calendar entry does to watch progress, viewing history ranges,
 in-memory Firestore service behaviour, watch-progress rules and controls, the
 media and person data objects, every popup under `lib/popups` except the
-profile section editor, and the reviews and Continue watching screens.
+profile section editor, the reviews and Continue watching screens, and the
+pre-commit hook itself.
 
 `npm test` in `functions/` runs the Node 22 unit tests for the playlist and
 OMDB helper modules.
@@ -916,7 +917,10 @@ patch number behind, is still refused.
   [`firestore-tests/`](firestore-tests/README.md) and run against the local
   emulator.
 - [`.githooks/pre-commit`](.githooks/pre-commit) — runs analyze and the tests
-  before a commit. Enable it with `git config core.hooksPath .githooks`.
+  before a commit. Enable it with `git config core.hooksPath .githooks`. It
+  clears git's own environment variables before invoking flutter, for the
+  reason [`test/pre_commit_hook_test.dart`](test/pre_commit_hook_test.dart)
+  spells out.
 
 ## Licence
 

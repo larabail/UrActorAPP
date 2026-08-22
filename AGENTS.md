@@ -278,6 +278,16 @@ when you genuinely need to commit something that does not build.
   in a file, as here, is harmless; only the commit message is scanned. The
   release workflow uses it deliberately; see
   [docs/releases.md](docs/releases.md#version-codes).
+- **Git exports `GIT_DIR` into every hook**, and it beats the repository a
+  nested tool picks for itself. `flutter` asks git for its own version, so a
+  hook that runs it without clearing `GIT_DIR`, `GIT_WORK_TREE` and their
+  relatives gets an SDK that calls itself `0.0.0-unknown`, rebuilds its tool on
+  every attempt, and fails pub resolution with an error naming a package —
+  nothing in it points at the hook. `.githooks/pre-commit` unsets them, after
+  reading the staged file list and not before, because that list comes from
+  `GIT_INDEX_FILE` and clearing it first breaks the change detection instead.
+  Anything else that runs a git-aware tool from a hook needs the same
+  treatment.
 - The generated files under `lib/l10n/` are committed. Forgetting
   `flutter gen-l10n` leaves them stale and the diff looks unrelated to your
   change.
