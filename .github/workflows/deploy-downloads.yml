@@ -38,7 +38,7 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # A Hosting deploy replaces the entire site, and `version.json` is not in
       # the repository: it is written at release time and gitignored. Left
@@ -84,7 +84,7 @@ jobs:
                         --jq '.publishedAt[:10]')"
           cat web/downloads/version.json
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
 

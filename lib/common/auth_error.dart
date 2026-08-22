@@ -30,6 +30,20 @@ enum AuthFailure {
   /// The device could not reach Firebase at all.
   network,
 
+  /// Firebase refused the app rather than the credentials.
+  ///
+  /// A Google API key can be restricted to a list of callers, and Identity
+  /// Toolkit rejects anything not on it with 403 before a password is ever
+  /// looked at. Every account then fails, on every attempt, with a correct
+  /// password — which is indistinguishable from the app being broken.
+  ///
+  /// This is worth separating from [unknown] because the advice is the
+  /// opposite. Every other failure here is something the person can act on by
+  /// trying again, or trying something else. This one cannot be: the app they
+  /// are holding is not allowed to talk to the project, and nothing they do
+  /// with the form will change that.
+  blockedApp,
+
   /// Anything else.
   ///
   /// This is not a rare case to be ignored. Firebase adds error codes over
@@ -46,9 +60,40 @@ enum AuthFailure {
   unknown,
 }
 
+/// The reasons Google gives for refusing a caller outright.
+///
+/// These arrive inside a generic `internal-error`, so the code alone cannot
+/// tell this apart from any other server-side fault; the reason token is the
+/// only thing that names it. They are matched rather than the prose beside
+/// them because the prose is localized and rewordable and these are neither.
+///
+/// All four are the same failure wearing different clothes — the key does not
+/// list this caller — and the app ships on every platform that can produce
+/// one, so they are handled together rather than waiting to be met singly.
+const _blockedCallerReasons = <String>[
+  // The bundle id is not on the key's iOS app list. This is what a macOS
+  // build hits when it borrows the iOS registration and is not itself on it.
+  'API_KEY_IOS_APP_BLOCKED',
+  // The package name and signing certificate are not on the Android list.
+  'API_KEY_ANDROID_APP_BLOCKED',
+  // The origin is not on the key's referrer list.
+  'API_KEY_HTTP_REFERRER_BLOCKED',
+  // The key is valid for this caller but not for Identity Toolkit.
+  'API_KEY_SERVICE_BLOCKED',
+];
+
 /// Classifies [error] from a sign in or sign up attempt.
 AuthFailure classifyAuthError(Object error) {
   if (error is! FirebaseAuthException) return AuthFailure.unknown;
+
+  // Read before the code, because the code carrying this is whatever generic
+  // fault the platform SDK wrapped the 403 in. Taking the code first would
+  // file the failure under that generic name and lose what it actually was.
+  final details = error.message?.toUpperCase();
+  if (details != null &&
+      _blockedCallerReasons.any(details.contains)) {
+    return AuthFailure.blockedApp;
+  }
 
   switch (error.code) {
     case 'user-not-found':
@@ -86,6 +131,8 @@ String authFailureMessage(BuildContext context, AuthFailure failure) {
       return S.of(context)!.tooManyRequestsError;
     case AuthFailure.network:
       return S.of(context)!.networkError;
+    case AuthFailure.blockedApp:
+      return S.of(context)!.blockedAppError;
     case AuthFailure.unknown:
       return S.of(context)!.genericAuthError;
   }

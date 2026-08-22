@@ -131,7 +131,7 @@ jobs:
       notes: ${{ steps.notes.outputs.text }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -211,7 +211,7 @@ jobs:
       # Carried to the Android stage rather than regenerated there, so the
       # store listing and the GitHub release cannot describe the same release
       # differently.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: release-notes
           path: build/release_notes.json
@@ -248,10 +248,10 @@ jobs:
       VERSION: ${{ needs.resolve.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: inputs.ios_action != 'skip'
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: inputs.ios_action != 'skip'
         with:
           python-version: '3.12'
@@ -363,18 +363,18 @@ jobs:
       code: ${{ steps.promote.outputs.version-code }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
       - name: Install Play API client
         run: pip install --quiet google-auth requests
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: release-notes
           path: build
@@ -448,9 +448,9 @@ jobs:
       VERSION: ${{ needs.resolve.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -588,7 +588,7 @@ jobs:
       VERSION: ${{ needs.resolve.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.resolve.outputs.ref }}
 
@@ -784,7 +784,7 @@ jobs:
       - name: Checksum
         run: shasum -a 256 "$DMG" | tee "$DMG.sha256"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: desktop-macos
           path: |
@@ -823,7 +823,7 @@ jobs:
       VERSION: ${{ needs.resolve.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.resolve.outputs.ref }}
 
@@ -864,7 +864,7 @@ jobs:
           cd build/windows/installer
           sha256sum UrActor-*-windows-setup.exe | tee UrActor-"$VERSION"-windows-setup.exe.sha256
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: desktop-windows
           path: |
@@ -887,11 +887,11 @@ jobs:
       VERSION: ${{ needs.resolve.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.resolve.outputs.ref }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           pattern: desktop-*
           path: artifacts
@@ -930,7 +930,7 @@ jobs:
       # master happened to be when the run started.
       - name: Publish the GitHub release
         if: ${{ !inputs.dry_run }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ env.VERSION }}
           target_commitish: ${{ needs.resolve.outputs.ref }}

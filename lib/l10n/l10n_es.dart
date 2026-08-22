@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'l10n.dart';
 
 // ignore_for_file: type=lint
@@ -631,6 +632,14 @@ class SEs extends S {
   String get joinListTitle => 'Unirse a Lista';
 
   @override
+  String get recommendationSendFailed =>
+      'No se ha podido enviar tu recomendación. Inténtalo de nuevo.';
+
+  @override
+  String get recommendationSendPartial =>
+      'No se ha podido enviar esto a algunos de tus amigos.';
+
+  @override
   String get enterListName => 'Por favor, introduce un nombre de lista';
 
   @override
@@ -641,6 +650,9 @@ class SEs extends S {
 
   @override
   String get add => 'Añadir';
+
+  @override
+  String get accept => 'Aceptar';
 
   @override
   String get confirmWatchedToday => '¿Has visto esta película hoy?';
@@ -768,6 +780,10 @@ class SEs extends S {
   @override
   String get networkError =>
       'No se pudo conectar con el servidor. Comprueba tu conexión.';
+
+  @override
+  String get blockedAppError =>
+      'Esta versión de la aplicación no tiene permiso para iniciar sesión. Volver a intentarlo no servirá de nada.';
 
   @override
   String updateAvailable(String version) {
