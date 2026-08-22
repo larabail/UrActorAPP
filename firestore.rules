@@ -273,10 +273,6 @@ service cloud.firestore {
             || request.resource.data.TVShows is map);
     }
 
-    function progressReadableByFriend(uid, docId) {
-      return docId != 'Progress' && friendOf(uid);
-    }
-
     function validFriendCreate(docId) {
       return docId == 'Movies' && createsListFieldOnly('Seen')
         || docId == 'TVShows' && createsListFieldOnly('Seen')
@@ -473,14 +469,32 @@ service cloud.firestore {
       // A single document. Settings is readable by any signed-in user because
       // it doubles as the public profile: the username and avatar shown for
       // playlist co-members and search results are read straight out of it.
+      //
+      // A friend may read EVERY document here, Progress included. Hiding one
+      // document from a friend is not something this rule can do on its own,
+      // and trying it took friend features down in production -- see the
+      // comment on `allow list` directly below, and issue #121.
       allow get: if isSelf(uid)
         || docId == 'Settings' && signedIn()
-        || progressReadableByFriend(uid, docId);
+        || friendOf(uid);
 
       // Listing the whole collection is how a friend's profile and calendar
       // pages load. Firestore fails a query outright if any single returned
       // document is unreadable, so this cannot be narrowed per document while
       // the client fetches the collection wholesale.
+      //
+      // That sentence is load-bearing and was learned the hard way. A previous
+      // version excluded `Progress` from what a friend could read, to keep
+      // watch progress private. Every local check passed -- the emulator, the
+      // Rules simulator and the whole `firestore-tests` suite -- because none
+      // of them model production's all-or-nothing query evaluation. Deployed,
+      // it denied a friend's ENTIRE collection query for any user who had a
+      // Progress document, so their friends' calendars and watched-together
+      // lists went blank.
+      //
+      // So: a document that a friend may not read cannot live in a collection
+      // that a friend lists. Making watch progress private needs it moved out
+      // of this collection, not a narrower rule here.
       allow list: if isSelf(uid) || friendOf(uid);
 
       // Per-user documents are created lazily on whatever write touches them
@@ -603,15 +617,23 @@ service cloud.firestore {
 //    at once.
 //
 //    Be careful about what "ships" means here, because it is not what the
-//    issues describing this staging assume. NOTHING IN CI DEPLOYS THIS FILE.
-//    The release workflow deploys `--only functions`; firebase.json names
-//    these rules but no automation ever acts on it. Merging a change here
-//    changes nothing in production until a human runs:
+//    issues describing this staging assume -- though it is no longer what it
+//    was. CI does now deploy this file: the release workflow deploys
+//    `--only functions,firestore:rules,firestore:indexes` on every merge to
+//    master that touched any of them, so merging a change here does reach
+//    production, on that merge, applied to every client at once.
+//
+//    For a long time it did not. The release deployed `--only functions`,
+//    firebase.json named these rules and no automation ever acted on it, and a
+//    merged change stayed inert until a human ran:
 //
 //        firebase deploy --only firestore:rules --project actordb-cf981
 //
-//    So a rules fix is not done when it merges, and the suite in
-//    firestore-tests/ is the only thing checking this file at all.
+//    which is still how you deploy one out of band. The consequence worth
+//    keeping is the opposite of the old one: a rules mistake is live on merge
+//    rather than parked until someone notices, so the suite in
+//    firestore-tests/ -- which now runs on the pull request and again in the
+//    release job -- is what stands between a bad edit here and every phone.
 //
 // 3. A user can still write their own FavActors, FavDirectors and FavWriters.
 //

@@ -344,6 +344,18 @@ Two things follow from this that are worth knowing before changing a screen:
   1210pt iPad while being drawn into a 565pt pane, so every card overflowed.
   The two failures above are the same mistake twice: deciding from a number
   that is not the width of the box.
+- **Never size a panel as a fraction of the window's height either.** The rule
+  above is usually said about width, but height is where it bites hardest,
+  because the app bar and the navigation rail have already taken their share
+  before the body sees any of the window. A month grid is as tall as its
+  header, its day-of-week strip and however many week rows the month has; a
+  row of cards is as tall as a card. Let the content say so — inside a scroll
+  view a widget with an intrinsic height needs no box at all, and a
+  horizontally scrolling row that has to have one takes it from
+  `posterRowHeight`, not from `MediaQuery`. The calendar gave its grid 57% of
+  the window and the sheet a day opens 37.5%; the first clipped any month
+  needing six week rows, and the second clipped its cards on a short window
+  and left a band of empty sheet under them on a tall one.
 - **Open detail pages with `openDetail`, not `Navigator.push`.** It puts the
   page in the detail pane when there is one and over the whole window when
   there is not, so a call site does not have to know which layout it is in. A
@@ -809,9 +821,10 @@ npm test
 npm run deploy
 ```
 
-The release workflow also deploys the functions automatically on every merge to
-`master` that touched `functions/`. Nothing else in `firebase.json` is deployed
-by any workflow — see below.
+`npm run deploy` is `--only functions`, so it leaves the rules and the indexes
+alone. The release workflow does not: it deploys all three together on every
+merge to `master` that touched `functions/`, `firestore.rules` or
+`firestore.indexes.json`. See [CI and releases](#ci-and-releases).
 
 ### Where a recommendation lands
 
@@ -911,23 +924,37 @@ FCM send API it used was decommissioned.
 
 ## Deploying the rules
 
-**`firestore.rules` is not deployed by CI.** The only Firebase deploy in the
-release pipeline is `--only functions`, and the downloads workflow deploys
-hosting. `firebase.json` names the rules file, but no automation acts on it.
+`firestore.rules` and `firestore.indexes.json` are deployed by CI, together with
+the Cloud Functions, in a single command on every merge to `master` that touched
+any of the three:
 
-That is worth stating plainly because both the code comments and several issues
-have assumed the opposite. Merging a change to `firestore.rules` does not change
-what the live database enforces. A tightened rule stays inert, and so does a
-mistaken one. Someone has to run:
+```bash
+firebase deploy --only functions,firestore:rules,firestore:indexes
+```
+
+**That was not always true, and the way it failed is worth knowing.** The
+release pipeline deployed `--only functions`. `firebase.json` named the other
+two files but no workflow ever read them, so merging a change to
+`firestore.rules` did not change what the live database enforced — a tightened
+rule stayed inert, and so did a mistaken one. Nothing reported it either,
+because neither file has a build step it can fail. It surfaced when a composite
+index was merged in the same pull request as the scheduled function whose query
+needs it: the function failed on every five-minute run with
+`FAILED_PRECONDITION` while the index sat committed and reviewed in the
+repository. Both the code comments and several issues had assumed the opposite
+all along, which is why this section used to say the reverse.
+
+Deploying by hand is still occasionally the right thing — a hotfix, or a rules
+change that should not wait for a merge:
 
 ```bash
 firebase deploy --only firestore:rules --project actordb-cf981
 ```
 
-Two consequences follow. A rules change is not finished when its pull request
-merges, so whoever merges one owns deploying it. And the rules suite in
-[`firestore-tests/`](firestore-tests/README.md), which the pull request workflow
-runs, is the only automated check this file gets at any point.
+The rules suite in [`firestore-tests/`](firestore-tests/README.md) runs twice:
+once on the pull request, and again in the release job immediately before it
+deploys, on the reasoning that a merge commit is a combination neither branch
+tested on its own.
 
 A deploy applies to every client at once — there is no staged rollout the way
 there is for an app release — which is why the KNOWN GAPS section at the bottom
@@ -1011,7 +1038,8 @@ rate-limited API.
 passing tests. It expects `firebase` already on PATH; CI runs `npm run test:ci`
 instead, which uses the same pinned CLI through `npx` that the functions suite
 does. If port 8080 is already held by an emulator you started separately, run
-`npx mocha rules.test.js --timeout 20000` from `firestore-tests/` instead.
+`npx mocha rules.test.js --timeout 20000` from `firestore-tests/` instead. The
+release job runs it a second time, immediately before it deploys the rules.
 
 `node --test web/downloads/*.test.js` runs the downloads page's release logic — which
 installer belongs to which platform, which of two versions is newer, and what
@@ -1051,10 +1079,9 @@ break:
 - **Functions** installs Node 22 dependencies in `functions/`, runs `npm test`,
   and confirms `index.js` loads.
 - **Firestore rules** installs Node 22 dependencies in `firestore-tests/` and
-  runs the rules suite against the Firestore emulator, which needs a JDK.
-  Nothing in CI deploys `firestore.rules` — the release workflow deploys
-  `--only functions` — so this job is the only automated check they get, and
-  merging a rules change does not make it live. See
+  runs the rules suite against the Firestore emulator, which needs a JDK. The
+  release workflow runs the same suite again before it deploys the rules, so
+  this is the first of two checks rather than the only one. See
   [Deploying the rules](#deploying-the-rules).
 - **Downloads site** runs `node --test web/downloads/*.test.js`. The page at
   `downloads.uractor.com` is served exactly as it is committed, so nothing else
@@ -1116,8 +1143,9 @@ itself.
 Every merge to `master` that is not docs-only runs
 `.github/workflows/release-internal.yml`, the one pipeline that puts a build in
 front of testers on all three platforms. It analyzes and tests once, on Linux,
-then deploys Cloud Functions to `actordb-cf981`, and only then starts the three
-platform stages:
+then deploys the Firebase backend to `actordb-cf981` — the Cloud Functions,
+`firestore.rules` and `firestore.indexes.json`, in one `firebase deploy` — and
+only then starts the three platform stages:
 
 1. **Android** builds a signed app bundle with a Play-derived version code,
    generates release notes and uploads to Play internal testing.
@@ -1135,6 +1163,25 @@ The numbering is the order they are reported in, not the order they run in: all
 three start together, so a release costs roughly twenty-five minutes rather than
 the fifty-five they would add up to. A stage whose secrets are missing is
 skipped rather than failed, and the run summary states which platforms shipped.
+
+The rules and the indexes ship with the functions because until this was fixed
+they shipped with nothing. `firebase deploy --only functions` never read either
+file, so a security rule or a composite index could be written, reviewed and
+merged and still not exist in the project, with nothing to say so — neither
+file has a build step it can fail. It is not hypothetical: a scheduled function
+was merged alongside the composite index its query needs, and failed on every
+five-minute run with `FAILED_PRECONDITION` until the index was deployed by
+hand. The deploy stage still does nothing at all unless the push changed
+`functions/`, `firestore.rules` or `firestore.indexes.json`, and it re-runs both
+the functions tests and the `firestore-tests/` rules suite before deploying —
+the same reasoning that already applied to the functions, with more force, since
+a mistake in the rules reaches every installed app rather than one screen.
+
+Worth knowing when reading a failure shortly after a release: `firebase deploy`
+returns once Firestore has accepted an index, not once the index is built, and
+building one over a large collection takes minutes. A `FAILED_PRECONDITION`
+naming a required index, in the first few minutes after a deploy that added
+one, is usually that index still building rather than a missing one.
 
 Internal builds are not tagged; that summary records the version code and the
 commit, which is what a production promotion is given. Production is a separate,
