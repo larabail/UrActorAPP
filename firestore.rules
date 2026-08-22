@@ -617,15 +617,23 @@ service cloud.firestore {
 //    at once.
 //
 //    Be careful about what "ships" means here, because it is not what the
-//    issues describing this staging assume. NOTHING IN CI DEPLOYS THIS FILE.
-//    The release workflow deploys `--only functions`; firebase.json names
-//    these rules but no automation ever acts on it. Merging a change here
-//    changes nothing in production until a human runs:
+//    issues describing this staging assume -- though it is no longer what it
+//    was. CI does now deploy this file: the release workflow deploys
+//    `--only functions,firestore:rules,firestore:indexes` on every merge to
+//    master that touched any of them, so merging a change here does reach
+//    production, on that merge, applied to every client at once.
+//
+//    For a long time it did not. The release deployed `--only functions`,
+//    firebase.json named these rules and no automation ever acted on it, and a
+//    merged change stayed inert until a human ran:
 //
 //        firebase deploy --only firestore:rules --project actordb-cf981
 //
-//    So a rules fix is not done when it merges, and the suite in
-//    firestore-tests/ is the only thing checking this file at all.
+//    which is still how you deploy one out of band. The consequence worth
+//    keeping is the opposite of the old one: a rules mistake is live on merge
+//    rather than parked until someone notices, so the suite in
+//    firestore-tests/ -- which now runs on the pull request and again in the
+//    release job -- is what stands between a bad edit here and every phone.
 //
 // 3. A user can still write their own FavActors, FavDirectors and FavWriters.
 //
