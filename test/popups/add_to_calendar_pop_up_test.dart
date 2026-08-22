@@ -75,7 +75,6 @@ void main() {
 
   Future<void> pump(WidgetTester tester, Widget dialog) async {
     ignoreInkSplashAdvisory();
-    ignoreOverflowErrors();
     ignoreNetworkImageFailures();
     usePhoneSurface(tester, size: const Size(560, 1400));
     await tester.pumpWidget(
