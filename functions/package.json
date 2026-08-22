@@ -8,7 +8,7 @@
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
     "test": "node --test test/*.test.js",
-    "test:emulator": "npx --yes firebase-tools@15.28.1 emulators:exec --config ../firebase.json --project demo-uractor-functions-test --only firestore,functions,pubsub \"node --test test/*.test.js\""
+    "test:emulator": "TMDB_API_KEY=stub-key TMDB_API_BASE_URL=http://127.0.0.1:5099/3 npx --yes firebase-tools@15.28.1 emulators:exec --config ../firebase.json --project demo-uractor-functions-test --only firestore,functions,pubsub \"node --test test/*.test.js\""
   },
   "engines": {
     "node": "22"

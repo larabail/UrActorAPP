@@ -257,9 +257,9 @@ service cloud.firestore {
     //
     // Declared BEFORE the per-user wildcard for readability only. Firestore
     // rules are additive: a request is allowed if ANY match grants it, so
-    // ordering carries no meaning. These three collection names are therefore
-    // also matched by /{uid}/{docId} below, which is harmless because no uid
-    // can equal them and every check there resolves false.
+    // ordering carries no meaning. These collection names are therefore also
+    // matched by /{uid}/{docId} below, which is harmless because no uid can
+    // equal them and every check there resolves false.
     // ---------------------------------------------------------------------
 
     // Reference data on award winners. Read by every client at sign-in and
@@ -316,6 +316,43 @@ service cloud.firestore {
             && playlistMember(request.resource.data));
 
       allow delete: if playlistOwner(resource.data);
+    }
+
+    // A title's cast and crew, cached so TMDB is asked for it once ever
+    // rather than once per viewer.
+    //
+    // Entirely server side: recomputePeopleScores fills it and reads it with
+    // admin credentials, which bypass these rules. Nothing in the app needs
+    // it -- the screens fetch their own credits in the viewer's language,
+    // while this holds only ids -- so it is closed to clients outright rather
+    // than left readable for no reason.
+    match /Credits/{docId} {
+      allow read: if false;
+      allow write: if false;
+    }
+
+    // One record per user saying their library has changed and their
+    // favourite actor, director and writer scores need recomputing.
+    //
+    // Normally written by markPeopleScoresDirty, which runs with admin
+    // credentials. A client may also mark ITSELF dirty, and that is the only
+    // thing it may do here: it is how a user whose library has not changed
+    // since the scores moved off the person page gets a first complete
+    // ranking without having to watch something to trigger one.
+    //
+    // Clearing the flag is deliberately not allowed. Only the worker may say
+    // the work is done, so a client cannot make itself be skipped, and the
+    // bookkeeping it writes (lastRunAt, lastError) cannot be forged.
+    match /PeopleScoreJobs/{uid} {
+      allow read: if isSelf(uid);
+      allow create: if isSelf(uid)
+        && request.resource.data.keys().hasOnly(['dirty', 'dirtyAt'])
+        && request.resource.data.dirty == true;
+      allow update: if isSelf(uid)
+        && request.resource.data.diff(resource.data)
+             .affectedKeys().hasOnly(['dirty', 'dirtyAt'])
+        && request.resource.data.dirty == true;
+      allow delete: if false;
     }
 
     // ---------------------------------------------------------------------
@@ -389,7 +426,7 @@ service cloud.firestore {
 // ---------------------------------------------------------------------------
 // KNOWN GAPS
 //
-// Both are client design problems that rules cannot close on their own.
+// All three are client design problems that rules cannot close on their own.
 //
 // 1. Every signed-in user can still read every playlist.
 //
@@ -428,4 +465,16 @@ service cloud.firestore {
 //    including a nonsense season. Closing that needs the entry to move behind
 //    a function, or the day to be written as a subcollection document whose id
 //    the rule can see.
+//
+// 3. A user can still write their own FavActors, FavDirectors and FavWriters.
+//
+//    recomputePeopleScores owns those three documents now and rewrites them
+//    whole, so anything a client puts there is corrected on the next run. The
+//    write is not blocked yet because builds already on people's phones still
+//    compute a score on the person page and save it; refusing it would make
+//    every person page they open raise a permission error.
+//
+//    The fix is to add these three ids to a deny list on /{uid}/{docId} once
+//    Play Console adoption of a client that does not write them is high
+//    enough -- the same staging as the playlist read restriction above.
 // ---------------------------------------------------------------------------

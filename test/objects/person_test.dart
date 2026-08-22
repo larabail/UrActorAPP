@@ -406,89 +406,6 @@ void main() {
     });
   });
 
-  group('updateStatsDoc', () {
-    late FakeFirebaseFirestore firestore;
-
-    setUp(() {
-      firestore = installFakeFirestore();
-    });
-
-    test('ranks the person against everyone else in the document', () async {
-      await seedUserDoc(firestore, user.uid, 'FavActors', {
-        '1': 30,
-        '2': 10,
-      });
-
-      final rank =
-          await personUnderTest().updateStatsDoc(20, user, 'FavActors');
-
-      expect(rank, 2, reason: 'between the 30 and the 10');
-    });
-
-    test('a new best score ranks first', () async {
-      await seedUserDoc(firestore, user.uid, 'FavActors', {'1': 30});
-
-      expect(await personUnderTest().updateStatsDoc(31, user, 'FavActors'), 1);
-    });
-
-    test('the score is written back, not just compared', () async {
-      await personUnderTest().updateStatsDoc(7, user, 'FavDirectors');
-
-      final doc =
-          await firestore.collection(user.uid).doc('FavDirectors').get();
-      expect(doc.data(), {'287': 7});
-    });
-
-    test('a re-scored person is ranked on the new score, not the old one',
-        () async {
-      await seedUserDoc(firestore, user.uid, 'FavActors', {
-        '287': 1,
-        '1': 30,
-      });
-
-      expect(await personUnderTest().updateStatsDoc(40, user, 'FavActors'), 1);
-    });
-  });
-
-  group('fetchNewStats', () {
-    late FakeFirebaseFirestore firestore;
-
-    setUp(() {
-      firestore = installFakeFirestore();
-    });
-
-    test('reloads all three lists best first', () async {
-      await seedUserDoc(firestore, user.uid, 'FavActors', {'1': 5, '2': 50});
-      await seedUserDoc(firestore, user.uid, 'FavDirectors', {'3': 7});
-      await seedUserDoc(firestore, user.uid, 'FavWriters', {'4': 2, '5': 9});
-
-      await personUnderTest().fetchNewStats(user);
-
-      expect(user.favActors, [
-        [50, '2'],
-        [5, '1'],
-      ]);
-      expect(user.favDirectors, [
-        [7, '3'],
-      ]);
-      expect(user.favWriters, [
-        [9, '5'],
-        [2, '4'],
-      ]);
-    });
-
-    test('a list that no longer has a document is emptied, not left stale',
-        () async {
-      user.favActors = [
-        [99, 'someone-who-was-removed'],
-      ];
-
-      await personUnderTest().fetchNewStats(user);
-
-      expect(user.favActors, isEmpty);
-    });
-  });
-
   group('getPersonData', () {
     late FakeFirebaseFirestore firestore;
     late HttpStub http;
@@ -520,14 +437,61 @@ void main() {
       expect(person.personStats['allDirMovies'], 1);
     });
 
-    test('the rankings it returns are the ones now stored', () async {
+    test('ranks the person against the scores the server worked out', () async {
+      user.favActors = [
+        [30, '1'],
+        [10, '2'],
+      ];
+      user.favDirectors = [
+        [8, '1'],
+      ];
+      user.seenMovies = [
+        ['Movies', '1'],
+      ];
+
       final json = await personUnderTest().getPersonData(user, {});
 
-      expect(json['actor_ranking'], 1);
-      expect(json['director_ranking'], 1);
-      expect(json['writer_ranking'], 1);
-      final doc = await firestore.collection(user.uid).doc('FavActors').get();
-      expect(doc.data(), {'287': 0});
+      expect(json['actor_ranking'], 3, reason: 'scores 2, behind the 30 and 10');
+      expect(json['director_ranking'], 2, reason: 'scores 0, behind the 8');
+      expect(json['writer_ranking'], 1, reason: 'nobody has been stored');
+    });
+
+    test('does not write the score it computed', () async {
+      // The whole reason the favourites were unreliable: this was the only
+      // thing that ever saved a score, so a person nobody opened never had
+      // one. recomputePeopleScores owns those documents now, and a page view
+      // must not put a value of its own into them.
+      await seedUserDoc(firestore, user.uid, 'FavActors', {'1': 30});
+
+      await personUnderTest().getPersonData(user, {});
+
+      final actors = await firestore.collection(user.uid).doc('FavActors').get();
+      expect(actors.data(), {'1': 30});
+      final directors =
+          await firestore.collection(user.uid).doc('FavDirectors').get();
+      expect(directors.exists, isFalse);
+      final writers =
+          await firestore.collection(user.uid).doc('FavWriters').get();
+      expect(writers.exists, isFalse);
+    });
+
+    test('counts a title seen since the last server run', () async {
+      // The stored score cannot know about a film logged a minute ago, so the
+      // page ranks on what it computed itself.
+      user.favActors = [
+        [30, '1'],
+        [1, '287'],
+      ];
+      user.seenMovies = [
+        ['Movies', '1'],
+      ];
+      user.favMovies = [
+        ['Movies', '1'],
+      ];
+
+      final json = await personUnderTest().getPersonData(user, {});
+
+      expect(json['actor_ranking'], 2, reason: 'scores 5 now, not the stored 1');
     });
 
     test('awards are regrouped by film so the screen can list them', () async {

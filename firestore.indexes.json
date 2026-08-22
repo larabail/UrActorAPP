@@ -1,1 +1,13 @@
-{"indexes": [], "fieldOverrides": []}
+{
+  "indexes": [
+    {
+      "collectionGroup": "PeopleScoreJobs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "dirty", "order": "ASCENDING"},
+        {"fieldPath": "dirtyAt", "order": "ASCENDING"}
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
