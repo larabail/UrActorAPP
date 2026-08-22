@@ -17,7 +17,8 @@ import 'viewing_history_range.dart';
 /// Reads when a title was started and finished and renders it as a range.
 ///
 /// Renders nothing at all when there is nothing recorded, so a title with no
-/// history looks exactly as it did before this existed.
+/// history looks exactly as it did before this existed, and nothing at all for
+/// a film — see [appliesTo].
 class ViewingHistoryRangeLabel extends StatefulWidget {
   /// `progressMoviesKey` or `progressTVShowsKey`.
   final String type;
@@ -46,6 +47,19 @@ class ViewingHistoryRangeLabel extends StatefulWidget {
     super.key,
   });
 
+  /// Whether a date range says anything worth reading about [type].
+  ///
+  /// Only a show. A film is watched in one sitting, so the range is either the
+  /// same day printed twice or — once it has been rewatched — two viewings
+  /// years apart drawn as though they were a single continuous watch, which is
+  /// worse than saying nothing. "How long it took" is a question only
+  /// something released in parts can answer.
+  ///
+  /// The individual dates a film was watched on are unaffected: they are the
+  /// rows inside the history, and they are what a rewatch is actually a record
+  /// of. Only the summary above them goes.
+  static bool appliesTo(String type) => type == progressTVShowsKey;
+
   @override
   State<ViewingHistoryRangeLabel> createState() =>
       _ViewingHistoryRangeLabelState();
@@ -71,6 +85,8 @@ class _ViewingHistoryRangeLabelState extends State<ViewingHistoryRangeLabel> {
   }
 
   Future<void> _load() async {
+    // Nothing to draw for a film, so nothing worth reading for one either.
+    if (!ViewingHistoryRangeLabel.appliesTo(widget.type)) return;
     final dates = await ProgressService.datesFor(widget.type, widget.id);
     if (!mounted) return;
     setState(() => _dates = dates);
@@ -78,6 +94,10 @@ class _ViewingHistoryRangeLabelState extends State<ViewingHistoryRangeLabel> {
 
   @override
   Widget build(BuildContext context) {
+    if (!ViewingHistoryRangeLabel.appliesTo(widget.type)) {
+      return const SizedBox.shrink();
+    }
+
     final range = ViewingHistory.rangeFor(
       seenDates: widget.seenDates,
       seen: widget.seen,

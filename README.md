@@ -41,11 +41,14 @@ window rather than the device it is on (see [Platforms](#platforms) and
   A movie is set to being watched from that control and nowhere else — a
   calendar entry records a day you watched something, which for a film is a
   completed act, so the calendar always means finished there.
-- See when you watched something. A title's viewing history is headed with the
-  range it covers: the first day recorded through to the day it was finished,
-  or through to the present while it is still being watched. The dates come
-  from the calendar, so an account that predates watch progress keeps the
-  history it always had (`lib/common/viewing_history_range.dart`,
+- See when you watched something. A **show's** viewing history is headed with
+  the range it covers: the first day recorded through to the day it was
+  finished, or through to the present while it is still being watched. The
+  dates come from the calendar, so an account that predates watch progress
+  keeps the history it always had. A film has no such heading — it is watched
+  in one sitting, so a range would either repeat one day or draw two separate
+  rewatches as a single viewing years long; the days themselves are still
+  listed (`lib/common/viewing_history_range.dart`,
   `lib/common/viewing_history_widgets.dart`).
 - Tick episodes and whole seasons off in the season guide. Watching the last
   episode finishes the show on its own (`lib/season_guide.dart`,
@@ -572,7 +575,7 @@ lib/
     watch_progress_widgets.dart     The season, episode and detail controls
     calendar_progress.dart          What a calendar entry means for tracking
     viewing_history_range.dart      When a title was started and finished
-    viewing_history_widgets.dart    The range shown above a viewing history
+    viewing_history_widgets.dart    The range shown above a show's history
     api/apiutils.dart        All TMDB HTTP calls; a show's credits come from
                              aggregate_credits and are flattened to the shape
                              /credits returns
