@@ -149,7 +149,8 @@ double posterRowHeight(BuildContext context, {double scale = 1.0}) =>
 /// they stay the same shape now that it is the right one, and that a future
 /// change to tile sizing does not have to be repeated twenty times.
 class PosterPlaceholder extends StatelessWidget {
-  const PosterPlaceholder({super.key, this.child, this.scale = 1.0});
+  const PosterPlaceholder(
+      {super.key, this.child, this.scale = 1.0, this.width});
 
   /// Shown centred in the reserved space — a spinner, or a message saying the
   /// details could not be loaded.
@@ -158,9 +159,13 @@ class PosterPlaceholder extends StatelessWidget {
   /// Matches the [scale] given to the tile this stands in for.
   final double scale;
 
+  /// Overrides the width outright, for a placeholder standing in for a tile
+  /// in a grid that has worked out its own tile width.
+  final double? width;
+
   @override
   Widget build(BuildContext context) {
-    final double width = context.posterWidth * scale;
+    final double tileWidth = width ?? context.posterWidth * scale;
     return Container(
       margin: const EdgeInsets.fromLTRB(
         kPosterTileMarginLeft,
@@ -168,8 +173,8 @@ class PosterPlaceholder extends StatelessWidget {
         kPosterTileMarginRight,
         0,
       ),
-      width: width,
-      height: posterHeightFor(width),
+      width: tileWidth,
+      height: posterHeightFor(tileWidth),
       child: child == null ? null : Center(child: child),
     );
   }

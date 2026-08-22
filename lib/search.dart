@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/common/media_pair_membership.dart';
+import 'package:uractor/common/widgets/scrolling_line.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'common/api/apiutils.dart';
 import 'package:uractor/objects/movie.dart';
@@ -195,7 +196,8 @@ class _SearchResultState extends State<Search> {
     }
   }
 
-  Widget _buildItem(BuildContext context, Map item) {
+  Widget _buildItem(BuildContext context, Map item,
+      {required double tileWidth}) {
     String typeContainer = "media";
     if (item.containsKey("poster_path") &&
         (item.containsKey("title") || item.containsKey("name"))) {
@@ -207,22 +209,30 @@ class _SearchResultState extends State<Search> {
     return GestureDetector(
       onTap: () => _handleTap(context, item, typeContainer),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           getItemContainer(
             context,
             item,
             typeContainer,
+            width: tileWidth,
             mediaPair: mediaPairForData(item, containerType: typeContainer),
           ),
-          SizedBox(
-            width: context.posterWidth,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Text(
-                item['title'] ?? (item["name"] ?? S.of(context)!.unknown),
-                style: const TextStyle(
-                  fontSize: 14,
-                ),
+          Padding(
+            padding: const EdgeInsets.only(
+              left: kPosterTileMarginLeft,
+              right: kPosterTileMarginRight,
+              top: kPosterLabelGap,
+            ),
+            child: SizedBox(
+              width: tileWidth,
+              // A title wider than a poster used to be clipped, in a scroll
+              // box too fiddly to drag inside a scrolling grid of them.
+              child: ScrollingLine(
+                text: item['title'] ?? (item["name"] ?? S.of(context)!.unknown),
+                style: const TextStyle(fontSize: 14),
+                height: kPosterLabelHeight,
               ),
             ),
           ),
@@ -249,19 +259,14 @@ class _SearchResultState extends State<Search> {
 
     return ResponsiveRegion(
       builder: (context, size) {
-        // The number of columns follows the width the results have, so a
-        // tablet or a desktop window fills its rows instead of showing three
-        // stretched tiles and a wide empty margin either side.
-        final double cellWidth = context.posterWidth +
-            kPosterTileMarginLeft +
-            kPosterTileMarginRight;
-        final int columns = gridColumnsFor(
+        // The grid follows the width the results have, so a tablet or a
+        // desktop window fills its rows instead of showing three stretched
+        // tiles and a wide empty margin either side.
+        final PosterGridMetrics grid = posterGridMetricsFor(
           LayoutScope.widthOf(context),
-          targetTileWidth: cellWidth,
-          spacing: 0,
-          minColumns: 2,
+          targetTileWidth: context.posterWidth,
         );
-        final int rowCount = (_results.length / columns).ceil();
+        final int rowCount = (_results.length / grid.columns).ceil();
 
         return ListView.builder(
           controller: _scrollController,
@@ -275,12 +280,13 @@ class _SearchResultState extends State<Search> {
             }
             return Row(
               mainAxisAlignment: MainAxisAlignment.start,
-              children: List.generate(columns, (column) {
-                final int itemIndex = index * columns + column;
+              children: List.generate(grid.columns, (column) {
+                final int itemIndex = index * grid.columns + column;
                 if (itemIndex >= _results.length) {
-                  return SizedBox(width: cellWidth);
+                  return SizedBox(width: grid.cellWidth);
                 }
-                return _buildItem(context, _results[itemIndex] as Map);
+                return _buildItem(context, _results[itemIndex] as Map,
+                    tileWidth: grid.tileWidth);
               }),
             );
           },

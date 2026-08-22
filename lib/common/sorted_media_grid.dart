@@ -164,22 +164,17 @@ class _SortedMediaGridState extends State<SortedMediaGrid> {
         Expanded(
           child: ResponsiveRegion(
             builder: (context, size) {
-              // How many tiles fit is decided from the width the grid has been
-              // given, not from the window: inside a two pane layout the grid
-              // occupies a fraction of a wide window, and sizing it to the
-              // window would run its rows off the edge of the pane.
-              final double tileWidth = context.posterWidth;
-              final double cellWidth =
-                  tileWidth + kPosterTileMarginLeft + kPosterTileMarginRight;
-              final int columns = gridColumnsFor(
+              // The grid is sized from the width it has been given, not from
+              // the window: inside a two pane layout the grid occupies a
+              // fraction of a wide window, and sizing it to the window would
+              // run its rows off the edge of the pane.
+              final PosterGridMetrics grid = posterGridMetricsFor(
                 LayoutScope.widthOf(context),
-                targetTileWidth: cellWidth,
-                spacing: 0,
-                minColumns: 2,
+                targetTileWidth: context.posterWidth,
               );
 
               return ListView.builder(
-                itemCount: (items.length / columns).ceil(),
+                itemCount: (items.length / grid.columns).ceil(),
                 itemBuilder: (context, index) {
                   return Row(
                     // Rows are packed from the leading edge so that a partial
@@ -187,16 +182,17 @@ class _SortedMediaGridState extends State<SortedMediaGrid> {
                     // out instead left the final one or two tiles drifting to
                     // the middle of a wide window.
                     mainAxisAlignment: MainAxisAlignment.start,
-                    children: List.generate(columns, (i) {
-                      final itemIndex = index * columns + i;
+                    children: List.generate(grid.columns, (i) {
+                      final itemIndex = index * grid.columns + i;
                       if (itemIndex < items.length) {
                         return ItemCard(
                           item: items[itemIndex],
+                          tileWidth: grid.tileWidth,
                           showFavoriteBadge: widget.showFavoriteBadge,
                           showWatchlistBadge: widget.showWatchlistBadge,
                         );
                       }
-                      return SizedBox(width: cellWidth);
+                      return SizedBox(width: grid.cellWidth);
                     }),
                   );
                 },
@@ -214,9 +210,14 @@ class ItemCard extends StatefulWidget {
   final bool showFavoriteBadge;
   final bool showWatchlistBadge;
 
+  /// The width the grid has worked out for its tiles. Null falls back to the
+  /// size class's own width, for the callers that draw a tile outside a grid.
+  final double? tileWidth;
+
   const ItemCard({
     super.key,
     required this.item,
+    this.tileWidth,
     this.showFavoriteBadge = true,
     this.showWatchlistBadge = true,
   });
@@ -261,6 +262,7 @@ class _ItemCardState extends State<ItemCard> {
               context,
               snapshot.data,
               'media',
+              width: widget.tileWidth,
               mediaPair: widget.item,
               showFavoriteBadge: widget.showFavoriteBadge,
               showWatchlistBadge: widget.showWatchlistBadge,
@@ -268,10 +270,14 @@ class _ItemCardState extends State<ItemCard> {
           );
         } else if (snapshot.hasError) {
           return PosterPlaceholder(
+            width: widget.tileWidth,
             child: Text(S.of(context)!.errorFailedToLoadDetails),
           );
         } else {
-          return const PosterPlaceholder(child: CircularProgressIndicator());
+          return PosterPlaceholder(
+            width: widget.tileWidth,
+            child: const CircularProgressIndicator(),
+          );
         }
       },
     );

@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:uractor/common/credit_label.dart';
 import 'package:uractor/common/item_container.dart';
-import 'package:uractor/common/widgets/credit_tile.dart';
 import 'package:uractor/common/widgets/scrolling_line.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/person.dart';
@@ -172,7 +171,7 @@ class ItemCard extends StatelessWidget {
                     ScrollingLine(
                       text: "${snapshot.data!['name']}",
                       style: const TextStyle(fontSize: 14),
-                      height: kCreditLabelHeight,
+                      height: kPosterLabelHeight,
                     ),
                     ScrollingLine(
                       // A credit with no part named gets a blank line rather
@@ -181,7 +180,7 @@ class ItemCard extends StatelessWidget {
                           ? ''
                           : "${S.of(context)!.as} $role",
                       style: const TextStyle(fontSize: 14),
-                      height: kCreditLabelHeight,
+                      height: kPosterLabelHeight,
                     ),
                   ],
                 ),

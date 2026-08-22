@@ -313,25 +313,21 @@ class _PersonResultState extends State<PersonResult> {
     );
   }
 
-  /// One row of a filmography, [columns] wide.
+  /// One row of a filmography, sized to the [grid] it belongs to.
   ///
-  /// The count is passed in rather than fixed at three, because this page is
-  /// as likely to be shown in a detail pane occupying half a wide window as
-  /// it is to have the whole screen. Three tiles sized for a phone left most
-  /// of a desktop pane empty; sizing them from the window instead overflowed
-  /// the pane, which is the same mistake in the other direction.
+  /// The shape is passed in rather than fixed at three tiles, because this
+  /// page is as likely to be shown in a detail pane occupying half a wide
+  /// window as it is to have the whole screen. Three tiles sized for a phone
+  /// left most of a desktop pane empty; sizing them from the window instead
+  /// overflowed the pane, which is the same mistake in the other direction.
   Widget buildMediaRow(BuildContext context, List<dynamic> mediaList, int index,
       String mediaType, bool isCrew, Map oscars,
-      {required int columns}) {
+      {required PosterGridMetrics grid}) {
     Widget buildMediaItem(dynamic media) {
       if (media == null || media["poster_path"] == null) {
         // Reserves the whole cell, margins included, so the column a
         // poster-less credit sits in stays where the rows above put it.
-        return SizedBox(
-          width: context.posterWidth +
-              kPosterTileMarginLeft +
-              kPosterTileMarginRight,
-        );
+        return SizedBox(width: grid.cellWidth);
       }
 
       return GestureDetector(
@@ -352,7 +348,8 @@ class _PersonResultState extends State<PersonResult> {
           }
           openDetail(context, page);
         },
-        child: creditTile(context, media, mediaType, oscars, isCrew: isCrew),
+        child: creditTile(context, media, mediaType, oscars,
+            isCrew: isCrew, tileWidth: grid.tileWidth),
       );
     }
 
@@ -364,9 +361,9 @@ class _PersonResultState extends State<PersonResult> {
       // its poster down to the middle of the row.
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (int column = 0; column < columns; column++)
-          if (index * columns + column < mediaList.length)
-            buildMediaItem(mediaList[index * columns + column]),
+        for (int column = 0; column < grid.columns; column++)
+          if (index * grid.columns + column < mediaList.length)
+            buildMediaItem(mediaList[index * grid.columns + column]),
       ],
     );
   }
@@ -380,19 +377,14 @@ class _PersonResultState extends State<PersonResult> {
   ) {
     return ResponsiveRegion(
       builder: (context, size) {
-        final double cellWidth = context.posterWidth +
-            kPosterTileMarginLeft +
-            kPosterTileMarginRight;
-        final int columns = gridColumnsFor(
+        final PosterGridMetrics grid = posterGridMetricsFor(
           LayoutScope.widthOf(context),
-          targetTileWidth: cellWidth,
-          spacing: 0,
-          minColumns: 2,
+          targetTileWidth: context.posterWidth,
         );
 
         return ListView.builder(
           scrollDirection: Axis.vertical,
-          itemCount: (media.length / columns).ceil(),
+          itemCount: (media.length / grid.columns).ceil(),
           itemBuilder: (context, index) => buildMediaRow(
             context,
             media,
@@ -400,7 +392,7 @@ class _PersonResultState extends State<PersonResult> {
             mediaType,
             isCrew,
             oscars,
-            columns: columns,
+            grid: grid,
           ),
         );
       },
@@ -541,7 +533,7 @@ class _PersonResultState extends State<PersonResult> {
   /// branches, which is how the two of them drifted apart on details like how
   /// dark the wash over a seen poster is.
   Widget creditTile(BuildContext context, dynamic media, String type, Map oscars,
-      {required bool isCrew}) {
+      {required bool isCrew, required double tileWidth}) {
     final bool watched =
         Utils.containsNonType(currentUser.seenMovies, [type, media['id']]) ||
             Utils.containsNonType(currentUser.seenTVShows, [type, media['id']]);
@@ -552,9 +544,10 @@ class _PersonResultState extends State<PersonResult> {
 
     return CreditTile(
       poster: getItemContainer(context, media, "media",
+          width: tileWidth,
           mediaPair: mediaPairForData(media, containerType: type)),
       label: creditLabelFor(media as Map, isCrew: isCrew),
-      tileWidth: context.posterWidth,
+      tileWidth: tileWidth,
       watched: watched,
       awards: awards,
     );

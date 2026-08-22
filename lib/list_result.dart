@@ -547,8 +547,8 @@ class _ListResultState extends State<ListResult> {
     }
   }
 
-  Widget buildMediaItem(
-      String mediaId, String mediaType, BuildContext context) {
+  Widget buildMediaItem(String mediaId, String mediaType, BuildContext context,
+      {required double tileWidth}) {
     return FutureBuilder<Map<String, dynamic>>(
       future: getData(mediaId, mediaType),
       builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
@@ -576,24 +576,22 @@ class _ListResultState extends State<ListResult> {
                 context,
                 snapshot.data,
                 "media",
+                width: tileWidth,
                 mediaPair: mediaPairForData(
                   snapshot.data,
                   containerType: mediaType,
                 ),
               ));
         } else if (snapshot.hasError) {
-          return Container(
-              margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-              width: context.posterWidth,
-              height: posterHeightFor(context.posterWidth),
-              child:
-                  Center(child: Text(S.of(context)!.errorFailedToLoadDetails)));
+          return PosterPlaceholder(
+            width: tileWidth,
+            child: Text(S.of(context)!.errorFailedToLoadDetails),
+          );
         } else {
-          return Container(
-              margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-              width: context.posterWidth,
-              height: posterHeightFor(context.posterWidth),
-              child: const Center(child: CircularProgressIndicator()));
+          return PosterPlaceholder(
+            width: tileWidth,
+            child: const CircularProgressIndicator(),
+          );
         }
       },
     );
@@ -603,30 +601,26 @@ class _ListResultState extends State<ListResult> {
       List mediaList, String mediaType, BuildContext context) {
     return ResponsiveRegion(
       builder: (context, size) {
-        // Column count follows the width the list has, so a playlist opened in
-        // a detail pane fills it instead of showing three tiles and a gap.
-        final double cellWidth = context.posterWidth +
-            kPosterTileMarginLeft +
-            kPosterTileMarginRight;
-        final int columns = gridColumnsFor(
+        // The grid follows the width the list has, so a playlist opened in a
+        // detail pane fills it instead of showing three tiles and a gap.
+        final PosterGridMetrics grid = posterGridMetricsFor(
           LayoutScope.widthOf(context),
-          targetTileWidth: cellWidth,
-          spacing: 0,
-          minColumns: 2,
+          targetTileWidth: context.posterWidth,
         );
 
         return ListView.builder(
-          itemCount: (mediaList.length / columns).ceil(),
+          itemCount: (mediaList.length / grid.columns).ceil(),
           itemBuilder: (context, index) {
             return Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                for (int column = 0; column < columns; column++)
-                  if (index * columns + column < mediaList.length)
+                for (int column = 0; column < grid.columns; column++)
+                  if (index * grid.columns + column < mediaList.length)
                     buildMediaItem(
-                        mediaList[index * columns + column].toString(),
+                        mediaList[index * grid.columns + column].toString(),
                         mediaType,
-                        context),
+                        context,
+                        tileWidth: grid.tileWidth),
               ],
             );
           },

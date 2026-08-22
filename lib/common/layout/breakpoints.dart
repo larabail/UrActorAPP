@@ -155,12 +155,21 @@ double posterWidthFor(WindowSizeClass size) {
 double tileSpacingFor(WindowSizeClass size) =>
     size == WindowSizeClass.compact ? 8 : 12;
 
-/// How many columns of [targetTileWidth]-wide tiles fit into [availableWidth].
+/// How many columns of [targetTileWidth]-wide tiles [availableWidth] is best
+/// divided into.
 ///
 /// The count is what adapts; the tiles then share the width out evenly, so a
 /// grid always reaches both edges instead of leaving a ragged margin. The
 /// result is clamped so a very narrow window still shows more than one tile
 /// and a very wide one does not shrink them to thumbnails.
+///
+/// The division rounds rather than floors, because the answer is handed to
+/// [posterGridMetricsFor], which gives the leftover width to the tiles. A
+/// floor leaves up to a whole column spare, and at two columns that inflates
+/// each tile by half again — a 320pt phone showing two posters half as wide
+/// again as the same posters on a 393pt one. Rounding keeps the tiles within
+/// about a seventh of the width asked for in either direction, which is the
+/// difference between a grid that breathes and one that looks broken.
 ///
 /// [spacing] is counted between columns only, not outside them, which is why
 /// the arithmetic adds one spacing before dividing.
@@ -171,9 +180,17 @@ int gridColumnsFor(
   int minColumns = 2,
   int maxColumns = 12,
 }) {
-  if (availableWidth <= 0 || targetTileWidth <= 0) return minColumns;
+  // An infinite width means the caller is being measured rather than laid
+  // out — inside a horizontal scroll view, say. Rounding infinity throws, so
+  // the fallback is the same one a zero width gets.
+  if (availableWidth <= 0 ||
+      !availableWidth.isFinite ||
+      targetTileWidth <= 0 ||
+      !targetTileWidth.isFinite) {
+    return minColumns;
+  }
   final int fitted =
-      ((availableWidth + spacing) / (targetTileWidth + spacing)).floor();
+      ((availableWidth + spacing) / (targetTileWidth + spacing)).round();
   return fitted.clamp(minColumns, maxColumns);
 }
 
@@ -227,6 +244,90 @@ int gridColumnsForMaxTileWidth(
 const double kPosterTileMarginLeft = 5;
 const double kPosterTileMarginTop = 10;
 const double kPosterTileMarginRight = 10;
+
+/// The width a poster tile's own margins take out of the cell holding it.
+const double kPosterTileMarginWidth =
+    kPosterTileMarginLeft + kPosterTileMarginRight;
+
+/// The room kept under a poster for its one line of caption — a character
+/// name on a filmography, a title in a list of search results.
+///
+/// Fixed rather than measured so every tile in a row is the same height
+/// whether or not it has anything to say. A row whose tiles disagree about
+/// their height centres the short ones, and the posters stop lining up.
+const double kPosterLabelHeight = 20;
+
+/// The gap between a poster and the caption under it.
+const double kPosterLabelGap = 4;
+
+/// The shape of one row of a poster grid: how many tiles, and how wide each
+/// one has to be for the row to reach both edges.
+class PosterGridMetrics {
+  const PosterGridMetrics({required this.columns, required this.tileWidth});
+
+  /// How many tiles go in a row.
+  final int columns;
+
+  /// The width of the artwork itself, excluding the margin around it.
+  final double tileWidth;
+
+  /// The width of the whole cell a tile occupies, margins included. This is
+  /// what a row should reserve for a gap where an item is missing, so the
+  /// columns of a partial last row stay under the ones above.
+  double get cellWidth => tileWidth + kPosterTileMarginWidth;
+}
+
+/// How a grid of posters should lay itself out in [availableWidth].
+///
+/// Every poster grid in the app used to work this out for itself, in the same
+/// six lines, and all of them got it wrong the same way: they picked a column
+/// count and then drew tiles at a fixed width, so whatever the division left
+/// over — up to a whole tile's worth — piled up as dead space against the
+/// trailing edge. On a phone that was three posters hugging the left and a
+/// visible gap on the right.
+///
+/// Here the count is decided first and the width follows from it, so the
+/// columns divide [availableWidth] exactly. [targetTileWidth] is what a tile
+/// would like to be, from [posterWidthFor]; it is an aim rather than a
+/// promise, and the tiles end up a little either side of it.
+///
+/// The exact fit has one floor under it: [minColumns] tiles of one logical
+/// pixel plus their margins, about 32 pixels in all. A region narrower than
+/// that cannot hold a grid at all, and the numbers returned for it are the
+/// least bad rather than a fit.
+///
+/// Pass the width the *grid* has, not the window's: inside a two pane layout
+/// they are different numbers, and sizing to the window runs the rows off the
+/// edge of the pane.
+PosterGridMetrics posterGridMetricsFor(
+  double availableWidth, {
+  required double targetTileWidth,
+  int minColumns = 2,
+  int maxColumns = 12,
+}) {
+  final int columns = gridColumnsFor(
+    availableWidth,
+    targetTileWidth: targetTileWidth + kPosterTileMarginWidth,
+    spacing: 0,
+    minColumns: minColumns,
+    maxColumns: maxColumns,
+  );
+
+  // A width of zero or infinity means the caller is being measured rather
+  // than laid out. Sharing out a width like that produces a tile of zero or
+  // NaN, so the aim is handed back untouched instead.
+  if (availableWidth <= 0 || !availableWidth.isFinite) {
+    return PosterGridMetrics(columns: columns, tileWidth: targetTileWidth);
+  }
+
+  return PosterGridMetrics(
+    columns: columns,
+    // Never negative: below about 30 logical pixels a cell is narrower than
+    // the margins inside it, and a negative width is a crash rather than a
+    // small tile.
+    tileWidth: math.max(availableWidth / columns - kPosterTileMarginWidth, 1),
+  );
+}
 
 /// The height a horizontally scrolling row of [tileWidth]-wide posters needs.
 ///
