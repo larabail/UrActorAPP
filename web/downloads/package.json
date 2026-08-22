@@ -1,0 +1,6 @@
+{
+  "name": "uractor-downloads",
+  "private": true,
+  "type": "module",
+  "description": "Marks the downloads site's scripts as ES modules so `node --test` can load them the same way a browser does. Not published: firebase.json keeps it out of the deployed site, and there are no dependencies to install."
+}

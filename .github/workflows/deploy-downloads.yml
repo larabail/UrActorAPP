@@ -1,0 +1,140 @@
+name: Deploy the downloads site
+
+# downloads.uractor.com has nothing to do with a release. It is a static page
+# that reads the GitHub releases API in the browser, so it is correct for a
+# version nobody has released yet and stays correct without being redeployed.
+#
+# Until this existed the only thing that ever deployed it was a full production
+# release, which also tags the commit, publishes a GitHub release and ships to
+# Play and the App Store. That is far too much machinery to fix a typo on a web
+# page, and it meant the site could not go live at all before the first desktop
+# release.
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'web/downloads/**'
+      - 'firebase.json'
+      - '.github/workflows/deploy-downloads.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Two deploys racing would leave whichever finished second serving the site,
+# which is not necessarily the newer one.
+concurrency:
+  group: deploy-downloads
+  cancel-in-progress: false
+
+env:
+  PROJECT: actordb-cf981
+  SITE: uractor-downloads
+
+jobs:
+  deploy:
+    name: Deploy to Firebase Hosting
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # A Hosting deploy replaces the entire site, and `version.json` is not in
+      # the repository: it is written at release time and gitignored. Left
+      # alone, deploying a change to the page would delete the manifest that
+      # every running desktop copy polls, and no install would learn about an
+      # update until some later release happened to put it back.
+      #
+      # Rebuilt without notes when it has to be rebuilt from scratch. They are
+      # optional in the manifest, and the release body they would come from
+      # carries a "Downloads" section written for GitHub, which would read as
+      # nonsense in the app's update banner.
+      - name: Keep the update manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          for origin in "https://downloads.uractor.com" \
+                        "https://${SITE}.web.app"; do
+            if curl -fsS --max-time 20 -o web/downloads/version.json \
+                 "$origin/version.json"; then
+              echo "Kept the manifest already live at $origin:"
+              cat web/downloads/version.json
+              exit 0
+            fi
+          done
+
+          TAG=$(gh release list --limit 30 \
+                  --json tagName,isDraft,isPrerelease \
+                  --jq '[.[] | select(.isDraft == false and .isPrerelease == false)][0].tagName // ""')
+
+          if [ -z "$TAG" ]; then
+            echo "Nothing live and nothing released, so no manifest is written."
+            echo "The page reads the releases API directly and will show the"
+            echo "first release the moment it exists."
+            exit 0
+          fi
+
+          echo "Nothing live; rebuilding the manifest from $TAG."
+          python tool/build_download_manifest.py \
+            --version "${TAG#v}" \
+            --date "$(gh release view "$TAG" --json publishedAt \
+                        --jq '.publishedAt[:10]')"
+          cat web/downloads/version.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # A deploy fails outright if the site does not exist, and creating one is
+      # a different API call than deploying to it. Done here rather than left
+      # as a step in a setup document, because a document cannot be re-read by
+      # the next person who wonders why the first deploy failed. It is a no-op
+      # on every run after the first.
+      - name: Make sure the Hosting site exists
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+
+          # Through a file rather than an argument: a service account key on a
+          # command line is readable by every other process on the runner.
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/service-account.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/service-account.json"
+
+          npm install --global --no-fund --no-audit firebase-tools@15
+
+          if firebase hosting:sites:list --project "$PROJECT" --json \
+               | grep -q "/sites/${SITE}\""; then
+            echo "The $SITE site is already there."
+          else
+            echo "Creating the $SITE site."
+            firebase hosting:sites:create "$SITE" --project "$PROJECT"
+          fi
+
+      - name: Deploy
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ env.PROJECT }}
+          channelId: live
+
+      # The custom domain is connected in the Firebase console and needs DNS
+      # records at the registrar, so a deploy can succeed while
+      # downloads.uractor.com still answers with "Site Not Found". Saying where
+      # the deploy actually landed is the difference between that being
+      # obvious and it looking like a broken release.
+      - name: Say where it went
+        run: |
+          set -euo pipefail
+          {
+            echo '### Downloads site deployed'
+            echo ''
+            echo "- https://${SITE}.web.app"
+            echo '- https://downloads.uractor.com — once the custom domain is'
+            echo '  connected in the Firebase console and its DNS records are'
+            echo '  in place'
+          } >> "$GITHUB_STEP_SUMMARY"
