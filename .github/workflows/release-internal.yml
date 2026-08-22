@@ -961,14 +961,26 @@ jobs:
 
   # The version code exists only inside the run that asked Play for it, which
   # is why the committed `+BUILD` suffix sat at 47 while Play was serving codes
-  # in the fifties. Writing it back afterwards makes pubspec.yaml a record of
-  # the last build that actually shipped, for anyone reading the repository or
+  # in the fifties. Recording it afterwards makes pubspec.yaml a record of the
+  # last build that actually shipped, for anyone reading the repository or
   # building a release by hand.
   #
+  # It arrives as a pull request rather than as a push, because `master`
+  # requires one and `github-actions[bot]` cannot be excused from that. Neither
+  # protection mechanism will make an exception for it: classic protection only
+  # accepts bypass entries for GitHub Apps installed on the repository, so
+  # naming `github-actions` there is silently ignored, and a repository ruleset
+  # refuses the GitHub Actions integration outright on a user-owned repository
+  # ("Actor GitHub Actions integration must be part of the ruleset source or
+  # owner organization"). The alternatives were a long-lived credential in
+  # repository secrets or weakening the rule that guards releases, and a pull
+  # request that has to be approved is the cheaper price.
+  #
   # Deliberately a separate job: the job that holds the signing key and the
-  # Play credentials should not also hold a token that can write to master.
+  # Play credentials should not also hold a token that can write to the
+  # repository.
   record:
-    name: Record the build number on master
+    name: Record the build number
     needs: android
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -977,33 +989,46 @@ jobs:
     # number is not master's to record.
     if: success() && github.ref == 'refs/heads/master'
 
+    # The script below turns each of its own failures into a summary note and
+    # exits 0, but a step can fail before it ever runs — the checkout and the
+    # Python install both can, and a failed redirect to the summary would too.
+    # The bundle is on Play before this job starts, so none of that may colour
+    # the run red: reporting a release that shipped as one that failed is the
+    # outcome this whole job is written to avoid.
+    continue-on-error: true
+
     # The only write access in this workflow, narrowed to the one job and the
-    # one scope that needs it.
+    # scopes that need it: a branch to push, and a pull request to open.
+    #
+    # It also needs the repository's "Allow GitHub Actions to create and
+    # approve pull requests" switch on. That gates creation as well as
+    # approval, despite the name, and these permissions do not override it.
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v4
         with:
           # master as it is now rather than the commit that was built: another
-          # merge can land during the forty minutes the build takes, and its
+          # merge can land during the half hour the build takes, and its
           # version name is the one that has to survive.
           ref: master
-          # This MUST stay the built-in GITHUB_TOKEN. GitHub does not start new
-          # workflow runs from pushes made with it, and that suppression is the
-          # only thing standing between this push and the release workflow
-          # triggering itself forever. A personal access token, a deploy key or
-          # a GitHub App token all lift it. The `[skip ci]` in the commit
-          # subject below is a second line of defence, not the mechanism.
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Write the build number back to master
+      - name: Open a pull request recording the build number
         env:
           CODE: ${{ needs.android.outputs.code }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # One long-lived branch and therefore at most one open pull request,
+          # rewritten by each release. Per-release branches would leave a queue
+          # of near-identical pull requests, all but the newest of them
+          # recording a build that has already been superseded.
+          BRANCH: chore/build-number
         run: |
           set -uo pipefail
 
@@ -1018,9 +1043,9 @@ jobs:
               echo "$1"
               echo ''
               echo "Build \`$CODE\` is live on the internal track; only the"
-              echo "commit recording it is missing. Set the \`+BUILD\` suffix"
-              echo "in \`pubspec.yaml\` to \`$CODE\` by hand, or leave it for"
-              echo "the next release to correct."
+              echo "record of it is missing. Set the \`+BUILD\` suffix in"
+              echo "\`pubspec.yaml\` to \`$CODE\` by hand, or leave it for the"
+              echo "next release to correct."
             } >> "$GITHUB_STEP_SUMMARY"
             exit 0
           }
@@ -1028,68 +1053,127 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
+          # Rebuilt from master as it is now rather than added to whatever the
+          # last release left on the branch, so the pull request is exactly
+          # "master plus this build number": one commit and one line, however
+          # many releases have gone by unmerged.
+          #
+          # That settles staleness against the *previous* release, not against
+          # the future. A version name bump landing on master after this branch
+          # is pushed touches the same line, and the pull request then conflicts
+          # and stays unmergeable until the next release rewrites the branch.
+          # Closing it is always safe: the number is not an input to anything.
+          git fetch --quiet origin master \
+            || give_up 'Could not fetch `master`.'
+          git checkout --quiet -B "$BRANCH" FETCH_HEAD \
+            || give_up "Could not start \`$BRANCH\` from \`master\`."
+
+          # Read from the file rather than passed down from the android job,
+          # which only outputs the code. This is master's name as it stands
+          # now, which is the one the pull request is about to carry.
+          NAME=$(grep '^version:' pubspec.yaml | sed 's/version: *//' | cut -d+ -f1)
+
+          python tool/set_build_number.py "$CODE" \
+            || give_up "\`tool/set_build_number.py\` would not write \`$CODE\`; see the step log."
+
+          # Nothing changed means nothing to record: the file already says what
+          # this release shipped, and an empty pull request is a chore with no
+          # content.
+          if git diff --quiet -- pubspec.yaml; then
+            {
+              echo '### Build number'
+              echo ''
+              echo "\`pubspec.yaml\` on \`master\` already records build"
+              echo "\`$CODE\`, so there is nothing to open."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # The skip-ci marker is now the mechanism rather than a second line
+          # of defence. Nothing this job does can start a release, because it
+          # never pushes to master — but a person merging the result does push
+          # to master, and pubspec.yaml is not in this workflow's paths-ignore,
+          # so without it the merge would ship a fresh build and open another
+          # one of these. It is repeated in the pull request title because a
+          # squash merge takes its subject from the single commit or the title
+          # depending on how the branch ends up, and both have to carry it.
+          SUBJECT="chore(release): record build $CODE as shipped [skip ci]"
+
           MESSAGE="$RUNNER_TEMP/build-number-commit.txt"
           printf '%s\n' \
-            "chore(release): record build $CODE as shipped [skip ci]" \
+            "$SUBJECT" \
             "" \
             "The version code comes from Play at build time, so the committed" \
             "+BUILD suffix never described anything that shipped and drifted" \
             "further out of date with every release." \
             "" \
-            "This is the release workflow writing back the code it just" \
-            "uploaded. Only the suffix is touched: the version name is a human" \
-            "decision, enforced on pull requests by tool/check_version_bump.py." \
+            "This is the release workflow recording the code it just uploaded." \
+            "Only the suffix is touched: the version name is a human decision," \
+            "enforced on pull requests by tool/check_version_bump.py." \
             > "$MESSAGE"
 
-          # Releases are serialised by the concurrency group, but an ordinary
-          # merge to master can still land between the checkout and the push
-          # and have it rejected. Bounded, because a push that keeps being
-          # rejected is a busy branch, not something to sit and retry on.
-          for attempt in 1 2 3; do
-            # Each attempt starts again from master as it is now instead of
-            # rebasing the commit the last one made: the only line this touches
-            # is the line a competing release would have touched too, so a
-            # rebase would conflict exactly when it matters. Re-running the
-            # rewrite is cheap and cannot conflict.
-            git fetch --quiet origin master \
-              || give_up 'Could not fetch `master`.'
-            git reset --quiet --hard FETCH_HEAD \
-              || give_up 'Could not reset to `master`.'
+          git add pubspec.yaml
+          git commit --quiet --file "$MESSAGE" \
+            || give_up 'Could not create the commit.'
 
-            python tool/set_build_number.py "$CODE" \
-              || give_up "\`tool/set_build_number.py\` would not write \`$CODE\`; see the step log."
+          # Force, because the branch is rewritten from master every release
+          # and the previous release's commit is not an ancestor of this one.
+          git push --quiet --force origin "HEAD:refs/heads/$BRANCH" \
+            || give_up "Could not push \`$BRANCH\`."
 
-            # Nothing changed means nothing to commit: the file already says
-            # what this release shipped, and an empty commit on master is noise
-            # in a log that release notes are read from.
-            if git diff --quiet -- pubspec.yaml; then
-              {
-                echo '### Build number'
-                echo ''
-                echo "\`pubspec.yaml\` on \`master\` already records build"
-                echo "\`$CODE\`, so nothing was committed."
-              } >> "$GITHUB_STEP_SUMMARY"
-              exit 0
-            fi
+          RUN="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          BODY="$RUNNER_TEMP/build-number-body.md"
+          cat > "$BODY" <<BODY_END
+          The version code is decided by Play at build time, so the \`+BUILD\`
+          suffix in \`pubspec.yaml\` never described anything that shipped. This
+          is the release workflow recording the code it just uploaded.
 
-            git add pubspec.yaml
-            git commit --quiet --file "$MESSAGE" \
-              || give_up 'Could not create the commit.'
+          - version: \`$NAME\`
+          - version code: \`$CODE\`
+          - built from: $GITHUB_SHA
+          - run: $RUN
 
-            if git push --quiet origin HEAD:master; then
-              {
-                echo '### Build number'
-                echo ''
-                echo "\`pubspec.yaml\` on \`master\` now records build \`$CODE\`,"
-                echo "committed as \`$(git rev-parse --short HEAD)\`."
-              } >> "$GITHUB_STEP_SUMMARY"
-              exit 0
-            fi
+          Only the \`+BUILD\` suffix is touched. The version name is a human
+          decision, enforced on pull requests by \`tool/check_version_bump.py\`.
 
-            echo "Push rejected on attempt $attempt of 3; master moved. Retrying."
-          done
+          ### Merging this
 
-          give_up 'Three pushes in a row were rejected because `master` kept moving.'
+          The checks will not start on their own. GitHub does not trigger
+          workflow runs for a pull request opened with the built-in
+          \`GITHUB_TOKEN\`, so the required contexts never report. Close and
+          reopen this pull request to make them run as normal, or merge it with
+          the administrator override — the diff is one line.
+
+          The subject carries the skip-ci marker so that merging this does not
+          start another release, which would ship a fresh build and open
+          another one of these.
+          BODY_END
+
+          # \`--head\` matches on branch name alone, and this repository is
+          # public: a pull request opened from a fork whose branch happens to
+          # carry this name would otherwise be picked up and have its title and
+          # body overwritten with ours.
+          URL=$(gh pr list --head "$BRANCH" --base master --state open \
+                  --json url,isCrossRepository \
+                  --jq 'map(select(.isCrossRepository | not)) | .[0].url // empty') \
+            || give_up 'Could not look for an existing pull request.'
+
+          if [ -n "$URL" ]; then
+            gh pr edit "$URL" --title "$SUBJECT" --body-file "$BODY" \
+              || give_up "Could not update [the open pull request]($URL)."
+          else
+            URL=$(gh pr create --base master --head "$BRANCH" \
+                    --title "$SUBJECT" --body-file "$BODY") \
+              || give_up 'Could not open the pull request. Check that Actions is allowed to create pull requests.'
+          fi
+
+          {
+            echo '### Build number'
+            echo ''
+            echo "Build \`$CODE\` is recorded in $URL, which is waiting for a"
+            echo "review. Until it is merged, the \`+BUILD\` suffix on"
+            echo "\`master\` describes an older build."
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # The point of one pipeline instead of three. The stages run in parallel and
   # can fail independently, so without this the only way to find out whether a

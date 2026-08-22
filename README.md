@@ -349,10 +349,10 @@ CI covers this on macOS runners. `.github/workflows/ios.yml` builds the app
 and launches it on a simulator for every pull request, and the iOS stage of
 `.github/workflows/release-internal.yml` ships to TestFlight. Both run on
 `macos-26`, because Apple refuses uploads built with an SDK older than iOS 26
-and the older image defaults to Xcode 16. The check is required to merge, which
-is why it is no longer filtered to iOS paths: a skipped workflow reports
-nothing, and a required check that never reports blocks the pull request
-forever. See [docs/releases.md](docs/releases.md).
+and the older image defaults to Xcode 16. The check is not required to merge
+yet, but it is no longer filtered to iOS paths so that it can be: a skipped
+workflow reports nothing, and a required check that never reports would block
+the pull request forever. See [docs/releases.md](docs/releases.md).
 
 **Run `flutter clean` after any change to `ios/Podfile.lock`.** `flutter
 build` will not do it for you, and a stale `build/` directory holding the
@@ -653,7 +653,7 @@ only Markdown, docs, or `.gitignore`. The workflow has three jobs:
 - **Version** runs the unit tests under `tool/` and then enforces the version
   policy from [AGENTS.md](AGENTS.md#versioning) against the pull request title
   and commits. Do not edit the `+BUILD` suffix: the release workflow builds
-  with a code derived from Play and writes that code back to `master` itself.
+  with a code derived from Play and opens a pull request recording it.
 
 The iOS check lives in its own workflow, `.github/workflows/ios.yml`, because
 it needs a macOS runner and that build takes around twenty-five minutes against
@@ -667,8 +667,11 @@ it is still running fifteen seconds later, because the iOS failure that matters
 most, Firebase failing to configure, happens at launch rather than at compile
 time.
 
-**Required to merge**, along with the three Linux jobs from `pr.yml`. Between
-them they are the four checks branch protection on `master` waits for.
+It is **not** yet required to merge. Branch protection on `master` waits for the
+three Linux jobs from `pr.yml` — `Analyze, test and build`, `Functions` and
+`Version` — and nothing else. Running on every pull request is what makes the
+check requirable; adding it to the required list is a separate, deliberate step,
+and it would make a macOS build the slowest gate on every pull request.
 
 There is no XCTest job. `ios/RunnerTests` still contains only the empty
 `testExample` stub that `flutter create` generates, and the app has no native
@@ -723,13 +726,19 @@ Internal builds are not tagged; that summary records the version code and the
 commit, which is what a production promotion is given. Production is a separate,
 manual pipeline. See [docs/releases.md](docs/releases.md).
 
-Once the Android upload succeeds, a last job commits the version code that
-shipped into `pubspec.yaml` on `master`, so the `+BUILD` suffix in the repository
-matches the newest build on the internal track. It pushes with the built-in
-`GITHUB_TOKEN`, which GitHub does not let trigger further workflow runs — that is
-what stops a release from releasing itself. If the push cannot be made, the run
-says so in its summary and still passes: the app is already on Play by then, and
-failing would report a shipped release as a broken one.
+Once the Android upload succeeds, a last job records the version code that
+shipped in `pubspec.yaml`, so the `+BUILD` suffix in the repository matches the
+newest build on the internal track. It arrives as a pull request from
+`github-actions[bot]` rather than as a direct commit: `master` requires a pull
+request, and the GitHub Actions identity cannot be granted an exception to that
+on a user-owned repository. Approve and merge it like any other — it is one
+line, there is at most one open at a time, and each release rewrites it. Its
+checks do not start on their own, because GitHub does not trigger workflow runs
+for a pull request opened with the built-in `GITHUB_TOKEN`; close and reopen it,
+or use the administrator override. If the pull request cannot be opened at all,
+the run says so in its summary and still passes: the app is already on Play by
+then, and failing would report a shipped release as a broken one. See
+[docs/releases.md](docs/releases.md#version-codes).
 
 ## Repo tooling
 
