@@ -269,6 +269,35 @@ the sandbox off, signing ad hoc with a team set, and matching the bundle
 identifier to the one in `FirebaseOptions`. All three were tried; the keychain
 access group is the actual requirement.
 
+### macOS sign in is also blocked by the API key restriction
+
+The keychain entitlement above is necessary but not sufficient, and it is no
+longer the first thing to suspect. A macOS build that is correctly signed and
+entitled still cannot sign anybody in, because `lib/firebase_options.dart`
+points macOS at the **iOS** registration and that key is restricted to a list
+of iOS bundle identifiers. `com.uractor.uractormacos` is not on it, so Identity
+Toolkit answers every attempt with
+
+```
+403 PERMISSION_DENIED — API_KEY_IOS_APP_BLOCKED
+"Requests from this iOS client application com.uractor.uractormacos are blocked."
+```
+
+before the password is looked at. The two failures are easy to confuse, since
+both refuse every correct password, so tell them apart by the error rather than
+by guessing: `keychain-error` is the entitlement, a wrapped `internal-error`
+carrying `API_KEY_IOS_APP_BLOCKED` is the key. The app now names the second one
+in the interface instead of offering the generic "please try again", which was
+advice that could not work.
+
+Fixing it is a console change, not a repository one — no edit here can lift the
+restriction. Either add `com.uractor.uractormacos` to that key's iOS
+application restrictions, or register a macOS app in the Firebase project and
+regenerate `lib/firebase_options.dart` from it. The second is preferable: the
+macOS entry currently carries `iosBundleId: 'com.example.uractor'`, a template
+leftover matching neither platform, and sharing the iOS key means any future
+tightening of it breaks macOS again.
+
 ## Layout
 
 The app lays itself out from the width of the window rather than from the

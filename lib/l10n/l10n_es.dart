@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'l10n.dart';
 
 // ignore_for_file: type=lint
@@ -768,6 +769,10 @@ class SEs extends S {
   @override
   String get networkError =>
       'No se pudo conectar con el servidor. Comprueba tu conexión.';
+
+  @override
+  String get blockedAppError =>
+      'Esta versión de la aplicación no tiene permiso para iniciar sesión. Volver a intentarlo no servirá de nada.';
 
   @override
   String updateAvailable(String version) {
