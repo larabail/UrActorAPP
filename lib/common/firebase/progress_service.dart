@@ -183,14 +183,24 @@ class ProgressService {
   ///
   /// Finishes the show when this completes every non-special episode, by the
   /// same check the season guide uses.
+  ///
+  /// [keepFinished] records the ticks against a show the user has already
+  /// finished without disturbing that. Ticking normally moves a show into
+  /// progress, which drops it from the Seen list that drives the user's badges
+  /// and counts; naming an episode of a show you have already seen is not a
+  /// request to undo any of that, but the episodes still have to be recorded
+  /// or the season guide — which draws only what is ticked — shows nothing.
   static Future<void> markEpisodesWatched(
     String showId,
     Map<int, List<int>> bySeason,
     List<SeasonEpisodeCount> seasons, {
     DateTime? date,
+    bool keepFinished = false,
   }) async {
     final today = formatDate(date ?? DateTime.now());
-    final entry = await _showEntryInProgress(showId, today);
+    final entry = keepFinished
+        ? await _finishedShowEntry(showId, today)
+        : await _showEntryInProgress(showId, today);
     final episodes = _episodesFrom(entry);
     for (final season in bySeason.entries) {
       if (season.key <= 0) continue;
@@ -200,11 +210,10 @@ class ProgressService {
     }
     await _writeEntry(progressTVShowsKey, showId.toString(), {
       ...entry,
-      'finished': null,
       'updated': today,
       'episodes': episodes,
     });
-    if (_allNonSpecialEpisodesWatched(episodes, seasons)) {
+    if (!keepFinished && _allNonSpecialEpisodesWatched(episodes, seasons)) {
       await finishShow(showId, date: date);
     }
   }
@@ -390,6 +399,32 @@ class ProgressService {
       ...existing,
       'started': existing['started']?.toString() ?? today,
       'finished': null,
+      'episodes': _episodesFrom(existing),
+    };
+  }
+
+  /// The stored entry for a show the user has already finished, left finished.
+  ///
+  /// The counterpart to [_showEntryInProgress], which exists to say "I am
+  /// watching this" and so clears the Seen list membership and the finish
+  /// date. Recording which episodes a finished show covers says nothing of the
+  /// kind, so both survive.
+  ///
+  /// A show finished only by sitting in the Seen list has no stored entry at
+  /// all, so one is invented dated today. That is the same convention
+  /// [finishItem] uses for a missing start date, and it matters because the
+  /// entry would otherwise read as in progress the moment anything removed the
+  /// title from Seen.
+  static Future<Map<String, dynamic>> _finishedShowEntry(
+    String showId,
+    String today,
+  ) async {
+    final existing = await _entry(progressTVShowsKey, showId.toString()) ??
+        <String, dynamic>{};
+    return <String, dynamic>{
+      ...existing,
+      'started': existing['started']?.toString() ?? today,
+      'finished': existing['finished']?.toString() ?? today,
       'episodes': _episodesFrom(existing),
     };
   }

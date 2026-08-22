@@ -60,6 +60,7 @@ class CalendarProgressService {
             ),
       seasons,
       date: date,
+      keepFinished: intent.keepsFinished,
     );
     return intent;
   }

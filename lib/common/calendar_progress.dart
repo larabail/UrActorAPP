@@ -22,9 +22,6 @@ enum CalendarProgressAction {
   /// Tick every episode through the one named, leaving the show in progress
   /// unless that completes it.
   markWatchedThrough,
-
-  /// Leave tracking exactly as it is and only log the day.
-  none,
 }
 
 /// The decision for one calendar entry.
@@ -32,11 +29,23 @@ class CalendarProgressIntent {
   const CalendarProgressIntent({
     required this.action,
     required this.marksFriendsSeen,
+    this.keepsFinished = false,
     this.season,
     this.episode,
   });
 
   final CalendarProgressAction action;
+
+  /// Whether the title was already finished when the entry was logged, and so
+  /// must still be finished afterwards.
+  ///
+  /// Ticking episodes normally moves a show into progress and out of the Seen
+  /// list. Logging what you watched is not a state change: the app already has
+  /// an explicit way to say you are watching something again, and deriving
+  /// that from a log entry would quietly pull a title out of the list the user
+  /// curates and that drives their badges and counts. So the episodes are
+  /// recorded and the finished state is left alone.
+  final bool keepsFinished;
 
   /// Whether the friends tagged on this entry should have the title added to
   /// their own Seen lists.
@@ -64,16 +73,18 @@ class CalendarProgressIntent {
           runtimeType == other.runtimeType &&
           action == other.action &&
           marksFriendsSeen == other.marksFriendsSeen &&
+          keepsFinished == other.keepsFinished &&
           season == other.season &&
           episode == other.episode;
 
   @override
-  int get hashCode => Object.hash(action, marksFriendsSeen, season, episode);
+  int get hashCode =>
+      Object.hash(action, marksFriendsSeen, keepsFinished, season, episode);
 
   @override
   String toString() =>
       'CalendarProgressIntent($action, season: $season, episode: $episode, '
-      'marksFriendsSeen: $marksFriendsSeen)';
+      'marksFriendsSeen: $marksFriendsSeen, keepsFinished: $keepsFinished)';
 }
 
 class CalendarProgress {
@@ -84,11 +95,10 @@ class CalendarProgress {
   /// films everywhere else in the app and are read that way here too.
   ///
   /// [alreadyFinished] is whether the logging user has the title recorded as
-  /// finished. A finished title stays finished: the app already has an
-  /// explicit way to say you are watching something again, and deriving that
-  /// from a log entry would quietly pull a title out of the Seen list the user
-  /// curates and that drives their badges and counts. Logging what you watched
-  /// is not a state change.
+  /// finished. The episodes are still ticked — the dialogue promises that, and
+  /// the season guide draws only what is ticked, so skipping it left the
+  /// promise visibly false — but the title stays finished and stays in the
+  /// Seen list, which is what [CalendarProgressIntent.keepsFinished] carries.
   static CalendarProgressIntent intentFor({
     required String type,
     CalendarEpisode? episode,
@@ -104,15 +114,10 @@ class CalendarProgress {
         marksFriendsSeen: true,
       );
     }
-    if (alreadyFinished) {
-      return const CalendarProgressIntent(
-        action: CalendarProgressAction.none,
-        marksFriendsSeen: false,
-      );
-    }
     return CalendarProgressIntent(
       action: CalendarProgressAction.markWatchedThrough,
       marksFriendsSeen: false,
+      keepsFinished: alreadyFinished,
       season: episode.season,
       episode: episode.episode,
     );

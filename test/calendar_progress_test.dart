@@ -94,16 +94,33 @@ void main() {
       expect(intent.marksFriendsSeen, isFalse);
     });
 
-    test('leaves a finished show finished', () {
+    test('ticks the episodes but leaves a finished show finished', () {
+      // The dialogue promises everything before the episode is marked as
+      // watched, and the season guide draws only what is ticked, so skipping
+      // this left the promise visibly false for every show the user had ever
+      // logged without naming a part.
       final intent = CalendarProgress.intentFor(
         type: 'series',
         episode: const CalendarEpisode(season: 2, episode: 5),
         alreadyFinished: true,
       );
 
-      expect(intent.action, CalendarProgressAction.none);
+      expect(intent.action, CalendarProgressAction.markWatchedThrough);
+      expect(intent.keepsFinished, isTrue);
+      expect(intent.season, 2);
+      expect(intent.episode, 5);
       expect(intent.marksSelfSeen, isFalse);
       expect(intent.marksFriendsSeen, isFalse);
+    });
+
+    test('does not claim to keep an unfinished show finished', () {
+      final intent = CalendarProgress.intentFor(
+        type: 'series',
+        episode: const CalendarEpisode(season: 2, episode: 5),
+        alreadyFinished: false,
+      );
+
+      expect(intent.keepsFinished, isFalse);
     });
   });
 
@@ -139,10 +156,19 @@ void main() {
       action: CalendarProgressAction.markSeen,
       marksFriendsSeen: true,
     );
+    const kept = CalendarProgressIntent(
+      action: CalendarProgressAction.markWatchedThrough,
+      marksFriendsSeen: false,
+      keepsFinished: true,
+      season: 2,
+      episode: 5,
+    );
 
     expect(one, same);
     expect(one.hashCode, same.hashCode);
     expect(one, isNot(other));
+    expect(one, isNot(kept),
+        reason: 'whether the title stays finished is part of the decision');
     expect(one.toString(), contains('season: 2'));
   });
 }

@@ -95,7 +95,8 @@ void main() {
     expect(await ProgressService.watchedEpisodes('1396', 9), isEmpty);
   });
 
-  test('a show already finished is left finished and untouched', () async {
+  test('a show already finished has its episodes ticked and stays finished',
+      () async {
     await ProgressService.finishShow('1396', date: DateTime(2026, 1, 9));
 
     final intent = await CalendarProgressService.apply(
@@ -106,14 +107,50 @@ void main() {
       date: DateTime(2026, 5, 1),
     );
 
-    expect(intent.action, CalendarProgressAction.none);
+    expect(intent.action, CalendarProgressAction.markWatchedThrough);
+    expect(intent.keepsFinished, isTrue);
+    // The season guide draws only what is ticked, so a finished show that
+    // recorded no episodes showed an empty guide however often it was logged.
+    expect(await ProgressService.watchedEpisodes('1396', 1), [1, 2, 3, 4]);
+    expect(await ProgressService.watchedEpisodes('1396', 2), [1, 2, 3, 4, 5]);
+    // None of which is a claim that the user started rewatching it.
     expect(
       await ProgressService.showState('1396'),
       WatchProgressState.finished,
     );
     final dates = await ProgressService.datesFor(progressTVShowsKey, '1396');
     expect(dates.finished, '2026-01-09');
-    expect(await ProgressService.watchedEpisodes('1396', 2), isEmpty);
+  });
+
+  test('a show finished only by sitting in the Seen list keeps its place',
+      () async {
+    // The state every show logged before episodes were recordable is in: on
+    // the Seen list, with no progress entry of its own.
+    final user = installTestUser(uid: 'calendar-user');
+    user.seenTVShows = [
+      ['TVShows', '1396'],
+    ];
+
+    await CalendarProgressService.apply(
+      type: 'series',
+      id: '1396',
+      episode: const CalendarEpisode(season: 2, episode: 5),
+      seasons: seasons,
+      date: DateTime(2026, 5, 1),
+    );
+
+    expect(await ProgressService.watchedEpisodes('1396', 2), [1, 2, 3, 4, 5]);
+    expect(
+      await ProgressService.showState('1396'),
+      WatchProgressState.finished,
+    );
+    expect(
+      user.seenTVShows,
+      [
+        ['TVShows', '1396']
+      ],
+      reason: 'the Seen list drives badges and counts and is the user to curate',
+    );
   });
 
   test('an entry with no part recorded leaves progress alone', () async {

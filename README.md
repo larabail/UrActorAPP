@@ -28,9 +28,11 @@ window rather than the device it is on (see [Platforms](#platforms) and
 - Log what you watched on a calendar — a single date or a date range. A show
   entry can also record the last episode you finished that day, which drives
   tracking rather than just being written down: the show moves into progress
-  and every episode up to that point is ticked off. An entry that names no
-  season still means the whole title was watched, which is what every entry
-  meant before episodes were recordable (`lib/calendar.dart`,
+  and every episode up to that point is ticked off. A show you have already
+  finished gets those ticks too but keeps its finished status, so the season
+  guide reflects the entry without the title leaving the Seen list. An entry
+  that names no season still means the whole title was watched, which is what
+  every entry meant before episodes were recordable (`lib/calendar.dart`,
   `lib/friends_calendar.dart`, `lib/popups/add_to_calendar_pop_up.dart`,
   `lib/common/calendar_episode.dart`, `lib/common/calendar_progress.dart`).
 - Track what you are part way through. A movie or show is not started, being

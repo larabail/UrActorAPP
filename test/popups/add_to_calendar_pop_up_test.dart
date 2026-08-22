@@ -427,10 +427,33 @@ void main() {
         );
       });
 
-      testWidgets('a show already finished stays finished', (tester) async {
+      testWidgets('a show already seen still gets its episodes ticked',
+          (tester) async {
+        // The dialogue says everything before the episode is marked as
+        // watched. It used to do nothing at all here, and this is the common
+        // case: every show logged before episodes were recordable sits in the
+        // Seen list, and the season guide draws only what is ticked, so the
+        // guide stayed empty however often the show was logged.
         user.seenTVShows = [
           ['TVShows', '1396'],
         ];
+        withSeasons();
+
+        await logEpisode(tester);
+
+        expect(await ProgressService.watchedEpisodes('1396', 1),
+            [1, 2, 3, 4, 5, 6, 7]);
+        expect(await ProgressService.watchedEpisodes('1396', 2), [1, 2, 3, 4]);
+      });
+
+      testWidgets('a show already seen is not pulled back out of Seen',
+          (tester) async {
+        user.seenTVShows = [
+          ['TVShows', '1396'],
+        ];
+        await seedUserDoc(firestore, 'test-uid', 'Seen', {
+          'TVShows': ['1396'],
+        });
         withSeasons();
 
         await logEpisode(tester);
@@ -439,10 +462,11 @@ void main() {
           await ProgressService.showState('1396'),
           WatchProgressState.finished,
         );
-        expect(await ProgressService.watchedEpisodes('1396', 2), isEmpty);
+        final seen = await firestore.collection('test-uid').doc('Seen').get();
+        expect(seen.data()!['TVShows'], ['1396'],
+            reason: 'logging what you watched is not a request to unfinish it');
         final day = (await calendarOf('test-uid'))!['2024-03-09'] as List;
-        expect(day.single['episode'], 4,
-            reason: 'the day is still logged, it just changes nothing');
+        expect(day.single['episode'], 4);
       });
 
       testWidgets('a tagged friend is not told they finished the show',
