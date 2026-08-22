@@ -345,8 +345,8 @@
     </a>
     <nav aria-label="Primary">
       <a href="https://uractor.com">uractor.com</a>
-      <a href="#builds">Builds</a>
-      <a href="#notes">What's new</a>
+      <a href="#builds">Desktop</a>
+      <a href="#mobile">Phone</a>
       <a href="https://developer.uractor.com">API</a>
     </nav>
   </div>
@@ -433,9 +433,35 @@
     </div>
   </section>
 
-  <section class="chapter" id="notes" hidden>
+  <section class="chapter" id="mobile">
     <div class="chead">
       <span class="no">02</span>
+      <h2>On a phone</h2>
+      <span class="rule" aria-hidden="true"></span>
+    </div>
+
+    <div class="cards">
+      <section class="card" id="card-android">
+        <h3>Android<span class="badge" id="badge-android" hidden>Yours</span></h3>
+        <p class="meta">Phones and tablets &middot; Android 8 or later</p>
+        <a class="button" id="button-android"
+           href="https://play.google.com/store/apps/details?id=com.uractor.uractorapp">Get it on Google Play</a>
+        <p class="asset">Installs and updates through Google Play.</p>
+      </section>
+
+      <section class="card" id="card-ios">
+        <h3>iPhone &amp; iPad<span class="badge" id="badge-ios" hidden>Yours</span></h3>
+        <p class="meta">iOS and iPadOS &middot; iOS 13 or later</p>
+        <a class="button" id="button-ios"
+           href="https://apps.apple.com/app/uractor/id6503330070">Download on the App Store</a>
+        <p class="asset">Installs and updates through the App Store.</p>
+      </section>
+    </div>
+  </section>
+
+  <section class="chapter" id="notes" hidden>
+    <div class="chead">
+      <span class="no">03</span>
       <h2 id="notes-heading">What&rsquo;s new</h2>
       <span class="rule" aria-hidden="true"></span>
     </div>
@@ -445,7 +471,7 @@
 
   <section class="chapter" id="history" hidden>
     <div class="chead">
-      <span class="no">03</span>
+      <span class="no">04</span>
       <h2>Every version</h2>
       <span class="rule" aria-hidden="true"></span>
     </div>
@@ -456,8 +482,7 @@
     <h2>End credits</h2>
     <dl class="crow">
       <dt>On a phone</dt>
-      <dd><a href="https://apps.apple.com/app/uractor/id6503330070">App Store</a> &middot;
-          <a href="https://play.google.com/store/apps/details?id=com.uractor.uractorapp">Play Store</a></dd>
+      <dd><a href="#mobile">Google Play and the App Store</a></dd>
       <dt>Every build</dt>
       <dd><a href="https://github.com/larabail/UrActorAPP/releases">GitHub releases, with checksums</a></dd>
       <dt>The site</dt>
