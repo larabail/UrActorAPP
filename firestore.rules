@@ -574,9 +574,10 @@ service cloud.firestore {
 //    such a function has Play Console adoption, the friend branches of
 //    `allow create` and `allow update` above -- and every helper they need --
 //    can be deleted outright, and this file gets shorter rather than longer.
-//    That is the same staging as gaps 1 and 3, and for the same reason: a
-//    rules deploy applies to every client at once, with no staged rollout, so
-//    the client has to be ready BEFORE the rules change ships.
+//    That is the same staging every gate in this section uses, and for the
+//    same reason: a rules deploy applies to every client at once, with no
+//    staged rollout, so the client has to be ready BEFORE the rules change
+//    ships.
 //
 //    Be careful about what "ships" means here, because it is not what the
 //    issues describing this staging assume. NOTHING IN CI DEPLOYS THIS FILE.
