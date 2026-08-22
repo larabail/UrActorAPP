@@ -1,20 +1,28 @@
 name: Pull request checks
 
-# Runs the same verification and release build as the internal release
-# workflow, without touching Play. A pull request that passes here should be
-# able to merge and release without surprises.
+# Every check a pull request has to pass, on every platform it ships to. The
+# iOS build used to live in its own file because path filters apply to a
+# workflow rather than to a job, and the Linux jobs were filtered while the iOS
+# one deliberately was not. That reasoning ended when the filter came off — see
+# below — and two files reporting on the same pull request only made it harder
+# to see whether it was actually green.
+#
+# It runs the same verification and release build as the internal release
+# pipeline, without touching Play, TestFlight or anything else. A pull request
+# that passes here should be able to merge and release without surprises.
+#
+# The job names are load bearing. "Analyze, test and build", "Functions" and
+# "Version" are configured as required status checks on `master`, which matches
+# them by name, so renaming one silently stops it being required.
 on:
   pull_request:
     branches: [master]
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - '.gitignore'
+  workflow_dispatch:
 
 # Superseded runs are wasted work: a new push to the same pull request makes
 # the previous result irrelevant.
 concurrency:
-  group: pr-${{ github.event.pull_request.number }}
+  group: pr-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -68,14 +76,14 @@ jobs:
       # GitHub before any job is scheduled: the run fails in about two seconds
       # with no logs, no runner and no indication of which line is wrong, and
       # it does that on every push regardless of the triggers the file
-      # declares. the desktop release workflow shipped in exactly that state and the
-      # only symptom was a red cross with nothing behind it.
+      # declares. The desktop release workflow shipped in exactly that state
+      # and the only symptom was a red cross with nothing behind it.
       #
       # Shellcheck integration is off. It reports pre-existing style warnings
-      # in four of the release workflows -- unquoted expansions that are
-      # deliberate, and single quotes that are meant literally -- and turning
-      # those into a merge blocker is a separate decision from catching a
-      # workflow that cannot run at all.
+      # in both release pipelines -- unquoted expansions that are deliberate,
+      # and single quotes that are meant literally -- and turning those into a
+      # merge blocker is a separate decision from catching a workflow that
+      # cannot run at all.
       - name: Lint the workflows
         run: |
           set -euo pipefail
@@ -232,6 +240,11 @@ jobs:
   # be tied back to a revision.
   version:
     name: Version
+    # There is no version bump to check outside a pull request: the check reads
+    # the commits a branch adds against its merge base, and a manual run has
+    # neither. Guarded rather than left to fail, so `workflow_dispatch` stays
+    # useful for re-running the builds by hand.
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -269,3 +282,153 @@ jobs:
             --base "$BASE" \
             --head "$HEAD_SHA" \
             --title "$PR_TITLE"
+
+  # The iOS half of the pull request, and the reason this workflow has no
+  # `paths-ignore`.
+  #
+  # The Linux jobs above used to be filtered to skip Markdown, docs and
+  # .gitignore, while this one deliberately was not. That could not survive
+  # them sharing a file, because a filter applies to a whole workflow -- and
+  # keeping the filter would have been the worse half to keep anyway. GitHub
+  # leaves a required check that was skipped by a path filter sitting at
+  # pending forever rather than reporting success, so a documentation-only
+  # pull request could never satisfy "Analyze, test and build", "Functions" and
+  # "Version", all three of which are required on `master`. The filter was not
+  # saving five minutes on those pull requests; it was making them unmergeable.
+  #
+  # The cost is the Linux jobs running on documentation-only pull requests.
+  # That is about five minutes, in parallel with a macOS build that was already
+  # running on them, so in wall-clock terms it is free. Runner minutes are free
+  # on a public repository.
+  #
+  # The one exception is the `if:` below, which is a condition on the job rather
+  # than a filter on the workflow. That difference is the whole point: a job
+  # skipped by an `if:` still reports a conclusion, so branch protection stays
+  # satisfiable, while a workflow skipped by paths reports nothing and blocks.
+  ios:
+    name: Build and launch on a simulator
+    needs: scope
+    # Skipped whole rather than run with its steps disabled, unlike the
+    # required Linux jobs above, because this one holds a macOS runner:
+    # starting one to skip everything on it costs a scarce minute to prove
+    # nothing. A skipped job still reports, so this stays safe if the check is
+    # ever made required.
+    if: needs.scope.outputs.app == 'true'
+    # macos-26 rather than macos-15, matching the release pipeline. The two
+    # have to agree: macos-15 defaults to Xcode 16.4, and a pull request that
+    # passed there could still be rejected at upload for the SDK it was built
+    # with. See the `ios` stage of release-internal.yml.
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    env:
+      TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-flutter-ios
+
+      # --simulator because it needs no signing: a pull request must not have
+      # access to the distribution certificate, and the branch may come from a
+      # fork. It still exercises everything that actually rots — that the pods
+      # resolve, that the deployment target clears what Firebase requires, and
+      # that every plugin compiles against the pinned SDK.
+      - name: Build for the simulator
+        run: |
+          flutter build ios --simulator --debug \
+            --dart-define=TMDB_API_KEY="$TMDB_API_KEY" \
+            --dart-define=OPENAI_API_KEY="$OPENAI_API_KEY"
+
+      # Compiling proves the code builds, not that the app can start, and the
+      # iOS-specific failure that matters most — Firebase failing to configure
+      # — happens at launch. Skipped without a TMDB key, because the app
+      # deliberately throws at startup when the define is missing and a fork's
+      # pull request has no secrets: that would report a missing secret as a
+      # broken app.
+      - name: Launch it on a simulator
+        if: env.TMDB_API_KEY != ''
+        run: |
+          set -euo pipefail
+
+          # A device created here rather than whichever ones the image happens
+          # to ship, so the check does not change meaning when the image does.
+          RUNTIME=$(xcrun simctl list runtimes --json | python3 -c "
+          import json, sys
+          runtimes = [
+              r for r in json.load(sys.stdin)['runtimes']
+              if r['isAvailable'] and 'iOS' in r['name']
+          ]
+          if not runtimes:
+              sys.exit('no available iOS runtime on this image')
+
+          def order(runtime):
+              # Compared as numbers, not as text: sorted as strings, '9.0'
+              # outranks '18.1' and the check would silently run against an
+              # ancient runtime.
+              parts = []
+              for part in runtime['version'].split('.'):
+                  parts.append(int(part) if part.isdigit() else 0)
+              return parts
+
+          print(max(runtimes, key=order)['identifier'])
+          ")
+          echo "using $RUNTIME"
+
+          DEVICE=$(xcrun simctl create ios-smoke \
+            com.apple.CoreSimulator.SimDeviceType.iPhone-16 "$RUNTIME")
+          xcrun simctl bootstatus "$DEVICE" -b
+
+          xcrun simctl install "$DEVICE" build/ios/iphonesimulator/Runner.app
+
+          # `simctl launch` prints "<bundle id>: <pid>" and returns as soon as
+          # the process exists, so its own success says nothing about an app
+          # that dies a moment later. The pid it reports is a host pid —
+          # simulator apps are ordinary processes on the host — so whether the
+          # app is still alive can be asked directly.
+          LAUNCH=$(xcrun simctl launch "$DEVICE" com.uractor.uractorios)
+          echo "$LAUNCH"
+          APP_PID=${LAUNCH##*: }
+
+          sleep 15
+
+          # `ps -p`, not `launchctl list`. The launchd job listing is not a
+          # stable interface across simulator runtimes, and reported a healthy
+          # app as gone: the run that produced that verdict logged a fully
+          # realised UIWindowScene, no exception and no crash report. A pid
+          # either exists or it does not.
+          if ps -p "$APP_PID" > /dev/null 2>&1; then
+            echo "app launched (pid $APP_PID) and was still running after 15s"
+          else
+            echo "::error::the app did not stay running after launch (pid $APP_PID)"
+
+            # `process == "Runner"` rather than a substring match on the
+            # executable path. "Runner" is a substring of the simulator's own
+            # BackgroundShortcutRunner, and matching loosely buries the app's
+            # few interesting lines under thousands from a daemon that has
+            # nothing to do with this build. An uncaught Dart exception in
+            # main() reaches this log, which is where a missing --dart-define
+            # shows up.
+            echo "===== Runner system log ====="
+            xcrun simctl spawn "$DEVICE" log show --last 3m --style compact \
+              --predicate 'process == "Runner"' | tail -60 || true
+
+            echo "===== crash reports ====="
+            find ~/Library/Logs/DiagnosticReports -name 'Runner*' -newermt '-10 minutes' \
+              -exec sh -c 'echo "--- $1 ---"; head -40 "$1"' _ {} \; 2>/dev/null || true
+
+            exit 1
+          fi
+
+      # The release pipeline names its signing keychain `ios-signing`. This
+      # asserts one never exists here: a pull request build must never hold the
+      # distribution certificate, and the branch may come from a fork.
+      - name: Confirm no signing material reached the build
+        if: always()
+        run: |
+          set -euo pipefail
+          if security list-keychains | grep -q ios-signing; then
+            echo "A signing keychain must never exist on a pull request build" >&2
+            exit 1
+          fi
