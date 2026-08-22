@@ -849,6 +849,48 @@ jobs:
           echo "SIGNING_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
           echo "signing as '$IDENTITY'"
 
+      # Developer ID distribution normally needs no provisioning profile. This
+      # app needs one because it declares `keychain-access-groups`, which is a
+      # restricted entitlement: Firebase Auth keeps the signed in session in
+      # the macOS data protection keychain, and macOS refuses that to an app
+      # which has not been granted a keychain group. Without the profile the
+      # build fails outright; with the entitlement stripped instead the app
+      # builds, signs and launches and then refuses every correct password,
+      # which is the worse failure because it looks like the app working.
+      #
+      # `preflight` has always insisted on this secret, but nothing here ever
+      # installed it, so `macos/Runner.xcodeproj` asking for the profile by
+      # name under manual signing could only fail. The production pipeline got
+      # this step and the internal one did not.
+      - name: Install the provisioning profile
+        env:
+          PROFILE_BASE64: ${{ secrets.MACOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          set -euo pipefail
+
+          echo "$PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/profile.provisionprofile"
+
+          # Xcode locates a profile by its UUID as the filename, not by the
+          # name inside it, so the UUID is read back out rather than assumed.
+          UUID=$(security cms -D -i "$RUNNER_TEMP/profile.provisionprofile" \
+            | plutil -extract UUID raw -o - -)
+
+          # Installed to both directories, for the same reason the iOS stage
+          # does it: Xcode 16 reads profiles from its own directory and older
+          # tooling still reads the MobileDevice one, and which applies is a
+          # detail of the image rather than something to depend on. A macOS
+          # profile is `.provisionprofile`, not `.mobileprovision`.
+          for dir in \
+            "$HOME/Library/MobileDevice/Provisioning Profiles" \
+            "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          do
+            mkdir -p "$dir"
+            cp "$RUNNER_TEMP/profile.provisionprofile" "$dir/$UUID.provisionprofile"
+          done
+
+          rm -f "$RUNNER_TEMP/profile.provisionprofile"
+          echo "installed provisioning profile $UUID"
+
       - name: Build
         env:
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
@@ -953,7 +995,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Remove the keychain
+      - name: Remove the signing material
         if: always()
         run: |
           # Unconditional: a failed build leaves the same key material behind
@@ -965,6 +1007,13 @@ jobs:
           # leave a keychain full of private key behind on the runner.
           security delete-keychain "$RUNNER_TEMP/desktop-release.keychain-db" \
             2>/dev/null || true
+
+          # The profile goes too, matching what the iOS stage does. It carries
+          # no private key, but everything a secret wrote to this runner is
+          # removed on the way out rather than sometimes.
+          rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/"*.provisionprofile
+          rm -f "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/"*.provisionprofile
+          rm -f "$RUNNER_TEMP/profile.provisionprofile"
 
   desktop_windows:
     name: '3 · Desktop → Windows'

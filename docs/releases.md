@@ -739,6 +739,51 @@ also work and is what most guides show, but it breaks whenever the Apple ID's
 password or two-factor settings change, which surfaces months later in the
 middle of a release.
 
+### macOS: a Developer ID build still needs a provisioning profile here
+
+This is the part that contradicts the usual advice. Developer ID distribution
+normally needs **no** provisioning profile at all — that is most of the point of
+it. This app needs one anyway, because it declares `keychain-access-groups`,
+which is a *restricted* entitlement: Firebase Auth keeps the signed in session
+in the macOS data protection keychain, and macOS refuses that to an app which
+has not been granted a keychain group. A restricted entitlement has to be
+authorised by a profile, so the build fails outright without one:
+
+```
+No profiles for 'com.uractor.uractormacos' were found
+```
+
+Dropping the entitlement instead was tried and rejected on evidence. Without it
+the app builds, signs, notarises and launches — and then refuses every correct
+password. That is the worse failure of the two, because it looks like the app
+working. Turning the sandbox off does not help either; the data protection
+keychain wants the group regardless.
+
+So create a **Developer ID** provisioning profile for
+`com.uractor.uractormacos` in the developer portal, download it, and store it
+base64 encoded as `MACOS_PROVISIONING_PROFILE_BASE64`:
+
+```bash
+base64 -i UrActor_macOS_Developer_ID.provisionprofile | pbcopy
+```
+
+Two details that are easy to get wrong, and both fail in ways that do not name
+the cause:
+
+- A macOS profile is a `.provisionprofile`, not a `.mobileprovision`.
+- **Xcode finds an installed profile by its UUID as the filename**, not by the
+  name inside it. Both pipelines therefore read the UUID back out of the
+  decoded profile and install it as `<UUID>.provisionprofile`, into both
+  `~/Library/MobileDevice/Provisioning Profiles` and
+  `~/Library/Developer/Xcode/UserData/Provisioning Profiles`, because which of
+  the two a given Xcode consults is a detail of the runner image.
+
+The name inside the profile has to match `PROVISIONING_PROFILE_SPECIFIER` in
+`macos/Runner.xcodeproj`, which is `UrActor macOS Developer ID`. The Release
+configuration signs manually with `Developer ID Application`; Debug and Profile
+keep automatic development signing, which is what someone building in Xcode
+locally needs.
+
 ### macOS: sign in has to be re-checked on the first notarised build
 
 `keychain-access-groups` is what lets Firebase Auth reach the keychain, and it
@@ -798,23 +843,30 @@ manifest gains a signature and becomes an appcast XML alongside the JSON.
 |---|---|
 | `MACOS_DEVELOPER_ID_CERT_P12_BASE64` | Developer ID Application certificate and key, base64 `.p12` |
 | `MACOS_DEVELOPER_ID_CERT_PASSWORD` | The password set when exporting it |
+| `MACOS_PROVISIONING_PROFILE_BASE64` | Developer ID profile for `com.uractor.uractormacos`, base64 `.provisionprofile` |
 | `APP_STORE_CONNECT_KEY_ID` | Already set, shared with TestFlight |
 | `APP_STORE_CONNECT_ISSUER_ID` | Already set, shared with TestFlight |
 | `APP_STORE_CONNECT_PRIVATE_KEY` | Already set, shared with TestFlight |
 | `FIREBASE_SERVICE_ACCOUNT` | Already set, shared with the internal release |
 
-Only the first two are new.
+Only the first three are new. All three are checked by `preflight`, which skips
+the macOS stage rather than failing it when one is missing — so a missing
+profile shows up as a desktop release that quietly did not happen, and the run
+summary names which secret was absent.
 
 ### One-time setup outside the repository
 
-1. Create the Developer ID certificate, as above, and add the two secrets.
-2. Enable **Keychain Sharing** on the `com.uractor.uractormacos` App ID.
-3. In the Firebase console, connect the custom domain `downloads.uractor.com`
+1. Create the Developer ID certificate, as above, and add the two certificate
+   secrets.
+2. Create the Developer ID provisioning profile for
+   `com.uractor.uractormacos` and add `MACOS_PROVISIONING_PROFILE_BASE64`.
+3. Enable **Keychain Sharing** on the `com.uractor.uractormacos` App ID.
+4. In the Firebase console, connect the custom domain `downloads.uractor.com`
    to the `uractor-downloads` Hosting site and add the DNS records Firebase
    gives you at the registrar. Until this is done the domain answers with
    Firebase's own "Site Not Found" page, which is what it does today, and the
    site is reachable only at `uractor-downloads.web.app`.
-4. Check the service account behind `FIREBASE_SERVICE_ACCOUNT` has the
+5. Check the service account behind `FIREBASE_SERVICE_ACCOUNT` has the
    **Firebase Hosting Admin** role; it was created for App Distribution and
    may not.
 
