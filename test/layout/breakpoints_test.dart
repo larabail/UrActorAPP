@@ -81,6 +81,30 @@ void main() {
     });
   });
 
+  group('landscapeMeansFullScreen', () {
+    // Turning a phone sideways is a deliberate act, and a phone on its side
+    // has room for the video and nothing else, so the trailer player is right
+    // to read it as a request to fill the window.
+    test('a landscape phone is asking for the video to fill the window', () {
+      expect(landscapeMeansFullScreen(WindowSizeClass.compact), isTrue);
+      expect(landscapeMeansFullScreen(WindowSizeClass.medium), isTrue);
+    });
+
+    // A tablet held horizontally is not asking for anything: landscape is
+    // where it lives. Reading it as a request made the trailer take over the
+    // detail pane on its own the first time the window metrics changed.
+    test('a window with two panes is landscape by nature, not by request', () {
+      expect(landscapeMeansFullScreen(WindowSizeClass.expanded), isFalse);
+      expect(landscapeMeansFullScreen(WindowSizeClass.large), isFalse);
+    });
+
+    test('it is the exact complement of having two panes', () {
+      for (final size in WindowSizeClass.values) {
+        expect(landscapeMeansFullScreen(size), !usesTwoPanes(size));
+      }
+    });
+  });
+
   group('poster geometry', () {
     test('a poster is two by three whatever width it is given', () {
       for (final width in <double>[104, 120, 132, 144, 300]) {

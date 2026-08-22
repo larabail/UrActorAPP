@@ -91,6 +91,24 @@ NavigationStyle navigationStyleFor(WindowSizeClass size) {
 bool usesTwoPanes(WindowSizeClass size) =>
     size == WindowSizeClass.expanded || size == WindowSizeClass.large;
 
+/// Whether a landscape window should be read as a request to fill it with a
+/// video.
+///
+/// The trailer player watches the window and goes fullscreen by itself
+/// whenever it is wider than it is tall. On a phone that is the right reading:
+/// turning the device sideways is something the user did on purpose, and a
+/// phone laid on its side has no room for anything but the video anyway.
+///
+/// A window wide enough for two panes is landscape all of the time — being
+/// wide is what put it in that class — so there is no gesture to read. The
+/// player would enter fullscreen unprompted the first time anything changed
+/// the window metrics, which on a tablet is as ordinary as the keyboard
+/// closing after a search, and a trailer sitting at the foot of a page would
+/// swallow the page. Worse, the takeover is drawn into the detail pane's own
+/// overlay while it sizes itself from the whole window, so it lands cropped
+/// and offset rather than merely unwanted.
+bool landscapeMeansFullScreen(WindowSizeClass size) => !usesTwoPanes(size);
+
 /// The aspect ratio of a poster, as width divided by height.
 ///
 /// TMDB serves posters at 500x750, so this is the shape the artwork actually
