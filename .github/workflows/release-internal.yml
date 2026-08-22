@@ -251,12 +251,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
-    # The one job here that is not limited to testers. The platform stages below
-    # reach the handful of people on Play's internal track, on TestFlight, or
-    # downloading a build from this run; this deploys to the live Firebase
-    # project that every installed app talks to, including everyone on the App
-    # Store and on Play production. A bad deploy here is felt by users who never
-    # opted into testing anything.
+    # This is the one job here that is not limited to testers. The platform
+    # stages below reach the handful of people on Play's internal track, on
+    # TestFlight, or downloading a build from this run; this deploys to the live
+    # Firebase project that every installed app talks to, including everyone on
+    # the App Store and on Play production.
     #
     # It used to wait for a manual approval on every merge. That was one click
     # per merge whether or not the merge had anything to do with the functions,
@@ -328,6 +327,15 @@ jobs:
   android:
     name: '1 · Android → Play internal'
     needs: [preflight, verify, functions]
+    # `!cancelled() && !failure()` rather than the default, which is an implicit
+    # `success()` over everything in `needs`. The functions deploy is skipped on
+    # any push that did not touch `functions/`, which is most of them, and a
+    # skipped job is not a successful one: left on the default this stage would
+    # be skipped along with it and the merge would ship nothing at all. Naming a
+    # status check function is also what drops the implicit `success()`, so the
+    # test has to be written this way round rather than as a plain
+    # `needs.functions.result` comparison.
+    if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -430,7 +438,15 @@ jobs:
   ios:
     name: '2 · iOS → TestFlight'
     needs: [preflight, verify, functions]
-    if: needs.preflight.outputs.ios == 'true'
+    # `!cancelled() && !failure()` rather than the default, which is an implicit
+    # `success()` over everything in `needs`. The functions deploy is skipped on
+    # any push that did not touch `functions/`, which is most of them, and a
+    # skipped job is not a successful one: left on the default this stage would
+    # be skipped along with it and the merge would ship nothing at all. Naming a
+    # status check function is also what drops the implicit `success()`, so the
+    # test has to be written this way round rather than as a plain
+    # `needs.functions.result` comparison.
+    if: ${{ !cancelled() && !failure() && needs.preflight.outputs.ios == 'true' }}
     # macos-26, not macos-15. Apple refuses any upload built against an SDK
     # older than iOS 26, and macos-15 defaults to Xcode 16.4, which carries the
     # iOS 18.5 SDK. That rejection arrives from App Store Connect as a 409
@@ -741,7 +757,15 @@ jobs:
   desktop_macos:
     name: '3 · Desktop → macOS'
     needs: [preflight, verify, functions]
-    if: needs.preflight.outputs.macos == 'true'
+    # `!cancelled() && !failure()` rather than the default, which is an implicit
+    # `success()` over everything in `needs`. The functions deploy is skipped on
+    # any push that did not touch `functions/`, which is most of them, and a
+    # skipped job is not a successful one: left on the default this stage would
+    # be skipped along with it and the merge would ship nothing at all. Naming a
+    # status check function is also what drops the implicit `success()`, so the
+    # test has to be written this way round rather than as a plain
+    # `needs.functions.result` comparison.
+    if: ${{ !cancelled() && !failure() && needs.preflight.outputs.macos == 'true' }}
     runs-on: macos-latest
     timeout-minutes: 90
 
@@ -994,6 +1018,15 @@ jobs:
   desktop_windows:
     name: '3 · Desktop → Windows'
     needs: [preflight, verify, functions]
+    # `!cancelled() && !failure()` rather than the default, which is an implicit
+    # `success()` over everything in `needs`. The functions deploy is skipped on
+    # any push that did not touch `functions/`, which is most of them, and a
+    # skipped job is not a successful one: left on the default this stage would
+    # be skipped along with it and the merge would ship nothing at all. Naming a
+    # status check function is also what drops the implicit `success()`, so the
+    # test has to be written this way round rather than as a plain
+    # `needs.functions.result` comparison.
+    if: ${{ !cancelled() && !failure() }}
     runs-on: windows-latest
     timeout-minutes: 60
 

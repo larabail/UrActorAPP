@@ -187,8 +187,7 @@ Deployments are recorded against the `production` environment either way.
 stages are limited to people who opted in: Play's internal track, TestFlight, or
 downloading an installer from the run. The `functions` job is not. It deploys to
 the live `actordb-cf981` project that every installed app talks to, including
-everyone on the App Store and on Play production, so a bad deploy there is felt
-by users who never signed up to test anything.
+everyone on the App Store and on Play production.
 
 It used to wait for a manual approval on every merge. That was one click per
 merge whether or not the merge had anything to do with the functions, and most
@@ -212,6 +211,22 @@ uploaded, because a build that reaches testers expecting a callable that is not
 deployed yet fails on the device — as true on iOS and on the desktop as it is on
 Android. All three stages therefore wait on it, where previously only the
 Android one did.
+
+Waiting on a job that is usually skipped needs saying out loud, because the
+obvious way to write it is wrong. GitHub skips every job that `needs` a skipped
+one unless the dependent job names a status check function, so with the plain
+default the path filter above would have skipped the whole release on every
+merge that left `functions/` alone — which is most of them. The platform stages
+therefore carry:
+
+```yaml
+if: ${{ !cancelled() && !failure() }}
+```
+
+which tolerates a skipped deploy while still stopping on a failed one. Writing
+it as `needs.functions.result == 'skipped'` would not work: without a status
+check function in the expression the implicit `success()` is still applied on
+top, and the job is skipped anyway.
 
 If a deploy ever needs holding back again, the approval is one `environment:`
 block on the job away.
