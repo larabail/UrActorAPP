@@ -16,6 +16,7 @@ from check_version_bump import (
     check,
     level_for_subject,
     parse_version,
+    reaches_the_app,
     required_level,
     version_from_pubspec,
 )
@@ -195,6 +196,89 @@ class Check(unittest.TestCase):
     def test_a_malformed_version_raises(self):
         with self.assertRaises(VersionError):
             check("3.5.4+47", "3.5.5", ["fix(x): fix a thing"])
+
+
+class ReachesTheApp(unittest.TestCase):
+    def test_the_downloads_site_does_not(self):
+        self.assertFalse(reaches_the_app([
+            "web/downloads/index.html",
+            "web/downloads/releases.js",
+        ]))
+
+    def test_anything_else_does(self):
+        self.assertTrue(reaches_the_app(["lib/main.dart"]))
+        self.assertTrue(reaches_the_app(["pubspec.yaml"]))
+
+    def test_one_file_outside_is_enough(self):
+        # A pull request that touches the app at all is a pull request that
+        # changes the app, however much of it was the web page.
+        self.assertTrue(reaches_the_app([
+            "web/downloads/index.html",
+            "lib/search.dart",
+        ]))
+
+    def test_the_manifest_script_still_counts(self):
+        # It writes the file every desktop install polls for updates, so a
+        # mistake in it does reach an install.
+        self.assertTrue(reaches_the_app(["tool/build_download_manifest.py"]))
+
+    def test_a_lookalike_path_outside_the_directory_counts(self):
+        self.assertTrue(reaches_the_app(["web/downloads.dart"]))
+        self.assertTrue(reaches_the_app(["docs/web/downloads/notes.md"]))
+
+    def test_an_empty_list_counts_as_reaching_the_app(self):
+        # An empty diff means this could not work out what changed. Exempting
+        # a pull request on the strength of a question it failed to answer is
+        # how an unversioned build reaches testers.
+        self.assertTrue(reaches_the_app([]))
+        self.assertTrue(reaches_the_app(["  "]))
+
+
+class ExemptPaths(unittest.TestCase):
+    def test_a_feat_on_the_site_alone_needs_no_bump(self):
+        problems = check(
+            "3.5.4+47", "3.5.4+47",
+            ["feat(downloads): list every published version"],
+            reaches_app=False,
+        )
+        self.assertEqual(problems, [])
+
+    def test_the_same_feat_touching_the_app_still_needs_one(self):
+        problems = check(
+            "3.5.4+47", "3.5.4+47",
+            ["feat(downloads): list every published version"],
+            reaches_app=True,
+        )
+        self.assertEqual(len(problems), 1)
+        self.assertIn("minor", problems[0])
+
+    def test_bumping_anyway_is_allowed(self):
+        problems = check(
+            "3.5.4+47", "3.6.0+47",
+            ["feat(downloads): list every published version"],
+            reaches_app=False,
+        )
+        self.assertEqual(problems, [])
+
+    def test_a_backwards_version_is_still_refused(self):
+        # The exemption drops the requirement, not the rest of the checking:
+        # Play never accepts a version it has already seen.
+        problems = check(
+            "3.5.4+47", "3.5.3+47",
+            ["feat(downloads): reword the warning"],
+            reaches_app=False,
+        )
+        self.assertEqual(len(problems), 1)
+        self.assertIn("backwards", problems[0])
+
+    def test_a_malformed_bump_is_still_refused(self):
+        problems = check(
+            "3.5.4+47", "3.6.4+47",
+            ["feat(downloads): reword the warning"],
+            reaches_app=False,
+        )
+        self.assertEqual(len(problems), 1)
+        self.assertIn("resets patch to zero", problems[0])
 
 
 if __name__ == "__main__":
