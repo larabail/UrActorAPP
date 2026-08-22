@@ -18,6 +18,8 @@ import 'package:http/testing.dart';
 import 'package:uractor/common/api/http_client.dart';
 import 'package:uractor/common/firebase/callable_context.dart';
 import 'package:uractor/common/firebase/firestore_core.dart';
+import 'package:uractor/common/media_metadata_store.dart';
+import 'package:uractor/common/media_sort_loader.dart';
 import 'package:uractor/main.dart' as app;
 import 'package:uractor/objects/user.dart';
 
@@ -130,6 +132,66 @@ HttpStub installHttpStub([HttpStub? stub]) {
   AppHttp.client = active.build();
   addTearDown(AppHttp.reset);
   return active;
+}
+
+/// Keeps the media sort metadata cache in memory for the current test.
+///
+/// The real store writes a file through `path_provider`, which has no platform
+/// channel to answer in a unit test. This stands in for it and, unlike the
+/// real one, can be inspected: [MemoryMetadataCacheBacking.files] is what
+/// would be on disk, which is how a test proves an account's cache is really
+/// gone after sign-out rather than merely absent from memory.
+///
+/// Also clears the loader itself, in memory and in the fake store, because a
+/// cache surviving into the next test would answer requests that test expected
+/// to make.
+MemoryMetadataCacheBacking installMemoryMetadataStore() {
+  final backing = MemoryMetadataCacheBacking();
+  MediaMetadataStore.backing = backing;
+  addTearDown(() async {
+    await MediaSortLoader.clearCache();
+    MediaMetadataStore.reset();
+  });
+  return backing;
+}
+
+/// An in-memory stand-in for the on-device metadata cache.
+class MemoryMetadataCacheBacking implements MetadataCacheBacking {
+  /// The stored contents, keyed by uid, standing in for one file each.
+  final Map<String, String> files = <String, String>{};
+
+  /// Every read, write and delete, so a test can assert a write happened at
+  /// all rather than only that the contents ended up right.
+  final List<String> operations = <String>[];
+
+  /// Makes the next operation of each kind fail, for testing that a cache
+  /// which cannot be reached degrades to the network instead of breaking.
+  bool failReads = false;
+  bool failWrites = false;
+
+  @override
+  Future<String?> read(String uid) async {
+    operations.add('read:$uid');
+    if (failReads) throw StateError('read failed');
+    return files[uid];
+  }
+
+  @override
+  Future<void> write(String uid, String contents) async {
+    operations.add('write:$uid');
+    if (failWrites) throw StateError('write failed');
+    files[uid] = contents;
+  }
+
+  @override
+  Future<void> delete(String uid) async {
+    operations.add('delete:$uid');
+    files.remove(uid);
+  }
+
+  /// How many writes landed for [uid], to prove the debounce coalesces them.
+  int writeCountFor(String uid) =>
+      operations.where((entry) => entry == 'write:$uid').length;
 }
 
 /// Points callable wrappers at a fake Firebase project and signed-in user.

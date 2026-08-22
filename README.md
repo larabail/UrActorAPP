@@ -137,6 +137,7 @@ window rather than the device it is on (see [Platforms](#platforms) and
 | `youtube_player_flutter` | Trailer playback |
 | `image_picker` + `image_cropper` | Profile photo capture |
 | `cached_network_image` | Poster and backdrop caching |
+| `path_provider` | Locates the on-device file the media sort cache is kept in |
 | `flutter_localizations` + `intl` | EN/ES localization |
 
 State is handled with plain `StatefulWidget`, `setState`, and
@@ -647,6 +648,13 @@ lib/
     viewing_history_widgets.dart    The range shown above a show's history
     playlist_grid.dart              The home page's playlist grid, and how many
                                     columns it fits into the space it is given
+    media_sort.dart                 Pure ordering rules for the media grids
+    media_sort_loader.dart          Looks up what those rules need, from the
+                                    cache first and the network only for what
+                                    is missing
+    media_metadata_cache.dart       The stored form of that cache: versioning,
+                                    the 30-day staleness rule, eviction
+    media_metadata_store.dart       Reads and writes it, one file per account
     api/apiutils.dart        All TMDB HTTP calls; a show's credits come from
                              aggregate_credits and are flattened to the shape
                              /credits returns
@@ -677,6 +685,41 @@ assets/                      Logos, tab icons, the cover and person
                              placeholders, oscars_api.json
 test/                        Flutter tests
 ```
+
+### Sorting the media grids
+
+The Seen, Watchlist and Favorites grids store nothing but `[type, id]` pairs,
+so ordering them by anything other than the order things were added means
+looking every title up first. Sorting by IMDb rating costs more again: TMDB
+details do not carry a rating, so each title needs an OMDB call, and a show
+needs a third call to `/external_ids` because only films carry an `imdb_id`.
+
+Those answers are now kept on the device, in a JSON file per account under the
+app support directory, so a cold start reads them instead of fetching them
+(`lib/common/media_metadata_store.dart`). The detail pages write through to the
+same cache, since they already fetch exactly these fields — so a title you have
+opened is usually free to sort by. Only what is missing is fetched, still six
+requests at a time.
+
+Three things are worth knowing about it:
+
+- **Your own rating is never stored.** It is read from the signed-in user on
+  every load instead. That is the only field belonging to a person rather than
+  a title, so keeping it out of the file means no cache can show one account
+  another's data — the file is also named per account, and deleted on sign-out,
+  but neither of those has to work for that guarantee to hold.
+- **Entries last 30 days.** Release dates get corrected and ratings drift.
+  Anything older is simply fetched again by the same path that fetches a title
+  never seen before, so there is no separate refresh to go wrong.
+- **The file records the language its titles were fetched in.** A detail page
+  asks TMDB in the user's language and the sort does not, and a grid ordered by
+  a mixture of Spanish and English names would sort by whichever titles you had
+  happened to open. A mismatched entry has its name refetched; its IMDb id and
+  rating, which have no language, are kept.
+
+A cache that cannot be read or written is never fatal — the app fetches exactly
+as it did before it existed. A file from an older version of the format is
+discarded rather than migrated, since everything in it can be fetched again.
 
 ## Cloud Functions
 
@@ -825,7 +868,7 @@ cd ..
 node --test web/downloads/*.test.js
 ```
 
-`flutter test` currently runs 847 tests with no emulator, credentials or
+`flutter test` currently runs 971 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
 `FirestoreCore.db` and `AppHttp.client` — and callable context through
 `CallableContext`. They default to the real implementations and are pointed at
@@ -836,9 +879,10 @@ HTTP client, auth/session helpers, search and playlist ordering, playlist join
 handling, settings, inbox, calendar/list services, calendar episode detail,
 what a calendar entry does to watch progress, viewing history ranges,
 in-memory Firestore service behaviour, watch-progress rules and controls, the
-media and person data objects, every popup under `lib/popups` except the
-profile section editor, the reviews and Continue watching screens, and the
-pre-commit hook itself.
+media sort cache — including that a warm start makes no requests at all and
+that one account's cache cannot outlive its sign-out — the media and person
+data objects, every popup under `lib/popups` except the profile section editor,
+the reviews and Continue watching screens, and the pre-commit hook itself.
 
 `npm test` in `functions/` runs the Node 22 unit tests for the playlist, OMDB
 and people-score helper modules. `npm run test:emulator` additionally runs the

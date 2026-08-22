@@ -12,13 +12,18 @@ class AuthSession {
   /// Signs out of Firebase and drops data cached for the previous user.
   static Future<void> signOut() async {
     await _authSignOut();
-    clearPerUserCaches();
+    await clearPerUserCaches();
   }
 
   /// Clears caches that are scoped to the signed-in user.
-  static void clearPerUserCaches() {
+  ///
+  /// Async because the media sort cache is now also kept on disk, and a file
+  /// left behind is exactly the leak this exists to prevent. Callers must
+  /// await it before another account can sign in.
+  /// @return Completes once every per-user cache is gone.
+  static Future<void> clearPerUserCaches() async {
     FriendsService.clearCache();
-    MediaSortLoader.clearCache();
+    await MediaSortLoader.clearCache();
   }
 
   @visibleForTesting
@@ -27,8 +32,8 @@ class AuthSession {
   }
 
   @visibleForTesting
-  static void resetForTest() {
+  static Future<void> resetForTest() async {
     _authSignOut = () => FirebaseAuth.instance.signOut();
-    clearPerUserCaches();
+    await clearPerUserCaches();
   }
 }
