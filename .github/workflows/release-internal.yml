@@ -63,7 +63,7 @@ jobs:
       version: ${{ steps.version.outputs.name }}
       ios: ${{ steps.ios.outputs.configured }}
       macos: ${{ steps.macos.outputs.configured }}
-      functions: ${{ steps.functions_changed.outputs.changed }}
+      backend: ${{ steps.backend_changed.outputs.changed }}
 
     steps:
       - uses: actions/checkout@v5
@@ -71,12 +71,22 @@ jobs:
           # Deep enough to diff against whatever master was before this push.
           fetch-depth: 0
 
-      # Most merges do not touch the Cloud Functions, and deploying them
+      # Most merges do not touch the Firebase backend, and deploying it
       # unchanged is a live deploy to the project every installed app talks to
       # in exchange for nothing. So the deploy is skipped unless this push
-      # actually changed something under `functions/`.
-      - name: Decide whether the functions need deploying
-        id: functions_changed
+      # actually changed something under `functions/`, or changed the Firestore
+      # rules or indexes.
+      #
+      # The rules and the indexes are in that list because leaving them out is
+      # what this filter got wrong for its whole life. A composite index was
+      # added to `firestore.indexes.json` in the same pull request as the
+      # scheduled function that queries it; the file was reviewed and merged,
+      # nothing in CI had ever deployed it, and the function then failed on
+      # every five-minute run with FAILED_PRECONDITION. A rule or an index that
+      # is committed but never deployed is invisible until production breaks,
+      # because there is no build step it can fail.
+      - name: Decide whether the backend needs deploying
+        id: backend_changed
         env:
           BEFORE: ${{ github.event.before }}
         run: |
@@ -97,12 +107,13 @@ jobs:
             exit 0
           fi
 
-          if git diff --name-only "$BEFORE" "$GITHUB_SHA" -- functions/ | grep -q .; then
+          if git diff --name-only "$BEFORE" "$GITHUB_SHA" \
+              -- functions/ firestore.rules firestore.indexes.json | grep -q .; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "functions/ changed; deploying."
+            echo "The backend changed; deploying."
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "functions/ untouched; skipping the deploy."
+            echo "functions/, the rules and the indexes are untouched; skipping the deploy."
           fi
 
       # One reading of pubspec.yaml for the whole run. Three platforms deriving
@@ -251,12 +262,19 @@ jobs:
   # The order matters: a build that reaches testers expecting a callable that is
   # not deployed yet fails on the device, and that is as true on iOS and on the
   # desktop as it is on Android.
+  #
+  # The job key is still `functions` even though the job now deploys the rules
+  # and the indexes too. Four platform stages name it in `needs:`, each carries
+  # a comment about how `needs.functions.result` behaves, and
+  # `docs/releases.md` quotes that expression as well. Renaming the key buys a
+  # more accurate word in nine places a reader never sees, at the cost of nine
+  # chances to leave a dangling reference behind. Only the display name changed.
   functions:
-    name: Deploy Cloud Functions
+    name: Deploy the Firebase backend
     needs: [preflight, verify]
-    if: needs.preflight.outputs.functions == 'true'
+    if: needs.preflight.outputs.backend == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     # This is the one job here that is not limited to testers. The platform
     # stages below reach the handful of people on Play's internal track, on
@@ -265,14 +283,15 @@ jobs:
     # the App Store and on Play production.
     #
     # It used to wait for a manual approval on every merge. That was one click
-    # per merge whether or not the merge had anything to do with the functions,
+    # per merge whether or not the merge had anything to do with the backend,
     # and most do not -- so the click became routine, and a gate people click
     # through without reading is not a gate.
     #
     # The path filter in `preflight` is the replacement the previous comment
     # here asked for: the deploy simply does not happen unless this push
-    # changed something under `functions/`. That removes the noise rather than
-    # the caution, and the deploys that do run are the ones worth watching.
+    # changed `functions/`, `firestore.rules` or `firestore.indexes.json`. That
+    # removes the noise rather than the caution, and the deploys that do run are
+    # the ones worth watching.
     #
     # If a deploy needs holding back again, the approval is one `environment:`
     # block away, and `docs/releases.md` records what it protected.
@@ -284,7 +303,17 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: functions/package-lock.json
+          cache-dependency-path: |
+            functions/package-lock.json
+            firestore-tests/package-lock.json
+
+      # The Firestore emulator the rules suite runs against is a Java program.
+      # Same distribution and version the pull request workflow uses for the
+      # functions emulator suite, so the two cannot drift apart.
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
 
       - name: Install
         working-directory: functions
@@ -296,6 +325,39 @@ jobs:
         working-directory: functions
         run: npm test
 
+      # And the rules suite, for the same reason, now that this job deploys the
+      # rules. It is the heavier of the two consequences: a broken function
+      # returns an error to one screen, a broken rule locks every installed app
+      # out of its own data or lets it read somebody else's.
+      #
+      # `test:ci` rather than `test` because the documented local command
+      # expects `firebase` already on PATH, which a runner does not have. Same
+      # script and same pinned CLI as the `Firestore rules` job in `pr.yml`;
+      # installing firebase-tools into `firestore-tests/` instead is a trap,
+      # because it vendors Dart templates that `flutter analyze` then reads.
+      - name: Test the security rules
+        working-directory: firestore-tests
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run test:ci
+
+      # One command for all three, not three commands. `firebase deploy` orders
+      # a combined deploy itself and puts the rules and the indexes ahead of the
+      # functions, which is the order that matters: a function deployed in front
+      # of the index its query needs fails until the index catches up, never the
+      # other way round. Splitting it into sequential steps would only add a way
+      # to get that order wrong by hand.
+      #
+      # Worth knowing when reading a failure shortly after a release: `deploy`
+      # returns once Firestore has accepted an index, not once the index is
+      # READY, and building one over a large collection takes minutes. A
+      # FAILED_PRECONDITION saying a query requires an index, in the few minutes
+      # after a deploy that added one, is usually that index still building
+      # rather than a missing one -- check the Firestore console before
+      # concluding the file never shipped. Nothing here polls for READY: the
+      # wait has no upper bound, and holding the whole release behind something
+      # that resolves itself would cost every platform stage for nothing.
       - name: Deploy
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
@@ -318,7 +380,7 @@ jobs:
           export GOOGLE_APPLICATION_CREDENTIALS="$CREDENTIALS"
 
           npx --yes firebase-tools@15 deploy \
-            --only functions \
+            --only functions,firestore:rules,firestore:indexes \
             --project actordb-cf981 \
             --non-interactive \
             --force
@@ -335,13 +397,13 @@ jobs:
     name: '1 · Android → Play internal'
     needs: [preflight, verify, functions]
     # `!cancelled() && !failure()` rather than the default, which is an implicit
-    # `success()` over everything in `needs`. The functions deploy is skipped on
-    # any push that did not touch `functions/`, which is most of them, and a
-    # skipped job is not a successful one: left on the default this stage would
-    # be skipped along with it and the merge would ship nothing at all. Naming a
-    # status check function is also what drops the implicit `success()`, so the
-    # test has to be written this way round rather than as a plain
-    # `needs.functions.result` comparison.
+    # `success()` over everything in `needs`. The backend deploy is skipped on
+    # any push that touched neither `functions/` nor the Firestore rules and
+    # indexes, which is most of them, and a skipped job is not a successful one:
+    # left on the default this stage would be skipped along with it and the
+    # merge would ship nothing at all. Naming a status check function is also
+    # what drops the implicit `success()`, so the test has to be written this
+    # way round rather than as a plain `needs.functions.result` comparison.
     if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -446,13 +508,13 @@ jobs:
     name: '2 · iOS → TestFlight'
     needs: [preflight, verify, functions]
     # `!cancelled() && !failure()` rather than the default, which is an implicit
-    # `success()` over everything in `needs`. The functions deploy is skipped on
-    # any push that did not touch `functions/`, which is most of them, and a
-    # skipped job is not a successful one: left on the default this stage would
-    # be skipped along with it and the merge would ship nothing at all. Naming a
-    # status check function is also what drops the implicit `success()`, so the
-    # test has to be written this way round rather than as a plain
-    # `needs.functions.result` comparison.
+    # `success()` over everything in `needs`. The backend deploy is skipped on
+    # any push that touched neither `functions/` nor the Firestore rules and
+    # indexes, which is most of them, and a skipped job is not a successful one:
+    # left on the default this stage would be skipped along with it and the
+    # merge would ship nothing at all. Naming a status check function is also
+    # what drops the implicit `success()`, so the test has to be written this
+    # way round rather than as a plain `needs.functions.result` comparison.
     if: ${{ !cancelled() && !failure() && needs.preflight.outputs.ios == 'true' }}
     # macos-26, not macos-15. Apple refuses any upload built against an SDK
     # older than iOS 26, and macos-15 defaults to Xcode 16.4, which carries the
@@ -765,13 +827,13 @@ jobs:
     name: '3 · Desktop → macOS'
     needs: [preflight, verify, functions]
     # `!cancelled() && !failure()` rather than the default, which is an implicit
-    # `success()` over everything in `needs`. The functions deploy is skipped on
-    # any push that did not touch `functions/`, which is most of them, and a
-    # skipped job is not a successful one: left on the default this stage would
-    # be skipped along with it and the merge would ship nothing at all. Naming a
-    # status check function is also what drops the implicit `success()`, so the
-    # test has to be written this way round rather than as a plain
-    # `needs.functions.result` comparison.
+    # `success()` over everything in `needs`. The backend deploy is skipped on
+    # any push that touched neither `functions/` nor the Firestore rules and
+    # indexes, which is most of them, and a skipped job is not a successful one:
+    # left on the default this stage would be skipped along with it and the
+    # merge would ship nothing at all. Naming a status check function is also
+    # what drops the implicit `success()`, so the test has to be written this
+    # way round rather than as a plain `needs.functions.result` comparison.
     if: ${{ !cancelled() && !failure() && needs.preflight.outputs.macos == 'true' }}
     runs-on: macos-latest
     timeout-minutes: 90
@@ -1026,13 +1088,13 @@ jobs:
     name: '3 · Desktop → Windows'
     needs: [preflight, verify, functions]
     # `!cancelled() && !failure()` rather than the default, which is an implicit
-    # `success()` over everything in `needs`. The functions deploy is skipped on
-    # any push that did not touch `functions/`, which is most of them, and a
-    # skipped job is not a successful one: left on the default this stage would
-    # be skipped along with it and the merge would ship nothing at all. Naming a
-    # status check function is also what drops the implicit `success()`, so the
-    # test has to be written this way round rather than as a plain
-    # `needs.functions.result` comparison.
+    # `success()` over everything in `needs`. The backend deploy is skipped on
+    # any push that touched neither `functions/` nor the Firestore rules and
+    # indexes, which is most of them, and a skipped job is not a successful one:
+    # left on the default this stage would be skipped along with it and the
+    # merge would ship nothing at all. Naming a status check function is also
+    # what drops the implicit `success()`, so the test has to be written this
+    # way round rather than as a plain `needs.functions.result` comparison.
     if: ${{ !cancelled() && !failure() }}
     runs-on: windows-latest
     timeout-minutes: 60
