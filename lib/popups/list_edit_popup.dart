@@ -33,28 +33,26 @@ class _ListEditDialogueState extends State<ListEditDialogue> {
 
   int _selectedIndex = 0;
 
+  /// Saves the edited name, cover and access code against the list.
+  ///
+  /// This used to find the document by downloading every playlist in the
+  /// collection and matching on name and access code, which needed a read of
+  /// other people's lists to edit your own and picked the wrong document when
+  /// two lists shared both fields. The dialogue is opened with the playlist,
+  /// so its id is already known.
   Future<void> editListSubmit() async {
-    await FirestoreCore.db
-        .collection("Watchlists")
-        .get()
-        .then((QuerySnapshot querySnapshot) async {
-      for (var doc in querySnapshot.docs) {
-        Map docData = doc.data() as Map;
-        if (originalListName == (docData["Name"])) {
-          if (docData["AccessCode"] == originalAccessCode) {
-            var userDoc = FirestoreCore.db.collection("Watchlists").doc(doc.id);
-            await FirestoreCore.mergeInto(userDoc, {"Name": listName});
-            await FirestoreCore.mergeInto(userDoc, {"CoverPhoto": cover});
-            await FirestoreCore.mergeInto(userDoc, {"AccessCode": accessCode});
-            widget.list_result.accesscode = accessCode;
-            widget.list_result.name = listName;
-            widget.list_result.backdrop = cover;
-            if (!mounted) return;
-            Navigator.pop(context);
-          }
-        }
-      }
+    final listDoc =
+        FirestoreCore.db.collection("Watchlists").doc(widget.list_result.id);
+    await FirestoreCore.mergeInto(listDoc, {
+      "Name": listName,
+      "CoverPhoto": cover,
+      "AccessCode": accessCode,
     });
+    widget.list_result.accesscode = accessCode;
+    widget.list_result.name = listName;
+    widget.list_result.backdrop = cover;
+    if (!mounted) return;
+    Navigator.pop(context);
   }
 
   @override

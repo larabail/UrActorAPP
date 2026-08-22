@@ -246,6 +246,27 @@ service cloud.firestore {
       ]);
     }
 
+    // The same membership, read from the flat `memberUids` array that the
+    // syncPlaylistMembers function maintains alongside `Users`.
+    //
+    // This exists because rules are not filters. A query is refused unless its
+    // own constraints prove every document it could return is readable, and no
+    // query can filter on `Users` — `arrayContains` needs the whole element,
+    // and the role is part of it. A read gated only on `Users` therefore
+    // refuses `where('memberUids', arrayContains: uid)`, which is how the app
+    // asks for its own lists. Matching on the field the client filters by is
+    // what makes that query allowed.
+    //
+    // The `in resource.data` guard matters: syncPlaylistMembers is a write
+    // trigger, so a playlist not written since it was deployed has no
+    // `memberUids` at all, and testing a missing field is an error rather than
+    // a false.
+    function queryablePlaylistMember(data) {
+      return signedIn()
+        && 'memberUids' in data
+        && request.auth.uid in data.memberUids;
+    }
+
     function playlistOwner(data) {
       return signedIn() && data.Users.hasAny([
         { request.auth.uid: 'Owner' }
@@ -289,31 +310,38 @@ service cloud.firestore {
 
     // Shared playlists.
     //
-    // Read is open to any signed-in user, which is wider than it looks. It is
-    // forced by clients already installed on phones, which find their lists by
-    // reading the whole collection. joinPlaylist and memberUids now make a
-    // member-only read possible; flipping it is Stage B, gated on adoption.
-    // See KNOWN GAPS.
+    // Read is restricted to members. A playlist's access code is stored on the
+    // document, so a wider read handed the one secret it has to anyone who
+    // could name it -- and any signed-in account could enumerate the whole
+    // collection to find them.
+    //
+    // Both membership fields are accepted, and each covers a case the other
+    // cannot. `memberUids` is what makes the app's own query allowed, since a
+    // query is only permitted when its constraints prove the result readable.
+    // `Users` is the field of record, and it keeps a playlist readable when
+    // syncPlaylistMembers has not written `memberUids` onto it yet. Together
+    // they refuse a non-member either way.
+    //
+    // Restricting this breaks any build that still finds its lists by reading
+    // the whole collection, everywhere at once, because a rules deploy has no
+    // staged rollout. Nothing deploys this file automatically: the only
+    // firebase deploy in CI is `--only functions`, so what is written here
+    // reaches the live project when someone runs
+    // `firebase deploy --only firestore:rules` by hand. That is the step to
+    // hold until Play Console shows the pre-3.18 clients are gone.
     match /Watchlists/{listId} {
-      allow read: if signedIn();
+      allow read: if queryablePlaylistMember(resource.data)
+        || playlistMember(resource.data);
 
       // The creator must appear as Owner in the document they create, so a
       // playlist cannot be created already belonging to someone else.
       allow create: if playlistOwner(request.resource.data);
 
-      // Members may edit the playlist's contents. Non-members may only join,
-      // and only by adding themselves: `Users` is the sole field they may
-      // touch, and the result must contain them.
-      //
-      // New clients do not take this path at all -- they call joinPlaylist,
-      // which runs with admin credentials and is not bound by these rules.
-      // It stays for the builds that still join by writing to `Users`
-      // directly, and goes away with the read restriction in Stage B.
-      allow update: if playlistMember(resource.data)
-        || (signedIn()
-            && request.resource.data.diff(resource.data)
-                 .affectedKeys().hasOnly(['Users'])
-            && playlistMember(request.resource.data));
+      // Members may edit the playlist's contents, which includes an Owner
+      // granting access to a friend. Joining is not a client write at all:
+      // it goes through joinPlaylist, which checks the access code with admin
+      // credentials so the code never reaches the device.
+      allow update: if playlistMember(resource.data);
 
       allow delete: if playlistOwner(resource.data);
     }
@@ -426,26 +454,9 @@ service cloud.firestore {
 // ---------------------------------------------------------------------------
 // KNOWN GAPS
 //
-// All three are client design problems that rules cannot close on their own.
+// Both are client design problems that rules cannot close on their own.
 //
-// 1. Every signed-in user can still read every playlist.
-//
-//    The server side of this is now done: joinPlaylist (functions/index.js)
-//    verifies the access code without the code ever reaching the device, and
-//    syncPlaylistMembers maintains a queryable `memberUids` array so a client
-//    can ask for its own lists instead of downloading the collection.
-//
-//    What remains is flipping `allow read` on /Watchlists/{listId} from
-//    `signedIn()` to `playlistMember(resource.data)`, and dropping the
-//    non-member update branch below that exists only so the old client can
-//    join by writing to `Users` itself.
-//
-//    That flip is deliberately NOT made yet. Builds already installed on
-//    people's phones find their playlists by reading the whole collection,
-//    and restricting read breaks them the moment it ships. It is gated on
-//    Play Console adoption of a client that uses the function.
-//
-// 2. Friend writes are now constrained to the coarse shape today's installed
+// 1. Friend writes are now constrained to the coarse shape today's installed
 //    clients already send: watched lists may only grow their known list fields,
 //    SeenWith may only touch one Movies/TVShows media entry, Calendar and
 //    rewatch documents may only touch one dynamic key, and Notifications may
@@ -466,7 +477,7 @@ service cloud.firestore {
 //    a function, or the day to be written as a subcollection document whose id
 //    the rule can see.
 //
-// 3. A user can still write their own FavActors, FavDirectors and FavWriters.
+// 2. A user can still write their own FavActors, FavDirectors and FavWriters.
 //
 //    recomputePeopleScores owns those three documents now and rewrites them
 //    whole, so anything a client puts there is corrected on the next run. The
@@ -476,5 +487,5 @@ service cloud.firestore {
 //
 //    The fix is to add these three ids to a deny list on /{uid}/{docId} once
 //    Play Console adoption of a client that does not write them is high
-//    enough -- the same staging as the playlist read restriction above.
+//    enough -- the same staging the playlist read restriction went through.
 // ---------------------------------------------------------------------------

@@ -15,6 +15,8 @@ const {
   updateDoc,
   deleteDoc,
   collection,
+  query,
+  where,
 } = require('firebase/firestore');
 
 let testEnv;
@@ -717,15 +719,101 @@ describe('G. usernames collection', () => {
 });
 
 describe('H. Watchlists', () => {
-  it('lets any signed-in user read them (documented current behaviour)', async () => {
+  it('lets a member read a playlist they belong to', async () => {
+    await seed(async (db) => {
+      await setDoc(doc(db, 'Watchlists/list1'), {
+        Name: 'n', CoverPhoto: '', Movies: [], 'TV Shows': [], AccessCode: 'abc',
+        Users: [{ [ALICE]: 'Owner' }, { [BOB]: 'Approved' }],
+        memberUids: [ALICE, BOB],
+      });
+    });
+    await assertSucceeds(getDoc(doc(ctxFor(ALICE).firestore(), 'Watchlists/list1')));
+    await assertSucceeds(getDoc(doc(ctxFor(BOB).firestore(), 'Watchlists/list1')));
+  });
+
+  it('does not let a signed-in non-member read a playlist', async () => {
     await seed(async (db) => {
       await setDoc(doc(db, 'Watchlists/list1'), {
         Name: 'n', CoverPhoto: '', Movies: [], 'TV Shows': [], AccessCode: 'abc',
         Users: [{ [ALICE]: 'Owner' }],
+        memberUids: [ALICE],
       });
     });
     const carol = ctxFor(CAROL).firestore();
-    await assertSucceeds(getDoc(doc(carol, 'Watchlists/list1')));
+    await assertFails(getDoc(doc(carol, 'Watchlists/list1')));
+  });
+
+  it('does not leak the access code to a non-member who guesses the id', async () => {
+    // The access code is the only secret a playlist has. Before joinPlaylist
+    // it was checked on the device, which meant handing it over to do so.
+    await seed(async (db) => {
+      await setDoc(doc(db, 'Watchlists/list1'), {
+        Name: 'n', CoverPhoto: '', Movies: [], 'TV Shows': [], AccessCode: 'secret',
+        Users: [{ [ALICE]: 'Owner' }],
+        memberUids: [ALICE],
+      });
+    });
+    const dave = ctxFor(DAVE).firestore();
+    await assertFails(getDoc(doc(dave, 'Watchlists/list1')));
+  });
+
+  it('still lets a member read a playlist that has no memberUids yet', async () => {
+    // syncPlaylistMembers is a write trigger, so a playlist untouched since it
+    // was deployed carries no memberUids. Reading membership only from that
+    // field would lock its own members out.
+    await seed(async (db) => {
+      await setDoc(doc(db, 'Watchlists/legacy'), {
+        Name: 'n', CoverPhoto: '', Movies: [], 'TV Shows': [], AccessCode: 'abc',
+        Users: [{ [ALICE]: 'Owner' }, { [BOB]: 'Approved' }],
+      });
+    });
+    await assertSucceeds(getDoc(doc(ctxFor(ALICE).firestore(), 'Watchlists/legacy')));
+    await assertSucceeds(getDoc(doc(ctxFor(BOB).firestore(), 'Watchlists/legacy')));
+    await assertFails(getDoc(doc(ctxFor(CAROL).firestore(), 'Watchlists/legacy')));
+  });
+
+  it('lets a member ask for their own playlists by memberUids', async () => {
+    // This is the query the client actually makes. It has to keep working,
+    // because restricting read is only safe if asking for your own lists is
+    // still possible.
+    await seed(async (db) => {
+      await setDoc(doc(db, 'Watchlists/mine'), {
+        Name: 'mine', CoverPhoto: '', Movies: [], 'TV Shows': [], AccessCode: 'abc',
+        Users: [{ [BOB]: 'Approved' }],
+        memberUids: [BOB],
+      });
+      await setDoc(doc(db, 'Watchlists/theirs'), {
+        Name: 'theirs', CoverPhoto: '', Movies: [], 'TV Shows': [], AccessCode: 'xyz',
+        Users: [{ [ALICE]: 'Owner' }],
+        memberUids: [ALICE],
+      });
+    });
+    const bob = ctxFor(BOB).firestore();
+    const mine = await assertSucceeds(getDocs(
+      query(collection(bob, 'Watchlists'), where('memberUids', 'array-contains', BOB))));
+    if (mine.docs.length !== 1 || mine.docs[0].id !== 'mine') {
+      throw new Error(`expected only 'mine', got ${mine.docs.map((d) => d.id)}`);
+    }
+  });
+
+  it('does not let anyone download the whole collection', async () => {
+    // The scan the old client did to find its lists. Rules are not filters:
+    // one unreadable document in range fails the entire query, which is what
+    // makes this the breaking change for builds predating memberUids.
+    await seed(async (db) => {
+      await setDoc(doc(db, 'Watchlists/mine'), {
+        Name: 'mine', CoverPhoto: '', Movies: [], 'TV Shows': [], AccessCode: 'abc',
+        Users: [{ [BOB]: 'Approved' }],
+        memberUids: [BOB],
+      });
+      await setDoc(doc(db, 'Watchlists/theirs'), {
+        Name: 'theirs', CoverPhoto: '', Movies: [], 'TV Shows': [], AccessCode: 'xyz',
+        Users: [{ [ALICE]: 'Owner' }],
+        memberUids: [ALICE],
+      });
+    });
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(getDocs(collection(bob, 'Watchlists')));
   });
 
   it('lets a user create a playlist where they are listed as Owner', async () => {
@@ -767,16 +855,25 @@ describe('H. Watchlists', () => {
     await assertFails(updateDoc(doc(carol, 'Watchlists/list1'), { Movies: ['tt1'] }));
   });
 
-  it('lets a non-member add themselves to Users (joining by access code, documented current behaviour)', async () => {
+  it('does not let a non-member add themselves to Users', async () => {
+    // Joining is joinPlaylist's job now. Writing yourself in from the device
+    // was the old path, and it let anyone who could name a list join it.
+    // The `Users`-only write is that path exactly, so it is the one that has
+    // to be refused; the second shape only confirms nothing else lets it in.
     await seed(async (db) => {
       await setDoc(doc(db, 'Watchlists/list1'), {
         Name: 'n', CoverPhoto: '', Movies: [], 'TV Shows': [], AccessCode: 'abc',
         Users: [{ [ALICE]: 'Owner' }],
+        memberUids: [ALICE],
       });
     });
     const carol = ctxFor(CAROL).firestore();
-    await assertSucceeds(updateDoc(doc(carol, 'Watchlists/list1'), {
+    await assertFails(updateDoc(doc(carol, 'Watchlists/list1'), {
       Users: [{ [ALICE]: 'Owner' }, { [CAROL]: 'Approved' }],
+    }));
+    await assertFails(updateDoc(doc(carol, 'Watchlists/list1'), {
+      Users: [{ [ALICE]: 'Owner' }, { [CAROL]: 'Approved' }],
+      memberUids: [ALICE, CAROL],
     }));
   });
 
@@ -791,6 +888,22 @@ describe('H. Watchlists', () => {
     await assertFails(updateDoc(doc(carol, 'Watchlists/list1'), {
       Users: [{ [ALICE]: 'Owner' }, { [CAROL]: 'Approved' }],
       Name: 'hacked',
+    }));
+  });
+
+  it('lets an Owner add a member, which is how sharing still works', async () => {
+    // Owners hand out access from the app; only joining moved to a function.
+    await seed(async (db) => {
+      await setDoc(doc(db, 'Watchlists/list1'), {
+        Name: 'n', CoverPhoto: '', Movies: [], 'TV Shows': [], AccessCode: 'abc',
+        Users: [{ [ALICE]: 'Owner' }],
+        memberUids: [ALICE],
+      });
+    });
+    const alice = ctxFor(ALICE).firestore();
+    await assertSucceeds(updateDoc(doc(alice, 'Watchlists/list1'), {
+      Users: [{ [ALICE]: 'Owner' }, { [CAROL]: 'Approved' }],
+      memberUids: [ALICE, CAROL],
     }));
   });
 
