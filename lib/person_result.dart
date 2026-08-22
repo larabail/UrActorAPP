@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:uractor/common/credit_label.dart';
 import 'package:uractor/common/item_container.dart';
 import 'package:uractor/common/media_pair_membership.dart';
+import 'package:uractor/common/widgets/credit_tile.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/movie.dart';
 import 'package:uractor/objects/person.dart';
@@ -323,7 +325,13 @@ class _PersonResultState extends State<PersonResult> {
       {required int columns}) {
     Widget buildMediaItem(dynamic media) {
       if (media == null || media["poster_path"] == null) {
-        return SizedBox(width: context.posterWidth);
+        // Reserves the whole cell, margins included, so the column a
+        // poster-less credit sits in stays where the rows above put it.
+        return SizedBox(
+          width: context.posterWidth +
+              kPosterTileMarginLeft +
+              kPosterTileMarginRight,
+        );
       }
 
       return GestureDetector(
@@ -344,9 +352,7 @@ class _PersonResultState extends State<PersonResult> {
           }
           openDetail(context, page);
         },
-        child: isCrew
-            ? seenCrew(context, media, mediaType, oscars)
-            : seen(context, media, mediaType, oscars),
+        child: creditTile(context, media, mediaType, oscars, isCrew: isCrew),
       );
     }
 
@@ -354,6 +360,9 @@ class _PersonResultState extends State<PersonResult> {
       // Packed from the leading edge so a partial last row lines up with the
       // rows above it rather than drifting to the middle.
       mainAxisAlignment: MainAxisAlignment.start,
+      // Tops aligned, so a tile whose credit line is missing does not float
+      // its poster down to the middle of the row.
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (int column = 0; column < columns; column++)
           if (index * columns + column < mediaList.length)
@@ -525,307 +534,29 @@ class _PersonResultState extends State<PersonResult> {
     );
   }
 
-  Stack seen(BuildContext context, movie, type, oscars) {
-    if (!Utils.containsNonType(currentUser.seenMovies, [type, movie['id']]) &&
-        !Utils.containsNonType(currentUser.seenTVShows, [type, movie['id']])) {
-      return Stack(
-        children: [
-          getItemContainer(context, movie, "media",
-              mediaPair: mediaPairForData(movie, containerType: type)),
-          if (type == "Movies" &&
-              oscars.containsKey(movie["title"].toLowerCase()))
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Center(
-                child: SizedBox(
-                  height: context.posterWidth * 0.28,
-                  child: Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        oscars[movie["title"].toLowerCase()].length,
-                        (index) => SizedBox(
-                          height: context.posterWidth * 0.28,
-                          child: Image.asset("assets/oscar2.png"),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  height: posterHeightFor(context.posterWidth) * 0.72,
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
-                  child: SizedBox(
-                    height: 20.0,
-                    width: context.posterWidth,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          Text(
-                            "${movie['character']}",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    } else {
-      return Stack(
-        children: [
-          getItemContainer(context, movie, "media",
-              mediaPair: mediaPairForData(movie, containerType: type)),
-          Container(
-            margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-            width: context.posterWidth,
-            height: posterHeightFor(context.posterWidth),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(27),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color.fromARGB(255, 0, 0, 0).withValues(alpha: 0.85),
-                  const Color.fromARGB(0, 255, 255, 255).withValues(alpha: 0),
-                ],
-              ),
-            ),
-          ),
-          if (type == "Movies" &&
-              oscars.containsKey(movie["title"].toLowerCase()))
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Center(
-                child: SizedBox(
-                  height: context.posterWidth * 0.28,
-                  child: Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        oscars[movie["title"].toLowerCase()].length,
-                        (index) => SizedBox(
-                          height: context.posterWidth * 0.28,
-                          child: Image.asset("assets/oscar2.png"),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  margin: const EdgeInsets.fromLTRB(54.0, 10.0, 5.0, 0),
-                  width: context.posterWidth * 0.55,
-                  height: context.posterWidth * 0.26,
-                  decoration: const BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage('assets/seen_after.png'),
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  height: posterHeightFor(context.posterWidth) * 0.52,
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
-                  child: SizedBox(
-                    height: 20.0,
-                    width: context.posterWidth,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          Text(
-                            "${movie['character']}",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    }
-  }
+  /// One poster in a filmography, with the part the person played under it.
+  ///
+  /// Cast and crew differ only in which field names the part, so they share
+  /// this. They used to be two near-identical methods of four near-identical
+  /// branches, which is how the two of them drifted apart on details like how
+  /// dark the wash over a seen poster is.
+  Widget creditTile(BuildContext context, dynamic media, String type, Map oscars,
+      {required bool isCrew}) {
+    final bool watched =
+        Utils.containsNonType(currentUser.seenMovies, [type, media['id']]) ||
+            Utils.containsNonType(currentUser.seenTVShows, [type, media['id']]);
 
-  Stack seenCrew(BuildContext context, movie, type, oscars) {
-    if (!Utils.containsNonType(currentUser.seenMovies, [type, movie['id']]) &&
-        !Utils.containsNonType(currentUser.seenTVShows, [type, movie['id']])) {
-      return Stack(
-        children: [
-          getItemContainer(context, movie, "media",
-              mediaPair: mediaPairForData(movie, containerType: type)),
-          if (type == "Movies" &&
-              oscars.containsKey(movie["title"].toLowerCase()))
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Center(
-                child: SizedBox(
-                  height: context.posterWidth * 0.28,
-                  child: Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        oscars[movie["title"].toLowerCase()].length,
-                        (index) => SizedBox(
-                          height: context.posterWidth * 0.28,
-                          child: Image.asset("assets/oscar2.png"),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  height: posterHeightFor(context.posterWidth) * 0.72,
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
-                  child: SizedBox(
-                    height: 20.0,
-                    width: context.posterWidth,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          Text(
-                            "${movie['job']}",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    } else {
-      return Stack(
-        children: [
-          getItemContainer(context, movie, "media",
-              mediaPair: mediaPairForData(movie, containerType: type)),
-          Container(
-            margin: const EdgeInsets.fromLTRB(5.0, 10.0, 10.0, 0),
-            width: context.posterWidth,
-            height: posterHeightFor(context.posterWidth),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(27),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color.fromARGB(255, 0, 0, 0).withValues(alpha: 0.75),
-                  const Color.fromARGB(0, 255, 255, 255).withValues(alpha: 0),
-                ],
-              ),
-            ),
-          ),
-          if (type == "Movies" &&
-              oscars.containsKey(movie["title"].toLowerCase()))
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Center(
-                child: SizedBox(
-                  height: context.posterWidth * 0.28,
-                  child: Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        oscars[movie["title"].toLowerCase()].length,
-                        (index) => SizedBox(
-                          height: context.posterWidth * 0.28,
-                          child: Image.asset("assets/oscar2.png"),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  margin: const EdgeInsets.fromLTRB(54.0, 10.0, 5.0, 0),
-                  width: context.posterWidth * 0.55,
-                  height: context.posterWidth * 0.26,
-                  decoration: const BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage('assets/seen_after.png'),
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  height: posterHeightFor(context.posterWidth) * 0.52,
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(15, 0, 0, 0),
-                  child: SizedBox(
-                    height: 20.0,
-                    width: context.posterWidth,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          Text(
-                            "${movie['job']}",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    }
+    final String title = "${media['title'] ?? ''}".toLowerCase();
+    final int awards =
+        type == "Movies" ? (oscars[title] as List?)?.length ?? 0 : 0;
+
+    return CreditTile(
+      poster: getItemContainer(context, media, "media",
+          mediaPair: mediaPairForData(media, containerType: type)),
+      label: creditLabelFor(media as Map, isCrew: isCrew),
+      tileWidth: context.posterWidth,
+      watched: watched,
+      awards: awards,
+    );
   }
 }
