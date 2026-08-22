@@ -310,7 +310,7 @@ jobs:
       # The Firestore emulator the rules suite runs against is a Java program.
       # Same distribution and version the pull request workflow uses for the
       # functions emulator suite, so the two cannot drift apart.
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
