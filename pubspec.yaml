@@ -17,7 +17,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 3.18.2+82
+version: 3.18.7+85
 
 environment:
   sdk: ">=3.5.4 <4.0.0"
@@ -49,6 +49,12 @@ dependencies:
   cached_network_image: ^3.3.1
   url_launcher: ^6.3.2
   package_info_plus: ^10.2.1
+
+  # Already present transitively (image_picker and cached_network_image both
+  # depend on it), so naming it here promotes an existing dependency rather
+  # than pulling a new plugin into the Android and iOS builds. It backs the
+  # on-device media sort metadata cache.
+  path_provider: ^2.1.4
 
 dev_dependencies:
   flutter_test:

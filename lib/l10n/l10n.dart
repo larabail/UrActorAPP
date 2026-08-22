@@ -63,7 +63,7 @@ import 'l10n_es.dart';
 /// property.
 abstract class S {
   S(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -85,16 +85,16 @@ abstract class S {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('es')
+    Locale('es'),
   ];
 
   /// No description provided for @addTVShowToCalendar.
@@ -1189,6 +1189,18 @@ abstract class S {
   /// **'Join List'**
   String get joinListTitle;
 
+  /// Shown when recommending a title to friends reached nobody, because the server refused the call or could not be reached.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send your recommendation. Please try again.'**
+  String get recommendationSendFailed;
+
+  /// Shown when a recommendation reached some of the chosen friends but not all of them, usually because one of them is no longer a friend.
+  ///
+  /// In en, this message translates to:
+  /// **'Some of your friends could not be sent this.'**
+  String get recommendationSendPartial;
+
   /// No description provided for @enterListName.
   ///
   /// In en, this message translates to:
@@ -1212,6 +1224,12 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Add'**
   String get add;
+
+  /// Confirm button on the share sheet, which sends the chosen friends a recommendation.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get accept;
 
   /// No description provided for @confirmWatchedToday.
   ///
@@ -1429,6 +1447,12 @@ abstract class S {
   /// **'Could not reach the server. Check your connection.'**
   String get networkError;
 
+  /// Shown when Firebase refuses the app itself rather than the credentials, because this build is not on its API key's list of permitted callers. Says plainly that retrying is pointless, since every account and every correct password fails identically.
+  ///
+  /// In en, this message translates to:
+  /// **'This build of the app is not allowed to sign in. Trying again will not help.'**
+  String get blockedAppError;
+
   /// Shown in the desktop update bar when a newer version has been published. {version} is a version number like 3.16.0.
   ///
   /// In en, this message translates to:
@@ -1474,8 +1498,9 @@ S lookupS(Locale locale) {
   }
 
   throw FlutterError(
-      'S.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'S.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

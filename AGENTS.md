@@ -278,6 +278,46 @@ when you genuinely need to commit something that does not build.
   in a file, as here, is harmless; only the commit message is scanned. The
   release workflow uses it deliberately; see
   [docs/releases.md](docs/releases.md#version-codes).
+
+  This has already cost a release. `7347803` is the commit that added this very
+  warning, and its body explains that the marker in the write-back's subject is
+  a second line of defence — a sentence that is itself a marker. It merged, no
+  workflow ran, and nothing reached internal testers. Nobody noticed for
+  weeks, because a run that never starts leaves nothing to go red.
+
+  On `master` the consequence is worse than a pull request with no checks: the
+  merge ships nothing, and the next release quietly carries two changes under
+  one build. **If you merge something and no release run appears, dispatch
+  "Release to internal testing" by hand from the Actions tab.**
+  `.github/workflows/check-release-gap.yml` also notices within a day and files
+  an issue, but it is a backstop, not a substitute for looking.
+
+  Note what the rule is *not*. This is about the commit message, and it can
+  happen to any commit touching any file — a feature branch whose author was
+  documenting the trap is the likeliest place for it. It is tempting to
+  remember it as "changing a workflow file skips the release", because the one
+  commit it happened to did both. There is now a counterexample: the merge that
+  added `check-release-gap.yml` (`5612c18`) added a workflow file and produced
+  a release run normally. Touching `.github/workflows/` is therefore not
+  sufficient to suppress anything.
+
+  That counterexample comes with one qualification, because the difference
+  matters. `5612c18` was merged with a personal access token. GitHub's
+  documented rule is about *integration* tokens — `GITHUB_TOKEN` and GitHub
+  Apps — so it may still hold for the merge button, and nothing here tests
+  that. What can be said with evidence: **the marker in a commit message is the
+  only confirmed cause**, and if credential-based suppression exists it depends
+  on how the push was made, not on what the diff contained.
+
+  And note *where* it bites. A pull request that touches only workflow files
+  still gets its checks, and those checks run the edited definitions, because
+  `pr.yml` has no path filter and a pull request is evaluated from its own merge
+  commit. **Workflow changes are self-verifying at review time.** The hole is
+  the push to `master` at merge — either from a message carrying the marker,
+  which is confirmed, or from integration-token suppression, which is
+  documented in general but is not what the evidence here isolates. Green checks
+  on the pull request tell you the workflow is correct; they tell you nothing
+  about whether merging it will produce a release.
 - **Git exports `GIT_DIR` into every hook**, and it beats the repository a
   nested tool picks for itself. `flutter` asks git for its own version, so a
   hook that runs it without clearing `GIT_DIR`, `GIT_WORK_TREE` and their

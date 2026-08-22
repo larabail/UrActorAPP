@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'l10n.dart';
 
 // ignore_for_file: type=lint
@@ -623,6 +624,14 @@ class SEn extends S {
   String get joinListTitle => 'Join List';
 
   @override
+  String get recommendationSendFailed =>
+      'Could not send your recommendation. Please try again.';
+
+  @override
+  String get recommendationSendPartial =>
+      'Some of your friends could not be sent this.';
+
+  @override
   String get enterListName => 'Please enter a list name';
 
   @override
@@ -633,6 +642,9 @@ class SEn extends S {
 
   @override
   String get add => 'Add';
+
+  @override
+  String get accept => 'Accept';
 
   @override
   String get confirmWatchedToday => 'Did you watch this movie today?';
@@ -760,6 +772,10 @@ class SEn extends S {
   @override
   String get networkError =>
       'Could not reach the server. Check your connection.';
+
+  @override
+  String get blockedAppError =>
+      'This build of the app is not allowed to sign in. Trying again will not help.';
 
   @override
   String updateAvailable(String version) {
