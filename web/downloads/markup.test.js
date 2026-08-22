@@ -19,6 +19,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it } from 'node:test';
 
+import { ANDROID, IOS, STORES } from './releases.js';
+
 const HERE = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(join(HERE, 'index.html'), 'utf8');
 const script = readFileSync(join(HERE, 'page.js'), 'utf8');
@@ -80,13 +82,19 @@ describe('the markup page.js depends on', () => {
     // desktop buttons fall back to the releases page, which is where the
     // installers actually live, while the store buttons are already final --
     // there is no Android or iOS build on GitHub to fall back to.
+    //
+    // The store entries are compared against releases.js rather than a
+    // prefix. An earlier version of this test asserted the iOS button merely
+    // started with apps.apple.com, and passed for months on a link that
+    // answered 404: the app id in it belonged to nothing. A prefix cannot
+    // tell a working store link from a dead one.
     const RELEASES = 'https://github.com/larabail/UrActorAPP/releases';
     const expected = {
       'hero-button': RELEASES,
       'button-macos': RELEASES,
       'button-windows': RELEASES,
-      'button-android': 'https://play.google.com/',
-      'button-ios': 'https://apps.apple.com/',
+      'button-android': STORES[ANDROID].url,
+      'button-ios': STORES[IOS].url,
     };
 
     const found = new Map(
@@ -97,13 +105,30 @@ describe('the markup page.js depends on', () => {
     for (const [id, href] of found) {
       assert.ok(expected[id],
         `${id} is a button with nowhere declared to lead without script`);
-      assert.ok(href.startsWith(expected[id]),
-        `${id} leads to ${href}, expected something under ${expected[id]}`);
+      if (expected[id] === RELEASES) {
+        assert.ok(href.startsWith(RELEASES),
+          `${id} leads to ${href}, expected something under ${RELEASES}`);
+      } else {
+        // Exactly, not by prefix: the page and releases.js must agree, or
+        // page.js will replace a correct link with a stale one.
+        assert.equal(href, expected[id],
+          `${id} in the page disagrees with releases.js`);
+      }
     }
 
     for (const id of Object.keys(expected)) {
       assert.ok(found.has(id), `${id} is missing from the page`);
     }
+  });
+
+  it('names a real app in each store link', () => {
+    // Not a check that the link resolves -- these tests make no network
+    // calls -- but the shape of a listing that exists. The dead iOS link was
+    // a well-formed URL with the wrong id.
+    assert.match(STORES[IOS].url,
+      /^https:\/\/apps\.apple\.com\/(?:[a-z]{2}\/)?app\/[^/]+\/id\d{9,}$/);
+    assert.match(STORES[ANDROID].url,
+      /^https:\/\/play\.google\.com\/store\/apps\/details\?id=[\w.]+$/);
   });
 });
 
