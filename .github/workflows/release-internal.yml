@@ -251,12 +251,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
-    # The one job here that is not limited to testers. The platform stages below
-    # reach the handful of people on Play's internal track, on TestFlight, or
-    # downloading a build from this run; this deploys to the live Firebase
-    # project that every installed app talks to, including everyone on the App
-    # Store and on Play production. A bad deploy here is felt by users who never
-    # opted into testing anything.
+    # This is the one job here that is not limited to testers. The platform
+    # stages below reach the handful of people on Play's internal track, on
+    # TestFlight, or downloading a build from this run; this deploys to the live
+    # Firebase project that every installed app talks to, including everyone on
+    # the App Store and on Play production.
     #
     # It used to wait for a manual approval on every merge. That was one click
     # per merge whether or not the merge had anything to do with the functions,
@@ -328,6 +327,15 @@ jobs:
   android:
     name: '1 · Android → Play internal'
     needs: [preflight, verify, functions]
+    # `!cancelled() && !failure()` rather than the default, which is an implicit
+    # `success()` over everything in `needs`. The functions deploy is skipped on
+    # any push that did not touch `functions/`, which is most of them, and a
+    # skipped job is not a successful one: left on the default this stage would
+    # be skipped along with it and the merge would ship nothing at all. Naming a
+    # status check function is also what drops the implicit `success()`, so the
+    # test has to be written this way round rather than as a plain
+    # `needs.functions.result` comparison.
+    if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -430,7 +438,15 @@ jobs:
   ios:
     name: '2 · iOS → TestFlight'
     needs: [preflight, verify, functions]
-    if: needs.preflight.outputs.ios == 'true'
+    # `!cancelled() && !failure()` rather than the default, which is an implicit
+    # `success()` over everything in `needs`. The functions deploy is skipped on
+    # any push that did not touch `functions/`, which is most of them, and a
+    # skipped job is not a successful one: left on the default this stage would
+    # be skipped along with it and the merge would ship nothing at all. Naming a
+    # status check function is also what drops the implicit `success()`, so the
+    # test has to be written this way round rather than as a plain
+    # `needs.functions.result` comparison.
+    if: ${{ !cancelled() && !failure() && needs.preflight.outputs.ios == 'true' }}
     # macos-26, not macos-15. Apple refuses any upload built against an SDK
     # older than iOS 26, and macos-15 defaults to Xcode 16.4, which carries the
     # iOS 18.5 SDK. That rejection arrives from App Store Connect as a 409
@@ -741,7 +757,15 @@ jobs:
   desktop_macos:
     name: '3 · Desktop → macOS'
     needs: [preflight, verify, functions]
-    if: needs.preflight.outputs.macos == 'true'
+    # `!cancelled() && !failure()` rather than the default, which is an implicit
+    # `success()` over everything in `needs`. The functions deploy is skipped on
+    # any push that did not touch `functions/`, which is most of them, and a
+    # skipped job is not a successful one: left on the default this stage would
+    # be skipped along with it and the merge would ship nothing at all. Naming a
+    # status check function is also what drops the implicit `success()`, so the
+    # test has to be written this way round rather than as a plain
+    # `needs.functions.result` comparison.
+    if: ${{ !cancelled() && !failure() && needs.preflight.outputs.macos == 'true' }}
     runs-on: macos-latest
     timeout-minutes: 90
 
@@ -824,6 +848,48 @@ jobs:
           fi
           echo "SIGNING_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
           echo "signing as '$IDENTITY'"
+
+      # Developer ID distribution normally needs no provisioning profile. This
+      # app needs one because it declares `keychain-access-groups`, which is a
+      # restricted entitlement: Firebase Auth keeps the signed in session in
+      # the macOS data protection keychain, and macOS refuses that to an app
+      # which has not been granted a keychain group. Without the profile the
+      # build fails outright; with the entitlement stripped instead the app
+      # builds, signs and launches and then refuses every correct password,
+      # which is the worse failure because it looks like the app working.
+      #
+      # `preflight` has always insisted on this secret, but nothing here ever
+      # installed it, so `macos/Runner.xcodeproj` asking for the profile by
+      # name under manual signing could only fail. The production pipeline got
+      # this step and the internal one did not.
+      - name: Install the provisioning profile
+        env:
+          PROFILE_BASE64: ${{ secrets.MACOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          set -euo pipefail
+
+          echo "$PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/profile.provisionprofile"
+
+          # Xcode locates a profile by its UUID as the filename, not by the
+          # name inside it, so the UUID is read back out rather than assumed.
+          UUID=$(security cms -D -i "$RUNNER_TEMP/profile.provisionprofile" \
+            | plutil -extract UUID raw -o - -)
+
+          # Installed to both directories, for the same reason the iOS stage
+          # does it: Xcode 16 reads profiles from its own directory and older
+          # tooling still reads the MobileDevice one, and which applies is a
+          # detail of the image rather than something to depend on. A macOS
+          # profile is `.provisionprofile`, not `.mobileprovision`.
+          for dir in \
+            "$HOME/Library/MobileDevice/Provisioning Profiles" \
+            "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          do
+            mkdir -p "$dir"
+            cp "$RUNNER_TEMP/profile.provisionprofile" "$dir/$UUID.provisionprofile"
+          done
+
+          rm -f "$RUNNER_TEMP/profile.provisionprofile"
+          echo "installed provisioning profile $UUID"
 
       - name: Build
         env:
@@ -929,7 +995,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Remove the keychain
+      - name: Remove the signing material
         if: always()
         run: |
           # Unconditional: a failed build leaves the same key material behind
@@ -942,9 +1008,25 @@ jobs:
           security delete-keychain "$RUNNER_TEMP/desktop-release.keychain-db" \
             2>/dev/null || true
 
+          # The profile goes too, matching what the iOS stage does. It carries
+          # no private key, but everything a secret wrote to this runner is
+          # removed on the way out rather than sometimes.
+          rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/"*.provisionprofile
+          rm -f "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/"*.provisionprofile
+          rm -f "$RUNNER_TEMP/profile.provisionprofile"
+
   desktop_windows:
     name: '3 · Desktop → Windows'
     needs: [preflight, verify, functions]
+    # `!cancelled() && !failure()` rather than the default, which is an implicit
+    # `success()` over everything in `needs`. The functions deploy is skipped on
+    # any push that did not touch `functions/`, which is most of them, and a
+    # skipped job is not a successful one: left on the default this stage would
+    # be skipped along with it and the merge would ship nothing at all. Naming a
+    # status check function is also what drops the implicit `success()`, so the
+    # test has to be written this way round rather than as a plain
+    # `needs.functions.result` comparison.
+    if: ${{ !cancelled() && !failure() }}
     runs-on: windows-latest
     timeout-minutes: 60
 
