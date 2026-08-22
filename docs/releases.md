@@ -478,7 +478,7 @@ is deliberately two runs rather than one.
 | Input | Meaning |
 | --- | --- |
 | `ios_action` | `submit` sends a version to Apple for review; `release` publishes one Apple has already approved; `skip` leaves iOS alone |
-| `version` | Marketing version, e.g. `3.14.2`. It must already exist in App Store Connect. Blank reads it from the promoted commit |
+| `version` | Marketing version, e.g. `3.14.2`. Created in App Store Connect if it is not there yet. Blank reads it from the promoted commit |
 | `ios_build` | Only for `submit`. Blank uses the newest build Apple holds |
 | `dry_run` | Resolves and checks everything, then stops before writing |
 
@@ -525,60 +525,102 @@ to being approved.
 anything, and submits only from `PREPARE_FOR_SUBMISSION`, `REJECTED`,
 `DEVELOPER_REJECTED`, `METADATA_REJECTED` or `INVALID_BINARY`. It releases only
 from `PENDING_DEVELOPER_RELEASE`. Anything else stops the run with a message
-naming the state it found. A version number that does not exist is refused with
-a list of the ones that do, rather than being created.
+naming the state it found.
 
 Apple reports each version's state twice, under an old name and a new one, and
 they disagree — a released version is `READY_FOR_SALE` in the first and
 `READY_FOR_DISTRIBUTION` in the second. Both vocabularies are accepted, because
 which one arrives is Apple's choice and not something to depend on.
 
+### The version record is created for you
+
+It used to be made by hand, and this document used to justify that: a
+submission fails without screenshots and a description, so a person had to
+create the version in App Store Connect before a release could run.
+
+That is true of an app's *first* version. It is false for every version after
+it, and the difference was never checked. Creating a version — through the web
+UI or the API, it turns out to make no difference — copies the previous
+version's metadata forward. Measured against this app, an API-created version
+arrived holding:
+
+| Field | What arrived |
+| --- | --- |
+| `description` | the previous version's, in full |
+| `keywords` | the previous version's |
+| `supportUrl` | the previous version's |
+| screenshots | all five sets — 22 images across iPhone and iPad |
+| `whatsNew` | **empty** |
+
+One empty field, and it is the one field that *should* be different every
+release. `release_notes.py` already writes exactly that text for Play, from the
+same commits, generated once in `resolve` and carried to both stores so they
+cannot disagree.
+
+So `ensure-version` does what the person was doing:
+
+```bash
+python tool/appstore.py ensure-version --version 3.18.0 \
+  --whats-new-file notes.txt
+```
+
+It decides between four outcomes before writing anything:
+
+| Situation | What happens |
+| --- | --- |
+| The version exists and is editable | Use it — so an interrupted release can simply be re-run |
+| It does not exist, and nothing else is editable | Create it |
+| A *different* version holds Apple's editable slot | Refuse, naming it. `--adopt-editable` renames it instead |
+| The version exists but is in review or published | Refuse — editing it could withdraw a live submission |
+
+The third row is Apple's one-editable-version-at-a-time rule, which otherwise
+surfaces as `You cannot create a new version of the App in the current state` —
+a message that does not say which version is in the way. Renaming is not the
+default because that version may be someone's deliberate work in progress.
+
+**What is still yours.** A first release, a changed description, new
+screenshots, a new keyword list. This automates the copying-forward Apple was
+doing anyway; it does not write store copy.
+
 ### It refuses early, before anyone approves
 
-Those refusals are worth about four seconds each, and they used to arrive last.
-The iOS stage ran behind the approval gate and alongside Android and desktop, so
-a version Apple had no record of failed the run *after* a reviewer had approved
-it and after Play and the downloads site had already been written to — two
-platforms shipped out of three, for a reason that was true before the run began.
+The remaining refusals are worth about four seconds each, and they used to
+arrive last. The iOS stage ran behind the approval gate and alongside Android
+and desktop, so a version Apple would not accept failed the run *after* a
+reviewer had approved it and after Play and the downloads site had already been
+written to — two platforms shipped out of three, for a reason that was true
+before the run began.
 
 So the pipeline asks first. A `preflight` job runs between `resolve` and the
 approval gate and calls the read-only `check` subcommand:
 
 ```bash
-python tool/appstore.py check --version 3.17.4 --action submit
+python tool/appstore.py check --version 3.18.0 --action submit
 ```
 
-It resolves the version, applies the same state guard the action itself would,
-and confirms an explicitly requested `ios_build` exists. It writes nothing. A
-failure stops the run before the `production` environment is ever reached, with
-the current state of every version Apple holds in the run summary.
+It runs the same decision `ensure-version` would, and fails on the two
+outcomes a person has to resolve — a version already with Apple, or a
+different one holding the editable slot. A missing version is *not* a failure
+here, because it is about to be created. It writes nothing, and a failure stops
+the run before the `production` environment is ever reached, with the state of
+every version Apple holds in the run summary.
 
-The check is not a promise. The iOS stage asks Apple again before it writes,
-because a state can change while a human is deciding — the pre-flight moves the
-common failure earlier rather than removing the guard from where it matters.
+Three things worth knowing about where it sits:
 
-Two consequences of putting it there:
-
-- `resolve` runs before the approval gate too, since the pre-flight needs to
-  know which version this is. It only reads, so there is nothing to gate. The
+- **Nothing is written before the gate.** The version record is created in the
+  iOS stage, after approval. A version record is invisible to users, but it is
+  *not deletable* once any build exists for the platform — Apple refuses with
+  `A version cannot be deleted if any build has been uploaded for the
+  platform`. So creating one is not something to do speculatively on a release
+  nobody has approved yet.
+- **`resolve` runs before the gate too**, since the pre-flight needs to know
+  which version this is. It only reads, so there is nothing to gate. The
   approval prompt is better for it: it now names the resolved version and
   commit instead of echoing the blank boxes the form was submitted with.
-- The job has no `if:` of its own. A skipped job skips everything that needs
-  it, which would take the approval gate and the entire release with it every
-  time iOS was set to `skip`. The steps opt out individually instead, and the
-  job reports green having done nothing.
-
-### What this does not do
-
-The version record itself, its screenshots, its description and its "what's
-new" text are not created or edited here. A submission fails outright if that
-metadata is incomplete, and generating store copy from commit subjects — which
-is what `release_notes.py` does for Play — is not something to do unattended
-for a listing customers read.
-
-Create the version in App Store Connect, fill it in, then run this. The
-pre-flight above is what tells you that you have not, and it tells you in
-seconds rather than at the end of a release.
+- **The job has no `if:` of its own.** A skipped job skips everything that
+  needs it, which would take the approval gate and the entire release with it
+  every time iOS was set to `skip`. The steps opt out individually instead, and
+  the job reports green having done nothing.
 
 ## Releasing to production
 

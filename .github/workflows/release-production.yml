@@ -218,18 +218,19 @@ jobs:
           retention-days: 30
 
   # The cheapest failure in the pipeline, moved to where it is cheap. Apple
-  # refuses a version it has no record of, and refuses to be edited once it has
-  # one in review -- both in about four seconds, and both from facts that are
-  # true before anybody clicks approve.
+  # refuses to edit a version once it is in review, and refuses to create one
+  # while a different version holds its single editable slot -- both in about
+  # four seconds, and both from facts that are true before anybody clicks
+  # approve.
   #
   # Behind the gate, as this used to be, those four seconds arrived last: after
   # a reviewer had approved the release and after Play and the desktop stage
   # had already written to their stores. The run then ended red having shipped
   # two platforms out of three, for a reason that was knowable at the start.
   #
-  # Read only, and it stays that way. It answers whether the requested action
-  # *would* be allowed; the iOS stage below asks Apple again before writing,
-  # because the answer can change while a human is deciding.
+  # Read only, and it stays that way -- the version record is created in the
+  # iOS stage below, after the gate, so that nothing is written to any store
+  # until the release has been approved. This only decides whether it could be.
   #
   # No job-level `if`. A skipped job skips everything that needs it, which would
   # take the approval gate and the whole release with it whenever iOS was left
@@ -281,11 +282,10 @@ jobs:
           the subject of a \`$ACTION\` as things stand, so the run stopped rather
           than ask anyone to approve a release that cannot happen.
 
-          A missing version record is the usual cause, and the fix is a manual
-          one on purpose. Create the version in App Store Connect and fill in
-          its screenshots, description and release notes — Apple rejects a
-          submission without them, and store copy customers read is not
-          something to generate unattended. Then start this run again.
+          A version already with Apple has to be withdrawn deliberately, and a
+          different version holding Apple's single editable slot has to be
+          finished or renamed. Neither is something to do unattended. Then
+          start this run again.
           EOF
             echo ""
             echo '```'
@@ -488,6 +488,33 @@ jobs:
             echo "no build given; using the latest Apple holds: $BUILD"
           fi
           echo "number=$BUILD" >> "$GITHUB_OUTPUT"
+
+      # The step that used to be a person in App Store Connect. It is safe to
+      # automate for a reason that was measured rather than assumed: a version
+      # created through the API arrives already holding the previous version's
+      # description, keywords, support URL and every screenshot set, exactly as
+      # it does when created in the web UI. `whatsNew` is the only field that
+      # comes back empty, and it is the only one that should differ per
+      # release -- so it is filled from the same notes Play gets, generated
+      # once in `resolve` and carried here rather than regenerated.
+      #
+      # After the approval gate, deliberately. A version record is invisible to
+      # users, but it is also not deletable once any build exists for the
+      # platform, so creating one is not a thing to do speculatively before
+      # someone has said the release is going ahead.
+      - name: Make sure the version record exists
+        if: inputs.ios_action == 'submit'
+        env:
+          NOTES: ${{ needs.resolve.outputs.notes }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$NOTES" > /tmp/whats_new.txt
+          echo "release notes ($(wc -c < /tmp/whats_new.txt) bytes):"
+          cat /tmp/whats_new.txt
+          python tool/appstore.py ensure-version \
+            --version "$VERSION" \
+            --whats-new-file /tmp/whats_new.txt \
+            ${{ inputs.dry_run && '--dry-run' || '' }}
 
       # Set to MANUAL release inside the tool, so approval leaves the version
       # waiting rather than putting it in front of users. Releasing is the

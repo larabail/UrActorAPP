@@ -13,15 +13,22 @@ requests that feed them.
 Run with: python -m unittest discover -s tool -p "test_*.py"
 """
 
+import os
+import tempfile
 import unittest
 
 from appstore import (
     AppStoreError,
+    WHATS_NEW_LIMIT,
     check_for_action,
     check_releasable,
     check_submittable,
+    editable_version,
+    find_version,
     missing_credentials,
     next_build_number,
+    plan_version,
+    read_notes,
     select_app_id,
     select_build_id,
     select_version,
@@ -224,6 +231,125 @@ class CheckForAction(unittest.TestCase):
         self.assertIn("release", message)
 
 
+class FindVersion(unittest.TestCase):
+    PAYLOAD = {"data": [
+        {"id": "aaa", "attributes": {"versionString": "3.14.0"}},
+    ]}
+
+    def test_returns_the_match(self):
+        self.assertEqual(find_version(self.PAYLOAD, "3.14.0")["id"], "aaa")
+
+    def test_returns_none_rather_than_raising(self):
+        # The difference from select_version, and the reason both exist: a
+        # missing version is now something to create, not something to fail on.
+        self.assertIsNone(find_version(self.PAYLOAD, "9.9.9"))
+
+    def test_handles_an_empty_payload(self):
+        self.assertIsNone(find_version({"data": []}, "3.14.0"))
+
+
+class EditableVersion(unittest.TestCase):
+    def test_finds_the_one_holding_the_slot(self):
+        payload = {"data": [
+            {"id": "live", "attributes": {
+                "versionString": "3.14.0",
+                "appVersionState": "READY_FOR_DISTRIBUTION",
+            }},
+            {"id": "draft", "attributes": {
+                "versionString": "3.18.0",
+                "appVersionState": "PREPARE_FOR_SUBMISSION",
+            }},
+        ]}
+        self.assertEqual(editable_version(payload)["id"], "draft")
+
+    def test_returns_none_when_everything_is_with_apple(self):
+        payload = {"data": [
+            {"id": "live", "attributes": {
+                "versionString": "3.14.0",
+                "appVersionState": "READY_FOR_DISTRIBUTION",
+            }},
+        ]}
+        self.assertIsNone(editable_version(payload))
+
+    def test_counts_a_rejected_version_as_editable(self):
+        # A rejected version still holds Apple's one editable slot, so it is
+        # just as much in the way as one being prepared.
+        payload = {"data": [
+            {"id": "bad", "attributes": {
+                "versionString": "3.17.0",
+                "appVersionState": "DEVELOPER_REJECTED",
+            }},
+        ]}
+        self.assertEqual(editable_version(payload)["id"], "bad")
+
+
+class PlanVersion(unittest.TestCase):
+    """The whole decision behind ensure-version."""
+
+    LIVE = {"id": "live", "attributes": {
+        "versionString": "3.14.0",
+        "appVersionState": "READY_FOR_DISTRIBUTION",
+    }}
+
+    def test_uses_a_version_that_exists_and_is_editable(self):
+        # Re-running a release that was interrupted has to be safe, so an
+        # existing editable record is adopted rather than duplicated.
+        payload = {"data": [self.LIVE, {"id": "draft", "attributes": {
+            "versionString": "3.18.0",
+            "appVersionState": "PREPARE_FOR_SUBMISSION",
+        }}]}
+        action, reason = plan_version(payload, "3.18.0")
+        self.assertEqual(action, "use")
+        self.assertIn("3.18.0", reason)
+
+    def test_creates_when_nothing_holds_the_editable_slot(self):
+        action, reason = plan_version({"data": [self.LIVE]}, "3.19.0")
+        self.assertEqual(action, "create")
+
+    def test_adopts_when_a_different_version_holds_the_slot(self):
+        # Apple permits one editable version at a time. This is the case that
+        # produced "You cannot create a new version of the App in the current
+        # state", which says nothing about which version is in the way.
+        payload = {"data": [self.LIVE, {"id": "draft", "attributes": {
+            "versionString": "3.18.0",
+            "appVersionState": "PREPARE_FOR_SUBMISSION",
+        }}]}
+        action, reason = plan_version(payload, "3.19.0")
+        self.assertEqual(action, "adopt")
+        self.assertIn("3.18.0", reason)
+        self.assertIn("3.19.0", reason)
+
+    def test_refuses_a_version_already_in_review(self):
+        # The dangerous one. Editing a version with Apple can withdraw it, so
+        # this must never come back as "use".
+        payload = {"data": [{"id": "x", "attributes": {
+            "versionString": "3.18.0",
+            "appVersionState": "IN_REVIEW",
+        }}]}
+        action, reason = plan_version(payload, "3.18.0")
+        self.assertEqual(action, "refuse")
+        self.assertIn("IN_REVIEW", reason)
+
+    def test_refuses_a_version_already_published(self):
+        action, _ = plan_version({"data": [self.LIVE]}, "3.14.0")
+        self.assertEqual(action, "refuse")
+
+    def test_creates_for_an_app_apple_holds_nothing_for(self):
+        action, _ = plan_version({"data": []}, "1.0.0")
+        self.assertEqual(action, "create")
+
+    def test_prefers_the_exact_version_over_the_editable_slot(self):
+        # If the requested version IS the editable one, that is a "use" and
+        # never an "adopt" — renaming a version to its own name would be a
+        # pointless write against a live store.
+        payload = {"data": [{"id": "draft", "attributes": {
+            "versionString": "3.18.0",
+            "appVersionState": "PREPARE_FOR_SUBMISSION",
+        }}]}
+        action, _ = plan_version(payload, "3.18.0")
+        self.assertEqual(action, "use")
+
+
 class SelectVersion(unittest.TestCase):
     PAYLOAD = {"data": [
         {"id": "aaa", "attributes": {"versionString": "3.14.0"}},
@@ -269,6 +395,51 @@ class SelectBuildId(unittest.TestCase):
     def test_refuses_a_build_that_is_not_there(self):
         with self.assertRaises(AppStoreError):
             select_build_id(self.PAYLOAD, "99")
+
+
+class ReadNotes(unittest.TestCase):
+    """Release notes on their way to Apple's whatsNew field."""
+
+    class Args:
+        def __init__(self, **kwargs):
+            self.whats_new = kwargs.get("whats_new", "")
+            self.whats_new_file = kwargs.get("whats_new_file")
+
+    def test_takes_a_string(self):
+        self.assertEqual(read_notes(self.Args(whats_new="New: a thing")),
+                         "New: a thing")
+
+    def test_strips_surrounding_whitespace(self):
+        self.assertEqual(read_notes(self.Args(whats_new="\n  hello \n")), "hello")
+
+    def test_reads_a_file_in_preference_to_a_string(self):
+        # The workflow passes a file, because release notes are multi-line and
+        # shell quoting them is how the newlines get lost.
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False,
+                                         encoding="utf-8") as handle:
+            handle.write("New:\n- from a file\n")
+            path = handle.name
+        self.addCleanup(os.unlink, path)
+        notes = read_notes(self.Args(whats_new="ignored", whats_new_file=path))
+        self.assertEqual(notes, "New:\n- from a file")
+
+    def test_keeps_newlines(self):
+        self.assertEqual(read_notes(self.Args(whats_new="a\nb")), "a\nb")
+
+    def test_trims_rather_than_refusing_an_over_long_note(self):
+        # Failing a release because its changelog was long would be a silly
+        # place to stop: the notes describe the release, they are not it.
+        notes = read_notes(self.Args(whats_new="x" * (WHATS_NEW_LIMIT + 500)))
+        self.assertEqual(len(notes), WHATS_NEW_LIMIT)
+
+    def test_leaves_a_note_at_exactly_the_limit_alone(self):
+        notes = read_notes(self.Args(whats_new="x" * WHATS_NEW_LIMIT))
+        self.assertEqual(len(notes), WHATS_NEW_LIMIT)
+
+    def test_empty_input_gives_empty_output(self):
+        # Which ensure-version reads as "leave whatsNew alone" rather than as
+        # "blank the release notes".
+        self.assertEqual(read_notes(self.Args()), "")
 
 
 if __name__ == "__main__":

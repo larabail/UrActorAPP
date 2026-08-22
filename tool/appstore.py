@@ -15,12 +15,22 @@ them straight from secrets without writing a private key to disk:
     APP_STORE_CONNECT_PRIVATE_KEY     the contents of the .p8, not a path
 
 Subcommands:
-  app-id      Print the numeric App Store Connect id for the bundle id.
-  next-build  Print the next unused build number.
-  status      Print the versions Apple holds and the state of each.
-  check       Say whether an action would be allowed, without doing it.
-  submit      Attach a build to a version and send it to Apple for review.
-  release     Publish a version Apple has approved and is holding.
+  app-id          Print the numeric App Store Connect id for the bundle id.
+  next-build      Print the next unused build number.
+  status          Print the versions Apple holds and the state of each.
+  check           Say whether an action would be allowed, without doing it.
+  ensure-version  Create the version record if missing, and set its notes.
+  submit          Attach a build to a version and send it to Apple for review.
+  release         Publish a version Apple has approved and is holding.
+
+A version record used to be made by hand, on the grounds that a submission
+fails without screenshots and a description. Measured rather than assumed, that
+turns out to be false for every version after the first: a version created
+through this API arrives already holding the previous one's description,
+keywords, support URL and every screenshot set, exactly as the web UI does.
+`whatsNew` is the only field that comes back empty, and that is the one field
+that should be different every release. `ensure-version` fills it from the same
+notes Play gets.
 
 `jwt` and `requests` are imported inside the functions that need them, not at
 module scope. The pull request workflow runs the tests in this directory with
@@ -73,6 +83,11 @@ TOKEN_LIFETIME = datetime.timedelta(minutes=10)
 # A stop against paging forever if the API keeps handing back a next link.
 # An app with more than twenty thousand builds is a bug, not a release.
 MAX_PAGES = 100
+
+# Apple's ceiling on the "what's new in this version" text. Play's is 500,
+# which is why release_notes.py trims to that by default; nothing needs the
+# extra room here, but refusing a release over it would be absurd.
+WHATS_NEW_LIMIT = 4000
 
 
 class AppStoreError(RuntimeError):
@@ -213,9 +228,9 @@ def check_for_action(state: str, version_string: str, action: str) -> None:
 
     The same guards `submit` and `release` apply to themselves, reachable
     without doing anything. It exists so the pipeline can ask the question
-    before it asks a human to approve a release: a version that does not exist,
-    or one already with Apple, is a four second answer that used to arrive at
-    the end of a run rather than the start of one.
+    before it asks a human to approve a release: a version already with Apple
+    is a four second answer that used to arrive at the end of a run rather
+    than the start of one.
     """
     check = ACTION_CHECKS.get(action)
     if check is None:
@@ -224,6 +239,74 @@ def check_for_action(state: str, version_string: str, action: str) -> None:
             f"{', '.join(sorted(ACTION_CHECKS))}."
         )
     check(state, version_string)
+
+
+def find_version(payload: dict, version_string: str) -> dict | None:
+    """The version record for a marketing version, or None.
+
+    `select_version` refuses when there is no match, which is right for
+    `release`: you cannot publish a version that does not exist. Planning a
+    submission needs the softer answer, because a missing version is now
+    something to create rather than something to fail on.
+    """
+    for version in payload.get("data") or []:
+        if (version.get("attributes") or {}).get("versionString") == version_string:
+            return version
+    return None
+
+
+def editable_version(payload: dict) -> dict | None:
+    """The one version still open for editing, if there is one.
+
+    Apple allows a single editable version per platform at a time. That is the
+    constraint behind every "you cannot create a new version of the App in the
+    current state" refusal, and knowing which version is holding the slot is
+    the difference between an error someone can act on and one they cannot.
+    """
+    for version in payload.get("data") or []:
+        if state_of(version) in SUBMITTABLE_STATES:
+            return version
+    return None
+
+
+def plan_version(payload: dict, version_string: str) -> tuple[str, str]:
+    """Decide how to get to an editable version record for `version_string`.
+
+    Returns one of:
+      use     the version exists and is ours to edit
+      create  it does not exist and nothing is holding the editable slot
+      adopt   a different editable version holds the slot and would have to be
+              renamed to become this one
+      refuse  the version exists but is with Apple or already published
+
+    Pure, and separated from the requests that feed it, because this is the
+    whole decision. Every interesting case — a resumed release, an abandoned
+    one left at the wrong number, a version already in review — is decided
+    here, and none of them are comfortable to reproduce against a live store.
+    """
+    existing = find_version(payload, version_string)
+    if existing is not None:
+        state = state_of(existing)
+        if state in SUBMITTABLE_STATES:
+            return "use", f"{version_string} exists and is {state}"
+        return (
+            "refuse",
+            f"{version_string} is {state}, which is not a state a submission "
+            "can be prepared from. A version already with Apple has to be "
+            "withdrawn in App Store Connect first, deliberately.",
+        )
+
+    holder = editable_version(payload)
+    if holder is None:
+        return "create", f"no {version_string} yet, and nothing else is editable"
+
+    held = (holder.get("attributes") or {}).get("versionString")
+    return (
+        "adopt",
+        f"{version_string} does not exist and {held} is already editable. "
+        "Apple allows one editable version at a time, so this one has to be "
+        f"renamed to {version_string} or finished first.",
+    )
 
 
 def missing_credentials(env: Mapping[str, str]) -> list[str]:
@@ -406,16 +489,32 @@ def cmd_status(args) -> None:
 def cmd_check(args) -> None:
     """Answer whether an action would be allowed, and write nothing.
 
-    Every failure this reports is one `submit` or `release` would have reported
-    anyway. The point is where it reports them: run before the approval gate,
-    a missing version record costs four seconds instead of being discovered
-    after a reviewer has approved the release and the other stores have already
-    been written to.
+    Run before the approval gate, so the whole class of failures that depend
+    only on what Apple already holds costs seconds rather than arriving after
+    a reviewer has approved the release and the other stores have been written
+    to.
+
+    A missing version is not a failure for `submit`, because `ensure-version`
+    creates it after the gate. It is still a failure for `release`: publishing
+    something that does not exist is not a thing to invent a way to do.
     """
     app = args.app_id or app_id()
-    version = select_version(app_versions(app), args.version)
-    state = state_of(version)
-    check_for_action(state, args.version, args.action)
+    payload = app_versions(app)
+
+    if args.action == "submit":
+        action, reason = plan_version(payload, args.version)
+        if action == "refuse":
+            raise AppStoreError(reason)
+        if action == "adopt":
+            raise AppStoreError(
+                reason + " Rename or finish it in App Store Connect, then run "
+                "this again."
+            )
+        print(f"{action}: {reason}")
+    else:
+        version = select_version(payload, args.version)
+        check_for_action(state_of(version), args.version, args.action)
+        print(f"version {args.version} is {state_of(version)}")
 
     # Only when the caller typed one. Left blank, the workflow attaches the
     # newest build Apple holds, which by definition exists.
@@ -423,7 +522,165 @@ def cmd_check(args) -> None:
         find_build(app, args.build)
         print(f"build {args.build} is there")
 
-    print(f"version {args.version} is {state}: '{args.action}' would be allowed")
+    print(f"'{args.action}' would be allowed for {args.version}")
+
+
+def create_version(app: str, version_string: str) -> str:
+    """Create the version record and return its id."""
+    payload = send(
+        "POST",
+        "/appStoreVersions",
+        {
+            "data": {
+                "type": "appStoreVersions",
+                "attributes": {
+                    "platform": "IOS",
+                    "versionString": version_string,
+                },
+                "relationships": {
+                    "app": {"data": {"type": "apps", "id": app}},
+                },
+            }
+        },
+    )
+    return payload["data"]["id"]
+
+
+def rename_version(version_id: str, version_string: str) -> None:
+    """Point an existing editable version at a different marketing version."""
+    send(
+        "PATCH",
+        f"/appStoreVersions/{version_id}",
+        {
+            "data": {
+                "type": "appStoreVersions",
+                "id": version_id,
+                "attributes": {"versionString": version_string},
+            }
+        },
+    )
+
+
+def version_localizations(version_id: str) -> list[dict]:
+    payload = get(
+        f"/appStoreVersions/{version_id}/appStoreVersionLocalizations",
+        {"limit": 50},
+    )
+    return payload.get("data") or []
+
+
+def set_whats_new(localization_id: str, text: str) -> None:
+    send(
+        "PATCH",
+        f"/appStoreVersionLocalizations/{localization_id}",
+        {
+            "data": {
+                "type": "appStoreVersionLocalizations",
+                "id": localization_id,
+                "attributes": {"whatsNew": text},
+            }
+        },
+    )
+
+
+def cmd_ensure_version(args) -> None:
+    """Make sure an editable version record exists, with release notes on it.
+
+    This is the step that used to be done by hand, and the reason it can be
+    automated at all is that Apple carries the expensive metadata forward. A
+    version created through the API arrives holding the previous version's
+    description, keywords, support URL and every screenshot set — measured,
+    not assumed. The one field that comes back empty is `whatsNew`, which is
+    precisely the field that should change every release and precisely what
+    release_notes.py already writes for Play.
+
+    What is *not* automated is the first version of an app, or a listing whose
+    description needs to change: both still want a person in App Store Connect.
+    This only removes the copying-forward that Apple was doing anyway.
+    """
+    app = args.app_id or app_id()
+    action, reason = plan_version(app_versions(app), args.version)
+    print(f"{action}: {reason}")
+
+    if action == "refuse":
+        raise AppStoreError(reason)
+
+    if action == "adopt" and not args.adopt_editable:
+        raise AppStoreError(
+            reason + " Pass --adopt-editable to rename it, or finish it in App "
+            "Store Connect. Renaming is not the default because that version "
+            "may be someone's deliberate work in progress."
+        )
+
+    notes = read_notes(args)
+
+    if args.dry_run:
+        print(f"dry run: would {action} {args.version}")
+        if notes:
+            print(f"dry run: would set whatsNew ({len(notes)} chars)")
+        return
+
+    if action == "create":
+        version_id = create_version(app, args.version)
+        print(f"created {args.version} id={version_id}")
+    elif action == "adopt":
+        holder = editable_version(app_versions(app))
+        version_id = holder["id"]
+        held = (holder.get("attributes") or {}).get("versionString")
+        rename_version(version_id, args.version)
+        print(f"renamed {held} to {args.version} id={version_id}")
+    else:
+        version_id = find_version(app_versions(app), args.version)["id"]
+        print(f"using existing {args.version} id={version_id}")
+
+    if not notes:
+        print("no release notes given; leaving whatsNew alone")
+        return
+
+    localizations = version_localizations(version_id)
+    if not localizations:
+        # Apple has always populated at least en-US in practice. If that ever
+        # changes, say so rather than reporting success on a version whose
+        # release notes are empty.
+        print(
+            "warning: Apple created no localizations for this version, so "
+            "there is nothing to write release notes to. The listing will "
+            "need attention in App Store Connect.",
+            file=sys.stderr,
+        )
+        return
+
+    for localization in localizations:
+        locale = (localization.get("attributes") or {}).get("locale")
+        set_whats_new(localization["id"], notes)
+        print(f"whatsNew set for {locale} ({len(notes)} chars)")
+
+
+def read_notes(args) -> str:
+    """The release notes text, from a file or an argument.
+
+    A file, normally: release notes are multi-line and shell quoting them
+    through a workflow is a way to lose the newlines.
+    """
+    if getattr(args, "whats_new_file", None):
+        with open(args.whats_new_file, encoding="utf-8") as handle:
+            text = handle.read()
+    else:
+        text = getattr(args, "whats_new", "") or ""
+
+    text = text.strip()
+    if len(text) > WHATS_NEW_LIMIT:
+        # Trimmed rather than refused. Apple rejects an over-long value, and
+        # failing a release over the length of its changelog would be a silly
+        # place to stop -- the notes are a description of the release, not the
+        # release itself.
+        print(
+            f"release notes are {len(text)} characters; trimming to "
+            f"{WHATS_NEW_LIMIT}",
+            file=sys.stderr,
+        )
+        text = text[:WHATS_NEW_LIMIT]
+    return text
 
 
 def cmd_submit(args) -> None:
@@ -589,6 +846,26 @@ def main() -> None:
     )
     ck.add_argument("--app-id")
     ck.set_defaults(func=cmd_check)
+
+    ev = sub.add_parser(
+        "ensure-version",
+        help="create the version record if it is missing, and set its notes",
+    )
+    ev.add_argument("--version", required=True, help="marketing version, e.g. 3.14.2")
+    ev.add_argument("--whats-new-file", help="file holding the release notes")
+    ev.add_argument("--whats-new", default="", help="release notes as a string")
+    ev.add_argument(
+        "--adopt-editable",
+        action="store_true",
+        help="rename an existing editable version rather than refusing",
+    )
+    ev.add_argument("--app-id")
+    ev.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="decide everything, then stop before writing",
+    )
+    ev.set_defaults(func=cmd_ensure_version)
 
     sb = sub.add_parser(
         "submit", help="attach a build to a version and submit it for review"
