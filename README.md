@@ -132,12 +132,14 @@ State is handled with plain `StatefulWidget`, `setState`, and
 | Platform | Status |
 | --- | --- |
 | Android, iOS | Shipped to testers by CI on every merge to `master` |
-| macOS, Windows | Downloadable from [downloads.uractor.com](https://downloads.uractor.com), released by tag |
+| macOS, Windows | Built by CI on every merge; downloadable from [downloads.uractor.com](https://downloads.uractor.com) once released |
 | Linux | Not a target — see below |
 | Web | Not a target |
 
-The desktop apps are released by pushing a tag rather than by merging, and
-they tell users about new versions themselves — there is no store to do it for
+The desktop apps go through the same two pipelines as the mobile ones, but with
+no store in the middle: an internal build is an installer attached to the CI run,
+and a production release publishes it and updates the downloads site. They tell
+users about new versions themselves, because there is no store to do it for
 them. See [Releasing the desktop apps](docs/releases.md#releasing-the-desktop-apps).
 
 ### Why not Linux
@@ -344,8 +346,8 @@ project sets `DEVELOPMENT_TEAM = Q8XY8276AC`, so that Apple Developer account
 has to be signed in to Xcode.
 
 CI covers this on macOS runners. `.github/workflows/ios.yml` builds the app
-and launches it on a simulator for every pull request, and
-`.github/workflows/release-testflight.yml` ships to TestFlight. Both run on
+and launches it on a simulator for every pull request, and the iOS stage of
+`.github/workflows/release-internal.yml` ships to TestFlight. Both run on
 `macos-26`, because Apple refuses uploads built with an SDK older than iOS 26
 and the older image defaults to Xcode 16. The check is required to merge, which
 is why it is no longer filtered to iOS paths: a skipped workflow reports
@@ -694,32 +696,40 @@ be installed before `flutter build --config-only`, which runs `pod install`
 itself.
 
 Every merge to `master` that is not docs-only runs
-`.github/workflows/release-internal.yml`. It deploys Cloud Functions to
-`actordb-cf981` first — behind an approval, because that project serves every
-installed app rather than only testers — then analyzes, tests with coverage,
-builds a signed app bundle with a Play-derived version code, generates release
-notes, uploads to Play internal testing, and keeps the bundle and coverage
-report as artifacts. Internal builds are not tagged; the run summary records the
-version code and the commit, which is what a production promotion is given.
-Production promotion is separate and manual. See
-[docs/releases.md](docs/releases.md).
+`.github/workflows/release-internal.yml`, the one pipeline that puts a build in
+front of testers on all three platforms. It analyzes and tests once, on Linux,
+then deploys Cloud Functions to `actordb-cf981` — behind an approval, because
+that project serves every installed app rather than only testers — and only then
+starts the three platform stages:
 
-The same merge also runs `.github/workflows/release-testflight.yml`, which
-builds a signed IPA on a macOS runner and uploads it to TestFlight. Its build
-number comes from App Store Connect through `tool/appstore.py`, the counterpart
-to `tool/play.py`, and is deliberately **not** written back to `pubspec.yaml`:
-the `+BUILD` suffix there records Play's version code, and the two stores count
-independently. The workflow stays inert until its six App Store secrets exist —
-a `preflight` job reports which are missing and skips the expensive job — so it
-does not fail every merge before the credentials are in place.
+1. **Android** builds a signed app bundle with a Play-derived version code,
+   generates release notes and uploads to Play internal testing.
+2. **iOS** builds a signed IPA on a macOS runner and uploads it to TestFlight.
+   Its build number comes from App Store Connect through `tool/appstore.py`, the
+   counterpart to `tool/play.py`, and is deliberately **not** written back to
+   `pubspec.yaml`: the `+BUILD` suffix there records Play's version code, and the
+   two stores count independently.
+3. **Desktop** builds the macOS and Windows installers, signing and notarising
+   the macOS one, and attaches them to the run. Nothing is published and
+   `downloads.uractor.com` is untouched — desktop has no test track, so "not
+   published" is what internal testing means for it.
 
-Once the upload succeeds, a last job commits the version code that shipped into
-`pubspec.yaml` on `master`, so the `+BUILD` suffix in the repository matches the
-newest build on the internal track. It pushes with the built-in `GITHUB_TOKEN`,
-which GitHub does not let trigger further workflow runs — that is what stops a
-release from releasing itself. If the push cannot be made, the run says so in
-its summary and still passes: the app is already on Play by then, and failing
-would report a shipped release as a broken one.
+The numbering is the order they are reported in, not the order they run in: all
+three start together, so a release costs roughly twenty-five minutes rather than
+the fifty-five they would add up to. A stage whose secrets are missing is
+skipped rather than failed, and the run summary states which platforms shipped.
+
+Internal builds are not tagged; that summary records the version code and the
+commit, which is what a production promotion is given. Production is a separate,
+manual pipeline. See [docs/releases.md](docs/releases.md).
+
+Once the Android upload succeeds, a last job commits the version code that
+shipped into `pubspec.yaml` on `master`, so the `+BUILD` suffix in the repository
+matches the newest build on the internal track. It pushes with the built-in
+`GITHUB_TOKEN`, which GitHub does not let trigger further workflow runs — that is
+what stops a release from releasing itself. If the push cannot be made, the run
+says so in its summary and still passes: the app is already on Play by then, and
+failing would report a shipped release as a broken one.
 
 ## Repo tooling
 
@@ -770,6 +780,6 @@ Things that are true today and worth knowing before you start:
 |---|---|
 | Push notifications are not implemented | The old notification function was removed because the app never registered FCM tokens and its legacy FCM API would no longer send. A future implementation needs `firebase_messaging`, token persistence, current FCM sends, APNs setup, and device testing. |
 | iOS Firebase config is partial | There is no `ios/Runner/GoogleService-Info.plist`, and `firebase_options.dart` declares `iosBundleId: 'com.example.uractor'` while Xcode builds `com.uractor.uractorios`. Neither stops an iOS build or a sign in, because Firebase is configured from Dart, but APNs, `firebase_messaging` and App Check would all need the plist. |
-| iOS is not released to the App Store automatically | `.github/workflows/release-appstore.yml` submits a version for review and, as a second deliberate run, releases it once Apple approves. Neither happens on merge: Apple reviews every version by hand, so there is no equivalent of Play's promote-and-it-is-live. The version record and its store metadata are still created in App Store Connect. |
+| iOS is not released to the App Store automatically | Stage 2 of `.github/workflows/release-production.yml` submits a version for review and, as a second deliberate run, releases it once Apple approves. Neither happens on merge: Apple reviews every version by hand, so there is no equivalent of Play's promote-and-it-is-live. The version record and its store metadata are still created in App Store Connect. |
 | Coverage is uneven | The API layer, the data objects and the popups are covered; the full screens under `lib/` still have very few widget tests. See [Tests](#tests). |
 | A friend's watch progress cannot be set from your device | Tagging a friend on a calendar entry writes to their calendar and seen-with records, but `firestore.rules` lets a client write its own `Progress` document and nobody else's. So an entry naming an episode no longer marks the show fully seen for them — which would be a lie — but it cannot record them as part way through it either, and the show reads as not started on their side until they log it themselves. Closing this needs the write to move behind a Cloud Function. |
