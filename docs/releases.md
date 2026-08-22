@@ -150,6 +150,63 @@ The job:
   run. The job is `continue-on-error` as well, so that a step failing before
   the script runs cannot redden it either.
 
+## When a merge ships nothing
+
+The premise everything above rests on is that a merge to `master` produces a
+release. It does not always, and the failure is silent in a way that no red X
+can warn you about, because there is no run to be red.
+
+The confirmed cause is a **commit message that mentions a skip-ci marker
+anywhere**. GitHub reads the whole message, not only the subject, so a body that
+merely explains what the marker does carries one. `7347803` is the example: it
+introduced the write-back described above, and its body says the marker in the
+subject is a second line of defence. That sentence stopped every workflow. The
+merge landed, no run was created, and nothing reached testers until somebody
+dispatched a release by hand three quarters of an hour later.
+
+Two things about that are worth keeping straight, because the first
+investigation got both wrong:
+
+- **It has nothing to do with touching a workflow file.** `7347803` did modify
+  `.github/workflows/`, and issue #58 built its explanation on that, proposing
+  that a push modifying workflow files with an integration token creates no run.
+  That suppression rule is real in general, but nothing about this incident
+  establishes that it played any part: the commit had two properties and only
+  one of them is known to be sufficient. Remembering the rule as "workflow
+  changes skip the release" leaves you confident and unprotected while writing
+  the marker into the body of an ordinary feature branch.
+- **The write-back's own use of the marker is deliberate and stays.** It is in
+  the subject, where it is the mechanism that stops merging the record pull
+  request from shipping a second build. A marker in a subject is a decision; a
+  marker in a body is an accident.
+
+### The watchdog
+
+`.github/workflows/check-release-gap.yml` runs daily and on demand. It asks the
+API which commits have a `Release to internal testing` run, walks `master` back
+from its tip to the first one that does, and reports anything in between that
+should have shipped. `tool/check_release_gap.py` holds the logic and is unit
+tested against both this incident and an ordinary healthy `master`.
+
+It deliberately never asks *why* a run is missing, only whether one happened.
+That is what let it survive its own founding diagnosis being wrong, and it is
+why it will still work if there turns out to be a third cause.
+
+It alerts and never releases, which is not timidity. A `workflow_dispatch` sent
+with the built-in `GITHUB_TOKEN` creates no run — the same suppression that
+stops the write-back from releasing itself — so an automatic release would need
+a personal access token, the long-lived credential
+[rejected above](#version-codes) for exactly this reason. Play also burns a
+version code permanently on any upload, so an unattended dispatcher that keeps
+retrying costs something real each time.
+
+Three outcomes, kept apart on purpose: a gap opens or updates a single tracking
+issue and fails; a clean result closes that issue; and an inability to tell —
+an API error, a rate limit, a run history too short to reach back — fails
+without touching the issue at all. A safety net that fires for the wrong reason
+is worse than none, because the next time it fires for the right one it gets
+dismissed.
+
 ## Restricting production to you
 
 Two independent controls, and it is worth knowing which one is load bearing.

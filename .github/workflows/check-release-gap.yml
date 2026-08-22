@@ -1,0 +1,243 @@
+name: Check master reached testers
+
+# The premise stated in AGENTS.md and README.md is that every merge to master
+# builds and ships to internal testers, and the version policy rests on it. That
+# premise has been broken at least once without anyone noticing: a merge
+# produced no workflow run at all -- not queued, not failed, not cancelled --
+# and nothing shipped. There was no red X to see, because there was no run to be
+# red.
+#
+# This is the watchdog. It asks once a day whether every commit on master that
+# should have produced a release actually did, and says so loudly when one did
+# not.
+#
+# It deliberately does not care WHY a run is missing, which has already earned
+# its keep: the incident was diagnosed as an integration-token push refusing to
+# trigger, and replaying it found a skip-ci marker in the commit body instead.
+# Checking the symptom rather than the cause survived the cause being wrong.
+#
+# It alerts and never releases. Dispatching a release from here would need a
+# personal access token, because a workflow_dispatch sent with the built-in
+# GITHUB_TOKEN creates no run -- the same suppression this exists to catch, so
+# the obvious fix is defeated by the thing it is fixing. docs/releases.md
+# already weighed a long-lived write credential in repository secrets and
+# rejected it, and closing a silent hole is not worth reopening a rejected one.
+on:
+  schedule:
+    # Daily. Hourly would ask the same question twenty-four times against a
+    # failure seen once, and a release takes about twenty-five minutes, so
+    # anything much tighter starts reporting releases that are merely still
+    # running. Master sitting a few hours behind testers is not an emergency;
+    # nobody knowing it is.
+    #
+    # Scheduled runs are queued rather than punctual, and GitHub disables them
+    # after sixty days without repository activity -- worth knowing before
+    # concluding from silence that all is well.
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+# A scheduled workflow only ever runs from the default branch, so this cannot be
+# exercised by the pull request that adds it. Running it by hand is how it gets
+# verified at all, which is why the dispatch trigger above is not optional.
+
+permissions:
+  contents: read
+  issues: write
+
+# Two overlapping runs would both read the same state and both act on the same
+# issue. Deliberately NOT the `release` group the release pipelines share: this
+# releases nothing, and queueing behind a half-hour build would only delay the
+# report of a build that is plainly happening.
+concurrency:
+  group: release-gap
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Has master reached testers
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # The marker that identifies the one tracking issue. Searched for in the
+      # body rather than matched on the title, so the title stays free to say
+      # something useful and a person retitling the issue cannot cause a second
+      # one to be opened.
+      MARKER: '<!-- release-gap-watchdog -->'
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The check walks master's history and reads commit messages, neither
+          # of which a shallow clone has.
+          fetch-depth: 0
+          ref: master
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      # Recent release runs for master, newest first. The head SHAs are the
+      # whole input: a commit that appears here was noticed by GitHub, and one
+      # that does not was not.
+      #
+      # One page rather than the full history. The walk back through master is
+      # capped well below this, and if the two windows ever cross the check
+      # reports that it could not tell rather than inventing a gap.
+      #
+      # Runs of any conclusion count. A release that ran and went red is already
+      # visible and already notified somebody; the hole this closes is the one
+      # where nothing happened at all, and reporting red runs again here would
+      # duplicate an alarm that has already fired.
+      - name: Collect the release runs GitHub knows about
+        run: |
+          set -euo pipefail
+          gh api \
+            "repos/$GITHUB_REPOSITORY/actions/workflows/release-internal.yml/runs?branch=master&per_page=100" \
+            --jq '.workflow_runs[].head_sha' > runs.txt
+          echo "Found $(wc -l < runs.txt) release runs on master."
+
+      # `set -e` on purpose: the script exits 0 for all three verdicts and
+      # non-zero only when it has genuinely broken. Without it a crashed script
+      # would leave the verdict empty, every later step would be skipped, and
+      # the job would pass green having checked nothing -- which is the same
+      # silent nothing-happened this workflow exists to catch.
+      - name: Look for a gap
+        id: check
+        run: |
+          set -euo pipefail
+
+          python tool/check_release_gap.py \
+            --tip HEAD --runs-file runs.txt --format json > verdict.json
+          python tool/check_release_gap.py \
+            --tip HEAD --runs-file runs.txt --format markdown > report.md
+
+          VERDICT=$(python -c "import json; print(json.load(open('verdict.json'))['verdict'])")
+          if [ -z "$VERDICT" ]; then
+            echo '::error::The check produced no verdict.'
+            exit 1
+          fi
+          echo "verdict=$VERDICT" >> "$GITHUB_OUTPUT"
+
+          {
+            echo '### Has master reached testers?'
+            echo ''
+            cat report.md
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          cat verdict.json
+
+      # Three outcomes, and keeping them apart is what makes this trustworthy.
+      # An expired token, a rate limit or a renamed workflow all arrive looking
+      # like "no runs found", and none of them is evidence that a release was
+      # missed. A safety net that fires for the wrong reason is worse than no
+      # safety net, because the next time it fires for the right one it gets
+      # dismissed -- so "could not tell" fails the run and touches nothing.
+      - name: Report that the check could not tell
+        if: steps.check.outputs.verdict == 'unknown'
+        run: |
+          set -euo pipefail
+          echo '::error::The release gap check could not determine what shipped.'
+          cat report.md
+          exit 1
+
+      # One issue, found by its marker and kept current. A new issue per run
+      # would produce a fresh notification every morning for a condition
+      # somebody is already looking at, and the second one would be ignored.
+      #
+      # Found by reading the open issues and matching the marker here, rather
+      # than with a `--search` query. Search tokenises punctuation, so an HTML
+      # comment is not reliably findable by it, and a lookup that quietly
+      # matches nothing would open a duplicate issue every single day.
+      - name: Open or update the tracking issue
+        if: steps.check.outputs.verdict == 'gap'
+        run: |
+          set -euo pipefail
+
+          TIP=$(git rev-parse HEAD)
+          {
+            cat report.md
+            echo ''
+            echo "$MARKER"
+            echo "Commit: \`$TIP\`"
+            echo "Checked by [this run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)."
+          } > body.md
+
+          gh issue list --state open --limit 100 --json number,body > open-issues.json
+
+          NUMBER=$(MARKER="$MARKER" python -c "
+          import json, os
+          marker = os.environ['MARKER']
+          for issue in json.load(open('open-issues.json')):
+              if marker in (issue.get('body') or ''):
+                  print(issue['number'])
+                  break
+          ")
+
+          if [ -z "$NUMBER" ]; then
+            gh issue create \
+              --title 'ci: master has not reached internal testers' \
+              --body-file body.md
+            exit 0
+          fi
+
+          # The anti-spam rule that matters. While the same commit is still
+          # stuck, the issue already says everything this run would: editing it
+          # would change nothing and commenting would notify everyone watching,
+          # daily, about a fact they were told yesterday. Only a moved master
+          # is news.
+          ALREADY=$(NUMBER="$NUMBER" TIP="$TIP" python -c "
+          import json, os
+          number = int(os.environ['NUMBER'])
+          for issue in json.load(open('open-issues.json')):
+              if issue['number'] == number:
+                  print('yes' if os.environ['TIP'] in (issue.get('body') or '') else '')
+                  break
+          ")
+
+          if [ -n "$ALREADY" ]; then
+            echo "Issue #$NUMBER already reports $TIP. Leaving it alone."
+            exit 0
+          fi
+
+          gh issue edit "$NUMBER" --body-file body.md
+          gh issue comment "$NUMBER" --body \
+            "\`master\` has moved to \`$(git rev-parse --short HEAD)\` and still has not reached internal testers. Details above."
+
+      # A gap that has been dealt with should stop being an open issue without
+      # anyone having to remember to close it, or the next real one arrives on
+      # top of a stale alarm and reads as the same old noise.
+      - name: Close the tracking issue
+        if: steps.check.outputs.verdict == 'shipped'
+        run: |
+          set -euo pipefail
+
+          gh issue list --state open --limit 100 --json number,body > open-issues.json
+          NUMBER=$(MARKER="$MARKER" python -c "
+          import json, os
+          marker = os.environ['MARKER']
+          for issue in json.load(open('open-issues.json')):
+              if marker in (issue.get('body') or ''):
+                  print(issue['number'])
+                  break
+          ")
+
+          if [ -z "$NUMBER" ]; then
+            echo 'Nothing outstanding.'
+            exit 0
+          fi
+
+          gh issue comment "$NUMBER" --body \
+            "\`master\` has reached internal testers again, at \`$(git rev-parse --short HEAD)\`. Closing."
+          gh issue close "$NUMBER"
+
+      # Failing puts a red X in the Actions tab and sends GitHub's
+      # scheduled-failure notification. The issue is the durable record; this is
+      # what makes somebody look at it, since an issue filed by a robot at seven
+      # in the morning is easy to never see.
+      - name: Fail because master has not shipped
+        if: steps.check.outputs.verdict == 'gap'
+        run: |
+          echo '::error::master has commits that never produced a release run.'
+          exit 1

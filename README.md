@@ -998,6 +998,51 @@ the run says so in its summary and still passes: the app is already on Play by
 then, and failing would report a shipped release as a broken one. See
 [docs/releases.md](docs/releases.md#version-codes).
 
+### A merge can ship nothing without saying so
+
+"Every merge to `master` ships" is the premise the version policy rests on, and
+it has been broken at least once. A commit whose **message mentions a skip-ci
+marker anywhere**, including in a body explaining what the marker does, runs no
+workflows at all — GitHub reads the whole message, not just the subject. The
+merge succeeds, no run is created, and there is nothing to go red because there
+is no run to be red.
+
+`.github/workflows/check-release-gap.yml` is the backstop. Once a day, and on
+demand, it collects the head commits of every recent `Release to internal
+testing` run and walks `master` back from its tip to the first commit that has
+one. Anything in between should have shipped, unless it deliberately asked for
+no run — a marker in the **subject**, which is what the write-back uses every
+release — or changed nothing outside the release workflow's `paths-ignore`. It
+reads that filter out of `release-internal.yml` at run time so the two cannot
+drift apart.
+
+It has three outcomes, and keeping them apart is the point:
+
+- **A gap** opens or updates one tracking issue and fails the run. While the
+  same commit is still stuck it says nothing further, so a condition somebody is
+  already looking at does not produce a notification every morning.
+- **No gap** closes that issue if it is open, so a dealt-with alarm does not sit
+  around making the next real one look like old noise.
+- **It could not tell** — no runs came back, or the run history did not reach far
+  enough to say what shipped — fails loudly and leaves the issue alone. An
+  expired token or a rate limit must never be able to look like a release gap.
+
+It alerts and never releases. Dispatching a release from a scheduled job would
+need a personal access token, because a `workflow_dispatch` sent with the
+built-in `GITHUB_TOKEN` creates no run — the same suppression the watchdog
+exists to catch. `docs/releases.md` already weighed a long-lived write
+credential in repository secrets and rejected it.
+
+The logic lives in `tool/check_release_gap.py` and is unit tested, including
+against the merge that shipped nothing. Run it by hand with:
+
+```bash
+gh api "repos/larabail/UrActorAPP/actions/workflows/release-internal.yml/runs?branch=master&per_page=100" \
+  --jq '.workflow_runs[].head_sha' > runs.txt
+python tool/check_release_gap.py --tip master --runs-file runs.txt \
+  --format markdown --fail-on-gap
+```
+
 ### What a downloads-only change skips
 
 `web/downloads/` is a static site served by Firebase Hosting. No Flutter build
@@ -1050,6 +1095,13 @@ patch number behind, is still refused.
   running desktop copy polls to discover it is out of date, and what the
   downloads page falls back to when the GitHub API is rate limited. It does not
   generate the page; see [the downloads site](#the-downloads-site).
+- [`tool/check_release_gap.py`](tool/check_release_gap.py) — answers whether
+  every commit on `master` that should have produced a release actually did.
+  Run daily by
+  [`check-release-gap.yml`](.github/workflows/check-release-gap.yml); see
+  [a merge can ship nothing without saying so](#a-merge-can-ship-nothing-without-saying-so).
+  It takes the run history as a file and shells out to git, so it is testable
+  without touching the API.
 - [`tools/sync-oscars`](tools/sync-oscars/README.md) — a standalone Node 18+
   script (no npm dependencies) that populates the Firestore `Oscars`
   collection from the UrActor API, resolving winners to TMDB ids. It has its
