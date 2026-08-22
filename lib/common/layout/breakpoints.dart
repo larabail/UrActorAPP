@@ -159,6 +159,46 @@ int gridColumnsFor(
   return fitted.clamp(minColumns, maxColumns);
 }
 
+/// The geometry of the playlist cards on the home page.
+///
+/// These live here, next to the arithmetic that consumes them, so a test can
+/// state what a real phone does with the real numbers rather than with a copy
+/// of them that can drift.
+const double kPlaylistCardMaxWidth = 360;
+const double kPlaylistGridSpacing = 10;
+const double kPlaylistGridPadding = 10;
+
+/// How many columns fit into [availableWidth] when a tile may be at most
+/// [maxTileWidth] wide, never fewer than [minColumns].
+///
+/// This is the counterpart to [gridColumnsFor]. That one aims at a tile width
+/// and lets the columns share out the surplus; this one treats the width as a
+/// ceiling and adds a column the moment tiles would exceed it. The division is
+/// the same one Flutter's own `SliverGridDelegateWithMaxCrossAxisExtent`
+/// performs, with the single thing that delegate cannot express added: a floor
+/// under the column count.
+///
+/// That floor is the whole point of having this. Without it a ceiling quietly
+/// turns into a *target* once the window is narrow enough, because one column
+/// is always enough to keep every tile under the limit. Asking for cards of at
+/// most 360 logical pixels on a 390 pixel phone gave a single column of 370
+/// pixel cards — wider than the ceiling that was asked for, twice the intended
+/// height, and no longer recognisably a grid.
+///
+/// [spacing] is the gap between columns, counted the way the framework counts
+/// it, so that a grid handed to either helper lands on the same answer.
+int gridColumnsForMaxTileWidth(
+  double availableWidth, {
+  required double maxTileWidth,
+  double spacing = 0,
+  int minColumns = 2,
+  int maxColumns = 12,
+}) {
+  if (availableWidth <= 0 || maxTileWidth <= 0) return minColumns;
+  final int fitted = (availableWidth / (maxTileWidth + spacing)).ceil();
+  return fitted.clamp(minColumns, maxColumns);
+}
+
 /// The margin a poster tile carries, kept here rather than inside the tile so
 /// that a row or a placeholder can reserve exactly the space a tile will take
 /// without having to guess at it.

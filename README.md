@@ -274,6 +274,15 @@ Two things follow from this that are worth knowing before changing a screen:
   upright. Posters are a fixed 2:3 and take a width in logical pixels from
   `posterWidthFor`; episode stills are 16:9. Grids count how many columns fit
   with `gridColumnsFor` instead of hard coding a number.
+- **A grid that caps a tile's width still needs a minimum column count.** Use
+  `gridColumnsForMaxTileWidth`, which is `gridColumnsFor`'s counterpart for a
+  ceiling rather than a target, and never Flutter's
+  `SliverGridDelegateWithMaxCrossAxisExtent` on its own. That delegate cannot
+  be given a floor, and a ceiling with no floor becomes a *target* on a narrow
+  window — one column is always enough to keep every tile under the limit. A
+  360pt cap on the home page's playlist cards did exactly that on any phone
+  390pt or narrower, turning a two column grid into one column of cards at
+  twice the height.
 - **Open detail pages with `openDetail`, not `Navigator.push`.** It puts the
   page in the detail pane when there is one and over the whole window when
   there is not, so a call site does not have to know which layout it is in. A
