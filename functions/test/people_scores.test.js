@@ -6,10 +6,12 @@ const assert = require('node:assert/strict');
 const {
   MAX_CAST_PER_TITLE,
   MAX_CREDIT_ATTEMPTS,
+  MAX_RANKED_PEOPLE,
   TMDB_BASE_URL,
   creditFailureKind,
   creditAttemptOutcome,
   mayClearDirty,
+  runIsIncomplete,
   cachedCreditsFrom,
   isLibraryWrite,
   libraryFrom,
@@ -388,4 +390,35 @@ test('cachedCreditsFrom tells an answer from a failed attempt', () => {
   assert.equal(cachedCreditsFrom({attempts: 2}), undefined);
   assert.equal(cachedCreditsFrom({}), undefined);
   assert.equal(cachedCreditsFrom(null), undefined);
+});
+
+test('topScores keeps a library-sized ranking, not a profile-sized one', () => {
+  // A dry run against a real 4,593 title library credited 42,683 actors with a
+  // non-zero score. Storing them all is about 630 KB in a document Firestore
+  // caps at 1 MiB, so a limit is not optional -- but the limit is also what
+  // decides where the person page's ranking goes flat, and at 500 it was
+  // cutting people who had been watched a dozen times.
+  const totals = {};
+  for (let i = 0; i < MAX_RANKED_PEOPLE + 500; i++) {
+    totals[`p${i}`] = MAX_RANKED_PEOPLE + 500 - i;
+  }
+
+  const kept = topScores(totals);
+  assert.equal(Object.keys(kept).length, MAX_RANKED_PEOPLE);
+  assert.ok(MAX_RANKED_PEOPLE >= 2000, 'the cut must stay below a real ranking');
+  assert.equal(kept.p0, MAX_RANKED_PEOPLE + 500, 'kept the best');
+  assert.equal(kept[`p${MAX_RANKED_PEOPLE}`], undefined, 'dropped past the cut');
+});
+
+test('runIsIncomplete treats a run that stopped early as unfinished', () => {
+  assert.equal(runIsIncomplete(100, 100, 0), false, 'all attempted, none failed');
+
+  // The deadline cut it off. Everything attempted worked, but the rest was
+  // never asked about, so storing now would rank a part of the library.
+  assert.equal(runIsIncomplete(100, 40, 0), true);
+
+  // attempted advances a batch at a time, so it can overshoot the total.
+  assert.equal(runIsIncomplete(100, 104, 0), false);
+
+  assert.equal(runIsIncomplete(100, 100, 1), true, 'one title would not resolve');
 });

@@ -29,6 +29,7 @@ const {
   creditFailureKind,
   creditAttemptOutcome,
   mayClearDirty,
+  runIsIncomplete,
   cachedCreditsFrom,
   scoreLibrary,
   titlesNeedingCredits,
@@ -251,13 +252,6 @@ exports.cleanupJoinAttempts = onSchedule(
 // several ordinary runs rather than one run that overruns its timeout.
 const PEOPLE_SCORE_JOB_BATCH = 20;
 
-// How many titles one run will fetch credits for. A large library that is
-// entirely uncached cannot be finished inside a single run, so the run banks
-// what it fetched, leaves the user dirty and lets the next run continue from
-// a warmer cache. Nothing is written until every title resolves, because a
-// ranking computed from half a library is wrong rather than incomplete.
-const MAX_CREDIT_FETCHES_PER_RUN = 250;
-
 // Concurrent TMDB requests. Their limit is far higher; this is low enough to
 // stay clear of it while several users are being recomputed in one run.
 const CREDIT_FETCH_CONCURRENCY = 8;
@@ -268,9 +262,17 @@ const CREDIT_READ_CHUNK = 200;
 // When to stop starting another user, short of the 540 second timeout.
 //
 // A run that is killed mid-user leaves that user claimed but unscored, and
-// everyone queued behind them unstarted. Stopping between users instead means
-// the batch always ends on a clean boundary and the rest are simply picked up
-// by the next run five minutes later.
+// everyone queued behind them unstarted. Stopping by choice instead means the
+// run always ends on a clean boundary, having banked every title it fetched.
+// It is checked between users and again between batches of credit requests,
+// so one enormous library cannot run past it either.
+//
+// This replaced a fixed budget of 250 fetches per user, which sounded cautious
+// and was: measured throughput is around 30 credits a second, so 250 of them
+// filled eight seconds of a nine minute budget. A real 4,593 title library
+// needed nineteen runs -- and since nothing is stored until every title
+// resolves, its owner would have waited 95 minutes to see anything at all.
+// The same library now fits inside a single run.
 const RUN_DEADLINE_MS = 480000;
 
 const PEOPLE_SCORE_DOCS = ['FavActors', 'FavDirectors', 'FavWriters'];
@@ -410,16 +412,20 @@ async function fetchAndCacheCredits(type, id, apiKey) {
   }
 }
 
-// Fills the gaps in the cache, a few at a time, up to this run's budget.
-// Returns the credits it managed to resolve and whether any title is still
-// outstanding.
-async function fetchMissingCredits(missing, apiKey) {
+// Fills the gaps in the cache, a few at a time, until they are done or the run
+// is out of time. Returns the credits it managed to resolve and whether any
+// title is still outstanding.
+async function fetchMissingCredits(missing, apiKey, deadline) {
   const resolved = new Map();
-  const budget = missing.slice(0, MAX_CREDIT_FETCHES_PER_RUN);
-  let failed = missing.length - budget.length;
+  let failed = 0;
+  let attempted = 0;
 
-  for (let i = 0; i < budget.length; i += CREDIT_FETCH_CONCURRENCY) {
-    const batch = budget.slice(i, i + CREDIT_FETCH_CONCURRENCY);
+  for (; attempted < missing.length; attempted += CREDIT_FETCH_CONCURRENCY) {
+    // Between batches rather than between titles: a batch is under a second,
+    // and stopping mid-batch would abandon requests already in flight.
+    if (Date.now() > deadline) break;
+
+    const batch = missing.slice(attempted, attempted + CREDIT_FETCH_CONCURRENCY);
     const results = await Promise.allSettled(
       batch.map(({type, id}) => fetchAndCacheCredits(type, id, apiKey)),
     );
@@ -436,11 +442,14 @@ async function fetchMissingCredits(missing, apiKey) {
     }
   }
 
-  return {resolved, incomplete: failed > 0};
+  return {
+    resolved,
+    incomplete: runIsIncomplete(missing.length, attempted, failed),
+  };
 }
 
 // Recomputes and stores one user's three score documents.
-async function recomputeFor(uid, apiKey) {
+async function recomputeFor(uid, apiKey, deadline) {
   const library = await readLibrary(uid);
   const titles = titlesNeedingCredits(library);
   const cached = await readCachedCredits(titles);
@@ -449,7 +458,7 @@ async function recomputeFor(uid, apiKey) {
     ({type, id}) => !cached.has(creditsKey(type, id)),
   );
   const {resolved, incomplete} = missing.length ?
-    await fetchMissingCredits(missing, apiKey) :
+    await fetchMissingCredits(missing, apiKey, deadline) :
     {resolved: new Map(), incomplete: false};
 
   if (incomplete) return {written: false, titles: titles.length};
@@ -501,9 +510,9 @@ exports.recomputePeopleScores = onSchedule(
 
     if (jobs.empty) return;
 
-    const startedAt = Date.now();
+    const deadline = Date.now() + RUN_DEADLINE_MS;
     for (const job of jobs.docs) {
-      if (Date.now() - startedAt > RUN_DEADLINE_MS) {
+      if (Date.now() > deadline) {
         logger.info('Stopped short of the timeout; the rest wait for the next run');
         return;
       }
@@ -511,12 +520,13 @@ exports.recomputePeopleScores = onSchedule(
       const uid = job.id;
       const claimedAt = job.get('dirtyAt');
       try {
-        const result = await recomputeFor(uid, apiKey);
+        const result = await recomputeFor(uid, apiKey, deadline);
         if (!result.written) {
-          // Not an error: the library was bigger than one run's fetch budget,
-          // or TMDB refused part of it. What was fetched is cached, so the
-          // next run starts closer to the end. The flag is untouched, so the
-          // user stays queued.
+          // Not an error: the run ran out of time part way through a large
+          // library, or TMDB refused some of it. What was fetched is cached,
+          // so the next run starts closer to the end. The flag is untouched,
+          // so the user stays queued -- and keeps their place at the front of
+          // it, since deferring does not move dirtyAt.
           logger.info('People scores deferred to the next run', {
             uid,
             titles: result.titles,
