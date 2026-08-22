@@ -137,6 +137,7 @@ window rather than the device it is on (see [Platforms](#platforms) and
 | `youtube_player_flutter` | Trailer playback |
 | `image_picker` + `image_cropper` | Profile photo capture |
 | `cached_network_image` | Poster and backdrop caching |
+| `path_provider` | Locates the on-device file the media sort cache is kept in |
 | `flutter_localizations` + `intl` | EN/ES localization |
 
 State is handled with plain `StatefulWidget`, `setState`, and
@@ -676,6 +677,13 @@ lib/
     viewing_history_widgets.dart    The range shown above a show's history
     playlist_grid.dart              The home page's playlist grid, and how many
                                     columns it fits into the space it is given
+    media_sort.dart                 Pure ordering rules for the media grids
+    media_sort_loader.dart          Looks up what those rules need, from the
+                                    cache first and the network only for what
+                                    is missing
+    media_metadata_cache.dart       The stored form of that cache: versioning,
+                                    the 30-day staleness rule, eviction
+    media_metadata_store.dart       Reads and writes it, one file per account
     api/apiutils.dart        All TMDB HTTP calls; a show's credits come from
                              aggregate_credits and are flattened to the shape
                              /credits returns
@@ -706,6 +714,41 @@ assets/                      Logos, tab icons, the cover and person
                              placeholders, oscars_api.json
 test/                        Flutter tests
 ```
+
+### Sorting the media grids
+
+The Seen, Watchlist and Favorites grids store nothing but `[type, id]` pairs,
+so ordering them by anything other than the order things were added means
+looking every title up first. Sorting by IMDb rating costs more again: TMDB
+details do not carry a rating, so each title needs an OMDB call, and a show
+needs a third call to `/external_ids` because only films carry an `imdb_id`.
+
+Those answers are now kept on the device, in a JSON file per account under the
+app support directory, so a cold start reads them instead of fetching them
+(`lib/common/media_metadata_store.dart`). The detail pages write through to the
+same cache, since they already fetch exactly these fields — so a title you have
+opened is usually free to sort by. Only what is missing is fetched, still six
+requests at a time.
+
+Three things are worth knowing about it:
+
+- **Your own rating is never stored.** It is read from the signed-in user on
+  every load instead. That is the only field belonging to a person rather than
+  a title, so keeping it out of the file means no cache can show one account
+  another's data — the file is also named per account, and deleted on sign-out,
+  but neither of those has to work for that guarantee to hold.
+- **Entries last 30 days.** Release dates get corrected and ratings drift.
+  Anything older is simply fetched again by the same path that fetches a title
+  never seen before, so there is no separate refresh to go wrong.
+- **The file records the language its titles were fetched in.** A detail page
+  asks TMDB in the user's language and the sort does not, and a grid ordered by
+  a mixture of Spanish and English names would sort by whichever titles you had
+  happened to open. A mismatched entry has its name refetched; its IMDb id and
+  rating, which have no language, are kept.
+
+A cache that cannot be read or written is never fatal — the app fetches exactly
+as it did before it existed. A file from an older version of the format is
+discarded rather than migrated, since everything in it can be fetched again.
 
 ## Cloud Functions
 
@@ -746,6 +789,35 @@ firebase functions:secrets:set TMDB_API_KEY
 npm test
 npm run deploy
 ```
+
+The release workflow also deploys the functions automatically on every merge to
+`master` that touched `functions/`. Nothing else in `firebase.json` is deployed
+by any workflow — see below.
+
+## Deploying the rules
+
+**`firestore.rules` is not deployed by CI.** The only Firebase deploy in the
+release pipeline is `--only functions`, and the downloads workflow deploys
+hosting. `firebase.json` names the rules file, but no automation acts on it.
+
+That is worth stating plainly because both the code comments and several issues
+have assumed the opposite. Merging a change to `firestore.rules` does not change
+what the live database enforces. A tightened rule stays inert, and so does a
+mistaken one. Someone has to run:
+
+```bash
+firebase deploy --only firestore:rules --project actordb-cf981
+```
+
+Two consequences follow. A rules change is not finished when its pull request
+merges, so whoever merges one owns deploying it. And the rules suite in
+[`firestore-tests/`](firestore-tests/README.md), which the pull request workflow
+runs, is the only automated check this file gets at any point.
+
+A deploy applies to every client at once — there is no staged rollout the way
+there is for an app release — which is why the KNOWN GAPS section at the bottom
+of `firestore.rules` gates some changes on Play Console adoption of a client
+that no longer needs the permission being removed.
 
 ### Favourite actors, directors and writers
 
@@ -854,7 +926,7 @@ cd ..
 node --test web/downloads/*.test.js
 ```
 
-`flutter test` currently runs 847 tests with no emulator, credentials or
+`flutter test` currently runs 971 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
 `FirestoreCore.db` and `AppHttp.client` — and callable context through
 `CallableContext`. They default to the real implementations and are pointed at
@@ -865,9 +937,10 @@ HTTP client, auth/session helpers, search and playlist ordering, playlist join
 handling, settings, inbox, calendar/list services, calendar episode detail,
 what a calendar entry does to watch progress, viewing history ranges,
 in-memory Firestore service behaviour, watch-progress rules and controls, the
-media and person data objects, every popup under `lib/popups` except the
-profile section editor, the reviews and Continue watching screens, and the
-pre-commit hook itself.
+media sort cache — including that a warm start makes no requests at all and
+that one account's cache cannot outlive its sign-out — the media and person
+data objects, every popup under `lib/popups` except the profile section editor,
+the reviews and Continue watching screens, and the pre-commit hook itself.
 
 `npm test` in `functions/` runs the Node 22 unit tests for the playlist, OMDB
 and people-score helper modules. `npm run test:emulator` additionally runs the
@@ -877,10 +950,11 @@ functions at it with `TMDB_API_BASE_URL`, so nothing in CI touches the real,
 rate-limited API.
 
 `npm test` in `firestore-tests/` starts the Firestore emulator with
-`firebase emulators:exec` and runs the rules suite. It currently reports 84
-passing tests. If port 8080 is already held by an emulator you started
-separately, run `npx mocha rules.test.js --timeout 20000` from
-`firestore-tests/` instead.
+`firebase emulators:exec` and runs the rules suite. It currently reports 97
+passing tests. It expects `firebase` already on PATH; CI runs `npm run test:ci`
+instead, which uses the same pinned CLI through `npx` that the functions suite
+does. If port 8080 is already held by an emulator you started separately, run
+`npx mocha rules.test.js --timeout 20000` from `firestore-tests/` instead.
 
 `node --test web/downloads/*.test.js` runs the downloads page's release logic — which
 installer belongs to which platform, which of two versions is newer, and what
@@ -919,6 +993,12 @@ break:
   checked to ensure no release signing material is present.
 - **Functions** installs Node 22 dependencies in `functions/`, runs `npm test`,
   and confirms `index.js` loads.
+- **Firestore rules** installs Node 22 dependencies in `firestore-tests/` and
+  runs the rules suite against the Firestore emulator, which needs a JDK.
+  Nothing in CI deploys `firestore.rules` — the release workflow deploys
+  `--only functions` — so this job is the only automated check they get, and
+  merging a rules change does not make it live. See
+  [Deploying the rules](#deploying-the-rules).
 - **Downloads site** runs `node --test web/downloads/*.test.js`. The page at
   `downloads.uractor.com` is served exactly as it is committed, so nothing else
   in CI would notice its script breaking.
@@ -1027,6 +1107,51 @@ the run says so in its summary and still passes: the app is already on Play by
 then, and failing would report a shipped release as a broken one. See
 [docs/releases.md](docs/releases.md#version-codes).
 
+### A merge can ship nothing without saying so
+
+"Every merge to `master` ships" is the premise the version policy rests on, and
+it has been broken at least once. A commit whose **message mentions a skip-ci
+marker anywhere**, including in a body explaining what the marker does, runs no
+workflows at all — GitHub reads the whole message, not just the subject. The
+merge succeeds, no run is created, and there is nothing to go red because there
+is no run to be red.
+
+`.github/workflows/check-release-gap.yml` is the backstop. Once a day, and on
+demand, it collects the head commits of every recent `Release to internal
+testing` run and walks `master` back from its tip to the first commit that has
+one. Anything in between should have shipped, unless it deliberately asked for
+no run — a marker in the **subject**, which is what the write-back uses every
+release — or changed nothing outside the release workflow's `paths-ignore`. It
+reads that filter out of `release-internal.yml` at run time so the two cannot
+drift apart.
+
+It has three outcomes, and keeping them apart is the point:
+
+- **A gap** opens or updates one tracking issue and fails the run. While the
+  same commit is still stuck it says nothing further, so a condition somebody is
+  already looking at does not produce a notification every morning.
+- **No gap** closes that issue if it is open, so a dealt-with alarm does not sit
+  around making the next real one look like old noise.
+- **It could not tell** — no runs came back, or the run history did not reach far
+  enough to say what shipped — fails loudly and leaves the issue alone. An
+  expired token or a rate limit must never be able to look like a release gap.
+
+It alerts and never releases. Dispatching a release from a scheduled job would
+need a personal access token, because a `workflow_dispatch` sent with the
+built-in `GITHUB_TOKEN` creates no run — the same suppression the watchdog
+exists to catch. `docs/releases.md` already weighed a long-lived write
+credential in repository secrets and rejected it.
+
+The logic lives in `tool/check_release_gap.py` and is unit tested, including
+against the merge that shipped nothing. Run it by hand with:
+
+```bash
+gh api "repos/larabail/UrActorAPP/actions/workflows/release-internal.yml/runs?branch=master&per_page=100" \
+  --jq '.workflow_runs[].head_sha' > runs.txt
+python tool/check_release_gap.py --tip master --runs-file runs.txt \
+  --format markdown --fail-on-gap
+```
+
 ### What a downloads-only change skips
 
 `web/downloads/` is a static site served by Firebase Hosting. No Flutter build
@@ -1079,16 +1204,23 @@ patch number behind, is still refused.
   running desktop copy polls to discover it is out of date, and what the
   downloads page falls back to when the GitHub API is rate limited. It does not
   generate the page; see [the downloads site](#the-downloads-site).
+- [`tool/check_release_gap.py`](tool/check_release_gap.py) — answers whether
+  every commit on `master` that should have produced a release actually did.
+  Run daily by
+  [`check-release-gap.yml`](.github/workflows/check-release-gap.yml); see
+  [a merge can ship nothing without saying so](#a-merge-can-ship-nothing-without-saying-so).
+  It takes the run history as a file and shells out to git, so it is testable
+  without touching the API.
 - [`tools/sync-oscars`](tools/sync-oscars/README.md) — a standalone Node 18+
   script (no npm dependencies) that populates the Firestore `Oscars`
   collection from the UrActor API, resolving winners to TMDB ids. It has its
   own README covering name resolution, overrides, and known gaps.
 - [`firestore.rules`](firestore.rules) — the checked-in Firestore security
-  rules. They constrain both who may write and, for friend writes, the shape of
-  what may be written. Read the rules' own KNOWN GAPS section before treating
-  them as complete. The matching tests live in
-  [`firestore-tests/`](firestore-tests/README.md) and run against the local
-  emulator.
+  rules. They constrain who may write, the shape of what a friend may write,
+  and — wherever the written key can be named — the value inside it. Read the
+  rules' own KNOWN GAPS section before treating them as complete. The matching
+  tests live in [`firestore-tests/`](firestore-tests/README.md) and run against
+  the local emulator, on every pull request.
 - [`.githooks/pre-commit`](.githooks/pre-commit) — runs analyze and the tests
   before a commit. Enable it with `git config core.hooksPath .githooks`. It
   clears git's own environment variables before invoking flutter, for the
@@ -1121,6 +1253,6 @@ Things that are true today and worth knowing before you start:
 |---|---|
 | Push notifications are not implemented | The old notification function was removed because the app never registered FCM tokens and its legacy FCM API would no longer send. A future implementation needs `firebase_messaging`, token persistence, current FCM sends, APNs setup, and device testing. |
 | iOS Firebase config is partial | There is no `ios/Runner/GoogleService-Info.plist`, and `firebase_options.dart` declares `iosBundleId: 'com.example.uractor'` while Xcode builds `com.uractor.uractorios`. Neither stops an iOS build or a sign in, because Firebase is configured from Dart, but APNs, `firebase_messaging` and App Check would all need the plist. |
-| iOS is not released to the App Store automatically | Stage 2 of `.github/workflows/release-production.yml` submits a version for review and, as a second deliberate run, releases it once Apple approves. Neither happens on merge: Apple reviews every version by hand, so there is no equivalent of Play's promote-and-it-is-live. The version record and its store metadata are still created in App Store Connect. |
+| iOS is not released to the App Store automatically | Stage 2 of `.github/workflows/release-production.yml` submits a version for review and, as a second deliberate run, releases it once Apple approves. Neither happens on merge: Apple reviews every version by hand, so there is no equivalent of Play's promote-and-it-is-live. The version record is created by the pipeline and its release notes written from the commits, but a changed description, new screenshots or an app's first release still want a person in App Store Connect. |
 | Coverage is uneven | The API layer, the data objects and the popups are covered; the full screens under `lib/` still have very few widget tests. See [Tests](#tests). |
 | A friend's watch progress cannot be set from your device | Tagging a friend on a calendar entry writes to their calendar and seen-with records, but `firestore.rules` lets a client write its own `Progress` document and nobody else's. So an entry naming an episode no longer marks the show fully seen for them — which would be a lie — but it cannot record them as part way through it either, and the show reads as not started on their side until they log it themselves. Closing this needs the write to move behind a Cloud Function. |
