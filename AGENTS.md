@@ -104,10 +104,20 @@ requested". Do not mention the agent, the model, or the conversation.
 
 The build number is not yours to choose. Play refuses any code it has already
 seen, so the release workflow asks Play for the next free one, builds with it,
-and — once the upload to internal testing has succeeded — commits it back to
-`master`. The suffix in the file is therefore a record of the last build that
-reached testers, not an input to the next one. Editing it changes nothing about
-what gets released and will be overwritten by the next release.
+and — once the upload to internal testing has succeeded — opens a pull request
+putting it back into `pubspec.yaml`. The suffix in the file is therefore a
+record of the last build that reached testers, not an input to the next one.
+Editing it changes nothing about what gets released and will be overwritten by
+the next release.
+
+That pull request comes from `github-actions[bot]` and is titled
+`chore(release): record build N as shipped [skip ci]`. Approve and merge it like
+any other; it is one line of `pubspec.yaml`. There is at most one open at a time,
+and each release rewrites it, so merging the newest is always enough — and if a
+version name bump has since landed on `master` it will conflict, at which point
+closing it costs nothing. It cannot be a direct push because `master` requires a
+pull request and the bot cannot be excused from that — see
+[docs/releases.md](docs/releases.md#version-codes).
 
 One consequence: a branch that lives a long time can conflict on the `version:`
 line when `master` is merged into it, because CI has been moving it. Resolve it
@@ -251,6 +261,14 @@ when you genuinely need to commit something that does not build.
 
 ## Things that will waste your time
 
+- **Never write `[skip ci]` literally in a commit message**, not even in the
+  body while explaining it. GitHub scans the whole message, not just the
+  subject, so a commit that merely *mentions* the marker silently runs no
+  workflows at all — the pull request then sits with no checks reported and
+  nothing to say why. Write "the skip-ci marker" in prose instead. Quoting it
+  in a file, as here, is harmless; only the commit message is scanned. The
+  release workflow uses it deliberately; see
+  [docs/releases.md](docs/releases.md#version-codes).
 - The generated files under `lib/l10n/` are committed. Forgetting
   `flutter gen-l10n` leaves them stale and the diff looks unrelated to your
   change.

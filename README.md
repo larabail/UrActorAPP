@@ -132,12 +132,14 @@ State is handled with plain `StatefulWidget`, `setState`, and
 | Platform | Status |
 | --- | --- |
 | Android, iOS | Shipped to testers by CI on every merge to `master` |
-| macOS, Windows | Downloadable from [downloads.uractor.com](https://downloads.uractor.com), released by tag |
+| macOS, Windows | Built by CI on every merge; downloadable from [downloads.uractor.com](https://downloads.uractor.com) once released |
 | Linux | Not a target — see below |
 | Web | Not a target |
 
-The desktop apps are released by pushing a tag rather than by merging, and
-they tell users about new versions themselves — there is no store to do it for
+The desktop apps go through the same two pipelines as the mobile ones, but with
+no store in the middle: an internal build is an installer attached to the CI run,
+and a production release publishes it and updates the downloads site. They tell
+users about new versions themselves, because there is no store to do it for
 them. See [Releasing the desktop apps](docs/releases.md#releasing-the-desktop-apps).
 
 ### Why not Linux
@@ -344,13 +346,13 @@ project sets `DEVELOPMENT_TEAM = Q8XY8276AC`, so that Apple Developer account
 has to be signed in to Xcode.
 
 CI covers this on macOS runners. `.github/workflows/ios.yml` builds the app
-and launches it on a simulator for every pull request, and
-`.github/workflows/release-testflight.yml` ships to TestFlight. Both run on
+and launches it on a simulator for every pull request, and the iOS stage of
+`.github/workflows/release-internal.yml` ships to TestFlight. Both run on
 `macos-26`, because Apple refuses uploads built with an SDK older than iOS 26
-and the older image defaults to Xcode 16. The check is required to merge, which
-is why it is no longer filtered to iOS paths: a skipped workflow reports
-nothing, and a required check that never reports blocks the pull request
-forever. See [docs/releases.md](docs/releases.md).
+and the older image defaults to Xcode 16. The check is not required to merge
+yet, but it is no longer filtered to iOS paths so that it can be: a skipped
+workflow reports nothing, and a required check that never reports would block
+the pull request forever. See [docs/releases.md](docs/releases.md).
 
 **Run `flutter clean` after any change to `ios/Podfile.lock`.** `flutter
 build` will not do it for you, and a stale `build/` directory holding the
@@ -651,7 +653,7 @@ only Markdown, docs, or `.gitignore`. The workflow has three jobs:
 - **Version** runs the unit tests under `tool/` and then enforces the version
   policy from [AGENTS.md](AGENTS.md#versioning) against the pull request title
   and commits. Do not edit the `+BUILD` suffix: the release workflow builds
-  with a code derived from Play and writes that code back to `master` itself.
+  with a code derived from Play and opens a pull request recording it.
 
 The iOS check lives in its own workflow, `.github/workflows/ios.yml`, because
 it needs a macOS runner and that build takes around twenty-five minutes against
@@ -665,8 +667,11 @@ it is still running fifteen seconds later, because the iOS failure that matters
 most, Firebase failing to configure, happens at launch rather than at compile
 time.
 
-**Required to merge**, along with the three Linux jobs from `pr.yml`. Between
-them they are the four checks branch protection on `master` waits for.
+It is **not** yet required to merge. Branch protection on `master` waits for the
+three Linux jobs from `pr.yml` — `Analyze, test and build`, `Functions` and
+`Version` — and nothing else. Running on every pull request is what makes the
+check requirable; adding it to the required list is a separate, deliberate step,
+and it would make a macOS build the slowest gate on every pull request.
 
 There is no XCTest job. `ios/RunnerTests` still contains only the empty
 `testExample` stub that `flutter create` generates, and the app has no native
@@ -674,55 +679,66 @@ code beyond an `AppDelegate` that registers plugins, so running it would spend
 macOS minutes asserting nothing. If real Swift is ever added to `ios/Runner`,
 that is the point to wire `xcodebuild test` into the iOS workflow.
 
-Xcode Cloud archives the app as well, and reports on pull requests as
-`uractorapp | Default | Archive - iOS`. It is configured in App Store Connect
-rather than in this repository, and it runs `xcodebuild` against
-`ios/Runner.xcworkspace` on a bare clone, knowing nothing about Flutter. What
-makes that work is
-[`ios/ci_scripts/ci_post_clone.sh`](ios/ci_scripts/ci_post_clone.sh), which
-Xcode Cloud runs after cloning: it installs the pinned Flutter SDK, resolves
-packages, writes `ios/Flutter/Generated.xcconfig` through
-`flutter build ios --config-only`, and installs the pods. None of those are
-committed, so without the script the archive fails on the missing files rather
-than on anything in the change. The directory and file names are fixed by Xcode
-Cloud, and the file has to stay executable in git; renamed, moved, or
-non-executable, it is skipped with no explanation and the build fails exactly
-as it did before. Its Flutter version is pinned to the same one as
-`.github/actions/setup-flutter-ios`, and the two are meant to move together.
+Xcode Cloud used to archive the app as well, reporting as
+`uractorapp | Default | Archive - iOS`, and was removed. It never gated
+anything — it was not a required check — and it told us strictly less than the
+workflow above: no analyze, no tests, and no launch check, which is the iOS
+failure that matters most. On `master` it rebuilt what
+`release-testflight.yml` already builds and then discarded the archive, because
+its distribution was set to None. Every failure it ever reported was about its
+own configuration rather than the app.
 
-The three API keys reach that build as Xcode Cloud environment variables set on
-the workflow in App Store Connect, not as GitHub Actions secrets. The script
-warns instead of failing when one is missing, because an archive built without
-them is still a valid archive — it is the app that throws at startup, and
-failing the build there would report an unset workflow variable as broken code.
+If it is ever reconnected, note that it runs `xcodebuild` on a bare clone and
+knows nothing about Flutter, so it needs a `ios/ci_scripts/ci_post_clone.sh` to
+install the SDK, write `ios/Flutter/Generated.xcconfig` and install the pods —
+none of which are committed. There was one; `git log -- ios/ci_scripts` has it.
+Two things that cost a day the first time: the workflow must point at
+`Runner.xcworkspace` and not `Runner.xcodeproj`, or the pods never enter the
+build graph and every plugin module comes back not found, and CocoaPods has to
+be installed before `flutter build --config-only`, which runs `pod install`
+itself.
 
 Every merge to `master` that is not docs-only runs
-`.github/workflows/release-internal.yml`. It deploys Cloud Functions to
-`actordb-cf981` first — behind an approval, because that project serves every
-installed app rather than only testers — then analyzes, tests with coverage,
-builds a signed app bundle with a Play-derived version code, generates release
-notes, uploads to Play internal testing, and keeps the bundle and coverage
-report as artifacts. Internal builds are not tagged; the run summary records the
-version code and the commit, which is what a production promotion is given.
-Production promotion is separate and manual. See
-[docs/releases.md](docs/releases.md).
+`.github/workflows/release-internal.yml`, the one pipeline that puts a build in
+front of testers on all three platforms. It analyzes and tests once, on Linux,
+then deploys Cloud Functions to `actordb-cf981` — behind an approval, because
+that project serves every installed app rather than only testers — and only then
+starts the three platform stages:
 
-The same merge also runs `.github/workflows/release-testflight.yml`, which
-builds a signed IPA on a macOS runner and uploads it to TestFlight. Its build
-number comes from App Store Connect through `tool/appstore.py`, the counterpart
-to `tool/play.py`, and is deliberately **not** written back to `pubspec.yaml`:
-the `+BUILD` suffix there records Play's version code, and the two stores count
-independently. The workflow stays inert until its six App Store secrets exist —
-a `preflight` job reports which are missing and skips the expensive job — so it
-does not fail every merge before the credentials are in place.
+1. **Android** builds a signed app bundle with a Play-derived version code,
+   generates release notes and uploads to Play internal testing.
+2. **iOS** builds a signed IPA on a macOS runner and uploads it to TestFlight.
+   Its build number comes from App Store Connect through `tool/appstore.py`, the
+   counterpart to `tool/play.py`, and is deliberately **not** written back to
+   `pubspec.yaml`: the `+BUILD` suffix there records Play's version code, and the
+   two stores count independently.
+3. **Desktop** builds the macOS and Windows installers, signing and notarising
+   the macOS one, and attaches them to the run. Nothing is published and
+   `downloads.uractor.com` is untouched — desktop has no test track, so "not
+   published" is what internal testing means for it.
 
-Once the upload succeeds, a last job commits the version code that shipped into
-`pubspec.yaml` on `master`, so the `+BUILD` suffix in the repository matches the
-newest build on the internal track. It pushes with the built-in `GITHUB_TOKEN`,
-which GitHub does not let trigger further workflow runs — that is what stops a
-release from releasing itself. If the push cannot be made, the run says so in
-its summary and still passes: the app is already on Play by then, and failing
-would report a shipped release as a broken one.
+The numbering is the order they are reported in, not the order they run in: all
+three start together, so a release costs roughly twenty-five minutes rather than
+the fifty-five they would add up to. A stage whose secrets are missing is
+skipped rather than failed, and the run summary states which platforms shipped.
+
+Internal builds are not tagged; that summary records the version code and the
+commit, which is what a production promotion is given. Production is a separate,
+manual pipeline. See [docs/releases.md](docs/releases.md).
+
+Once the Android upload succeeds, a last job records the version code that
+shipped in `pubspec.yaml`, so the `+BUILD` suffix in the repository matches the
+newest build on the internal track. It arrives as a pull request from
+`github-actions[bot]` rather than as a direct commit: `master` requires a pull
+request, and the GitHub Actions identity cannot be granted an exception to that
+on a user-owned repository. Approve and merge it like any other — it is one
+line, there is at most one open at a time, and each release rewrites it. Its
+checks do not start on their own, because GitHub does not trigger workflow runs
+for a pull request opened with the built-in `GITHUB_TOKEN`; close and reopen it,
+or use the administrator override. If the pull request cannot be opened at all,
+the run says so in its summary and still passes: the app is already on Play by
+then, and failing would report a shipped release as a broken one. See
+[docs/releases.md](docs/releases.md#version-codes).
 
 ## Repo tooling
 
@@ -773,6 +789,6 @@ Things that are true today and worth knowing before you start:
 |---|---|
 | Push notifications are not implemented | The old notification function was removed because the app never registered FCM tokens and its legacy FCM API would no longer send. A future implementation needs `firebase_messaging`, token persistence, current FCM sends, APNs setup, and device testing. |
 | iOS Firebase config is partial | There is no `ios/Runner/GoogleService-Info.plist`, and `firebase_options.dart` declares `iosBundleId: 'com.example.uractor'` while Xcode builds `com.uractor.uractorios`. Neither stops an iOS build or a sign in, because Firebase is configured from Dart, but APNs, `firebase_messaging` and App Check would all need the plist. |
-| iOS is not released to the App Store automatically | `.github/workflows/release-appstore.yml` submits a version for review and, as a second deliberate run, releases it once Apple approves. Neither happens on merge: Apple reviews every version by hand, so there is no equivalent of Play's promote-and-it-is-live. The version record and its store metadata are still created in App Store Connect. |
+| iOS is not released to the App Store automatically | Stage 2 of `.github/workflows/release-production.yml` submits a version for review and, as a second deliberate run, releases it once Apple approves. Neither happens on merge: Apple reviews every version by hand, so there is no equivalent of Play's promote-and-it-is-live. The version record and its store metadata are still created in App Store Connect. |
 | Coverage is uneven | The API layer, the data objects and the popups are covered; the full screens under `lib/` still have very few widget tests. See [Tests](#tests). |
 | A friend's watch progress cannot be set from your device | Tagging a friend on a calendar entry writes to their calendar and seen-with records, but `firestore.rules` lets a client write its own `Progress` document and nobody else's. So an entry naming an episode no longer marks the show fully seen for them — which would be a lie — but it cannot record them as part way through it either, and the show reads as not started on their side until they log it themselves. Closing this needs the write to move behind a Cloud Function. |

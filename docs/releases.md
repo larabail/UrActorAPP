@@ -1,21 +1,42 @@
 # Releasing
 
-Three workflows, split by risk and by store. Internal testing is automatic;
-production is not.
+Two pipelines, split by risk rather than by platform. Internal testing is
+automatic; production is not. Each covers all three platforms in one run.
 
-| | Internal testing | TestFlight | Production | App Store |
-|---|---|---|---|---|
-| Store | Play | App Store | Play | App Store |
-| Trigger | every merge to `master` | every merge to `master` | manual only | manual only |
-| Builds? | yes | yes | no, promotes an existing build | no, promotes an existing build |
-| Who can run it | anyone merging | anyone merging | you, via environment approval | you, via environment approval |
-| Rollout | all testers | all testers | your choice, 5–100% | Apple reviews, then you release |
+| | Internal testing | Production |
+|---|---|---|
+| Workflow | `release-internal.yml` | `release-production.yml` |
+| Trigger | every merge to `master` | manual only |
+| Who can run it | anyone merging | you, via environment approval |
+| 1. Android | builds and uploads to Play internal | promotes that build, 5–100% |
+| 2. iOS | builds and uploads to TestFlight | submits for review, then releases |
+| 3. Desktop | builds installers onto the run | rebuilds, publishes, updates the site |
 
-The iOS half runs on macOS runners, which are slower than Linux by roughly five
-to one and are the one part of this worth a deliberate decision. See
-[Releasing to TestFlight](#releasing-to-testflight). Publishing to the App
-Store is [its own workflow](#releasing-to-the-app-store) and is two runs rather
-than one, because Apple reviews every version by hand before it can go live.
+### The stages run in parallel
+
+The numbering is the order they are *reported* in, not the order they run in.
+All three start together, because nothing one of them does can affect another
+and serialising them would make every merge cost the sum of the three — roughly
+fifty-five minutes — instead of the longest, roughly twenty-five.
+
+The consequence is that a stage can fail on its own. A merge can reach Play and
+not TestFlight, and neither stage knows about the other. The `summary` job at
+the end of each pipeline is what states plainly which platforms shipped, and it
+is the thing to read rather than the list of job results.
+
+A stage whose credentials are missing is **skipped, not failed**. The iOS and
+desktop halves were both committed before their secrets existed, and a pipeline
+that goes red on every merge until someone finishes gathering certificates
+trains people to ignore it.
+
+### Why they used to be five workflows
+
+Play, TestFlight and a tag-triggered desktop release were three separate files,
+with production split again between Play and the App Store. A single merge
+therefore produced two runs plus a manual third, each with its own idea of what
+"this release" was, and a tester reporting a bug had to be told which of them to
+look at. The desktop half in particular was so easy to forget that it lagged the
+other two by weeks.
 
 ## How the split works
 
@@ -23,6 +44,22 @@ Merging to `master` builds a signed bundle and ships it to internal testers.
 Production takes the bundle testers already installed and moves it across
 without rebuilding, so the artifact that goes live is byte-for-byte the one
 that was verified. Rebuilding for production would discard that evidence.
+
+Desktop is the exception and rebuilds, because there is nothing to promote:
+see [Releasing the desktop apps](#releasing-the-desktop-apps).
+
+### One verification, not three
+
+Both `flutter analyze` and `flutter test` run once per release, in a `verify`
+job on Linux, and every platform stage waits on it. They are platform
+independent and already ran on the pull request, but a merge commit is a
+combination neither branch tested on its own — so they are repeated, on the
+runner where they cost five minutes rather than being paid three times over on
+two macOS runners and a Windows one.
+
+The Cloud Functions deploy waits on `verify` too, and every platform stage waits
+on the deploy. See
+[The Cloud Functions deploy](#the-cloud-functions-deploy-only-runs-when-the-functions-change).
 
 Every release runs inside a Play *edit transaction*: open, change, commit.
 Nothing is visible on Play until the commit succeeds, so a failed run cannot
@@ -38,27 +75,80 @@ therefore drifts out of date and collides — which is exactly what happened to
 build 45. The workflow asks Play for the highest code ever used and adds one.
 
 The `version:` line in `pubspec.yaml` supplies the user-facing name (`3.5.4`);
-the `+build` half is not read when building a release. It is written, though:
-after a successful upload the workflow commits the code it just shipped back
-onto `master`, so the file records the last build testers received rather than
-drifting for months. Nobody edits it by hand.
+the `+build` half is not read when building a release. It is recorded, though:
+after a successful upload the workflow opens a pull request setting the suffix
+to the code it just shipped, so the file records the last build testers received
+rather than drifting for months. Nobody edits it by hand.
 
 That write-back is a separate job in `release-internal.yml`, and the only place
-in either release workflow that a token can write to the repository:
+in either pipeline outside the desktop stage that a token can write to the
+repository.
 
-- **It pushes with the built-in `GITHUB_TOKEN`.** GitHub does not start new
-  workflow runs from pushes made with that token, and that is the only reason
-  a workflow triggered by `master` can commit to `master` without releasing
-  forever. A personal access token, a deploy key or a GitHub App token would
-  all remove that protection. The `[skip ci]` in the commit subject is a
-  second guard, not the mechanism.
-- **A rejected push is retried.** An ordinary merge can land between the
-  checkout and the push. The job fetches `master` again, re-applies the number
-  and retries, three times, then gives up.
+**It arrives as a pull request rather than a push, and that is not a style
+choice.** `master` requires a pull request, and `github-actions[bot]` cannot be
+excused from that rule on this repository. Both mechanisms refuse it, for the
+same underlying reason — the GitHub Actions app is not *installed* on a
+user-owned account, so there is no identity to name:
+
+- **Classic branch protection** accepts bypass entries only for GitHub Apps
+  installed on the repository. Adding `github-actions` to
+  `bypass_pull_request_allowances` is accepted by the API and then silently
+  dropped; reading the setting back returns an empty `apps` list.
+- **A repository ruleset** refuses it outright rather than silently, with
+  `422 Actor GitHub Actions integration must be part of the ruleset source or
+  owner organization`. Rulesets do support bypass actors properly — but only for
+  actors the account has, which here means repository roles and deploy keys.
+
+What was rejected, and why:
+
+- **A personal access token or a GitHub App key** would work, and puts a
+  long-lived credential with write access to `master` into repository secrets.
+  A worse trade than a stale integer, and worse than a pull request to approve.
+- **Moving `master` off its protection**, or granting the bypass to a deploy
+  key, weakens the rule that stops unreviewed code shipping to testers. The
+  point of the rule is that it has no exceptions.
+- **Dropping the write-back entirely** was the honest alternative and remains
+  one. It was kept because the promotion path reads the number back out.
+
+The job:
+
+- **Depends on one repository setting.** *Settings → Actions → General →
+  Workflow permissions → "Allow GitHub Actions to create and approve pull
+  requests"* must stay on. It gates creation as well as approval, despite the
+  name, and `permissions: pull-requests: write` in the workflow does not
+  override it. Turned off, every release pushes the branch and then fails to
+  open anything, reporting it in the run summary. It is safe to have on here:
+  `CODEOWNERS` covers `*` and review from code owners is required, so an
+  approval from `github-actions[bot]` cannot satisfy the review gate.
+- **Rebuilds one branch, `chore/build-number`, from `master` every release**
+  and force-pushes it, so the pull request is always exactly "master plus this
+  build number" — one commit, one line. There is at most one open at a time; if
+  several releases go by unmerged, the newest simply overwrites the branch, and
+  merging it records the latest build. A branch per release would leave a queue
+  of pull requests recording builds that have already been superseded.
+- **Can conflict, and that is not worth fixing.** A version name bump landing
+  on `master` after the branch is pushed touches the same `version:` line, so
+  the pull request becomes unmergeable until the next release rewrites the
+  branch. Close it, or leave it; the number is a record, never an input, so
+  nothing is lost by skipping one.
+- **Cannot start a release, but merging it can.** The bot never pushes to
+  `master`, so nothing it does triggers anything. A person merging the pull
+  request does push to `master`, and `pubspec.yaml` is not in the workflow's
+  `paths-ignore`, so without a guard that merge would ship a fresh build and
+  open another one of these. The skip-ci marker in the subject is what stops
+  it, and it is now the mechanism rather than a second line of defence. It is
+  in the pull request title as well as the commit subject, because a squash
+  merge takes its subject from one or the other.
+- **Its checks do not start on their own.** GitHub does not trigger workflow
+  runs for a pull request opened with the built-in `GITHUB_TOKEN`, so the
+  required contexts never report and the merge button stays blocked. Close and
+  reopen the pull request to make them run as normal, or merge it with the
+  administrator override. The pull request body says so each time.
 - **It never fails the run.** The bundle is already on Play before this job
-  starts. A write-back that cannot be made is reported loudly in the run
-  summary and left for a person, rather than turning a release that shipped
-  into a red run.
+  starts. A record that cannot be made is reported loudly in the run summary
+  and left for a person, rather than turning a release that shipped into a red
+  run. The job is `continue-on-error` as well, so that a step failing before
+  the script runs cannot redden it either.
 
 ## Restricting production to you
 
@@ -70,6 +160,13 @@ rules are not offered on private repositories on the Free plan — and they are
 configured under **Settings → Environments → production → Required reviewers**.
 A run that targets the environment stops and waits for an approval in the UI.
 Editing a workflow file does not get past it.
+
+The environment is held by a single `approve` job that does nothing else, and
+every stage waits on it. One approval therefore covers the whole release, on all
+three platforms. Putting `environment: production` on each stage instead would
+record a deployment per store, which is genuinely nicer to read afterwards, but
+it asks for the approval once per job — and three clicks to answer one question
+is how people learn to click through approvals without reading them.
 
 **The `authorize` job** runs first and checks the login that started the run
 against the `RELEASE_MANAGERS` repository variable, defaulting to `larabail`.
@@ -84,49 +181,47 @@ required reviewers, keeping write access limited, and protecting `master`.
 
 Deployments are recorded against the `production` environment either way.
 
-## The Cloud Functions deploy is gated too
+## The Cloud Functions deploy only runs when the functions change
 
-`release-internal.yml` runs on every merge to `master`, and two of its three
-jobs are limited to people who opted in: `release` uploads to Play's internal
-track, and the TestFlight workflow does the same on iOS. The `functions` job is
-not. It deploys to the live `actordb-cf981` project that every installed app
-talks to, including everyone on the App Store and on Play production, so a bad
-deploy there is felt by users who never signed up to test anything.
+`release-internal.yml` runs on every merge to `master`, and its three platform
+stages are limited to people who opted in: Play's internal track, TestFlight, or
+downloading an installer from the run. The `functions` job is not. It deploys to
+the live `actordb-cf981` project that every installed app talks to, including
+everyone on the App Store and on Play production, so a bad deploy there is felt
+by users who never signed up to test anything.
 
-It therefore targets a `functions` environment with the same required reviewer,
-and a merge waits for an approval before the server side moves. Review on the
-pull request already stops unreviewed code reaching `master`; this is the
-second gate, for the approved-but-wrong change that review did not catch.
+It used to wait for a manual approval on every merge. That was one click per
+merge whether or not the merge had anything to do with the functions, and most
+do not — so the click became routine, and a gate people click through without
+reading is not a gate.
 
-Order still matters when it is approved: functions deploy before the app is
+The approval has been replaced by the path filter the previous version of this
+section recommended. `preflight` compares the push against the commit `master`
+was on before it, and the deploy simply does not happen unless something under
+`functions/` changed. That removes the noise rather than the caution: the
+deploys that do run are the ones worth watching, and there are far fewer of
+them.
+
+A run that cannot work out what changed — a manual `workflow_dispatch`, a first
+push, or a `before` commit missing from the clone — deploys rather than
+skipping. Guessing wrong in that direction costs a redundant deploy; guessing
+wrong the other way silently withholds a change somebody asked for.
+
+Order still matters when it does run: functions deploy before **any** app is
 uploaded, because a build that reaches testers expecting a callable that is not
-deployed yet fails on the device.
+deployed yet fails on the device — as true on iOS and on the desktop as it is on
+Android. All three stages therefore wait on it, where previously only the
+Android one did.
 
-The cost is one approval per merge. If that becomes tiresome, put a path filter
-on the job so it only runs when `functions/` changed, rather than removing the
-gate.
-
-## The build number is no longer written back
-
-The `record` job used to push the Play-assigned build number to `master`.
-Branch protection now requires a pull request for every push to `master`, and
-`github-actions[bot]` is not a bypass actor, so that push is refused.
-
-Nothing about a release depends on it. The workflow asks Play for the next free
-code on every run, so the number in `pubspec.yaml` was only ever a record of the
-last build that reached testers, never an input. The step was already written so
-that it cannot fail a run that has already shipped, so it reports the refusal in
-the run summary and stops there.
-
-The consequence is that the `+BUILD` suffix on `master` now goes stale. Read the
-run summary, not `pubspec.yaml`, for the code a build actually shipped with.
-
-> Repository secrets are readable by any workflow that runs. Treat write access
-> to this repo as equivalent to holding the signing key.
+If a deploy ever needs holding back again, the approval is one `environment:`
+block on the job away.
 
 ## Secrets
 
 Set these under **Settings → Secrets and variables → Actions**.
+
+> Repository secrets are readable by any workflow that runs. Treat write access
+> to this repo as equivalent to holding the signing key.
 
 | Secret | What it is |
 |---|---|
@@ -159,15 +254,15 @@ deletes them in an `always()` step, so they never persist on the runner.
 
 ## Releasing to TestFlight
 
-The iOS side is **Release to TestFlight**, and it mirrors the internal testing
-workflow: every merge to `master` builds a signed IPA and uploads it, and
+TestFlight is stage 2 of `release-internal.yml`, and it mirrors the Android
+stage beside it: every merge to `master` builds a signed IPA and uploads it, and
 Apple's TestFlight stands in for Play's internal track. Nothing about it needs
 a Mac or an iOS device; the macOS runner is the Mac.
 
-The workflow is committed but starts inert. Until every secret below is set,
-the `preflight` job records what is missing in the run summary and the
-expensive job never starts, so merging this does not turn every merge red
-while you are still gathering credentials.
+The stage is committed but starts inert. Until every secret below is set, the
+`preflight` job records what is missing in the run summary and the expensive job
+never starts, so merging this does not turn every merge red while you are still
+gathering credentials.
 
 ### What it costs
 
@@ -179,11 +274,12 @@ elsewhere in this repo exist.
 
 What it still costs is time. Most of the job is spent compiling gRPC and
 Firestore from source, so expect 20–30 minutes per release against about five
-for the Android half.
+for the Android stage. Because the stages run in parallel, that is also roughly
+what the whole pipeline costs.
 
-If that wait is not worth it on every merge, delete the `push` trigger from
-`.github/workflows/release-testflight.yml` and run it by hand. Nothing else in
-the workflow depends on how it was started.
+If that wait is not worth it on every merge, add an `if:` to the `ios` job so it
+only runs on `workflow_dispatch`. Removing the `push` trigger is no longer an
+option, since it is the trigger for the Android stage as well.
 
 ### The runner image decides whether a release is possible
 
@@ -347,18 +443,29 @@ yet.
 
 ## Releasing to the App Store
 
-**Actions → Release to the App Store → Run workflow.**
+Stage 2 of **Release to production**, driven by the `ios_action` input.
 
 TestFlight is not the App Store. A build sitting in TestFlight is available to
-testers and nobody else; putting it in front of the public is this workflow,
-and it is deliberately two runs rather than one.
+testers and nobody else; putting it in front of the public is this stage, and it
+is deliberately two runs rather than one.
 
 | Input | Meaning |
 | --- | --- |
-| Action | `submit` sends a version to Apple for review; `release` publishes one Apple has already approved |
-| Version | Marketing version, e.g. `3.14.2`. It must already exist in App Store Connect |
-| Build | Only for `submit`. Blank uses the newest build Apple holds |
-| Dry run | Resolves and checks everything, then stops before writing |
+| `ios_action` | `submit` sends a version to Apple for review; `release` publishes one Apple has already approved; `skip` leaves iOS alone |
+| `version` | Marketing version, e.g. `3.14.2`. It must already exist in App Store Connect. Blank reads it from the promoted commit |
+| `ios_build` | Only for `submit`. Blank uses the newest build Apple holds |
+| `dry_run` | Resolves and checks everything, then stops before writing |
+
+The second run is the one that catches people out. **Set `android: skip` and
+`desktop: skip` on it.** Left at their defaults, the Android stage promotes
+whatever internal builds landed during Apple's day or two of review — code
+nobody chose to release — straight to Play production, and the desktop stage
+publishes a GitHub release and a downloads-site manifest built from `master` as
+it is now rather than from what Apple approved.
+
+Neither is a rejected write that fails loudly. Play accepts a higher version
+code happily, so the first sign of it would be users on a build that was never
+promoted deliberately.
 
 ### Why it is two runs
 
@@ -412,59 +519,107 @@ Create the version in App Store Connect, fill it in, then run this.
 
 ## Releasing to production
 
-**Actions → Release to production → Run workflow.**
+**Actions → Release to production → Run workflow.** One run covers all three
+platforms.
 
 | Input | Meaning |
 |---|---|
-| Version code | Blank promotes the latest internal build |
-| Rollout | Share of users; start small |
-| Status | `inProgress` goes live, `draft` stages it in Play for review |
+| `version_code` | Play version code to promote. Blank promotes the latest internal build |
+| `commit` | The commit that produced it, from the internal run's summary |
+| `rollout` | Android: share of users; start small |
+| `status` | Android: `inProgress` goes live, `draft` stages it in Play for review |
+| `android` | `promote` or `skip` |
+| `ios_action` | `submit`, `release`, or `skip`. See [Releasing to the App Store](#releasing-to-the-app-store) |
+| `ios_build` | iOS: build to attach when submitting. Blank uses the newest Apple holds |
+| `desktop` | `publish` builds and publishes the installers, `skip` leaves them alone |
+| `version` | Marketing version for iOS and desktop. Blank reads it from the promoted commit |
+| `dry_run` | Resolve, build and check everything, then stop before writing to any store |
 
-Approve the deployment when prompted. To widen or halt a rollout afterwards,
-use the Play Console — a halted rollout stops new users receiving the update,
-but does not remove it from anyone who already has it.
+Every stage can be skipped independently, and that is load bearing rather than a
+convenience — see [Releasing to the App Store](#releasing-to-the-app-store) for
+the run where it matters.
 
-The promotion refuses to go backwards. If production already serves a higher
-version code than internal, the run fails with an explanation rather than
+Approve the deployment when prompted — once, for the whole release. To widen or
+halt an Android rollout afterwards, use the Play Console: a halted rollout stops
+new users receiving the update, but does not remove it from anyone who already
+has it. There is no equivalent for desktop, and Apple's phased release is a
+fixed seven-day ladder rather than a dial.
+
+The commit and the version are resolved once, in a `resolve` job, and handed to
+all three stages. Three stages working that out for themselves would be three
+chances to disagree, and the disagreement would only become visible afterwards
+— in an installer and a store listing naming different versions.
+
+`version` is read from `pubspec.yaml` **at the promoted commit**, not at `HEAD`.
+Promoting a fortnight-old build while `master` has moved on to 3.17.0 would
+otherwise publish a desktop installer and an App Store version named after a
+release the promoted binary is not.
+
+The Android promotion refuses to go backwards. If production already serves a
+higher version code than internal, the run fails with an explanation rather than
 being rejected by Play. That happens when a build is uploaded to production by
 hand, which leaves production ahead of the track it is supposed to be promoted
 from; the fix is to build a newer version rather than to promote an older one.
 
+### What `dry_run` actually skips
+
+Not the same thing on each platform, and worth knowing before relying on it.
+
+- **iOS** has a real dry run: `tool/appstore.py` resolves the version and the
+  build, checks the state it would be writing over, and stops.
+- **Android** does not. Every path through `tool/play.py` opens a real Play
+  edit, so the stage stops short of calling it and prints what it would have
+  called it with.
+- **Desktop** builds both installers, which is most of the value, and skips the
+  GitHub release, the tag and the hosting deploy.
+
 ## Releasing the desktop apps
 
-macOS and Windows are built by `.github/workflows/release-desktop.yml`, which
-publishes the installers to a GitHub release and updates
-`downloads.uractor.com`.
+Stage 3 of both pipelines. Internally, the installers are built, signed and
+notarised exactly as a production one is and left as artifacts on the run.
+In production they are rebuilt, published to a GitHub release and
+`downloads.uractor.com` is updated.
 
-### It runs on a tag, not on a merge
+### It is the one stage that rebuilds
 
-```bash
-# bump `version:` in pubspec.yaml first, and land it
-git tag v3.16.0 && git push origin v3.16.0
-```
+Play and Apple both hold the tested binary and can move it between tracks.
+Nothing holds a desktop build except the run that made it, and those artifacts
+expire — so production rebuilds, from the promoted commit rather than from
+`HEAD`, which makes it at least the same source testers ran.
 
-Unlike the mobile releases, this is not triggered by merging to `master`. Two
-reasons, and both are deliberate:
+### Internal testing has no store to upload to
 
-- The macOS half takes around twenty-five minutes against roughly five on
-  Linux, because most of it is spent compiling gRPC and Firestore from source,
-  and it would run on every merge for a build nobody had asked to publish.
-- There is no desktop equivalent of a staged rollout. Whatever is published
-  is what people download, immediately.
+Desktop has no test track, so its equivalent is the run itself: the installers
+are attached to the internal run and a tester downloads them from there. Nothing
+is published and `downloads.uractor.com` is untouched, so no existing install
+learns there is a new version.
 
-The tag is the source of truth for the version, and the preflight job refuses
-the run if it disagrees with `pubspec.yaml`. A release whose installer,
-download page and in-app update notice named different versions would be
-worse than no release at all.
+That last part is the whole distinction. There is no desktop equivalent of a
+staged rollout — whatever is published is what people download, immediately,
+with no way to hold it back — so "internal" has to mean *not published at all*.
+
+The macOS build is still notarised even though it is never published. A tester
+on Sequoia or later cannot open an un-notarised app at all, since the
+right-click-to-open bypass is gone, so skipping it would produce an internal
+build nobody could install.
+
+### It no longer runs on a tag
+
+Desktop used to be released by pushing a `v*` tag, with a preflight job that
+refused the run if the tag disagreed with `pubspec.yaml`. That check is gone
+because the thing it was checking is gone: the version now comes from
+`pubspec.yaml` at the commit being released, so there is no second source for it
+to disagree with. The `v<version>` tag is still created, by the production run,
+as part of publishing the GitHub release.
 
 ### What it produces
 
-| Artifact | Where it goes | Why there |
+| Artifact | Internal | Production |
 |---|---|---|
-| `UrActor-<version>-macos.dmg` | GitHub release | Free CDN, no bandwidth billing |
-| `UrActor-<version>-windows-setup.exe` | GitHub release | Same |
-| `.sha256` for each | GitHub release | Lets a cautious Windows user verify the file the SmartScreen warning is about |
-| `index.html`, `version.json` | Firebase Hosting | Small, and it is where the domain already lives |
+| `UrActor-<version>-macos.dmg` | run artifact | GitHub release |
+| `UrActor-<version>-windows-setup.exe` | run artifact | GitHub release |
+| `.sha256` for each | run artifact | GitHub release |
+| `index.html`, `version.json` | not built | Firebase Hosting |
 
 The installers are deliberately **not** on Firebase Hosting. It bills per
 gigabyte past its free tier and these files are over a hundred megabytes, so
@@ -474,6 +629,11 @@ release assets over a CDN for nothing.
 `version.json` is what a running copy of the app polls to discover it is out
 of date, so it is deployed **last** — after the release and its assets exist.
 Publishing it first would point every install at a download that 404s.
+
+The two builds are separate jobs, because macOS and Windows cannot be cross
+compiled, and publishing is a third that waits for both. A GitHub release
+carrying only one installer is worse than none: the downloads page would offer a
+link that 404s for half its visitors.
 
 ### macOS: one certificate you do not have yet
 
@@ -584,7 +744,8 @@ Signing later is a small change and does not touch the app:
   about $10/month, is the only option that works cleanly in CI. Since June 2023
   every OV and EV certificate must live on a hardware token or HSM, which
   rules out putting a `.pfx` in a secret.
-- Add a signing step to the `windows` job before the installer is built, and
+- Add a signing step to the `desktop_windows` job before the installer is built,
+  and
   delete the warning from the downloads page and the release body.
 - Reputation is per-publisher and builds with installs, so the warning fades
   rather than vanishing the day it is signed.

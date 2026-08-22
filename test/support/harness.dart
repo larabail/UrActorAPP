@@ -161,18 +161,6 @@ void ignoreInkSplashAdvisory() => _ignoreFlutterErrors(
     (details) =>
         details.exceptionAsString().contains('ink splashes may be invisible'));
 
-/// Stops a layout overflow from failing the current test.
-///
-/// Use this only where the popup under test overflows at *every* window size,
-/// so no surface can avoid it -- the settings dialogue pins itself to the
-/// minimum dialogue width and its bottom row does not fit inside that. That is
-/// a real defect, but it is one this change is not fixing, and leaving it
-/// fatal would mean the dialogue could not be covered at all.
-///
-/// Prefer [usePhoneSurface] wherever a taller or wider window is enough.
-void ignoreOverflowErrors() => _ignoreFlutterErrors(
-    (details) => details.exceptionAsString().contains('RenderFlex overflowed'));
-
 /// Stops a failed network image from failing the current test.
 ///
 /// A widget test has no network: every request is answered with a 400, and
