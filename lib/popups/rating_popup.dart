@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uractor/common/firebase/review_service.dart';
 import 'package:uractor/common/firebase/firestore_core.dart';
+import 'package:uractor/common/widgets/app_dialog.dart';
 import '../main.dart';
 
 final myController = TextEditingController(text: "");
@@ -88,135 +89,92 @@ class _RatingDialogState extends State<RatingDialog> {
       ratingStarFunction(int.parse(reviewInfo["Rating"]));
       got = true;
     }
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[900],
-          borderRadius: BorderRadius.circular(10.0),
+    return AppDialog(
+      actions: [
+        AppDialogAction(
+          label: 'Not now',
+          icon: Icons.close,
+          tone: AppDialogTone.cancel,
+          onPressed: () => Navigator.pop(context),
         ),
-        padding: const EdgeInsets.all(25.0),
-        child: SingleChildScrollView(
-          child: ListBody(
-            children: <Widget>[
-              const Text(
-                'Opinion',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+        AppDialogAction(
+          label: 'Submit',
+          icon: Icons.check,
+          tone: AppDialogTone.confirm,
+          onPressed: submit,
+        ),
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Text(
+            'Opinion',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          TextField(
+            controller: myController,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.white,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Enter your opinion',
+              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+              enabledBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.white),
               ),
-              TextField(
-                controller: myController,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.white,
+              focusedBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.white),
+              ),
+            ),
+            onChanged: (value) {
+              setState(() {
+                opinion = value;
+              });
+            },
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Your Rating',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          Wrap(
+            // The spacing used to be -6, which pulled each star back over the
+            // one before it. Wrap decides where to break from the widths it is
+            // given, so a negative gap let ten stars measure narrower than they
+            // draw and the row ran off the edge instead of wrapping. Making the
+            // buttons compact is what fits them; letting Wrap wrap is what
+            // stops them clipping when a large text scale means they cannot.
+            alignment: WrapAlignment.center,
+            children: List.generate(
+              10,
+              (index) => IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(
+                  width: 32,
+                  height: 40,
                 ),
-                decoration: InputDecoration(
-                  hintText: 'Enter your opinion',
-                  hintStyle:
-                      TextStyle(color: Colors.white.withValues(alpha: 0.6)),
-                  enabledBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white),
-                  ),
-                  focusedBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white),
-                  ),
+                iconSize: 26,
+                icon: Icon(
+                  Icons.star_rate_outlined,
+                  color: index < rating ? Colors.yellow[600] : Colors.white,
                 ),
-                onChanged: (value) {
-                  setState(() {
-                    opinion = value;
-                  });
+                onPressed: () {
+                  ratingStarFunction(index + 1);
                 },
               ),
-              const SizedBox(height: 10),
-              const Text(
-                'Your Rating',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              Wrap(
-                spacing: -6,
-                children: List.generate(
-                  10,
-                  (index) => IconButton(
-                    icon: Icon(
-                      Icons.star_rate_outlined,
-                      color: index < rating ? Colors.yellow[600] : Colors.white,
-                    ),
-                    onPressed: () {
-                      ratingStarFunction(index + 1);
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      submit();
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[900],
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.check, color: Colors.green),
-                          SizedBox(width: 5),
-                          Text(
-                            'Submit',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[900],
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.close, color: Colors.red),
-                          SizedBox(width: 5),
-                          Text(
-                            'Not now',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

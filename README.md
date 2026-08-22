@@ -236,6 +236,34 @@ list occupying half a wide window sizes its contents to the half it has.
 Inside a pane, read the size class from `context.sizeClass`, never from
 `MediaQuery`.
 
+### Dialogues
+
+Every popup is an `AppDialog` (`lib/common/widgets/app_dialog.dart`). It owns
+the inset, the panel, the scrolling and the action row, so a popup supplies a
+title, a body and a list of `AppDialogAction`s and nothing else. Do not build
+a `Dialog` or an `AlertDialog` by hand: twelve popups each did, and each
+re-derived the same layout slightly differently wrong.
+
+What the shell settles once, so no popup has to:
+
+- **The panel takes the width it is offered**, up to a 560pt ceiling. A
+  dialogue whose content never asks for a width sits at the framework's 280pt
+  minimum instead, which on a phone throws away a third of the screen.
+- **Only the body scrolls.** The title and the buttons are pinned, so a long
+  form moves under a heading that stays put and the buttons cannot scroll off.
+- **The action row is an `OverflowBar`**, so it stacks when the labels grow
+  rather than clipping. That is what makes it safe at a large text scale and
+  in a language whose words are longer than English's.
+- **The panel is the `Dialog`'s own `Material`.** Painting it with a
+  `Container` instead puts the `Material` above the list tiles, and their ink
+  splashes have nothing to land on.
+
+The same rule as tiles applies inside one: **never give a list a fixed
+height.** A vertical list should shrink-wrap and let the dialogue scroll —
+`FriendPicker` (`lib/common/widgets/friend_picker.dart`) is the shared one, and
+it is what the four hardcoded 125pt friend lists became. Only a horizontal
+strip needs to be told how tall it is.
+
 ## Getting started
 
 ### Prerequisites

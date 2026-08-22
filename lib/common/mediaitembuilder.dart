@@ -180,7 +180,11 @@ Widget getCover(Map data, context, MediaItem mediaItem, String type) {
               children: [
                 IconButton(
                   onPressed: () {
-                    showModalBottomSheet(
+                    // A dialogue rather than a bottom sheet: the sheet capped
+                    // itself at 9/16 of the screen and rendered 233pt of the
+                    // 500 it asked for, which is why the friend list was the
+                    // most cramped thing here.
+                    showDialog<bool>(
                       context: context,
                       builder: (_) {
                         MediaItem tempItem = type == "movie"
