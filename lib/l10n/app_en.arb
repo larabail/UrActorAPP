@@ -364,10 +364,22 @@
   "joinListMissingDetails": "Enter both a list name and an access code.",
   "joinListUnavailable": "Could not join the list. Please try again.",
   "joinListTitle": "Join List",
+  "recommendationSendFailed": "Could not send your recommendation. Please try again.",
+  "@recommendationSendFailed": {
+    "description": "Shown when recommending a title to friends reached nobody, because the server refused the call or could not be reached."
+  },
+  "recommendationSendPartial": "Some of your friends could not be sent this.",
+  "@recommendationSendPartial": {
+    "description": "Shown when a recommendation reached some of the chosen friends but not all of them, usually because one of them is no longer a friend."
+  },
   "enterListName": "Please enter a list name",
   "listName": "List Name",
   "accessCodeLabel": "Access Code",
   "add": "Add",
+  "accept": "Accept",
+  "@accept": {
+    "description": "Confirm button on the share sheet, which sends the chosen friends a recommendation."
+  },
   "confirmWatchedToday": "Did you watch this movie today?",
   "deleteCalendarEntry": "Delete Calendar Entry",
   "deleteCalendarEntryQuestion": "Do you want to delete this from just your calendar or everyone's?",

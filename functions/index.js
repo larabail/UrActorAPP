@@ -21,6 +21,13 @@ const {
   trimOmdbResponse,
 } = require('./omdb');
 const {
+  normalizeRecommendRequest,
+  nextNotificationKey,
+  isDenselyKeyed,
+  listsFriend,
+  buildNotification,
+} = require('./friend_writes');
+const {
   isLibraryWrite,
   libraryFrom,
   trimCredits,
@@ -175,6 +182,129 @@ exports.joinPlaylist = onCall({region: REGION}, async (request) => {
   logger.info('User joined playlist', {uid, playlistId: playlist.id});
   return {id: playlist.id, alreadyMember: false};
 });
+
+// Recommending a title to a friend.
+//
+// The client used to write straight into the recipient's Notifications
+// document, and `sender` was built entirely on the writer's device. Nothing
+// checked it, so a friend could file a recommendation in your inbox
+// attributed to a third party. firestore.rules now pins `sender.uid` to the
+// authenticated writer, but only because a notification's key can be
+// reconstructed; it still cannot tell whether `username` belongs to that uid,
+// and it cannot look the sender's name up. Here the whole of `sender` is
+// derived from the auth context and the caller's own Settings document, so the
+// payload has no say in it at all.
+//
+// The old path was also a read-modify-write of the whole document with an
+// unmerged set(), so two people recommending at the same moment silently lost
+// one of the two. The append below runs in a transaction and merges.
+exports.recommendTitle = onCall({region: REGION}, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Sign in before recommending.');
+  }
+
+  const parsed = normalizeRecommendRequest(request.data);
+  if (!parsed.ok) {
+    throw new HttpsError(
+      'invalid-argument',
+      'Provide a title and at least one friend to send it to.',
+    );
+  }
+
+  const settings = (await db.collection(uid).doc('Settings').get()).data();
+  const notification = buildNotification({
+    id: parsed.id,
+    type: parsed.type,
+    title: parsed.title,
+    coverPhoto: parsed.coverPhoto,
+    senderUid: uid,
+    senderUsername: settings?.username,
+  });
+
+  const skipped = [];
+  let delivered = 0;
+
+  // One transaction per recipient rather than one across all of them: a
+  // stranger in the list, or an inbox that cannot be appended to, should cost
+  // the other recipients nothing.
+  for (const friendUid of parsed.friends) {
+    // Recommending to yourself is not a thing the app offers, and the check
+    // below would only pass for someone who had written themselves into their
+    // own friends list. Skipping here saves the read.
+    if (friendUid === uid) {
+      skipped.push(friendUid);
+      continue;
+    }
+
+    const friendsDoc = await db.collection(friendUid).doc('Friends').get();
+    // The TARGET's list, never the caller's own -- same asymmetry as
+    // friendOf() in firestore.rules. Anyone may write their own friends list,
+    // so reading it here would let a stranger add you and reach your inbox.
+    if (!listsFriend(friendsDoc.data(), uid)) {
+      logger.info('Recommendation skipped: not a friend', {uid, friendUid});
+      skipped.push(friendUid);
+      continue;
+    }
+
+    try {
+      await appendNotification(friendUid, notification);
+      delivered += 1;
+    } catch (error) {
+      if (error instanceof HttpsError) throw error;
+      logger.warn('Recommendation could not be delivered', {
+        uid,
+        friendUid,
+        message: error?.message,
+      });
+      skipped.push(friendUid);
+    }
+  }
+
+  return {delivered, skipped};
+});
+
+// Appends one notification to a recipient's inbox.
+//
+// The key is `String(number of keys already present)`, and that is not a
+// detail: appendsOneNotificationOnly() in firestore.rules validates the
+// appended entry by rebuilding exactly that key, because a key added by a
+// write is otherwise only reachable as a Set member. Builds already on
+// people's phones append the same way (lib/popups/share.dart), so a uuid or a
+// timestamp here would leave the document sparse and every later write from an
+// old client would read as a change rather than an add and be refused.
+//
+// Reading the count and writing the entry have to happen together, which is
+// what the transaction is for -- two concurrent recommendations both computing
+// the same key is precisely how the old client lost one of them.
+async function appendNotification(friendUid, notification) {
+  const ref = db.collection(friendUid).doc('Notifications');
+
+  await db.runTransaction(async (tx) => {
+    const snapshot = await tx.get(ref);
+    const existing = snapshot.exists ? snapshot.data() : {};
+
+    // An inbox that is not densely keyed -- one an owner has deleted an entry
+    // from -- has no safe place to append. The dense key may sit on top of a
+    // notification the recipient has not read, and anywhere else widens the
+    // gap and leaves the document permanently unwritable by a build already on
+    // someone's phone. Refusing costs this one recommendation; the
+    // alternatives cost someone else's, or all of their future ones.
+    if (!isDenselyKeyed(existing)) {
+      throw new Error(`Notifications for ${friendUid} are not densely keyed`);
+    }
+
+    const key = nextNotificationKey(existing);
+
+    // merge, so nothing that arrived between the read and the write is lost,
+    // and so an inbox that does not exist yet is created rather than throwing.
+    tx.set(
+      ref,
+      {[key]: {...notification, timestamp: FieldValue.serverTimestamp()}},
+      {merge: true},
+    );
+  });
+}
 
 // Keeps `memberUids` in step with `Users`.
 //
