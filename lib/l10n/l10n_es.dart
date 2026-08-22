@@ -770,6 +770,10 @@ class SEs extends S {
       'No se pudo conectar con el servidor. Comprueba tu conexión.';
 
   @override
+  String get blockedAppError =>
+      'Esta versión de la aplicación no tiene permiso para iniciar sesión. Volver a intentarlo no servirá de nada.';
+
+  @override
   String updateAvailable(String version) {
     return 'UrActor $version ya está disponible';
   }

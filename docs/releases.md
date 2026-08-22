@@ -809,6 +809,15 @@ Sign in working in development does not prove it works when distributed. If it
 is broken, the symptom is `firebase_auth/keychain-error` and every correct
 password is refused. See the Platforms section of `README.md`.
 
+That check was worth asking for, but when it was finally run the cause turned
+out to be something else: the API key restriction, not the keychain. A macOS
+build signed and entitled correctly is still refused, because it borrows the
+iOS registration and its bundle identifier is not on that key's iOS app list —
+`API_KEY_IOS_APP_BLOCKED`, returned as a 403 before the password is read. So
+run the check, but expect two possible causes and read the error rather than
+assuming the keychain. Neither is fixable from the repository; both are
+resolved in the Firebase and Google Cloud consoles.
+
 ### Windows is not code signed yet
 
 The installer is unsigned, so Windows shows **"Windows protected your PC"** on
@@ -872,12 +881,16 @@ summary names which secret was absent.
 2. Create the Developer ID provisioning profile for
    `com.uractor.uractormacos` and add `MACOS_PROVISIONING_PROFILE_BASE64`.
 3. Enable **Keychain Sharing** on the `com.uractor.uractormacos` App ID.
-4. In the Firebase console, connect the custom domain `downloads.uractor.com`
+4. Add `com.uractor.uractormacos` to the iOS application restrictions on the
+   API key the macOS build uses, or register a macOS app in the Firebase
+   project and regenerate `lib/firebase_options.dart`. Without this, sign in is
+   refused with `API_KEY_IOS_APP_BLOCKED` however well signed the build is.
+5. In the Firebase console, connect the custom domain `downloads.uractor.com`
    to the `uractor-downloads` Hosting site and add the DNS records Firebase
    gives you at the registrar. Until this is done the domain answers with
    Firebase's own "Site Not Found" page, which is what it does today, and the
    site is reachable only at `uractor-downloads.web.app`.
-5. Check the service account behind `FIREBASE_SERVICE_ACCOUNT` has the
+6. Check the service account behind `FIREBASE_SERVICE_ACCOUNT` has the
    **Firebase Hosting Admin** role; it was created for App Distribution and
    may not.
 

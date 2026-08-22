@@ -1429,6 +1429,12 @@ abstract class S {
   /// **'Could not reach the server. Check your connection.'**
   String get networkError;
 
+  /// Shown when Firebase refuses the app itself rather than the credentials, because this build is not on its API key's list of permitted callers. Says plainly that retrying is pointless, since every account and every correct password fails identically.
+  ///
+  /// In en, this message translates to:
+  /// **'This build of the app is not allowed to sign in. Trying again will not help.'**
+  String get blockedAppError;
+
   /// Shown in the desktop update bar when a newer version has been published. {version} is a version number like 3.16.0.
   ///
   /// In en, this message translates to:

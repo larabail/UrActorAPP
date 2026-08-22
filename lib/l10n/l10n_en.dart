@@ -762,6 +762,10 @@ class SEn extends S {
       'Could not reach the server. Check your connection.';
 
   @override
+  String get blockedAppError =>
+      'This build of the app is not allowed to sign in. Trying again will not help.';
+
+  @override
   String updateAvailable(String version) {
     return 'UrActor $version is available';
   }

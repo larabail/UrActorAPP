@@ -260,6 +260,7 @@
   "userDisabledError": "Esa cuenta ha sido deshabilitada.",
   "tooManyRequestsError": "Demasiados intentos. Espera un momento y vuelve a intentarlo.",
   "networkError": "No se pudo conectar con el servidor. Comprueba tu conexión.",
+  "blockedAppError": "Esta versión de la aplicación no tiene permiso para iniciar sesión. Volver a intentarlo no servirá de nada.",
   "updateAvailable": "UrActor {version} ya está disponible",
   "updateDownload": "Descargar",
   "updateDismiss": "Descartar"
