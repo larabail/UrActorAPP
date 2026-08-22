@@ -731,9 +731,13 @@ regression signal is not diluted by UI code that still lacks widget tests.
 
 ## CI and releases
 
-Every pull request to `master` runs `.github/workflows/pr.yml`, which has five
-jobs — one per thing that can break:
+Every pull request to `master` runs `.github/workflows/pr.yml`, which has six
+jobs — one to work out what the change touches, and one per thing that can
+break:
 
+- **Scope** works out whether anything outside `web/downloads/` changed, and
+  the jobs below skip their real work when nothing did. See
+  [what a downloads-only change skips](#what-a-downloads-only-change-skips).
 - **Analyze, test and build** installs Flutter 3.47.1 plus the pinned Android
   NDK through `.github/actions/setup-flutter-android`, then runs
   `flutter analyze`, `flutter test --coverage`, the coverage floor, and a
@@ -849,6 +853,43 @@ or use the administrator override. If the pull request cannot be opened at all,
 the run says so in its summary and still passes: the app is already on Play by
 then, and failing would report a shipped release as a broken one. See
 [docs/releases.md](docs/releases.md#version-codes).
+
+### What a downloads-only change skips
+
+`web/downloads/` is a static site served by Firebase Hosting. No Flutter build
+reads it and no release packages it, so a change confined to it cannot alter
+what any app does. Four things follow, and each is arranged differently for a
+reason worth knowing before changing any of them.
+
+| | On a downloads-only change |
+| --- | --- |
+| `pr.yml` — Analyze, test and build | runs, skips its steps, reports |
+| `pr.yml` — Functions | runs, skips its steps, reports |
+| `pr.yml` — Build and launch on a simulator | skipped whole |
+| `release-internal.yml` | does not run: no build reaches testers |
+| `tool/check_version_bump.py` | requires no version bump |
+
+The two required jobs are gated **step by step** rather than by a path filter
+on the workflow. This is not fussiness. A workflow skipped by `paths-ignore`
+reports nothing at all, and a required check that never reports leaves the
+pull request permanently unmergeable — the same trap that took the path filter
+off the iOS workflow. Gated by step, the job still runs and still reports; it
+just has nothing to do. The iOS job is skipped whole instead, by a condition on
+the job rather than on the workflow, because a skipped job does report a
+conclusion and because starting a macOS runner to skip everything on it wastes
+the scarcest runner there is.
+
+`release-internal.yml` is the one place a plain path filter is safe: it runs
+after the merge and is nobody's required check. Without it, editing a sentence
+on a web page would put a build in front of every internal tester under a new
+version number containing nothing they could find.
+
+The version exemption is by path, not by kind. A change to a public web page is
+honestly a `feat` or a `fix`, so the kind alone would demand a minor bump the
+app has no reason to make. `tool/check_version_bump.py` therefore drops the
+requirement when nothing outside `web/downloads/` changed. Bumping anyway is
+still allowed; a version that moves backwards, or a minor bump that leaves the
+patch number behind, is still refused.
 
 ## Repo tooling
 

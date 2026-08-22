@@ -1,0 +1,56 @@
+name: Scope of the change
+description: >
+  Whether this pull request changes anything outside the downloads site, so a
+  workflow can skip work that cannot possibly be affected by it.
+
+# The caller must check out with `fetch-depth: 0`. This compares against the
+# merge base, which a shallow clone does not have.
+
+inputs:
+  base-sha:
+    description: The base commit of the pull request.
+    required: true
+  head-sha:
+    description: The head commit of the pull request.
+    required: true
+
+outputs:
+  app:
+    description: >
+      "true" when a file outside web/downloads/ changed, and so when the app
+      may build or behave differently. "false" only when the change is
+      confined to the downloads site.
+    value: ${{ steps.scope.outputs.app }}
+
+runs:
+  using: composite
+  steps:
+    - id: scope
+      shell: bash
+      env:
+        BASE_SHA: ${{ inputs.base-sha }}
+        HEAD_SHA: ${{ inputs.head-sha }}
+      run: |
+        set -euo pipefail
+
+        # Against the merge base rather than the tip of master, so this
+        # measures what THIS branch changed. Against the tip, every file
+        # someone else landed while the branch was open would count as
+        # touching the app.
+        BASE=$(git merge-base "$BASE_SHA" "$HEAD_SHA")
+        CHANGED=$(git diff --name-only "$BASE" "$HEAD_SHA")
+
+        echo 'Changed files:'
+        printf '%s\n' "$CHANGED" | sed 's/^/  /'
+
+        # `grep -v` looks for a path that is NOT in the downloads site. An
+        # empty file list leaves a single empty line, which does not match the
+        # prefix either, so it reads as "the app changed" -- the safe answer
+        # when this could not tell.
+        if printf '%s\n' "$CHANGED" | grep -qv '^web/downloads/'; then
+          echo 'app=true' >> "$GITHUB_OUTPUT"
+          echo 'Something outside web/downloads/ changed.'
+        else
+          echo 'app=false' >> "$GITHUB_OUTPUT"
+          echo 'Only the downloads site changed.'
+        fi

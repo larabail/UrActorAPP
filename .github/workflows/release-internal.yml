@@ -27,6 +27,13 @@ on:
       - '**/*.md'
       - 'docs/**'
       - '.gitignore'
+      # The downloads site is deployed by deploy-downloads.yml, on this same
+      # push. Nothing in it reaches an app, so putting a build in front of
+      # every internal tester because a web page changed would ask them to
+      # install a new version number containing nothing they can find. A path
+      # filter is safe here in a way it is not on the pull request workflow:
+      # this runs after the merge and is nobody's required check.
+      - 'web/downloads/**'
   workflow_dispatch:
 
 # Shared with `release-production.yml`. Two runs uploading at once would pick
