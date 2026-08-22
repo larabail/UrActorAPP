@@ -286,6 +286,15 @@ Two things follow from this that are worth knowing before changing a screen:
   360pt cap on the home page's playlist cards did exactly that on any phone
   390pt or narrower, turning a two column grid into one column of cards at
   twice the height.
+- **Count columns from the box, not from a `LayoutScope` you did not create.**
+  Wrap the grid in a `ResponsiveRegion`, which measures the space it is
+  actually given, and read the width inside its builder. `LayoutScope.widthOf`
+  walks *up* the tree, so calling it from a screen's own `context` misses the
+  scope the two pane layout publishes further down and silently falls back to
+  the whole window. The playlist grid did this and counted four columns for a
+  1210pt iPad while being drawn into a 565pt pane, so every card overflowed.
+  The two failures above are the same mistake twice: deciding from a number
+  that is not the width of the box.
 - **Open detail pages with `openDetail`, not `Navigator.push`.** It puts the
   page in the detail pane when there is one and over the whole window when
   there is not, so a call site does not have to know which layout it is in. A
@@ -585,6 +594,8 @@ lib/
     calendar_progress.dart          What a calendar entry means for tracking
     viewing_history_range.dart      When a title was started and finished
     viewing_history_widgets.dart    The range shown above a show's history
+    playlist_grid.dart              The home page's playlist grid, and how many
+                                    columns it fits into the space it is given
     api/apiutils.dart        All TMDB HTTP calls; a show's credits come from
                              aggregate_credits and are flattened to the shape
                              /credits returns

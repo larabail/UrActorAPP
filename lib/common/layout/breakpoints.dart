@@ -186,6 +186,10 @@ const double kPlaylistCardMaxWidth = 360;
 const double kPlaylistGridSpacing = 10;
 const double kPlaylistGridPadding = 10;
 
+/// A playlist card is a wide, short strip rather than a poster: a cover
+/// thumbnail with a name and a count beside it.
+const double kPlaylistCardAspectRatio = 2.75;
+
 /// How many columns fit into [availableWidth] when a tile may be at most
 /// [maxTileWidth] wide, never fewer than [minColumns].
 ///
