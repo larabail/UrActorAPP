@@ -498,4 +498,74 @@ void main() {
       expect(dates.started, '2026-05-01');
     });
   });
+
+  group('markEpisodesWatched on a show already finished', () {
+    test('records the ticks without unfinishing it', () async {
+      await ProgressService.finishShow('s1', date: DateTime(2026, 1, 9));
+
+      await ProgressService.markEpisodesWatched(
+        's1',
+        {
+          1: [1, 2],
+        },
+        seasons,
+        date: DateTime(2026, 5, 1),
+        keepFinished: true,
+      );
+
+      expect(await ProgressService.watchedEpisodes('s1', 1), [1, 2]);
+      expect(
+        await ProgressService.showState('s1'),
+        WatchProgressState.finished,
+      );
+      final dates = await ProgressService.datesFor(progressTVShowsKey, 's1');
+      expect(dates.finished, '2026-01-09',
+          reason: 'the day it was finished is not the day it was logged');
+      final seen = await seenDoc();
+      expect(seen[progressTVShowsKey], contains('s1'));
+    });
+
+    test('invents a finish date for a show that only sat in the Seen list',
+        () async {
+      // Every show logged before episodes were recordable is in this state:
+      // on the Seen list with no progress entry of its own. Without a finish
+      // date the entry would read as in progress the moment anything took the
+      // title off that list.
+      currentUser.seenTVShows = [
+        [progressTVShowsKey, 's1'],
+      ];
+
+      await ProgressService.markEpisodesWatched(
+        's1',
+        {
+          1: [1],
+        },
+        seasons,
+        date: DateTime(2026, 5, 1),
+        keepFinished: true,
+      );
+
+      final dates = await ProgressService.datesFor(progressTVShowsKey, 's1');
+      expect(dates.finished, '2026-05-01');
+      expect(await ProgressService.watchedEpisodes('s1', 1), [1]);
+    });
+
+    test('does not tick a show into a second finish', () async {
+      await ProgressService.finishShow('s1', date: DateTime(2026, 1, 9));
+
+      await ProgressService.markEpisodesWatched(
+        's1',
+        {
+          1: [1, 2],
+          2: [1, 2],
+        },
+        seasons,
+        date: DateTime(2026, 5, 1),
+        keepFinished: true,
+      );
+
+      final dates = await ProgressService.datesFor(progressTVShowsKey, 's1');
+      expect(dates.finished, '2026-01-09');
+    });
+  });
 }
