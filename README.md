@@ -791,8 +791,11 @@ running on Node 22 in `us-central1`:
   under a third party's name; it also rewrote the whole inbox unmerged, which
   lost one of two recommendations sent at the same moment. This is a verified
   route, not a closed door: builds already on people's phones still write to
-  `Notifications` directly, and the rule that would refuse a forged sender only
-  refuses one once `firestore.rules` has been deployed by hand. See
+  `Notifications` directly, and that branch stays in the rules until they are
+  gone. What those builds cannot do is forge a sender — `validNotification`
+  pins `sender.uid` to the authenticated caller, and the release deploys the
+  rules on every merge that touches them, so that check is live rather than
+  waiting for someone to run `firebase deploy` by hand. See
   [Where a recommendation lands](#where-a-recommendation-lands).
 - `syncPlaylistMembers` is a Firestore `onDocumentWritten` trigger on
   `Watchlists/{listId}`. It derives a flat `memberUids` array from the legacy

@@ -1,7 +1,10 @@
 // ignore_for_file: use_key_in_widget_constructors, must_be_immutable
 
 import 'package:flutter/material.dart';
+import 'package:uractor/common/credit_label.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/common/widgets/credit_tile.dart';
+import 'package:uractor/common/widgets/scrolling_line.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'package:uractor/objects/person.dart';
 import 'package:uractor/person_result.dart';
@@ -73,8 +76,10 @@ class _CastCrewState extends State<CastCrew> {
                     child: TabBarView(
                       children: [
                         CastCrewTabView(
+                            isCrew: false,
                             items: widget.data["cast"].reversed.toList()),
-                        CastCrewTabView(items: sortedCrew.reversed.toList()),
+                        CastCrewTabView(
+                            isCrew: true, items: sortedCrew.reversed.toList()),
                       ],
                     ),
                   ),
@@ -92,7 +97,15 @@ class _CastCrewState extends State<CastCrew> {
 class CastCrewTabView extends StatelessWidget {
   final List<dynamic> items;
 
-  const CastCrewTabView({super.key, required this.items});
+  /// Whether these are crew credits, which are named by `job` rather than by
+  /// the character played.
+  final bool isCrew;
+
+  const CastCrewTabView({
+    super.key,
+    required this.items,
+    required this.isCrew,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -106,6 +119,7 @@ class CastCrewTabView extends StatelessWidget {
             if (itemIndex < items.reversed.toList().length) {
               final item = items.reversed.toList()[itemIndex] as Map;
               return ItemCard(
+                  isCrew: isCrew,
                   person: Person(
                       id: item["id"].toString(),
                       name: item["name"],
@@ -121,8 +135,9 @@ class CastCrewTabView extends StatelessWidget {
 
 class ItemCard extends StatelessWidget {
   final Person person;
+  final bool isCrew;
 
-  const ItemCard({super.key, required this.person});
+  const ItemCard({super.key, required this.person, required this.isCrew});
 
   @override
   Widget build(BuildContext context) {
@@ -130,6 +145,7 @@ class ItemCard extends StatelessWidget {
       future: person.getSimpleData(),
       builder: (BuildContext context, AsyncSnapshot<Map> snapshot) {
         if (snapshot.hasData) {
+          final String role = creditLabelFor(person.data, isCrew: isCrew);
           return GestureDetector(
             onTap: () {
               Person tempMediaItem = Person(
@@ -145,33 +161,30 @@ class ItemCard extends StatelessWidget {
             },
             child: Row(children: [
               getItemContainer(context, snapshot.data, "person"),
-              Column(
-                children: [
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.5,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Text(
-                        "${snapshot.data!['name']}",
-                        style: const TextStyle(
-                          fontSize: 14,
-                        ),
-                      ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Neither line can be widened — the row is as wide as the
+                    // screen — so a long name or a long part scrolls itself
+                    // rather than being cut off where it happens to run out.
+                    ScrollingLine(
+                      text: "${snapshot.data!['name']}",
+                      style: const TextStyle(fontSize: 14),
+                      height: kCreditLabelHeight,
                     ),
-                  ),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.5,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Text(
-                        "${S.of(context)!.as} ${person.data["character"] ?? person.data["job"] ?? ""}",
-                        style: const TextStyle(
-                          fontSize: 14,
-                        ),
-                      ),
+                    ScrollingLine(
+                      // A credit with no part named gets a blank line rather
+                      // than a dangling "as".
+                      text: role.isEmpty
+                          ? ''
+                          : "${S.of(context)!.as} $role",
+                      style: const TextStyle(fontSize: 14),
+                      height: kCreditLabelHeight,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               )
             ]),
           );
