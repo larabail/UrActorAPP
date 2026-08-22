@@ -17,6 +17,7 @@ import unittest
 
 from appstore import (
     AppStoreError,
+    check_for_action,
     check_releasable,
     check_submittable,
     missing_credentials,
@@ -188,6 +189,39 @@ class CheckReleasable(unittest.TestCase):
     def test_refuses_a_version_already_live(self):
         with self.assertRaises(AppStoreError):
             check_releasable("READY_FOR_DISTRIBUTION", "3.5.1")
+
+
+class CheckForAction(unittest.TestCase):
+    """The guard the pre-flight runs before anyone is asked to approve."""
+
+    def test_defers_to_the_submit_guard(self):
+        check_for_action("PREPARE_FOR_SUBMISSION", "3.14.2", "submit")
+        with self.assertRaises(AppStoreError):
+            check_for_action("IN_REVIEW", "3.14.2", "submit")
+
+    def test_defers_to_the_release_guard(self):
+        check_for_action("PENDING_DEVELOPER_RELEASE", "3.14.2", "release")
+        with self.assertRaises(AppStoreError):
+            check_for_action("PREPARE_FOR_SUBMISSION", "3.14.2", "release")
+
+    def test_the_two_actions_disagree_about_the_same_state(self):
+        # Not a quirk to work around: a version being prepared is exactly the
+        # one to submit and exactly the one that cannot be released. The
+        # pre-flight has to ask about the action actually requested, not about
+        # whether the version looks generally healthy.
+        check_for_action("PREPARE_FOR_SUBMISSION", "3.14.2", "submit")
+        with self.assertRaises(AppStoreError):
+            check_for_action("PREPARE_FOR_SUBMISSION", "3.14.2", "release")
+
+    def test_refuses_an_action_it_does_not_know(self):
+        # `skip` reaching here means the workflow asked about a platform it had
+        # been told to leave alone. Answering "fine" would be a lie.
+        with self.assertRaises(AppStoreError) as caught:
+            check_for_action("PREPARE_FOR_SUBMISSION", "3.14.2", "skip")
+        message = str(caught.exception)
+        self.assertIn("skip", message)
+        self.assertIn("submit", message)
+        self.assertIn("release", message)
 
 
 class SelectVersion(unittest.TestCase):

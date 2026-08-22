@@ -533,6 +533,41 @@ they disagree — a released version is `READY_FOR_SALE` in the first and
 `READY_FOR_DISTRIBUTION` in the second. Both vocabularies are accepted, because
 which one arrives is Apple's choice and not something to depend on.
 
+### It refuses early, before anyone approves
+
+Those refusals are worth about four seconds each, and they used to arrive last.
+The iOS stage ran behind the approval gate and alongside Android and desktop, so
+a version Apple had no record of failed the run *after* a reviewer had approved
+it and after Play and the downloads site had already been written to — two
+platforms shipped out of three, for a reason that was true before the run began.
+
+So the pipeline asks first. A `preflight` job runs between `resolve` and the
+approval gate and calls the read-only `check` subcommand:
+
+```bash
+python tool/appstore.py check --version 3.17.4 --action submit
+```
+
+It resolves the version, applies the same state guard the action itself would,
+and confirms an explicitly requested `ios_build` exists. It writes nothing. A
+failure stops the run before the `production` environment is ever reached, with
+the current state of every version Apple holds in the run summary.
+
+The check is not a promise. The iOS stage asks Apple again before it writes,
+because a state can change while a human is deciding — the pre-flight moves the
+common failure earlier rather than removing the guard from where it matters.
+
+Two consequences of putting it there:
+
+- `resolve` runs before the approval gate too, since the pre-flight needs to
+  know which version this is. It only reads, so there is nothing to gate. The
+  approval prompt is better for it: it now names the resolved version and
+  commit instead of echoing the blank boxes the form was submitted with.
+- The job has no `if:` of its own. A skipped job skips everything that needs
+  it, which would take the approval gate and the entire release with it every
+  time iOS was set to `skip`. The steps opt out individually instead, and the
+  job reports green having done nothing.
+
 ### What this does not do
 
 The version record itself, its screenshots, its description and its "what's
@@ -541,7 +576,9 @@ metadata is incomplete, and generating store copy from commit subjects — which
 is what `release_notes.py` does for Play — is not something to do unattended
 for a listing customers read.
 
-Create the version in App Store Connect, fill it in, then run this.
+Create the version in App Store Connect, fill it in, then run this. The
+pre-flight above is what tells you that you have not, and it tells you in
+seconds rather than at the end of a release.
 
 ## Releasing to production
 
@@ -570,6 +607,19 @@ halt an Android rollout afterwards, use the Play Console: a halted rollout stops
 new users receiving the update, but does not remove it from anyone who already
 has it. There is no equivalent for desktop, and Apple's phased release is a
 fixed seven-day ladder rather than a dial.
+
+Two jobs run before that prompt, and both only read:
+
+```
+authorize → resolve → preflight → approve → ┬ 1. Android
+                                            ├ 2. iOS
+                                            └ 3. Desktop
+```
+
+`resolve` works out the commit and the version, so the prompt can name what is
+being shipped. `preflight` asks Apple whether the iOS half could happen at all
+— see [It refuses early](#it-refuses-early-before-anyone-approves). Nothing is
+written to any store until the gate has been passed.
 
 The commit and the version are resolved once, in a `resolve` job, and handed to
 all three stages. Three stages working that out for themselves would be three

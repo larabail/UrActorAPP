@@ -17,6 +17,10 @@ them straight from secrets without writing a private key to disk:
 Subcommands:
   app-id      Print the numeric App Store Connect id for the bundle id.
   next-build  Print the next unused build number.
+  status      Print the versions Apple holds and the state of each.
+  check       Say whether an action would be allowed, without doing it.
+  submit      Attach a build to a version and send it to Apple for review.
+  release     Publish a version Apple has approved and is holding.
 
 `jwt` and `requests` are imported inside the functions that need them, not at
 module scope. The pull request workflow runs the tests in this directory with
@@ -193,6 +197,33 @@ def check_releasable(state: str, version_string: str) -> None:
         "approved and is holding for manual release can be released. If it is "
         "still WAITING_FOR_REVIEW or IN_REVIEW, Apple has not finished yet."
     )
+
+
+# The two actions a release run can ask for, and the guard each answers to.
+# `skip` is absent deliberately: a caller that has decided to skip iOS should
+# not be asking whether iOS would work.
+ACTION_CHECKS = {
+    "submit": check_submittable,
+    "release": check_releasable,
+}
+
+
+def check_for_action(state: str, version_string: str, action: str) -> None:
+    """Whether `action` could act on a version in `state`.
+
+    The same guards `submit` and `release` apply to themselves, reachable
+    without doing anything. It exists so the pipeline can ask the question
+    before it asks a human to approve a release: a version that does not exist,
+    or one already with Apple, is a four second answer that used to arrive at
+    the end of a run rather than the start of one.
+    """
+    check = ACTION_CHECKS.get(action)
+    if check is None:
+        raise AppStoreError(
+            f"unknown action {action!r}. Expected one of "
+            f"{', '.join(sorted(ACTION_CHECKS))}."
+        )
+    check(state, version_string)
 
 
 def missing_credentials(env: Mapping[str, str]) -> list[str]:
@@ -372,6 +403,29 @@ def cmd_status(args) -> None:
         )
 
 
+def cmd_check(args) -> None:
+    """Answer whether an action would be allowed, and write nothing.
+
+    Every failure this reports is one `submit` or `release` would have reported
+    anyway. The point is where it reports them: run before the approval gate,
+    a missing version record costs four seconds instead of being discovered
+    after a reviewer has approved the release and the other stores have already
+    been written to.
+    """
+    app = args.app_id or app_id()
+    version = select_version(app_versions(app), args.version)
+    state = state_of(version)
+    check_for_action(state, args.version, args.action)
+
+    # Only when the caller typed one. Left blank, the workflow attaches the
+    # newest build Apple holds, which by definition exists.
+    if args.build:
+        find_build(app, args.build)
+        print(f"build {args.build} is there")
+
+    print(f"version {args.version} is {state}: '{args.action}' would be allowed")
+
+
 def cmd_submit(args) -> None:
     """Attach a build to a version and send it to Apple for review.
 
@@ -516,6 +570,25 @@ def main() -> None:
     st = sub.add_parser("status", help="show the App Store versions and their states")
     st.add_argument("--app-id")
     st.set_defaults(func=cmd_status)
+
+    ck = sub.add_parser(
+        "check",
+        help="say whether submit or release would be allowed, without doing it",
+    )
+    ck.add_argument("--version", required=True, help="marketing version, e.g. 3.14.2")
+    ck.add_argument(
+        "--action",
+        required=True,
+        choices=sorted(ACTION_CHECKS),
+        help="the action to test",
+    )
+    ck.add_argument(
+        "--build",
+        default="",
+        help="also confirm this build number exists; blank checks the version only",
+    )
+    ck.add_argument("--app-id")
+    ck.set_defaults(func=cmd_check)
 
     sb = sub.add_parser(
         "submit", help="attach a build to a version and submit it for review"
