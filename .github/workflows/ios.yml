@@ -1,26 +1,25 @@
 name: iOS checks
 
-# Separate from the main pull request workflow for two reasons. The macOS build
-# takes around twenty-five minutes against roughly five for the Linux jobs, so
-# this should run only when it can tell you something; and path filters apply to
-# a workflow rather than to a job, so the filter cannot live in pr.yml alongside
-# the Linux jobs.
+# Separate from the main pull request workflow because path filters apply to a
+# workflow rather than to a job, so this cannot live in pr.yml alongside the
+# Linux jobs -- and because a macOS build takes around twenty-five minutes
+# against roughly five for those jobs, which is worth being able to see on its
+# own.
 #
-# The listed paths are the ones that can break the native build. A Dart-only
-# change is already covered by analyze and test on Linux in a fifth of the
-# time, and cannot break the iOS build without also touching pubspec.
+# This used to be filtered to the paths that can break the native build, on the
+# grounds that a Dart-only change cannot break iOS without also touching
+# pubspec. That reasoning is sound but it cannot coexist with requiring the
+# check: a filtered workflow reports nothing at all on a pull request it skips,
+# and a required check that never reports leaves the pull request permanently
+# unmergeable rather than merely unverified. The filter is gone so the verdict
+# always arrives.
 #
-# Runner minutes are free here because the repository is public. The filter is
-# about how long a pull request waits for a verdict, not about the bill.
+# The cost is a macOS build on every pull request, including documentation-only
+# ones. Runner minutes are free on a public repository, so this is paid in
+# waiting rather than in money, and it runs in parallel with the Linux jobs.
 on:
   pull_request:
     branches: [master]
-    paths:
-      - 'ios/**'
-      - 'pubspec.yaml'
-      - 'pubspec.lock'
-      - '.github/workflows/ios.yml'
-      - '.github/actions/setup-flutter-ios/**'
   workflow_dispatch:
 
 concurrency:
