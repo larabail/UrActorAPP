@@ -1,9 +1,10 @@
-// ignore_for_file: non_constant_identifier_names
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../common/firebase/firestore_core.dart';
+import '../common/widgets/app_dialog.dart';
+import '../common/widgets/friend_picker.dart';
 import '../objects/playlist.dart';
 
 class GrantAccessDialog extends StatefulWidget {
@@ -17,189 +18,59 @@ class GrantAccessDialog extends StatefulWidget {
 class _GrantAccessDialogState extends State<GrantAccessDialog> {
   Map<String, bool> selectedFriends = {};
 
+  Future<void> _grant() async {
+    final itemToAdd = [
+      for (final friendUid in selectedFriends.keys) {friendUid: "Approved"},
+    ];
+    await FirestoreCore.mergeInto(
+      FirestoreCore.db.collection('Watchlists').doc(widget.listResult.id),
+      {
+        'Users': FieldValue.arrayUnion(itemToAdd),
+        'memberUids': FieldValue.arrayUnion(selectedFriends.keys.toList()),
+      },
+    );
+    widget.listResult.users += itemToAdd;
+    if (!mounted) return;
+    Navigator.pop(context, widget.listResult);
+  }
+
   @override
   Widget build(BuildContext context) {
-    Set uidsInListResult =
+    final Set uidsInListResult =
         widget.listResult.users.expand((map) => map.keys).toSet();
 
-    // Filter currentUser.friends to get UIDs not in uidsInListResult
-    List uniqueFriendIds = currentUser.friends
-        .where((friendId) => !uidsInListResult.contains(friendId))
-        .toList();
+    // Only friends who are not already on the list are worth offering.
+    final uniqueFriendIds = List<String>.from(
+      currentUser.friends.where(
+        (friendId) => !uidsInListResult.contains(friendId),
+      ),
+    );
 
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15), // Add rounded corners
-      ),
-      elevation: 0,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.grey[900],
-          borderRadius: BorderRadius.circular(10.0),
+    return AppDialog(
+      title: "Grant Users Access",
+      actions: [
+        AppDialogAction(
+          label: "Cancel",
+          icon: Icons.cancel,
+          tone: AppDialogTone.cancel,
+          onPressed: () => Navigator.pop(context),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              "Grant Users Access",
-              style: TextStyle(fontSize: 20),
-            ),
-            if (uniqueFriendIds.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: SizedBox(
-                  height: 125, // Set your desired height here
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: uniqueFriendIds.length,
-                    itemBuilder: (context, friendIndex) {
-                      return FutureBuilder<DocumentSnapshot>(
-                        future: FirestoreCore.db
-                            .collection(uniqueFriendIds[friendIndex])
-                            .doc('Settings')
-                            .get(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                                child: CircularProgressIndicator());
-                          } else if (snapshot.hasError) {
-                            return Text('Error: ${snapshot.error}');
-                          } else if (!snapshot.hasData ||
-                              !snapshot.data!.exists) {
-                            return const Text('No data found');
-                          } else {
-                            var data =
-                                snapshot.data!.data() as Map<String, dynamic>;
-                            String userName = data['username'] ?? '';
-                            String profilePath = data['profile_photo'] ?? '';
-                            return CheckboxListTile(
-                              title: Row(
-                                children: [
-                                  ClipOval(
-                                    child: profilePath != ""
-                                        ? Image.network(
-                                            profilePath,
-                                            height: 25,
-                                            width: 25,
-                                            fit: BoxFit.cover,
-                                          )
-                                        : Image.asset(
-                                            'assets/main_profile.png',
-                                            height: 25,
-                                            width: 25,
-                                            fit: BoxFit.cover,
-                                          ),
-                                  ),
-                                  const SizedBox(width: 16.0),
-                                  Expanded(
-                                    child: Text(
-                                      userName,
-                                      style: const TextStyle(fontSize: 16.0),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              value: selectedFriends.keys
-                                      .toList()
-                                      .contains(uniqueFriendIds[friendIndex])
-                                  ? selectedFriends[
-                                      uniqueFriendIds[friendIndex]]
-                                  : false,
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  selectedFriends[
-                                      uniqueFriendIds[friendIndex]] = value!;
-                                });
-                              },
-                            );
-                          }
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ),
-            if (uniqueFriendIds.isEmpty)
-              const Text("All your friends already have access to this list"),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[900],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(
-                          Icons.cancel,
-                          color: Colors.red,
-                        ),
-                        SizedBox(
-                          width: 5,
-                        ),
-                        Text(
-                          "Cancel",
-                          style: TextStyle(fontSize: 13, color: Colors.white),
-                        )
-                      ],
-                    )),
-                const SizedBox(
-                  width: 5,
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    List itemToAdd = [];
-                    for (String friendUid in selectedFriends.keys.toList()) {
-                      itemToAdd.add({friendUid: "Approved"});
-                    }
-                    await FirestoreCore.mergeInto(
-                        FirestoreCore.db
-                            .collection('Watchlists')
-                            .doc(widget.listResult.id),
-                        {
-                          'Users': FieldValue.arrayUnion(itemToAdd),
-                          'memberUids': FieldValue.arrayUnion(
-                              selectedFriends.keys.toList())
-                        });
-                    widget.listResult.users += itemToAdd;
-                    if (!context.mounted) return;
-                    Navigator.pop(context, widget.listResult);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[900],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(
-                        Icons.check,
-                        color: Colors.green,
-                      ),
-                      SizedBox(
-                        width: 5,
-                      ),
-                      Text(
-                        "Accept",
-                        style: TextStyle(fontSize: 13, color: Colors.white),
-                      )
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
+        AppDialogAction(
+          label: "Accept",
+          icon: Icons.check,
+          tone: AppDialogTone.confirm,
+          onPressed: _grant,
         ),
-      ),
+      ],
+      child: uniqueFriendIds.isEmpty
+          ? const Text("All your friends already have access to this list")
+          : FriendPicker(
+              friendIds: uniqueFriendIds,
+              selected: selectedFriends,
+              onChanged: (friendId, value) {
+                setState(() => selectedFriends[friendId] = value);
+              },
+            ),
     );
   }
 }

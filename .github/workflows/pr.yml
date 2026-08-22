@@ -34,7 +34,7 @@ jobs:
       # GitHub before any job is scheduled: the run fails in about two seconds
       # with no logs, no runner and no indication of which line is wrong, and
       # it does that on every push regardless of the triggers the file
-      # declares. `release-desktop.yml` shipped in exactly that state and the
+      # declares. the desktop release workflow shipped in exactly that state and the
       # only symptom was a red cross with nothing behind it.
       #
       # Shellcheck integration is off. It reports pre-existing style warnings
