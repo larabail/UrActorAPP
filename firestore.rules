@@ -243,6 +243,15 @@ service cloud.firestore {
     // legitimate write adds is always the current size rendered as a string.
     // Reconstructing it turns an unnameable Set member into an index.
     //
+    // That scheme is therefore LOAD-BEARING, and it is chosen somewhere else:
+    // lib/popups/share.dart on the phone, and appendNotification() in
+    // functions/index.js on the server. Anything that appends a notification
+    // under a different key -- a uuid, a timestamp, a random number -- leaves
+    // this document sparse, and from that moment the key rebuilt below is one
+    // that already exists. The next write from a build already on someone's
+    // phone then reads as a change rather than an add and is refused here,
+    // forever, with the client swallowing the error.
+    //
     // A write that collides with an existing key -- which is what a sparse
     // document would produce -- changes a key rather than adding one, and was
     // already refused by the changedKeys check below. So nothing that used to
@@ -578,6 +587,20 @@ service cloud.firestore {
 //    same reason: a rules deploy applies to every client at once, with no
 //    staged rollout, so the client has to be ready BEFORE the rules change
 //    ships.
+//
+//    The recommendation path has taken that route already. recommendTitle
+//    (functions/index.js) verifies the friendship against the RECIPIENT's own
+//    list, derives `sender` from the caller's token and their own Settings
+//    document, and appends inside a transaction -- so a client calling it
+//    cannot forge a sender at all, rather than being caught trying.
+//
+//    That is a verified ROUTE, not a closed gap. The Notifications branch
+//    below still stands and builds already on people's phones still write
+//    through it; nothing closes until that branch is removed and these rules
+//    are deployed. The Calendar and SeenWith UPDATE paths are still waiting
+//    for the equivalent function -- a watched-together fan-out -- which is a
+//    larger piece of work because it writes several documents for both people
+//    at once.
 //
 //    Be careful about what "ships" means here, because it is not what the
 //    issues describing this staging assume. NOTHING IN CI DEPLOYS THIS FILE.

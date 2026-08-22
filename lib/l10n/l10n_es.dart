@@ -631,6 +631,14 @@ class SEs extends S {
   String get joinListTitle => 'Unirse a Lista';
 
   @override
+  String get recommendationSendFailed =>
+      'No se ha podido enviar tu recomendación. Inténtalo de nuevo.';
+
+  @override
+  String get recommendationSendPartial =>
+      'No se ha podido enviar esto a algunos de tus amigos.';
+
+  @override
   String get enterListName => 'Por favor, introduce un nombre de lista';
 
   @override
@@ -641,6 +649,9 @@ class SEs extends S {
 
   @override
   String get add => 'Añadir';
+
+  @override
+  String get accept => 'Aceptar';
 
   @override
   String get confirmWatchedToday => '¿Has visto esta película hoy?';
