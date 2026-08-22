@@ -888,10 +888,25 @@ up:
    dropped out of your library loses their score instead of keeping the one
    they last had.
 
-A library too large to resolve in one run is not written at all: the run banks
-the credits it fetched, leaves you flagged, and the next run finishes from a
-warmer cache. A ranking computed from half a library would be wrong rather than
-incomplete.
+A library too large to resolve before the run's deadline is not written at all:
+the run banks the credits it fetched, leaves you flagged, and the next run
+finishes from a warmer cache. A ranking computed from half a library would be
+wrong rather than incomplete. Deferring does not move `dirtyAt`, so a large
+library keeps its place at the front of the queue and converges rather than
+being overtaken every five minutes.
+
+Both limits that shape the result were set against a real library of 4,593
+titles rather than guessed:
+
+- **How many people are stored per role** (`MAX_RANKED_PEOPLE`, 2,000). That
+  library credits 42,683 distinct actors with a non-zero score — about 630 KB
+  in a document Firestore caps at 1 MiB — so a limit is necessary. It is also
+  what decides where the person page's ranking goes flat, since everyone below
+  the cut has nothing stored to separate them. At 2,000 the cut falls at a
+  score of 16, roughly a face from eight titles.
+- **How long a run fetches for** (`RUN_DEADLINE_MS`, 8 minutes of a 9 minute
+  timeout). Throughput is around 30 credits a second, so that whole library
+  fits inside one run.
 
 The person page still computes its own score locally, because that is the only
 value that accounts for a film marked seen since the worker last ran, and ranks

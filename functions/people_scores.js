@@ -65,12 +65,24 @@ const MEDIA_TYPES = ['Movies', 'TVShows'];
 // measured; only the cheap one can be stored for everybody.
 const MAX_CAST_PER_TITLE = 20;
 
-// How many people are kept per role. Far more than the profile shows (10) or
-// than a person page needs to state a rank, and small enough that the
-// document stays a few kilobytes whatever the size of the library -- which is
-// what keeps it under Firestore's 1 MiB limit for a viewer with thousands of
-// titles.
-const MAX_RANKED_PEOPLE = 500;
+// How many people are kept per role.
+//
+// A cap is not optional: this user's library credits 42,683 distinct actors
+// with a non-zero score, which is about 630 KB in one document, and Firestore
+// refuses anything over 1 MiB. Somebody with twice the library would lose the
+// feature entirely.
+//
+// 2,000 is where the dry run put it. At 500 the lowest kept actor still scored
+// 36 out of a top score of 152 -- people who had genuinely been watched a
+// dozen times were falling off, and the three documents came to less than the
+// user already carries today. At 2,000 the cut lands at 16, which is a face
+// from about eight titles, and the documents total 85 KB against the 60 KB
+// those same documents hold now.
+//
+// The number that matters is not how many the profile shows, which is ten. It
+// is where the person page's ranking goes flat: everyone below the cut reports
+// the same position, because there is nothing stored to separate them.
+const MAX_RANKED_PEOPLE = 2000;
 
 // Characters that mean the person appeared as themselves or was not really in
 // the finished film. The person page has always excluded these from a
@@ -391,6 +403,17 @@ function titlesNeedingCredits(library) {
   return titles;
 }
 
+// Whether a run still owes this user work.
+//
+// The subtle half is `attempted`. A run that stops at its deadline has not
+// finished even when everything it did attempt succeeded, and reporting
+// otherwise would store a ranking built from part of a library -- which is
+// wrong rather than merely incomplete, because the missing titles are missing
+// points for real people.
+function runIsIncomplete(total, attempted, failed) {
+  return failed + Math.max(0, total - attempted) > 0;
+}
+
 // A cached credits document only counts as an answer once it holds one. A
 // record left behind by a failed attempt carries an attempt count and no cast,
 // and has to be fetched again rather than read as a title with nobody in it.
@@ -420,6 +443,7 @@ module.exports = {
   creditFailureKind,
   creditAttemptOutcome,
   mayClearDirty,
+  runIsIncomplete,
   cachedCreditsFrom,
   topScores,
   scoreLibrary,
