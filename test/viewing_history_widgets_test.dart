@@ -180,4 +180,75 @@ void main() {
     expect(find.textContaining('09 April, 2026'), findsOneWidget);
     expect(find.textContaining('present'), findsNothing);
   });
+
+  group('a film has no range', () {
+    testWidgets('nothing is drawn even with a start and a finish recorded',
+        (tester) async {
+      await ProgressService.startMovie('27205', date: DateTime(2026, 3, 1));
+      await ProgressService.finishMovie('27205', date: DateTime(2026, 3, 1));
+
+      await pump(
+        tester,
+        const ViewingHistoryRangeLabel(
+          type: progressMoviesKey,
+          id: '27205',
+          seenDates: [],
+          seen: true,
+        ),
+      );
+
+      expect(find.byKey(const ValueKey('viewingHistoryRange')), findsNothing);
+      expect(find.textContaining('01 March, 2026'), findsNothing);
+    });
+
+    testWidgets('rewatches are not drawn as one viewing spanning years',
+        (tester) async {
+      // The case that made this wrong rather than merely redundant: two
+      // separate viewings six years apart read as a single watch that took
+      // six years. The days themselves are still listed as rows underneath.
+      await pump(
+        tester,
+        const ViewingHistoryRangeLabel(
+          type: progressMoviesKey,
+          id: '27205',
+          seenDates: [
+            ['2020-01-03', <String>[]],
+            ['2026-08-15', <String>[]],
+          ],
+          seen: true,
+        ),
+      );
+
+      expect(find.byKey(const ValueKey('viewingHistoryRange')), findsNothing);
+      expect(find.textContaining('2020'), findsNothing);
+      expect(find.textContaining('2026'), findsNothing);
+    });
+
+    testWidgets('the same record on a show still reads as a range',
+        (tester) async {
+      // The control: the data is identical, so the type is doing the work and
+      // the section has not simply been broken for everything.
+      await pump(
+        tester,
+        const ViewingHistoryRangeLabel(
+          type: progressTVShowsKey,
+          id: '1396',
+          seenDates: [
+            ['2020-01-03', <String>[]],
+            ['2026-08-15', <String>[]],
+          ],
+          seen: true,
+        ),
+      );
+
+      expect(find.byKey(const ValueKey('viewingHistoryRange')), findsOneWidget);
+      expect(find.textContaining('03 January, 2020'), findsOneWidget);
+      expect(find.textContaining('15 August, 2026'), findsOneWidget);
+    });
+
+    test('the rule is stated where a screen can ask it', () {
+      expect(ViewingHistoryRangeLabel.appliesTo(progressTVShowsKey), isTrue);
+      expect(ViewingHistoryRangeLabel.appliesTo(progressMoviesKey), isFalse);
+    });
+  });
 }

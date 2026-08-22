@@ -39,6 +39,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/l10n.dart';
 import 'common/navigation/app_scaffold.dart';
+import 'common/layout/breakpoints.dart';
+import 'common/layout/responsive.dart';
 import 'common/layout/two_pane.dart';
 
 List idsExplorePage = [];
@@ -510,19 +512,32 @@ class _MyHomePageState extends State<MyHomePage> {
       SettingsService.read<dynamic>(kPlaylistOrderSettingsKey, null),
     );
 
+    // A card is capped at 360 wide, but the grid keeps at least two columns.
+    // Deriving the count here rather than handing the cap to
+    // SliverGridDelegateWithMaxCrossAxisExtent is deliberate: that delegate
+    // has no way to be told a minimum, so on any window at or under 390 --
+    // most phones -- it answered with one column and stretched each card to
+    // the full width at twice its intended height.
+    //
+    // The width comes from the scope rather than the window so that a card in
+    // the list pane of a two pane layout is measured against the pane.
+    final int columns = gridColumnsForMaxTileWidth(
+      LayoutScope.widthOf(context) - kPlaylistGridPadding * 2,
+      maxTileWidth: kPlaylistCardMaxWidth,
+      spacing: kPlaylistGridSpacing,
+      minColumns: 2,
+    );
+
     return GridView.builder(
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        // A ceiling on card width rather than a fixed count: the grid fits as
-        // many as the width allows, so a wide window gains columns instead of
-        // stretching two cards across the whole of it.
-        maxCrossAxisExtent: 360,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: columns,
         childAspectRatio: 2.75,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
+        crossAxisSpacing: kPlaylistGridSpacing,
+        mainAxisSpacing: kPlaylistGridSpacing,
       ),
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(kPlaylistGridPadding),
       itemCount: filteredKeys.length < 6 ? filteredKeys.length : 6,
       itemBuilder: (context, index) {
         String key = filteredKeys[index];

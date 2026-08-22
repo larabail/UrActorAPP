@@ -41,11 +41,14 @@ window rather than the device it is on (see [Platforms](#platforms) and
   A movie is set to being watched from that control and nowhere else — a
   calendar entry records a day you watched something, which for a film is a
   completed act, so the calendar always means finished there.
-- See when you watched something. A title's viewing history is headed with the
-  range it covers: the first day recorded through to the day it was finished,
-  or through to the present while it is still being watched. The dates come
-  from the calendar, so an account that predates watch progress keeps the
-  history it always had (`lib/common/viewing_history_range.dart`,
+- See when you watched something. A **show's** viewing history is headed with
+  the range it covers: the first day recorded through to the day it was
+  finished, or through to the present while it is still being watched. The
+  dates come from the calendar, so an account that predates watch progress
+  keeps the history it always had. A film has no such heading — it is watched
+  in one sitting, so a range would either repeat one day or draw two separate
+  rewatches as a single viewing years long; the days themselves are still
+  listed (`lib/common/viewing_history_range.dart`,
   `lib/common/viewing_history_widgets.dart`).
 - Tick episodes and whole seasons off in the season guide. Watching the last
   episode finishes the show on its own (`lib/season_guide.dart`,
@@ -274,6 +277,15 @@ Two things follow from this that are worth knowing before changing a screen:
   upright. Posters are a fixed 2:3 and take a width in logical pixels from
   `posterWidthFor`; episode stills are 16:9. Grids count how many columns fit
   with `gridColumnsFor` instead of hard coding a number.
+- **A grid that caps a tile's width still needs a minimum column count.** Use
+  `gridColumnsForMaxTileWidth`, which is `gridColumnsFor`'s counterpart for a
+  ceiling rather than a target, and never Flutter's
+  `SliverGridDelegateWithMaxCrossAxisExtent` on its own. That delegate cannot
+  be given a floor, and a ceiling with no floor becomes a *target* on a narrow
+  window — one column is always enough to keep every tile under the limit. A
+  360pt cap on the home page's playlist cards did exactly that on any phone
+  390pt or narrower, turning a two column grid into one column of cards at
+  twice the height.
 - **Open detail pages with `openDetail`, not `Navigator.push`.** It puts the
   page in the detail pane when there is one and over the whole window when
   there is not, so a call site does not have to know which layout it is in. A
@@ -587,7 +599,7 @@ lib/
     watch_progress_widgets.dart     The season, episode and detail controls
     calendar_progress.dart          What a calendar entry means for tracking
     viewing_history_range.dart      When a title was started and finished
-    viewing_history_widgets.dart    The range shown above a viewing history
+    viewing_history_widgets.dart    The range shown above a show's history
     api/apiutils.dart        All TMDB HTTP calls; a show's credits come from
                              aggregate_credits and are flattened to the shape
                              /credits returns
@@ -700,7 +712,7 @@ cd ..
 node --test web/downloads/*.test.js
 ```
 
-`flutter test` currently runs 804 tests with no emulator, credentials or
+`flutter test` currently runs 823 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
 `FirestoreCore.db` and `AppHttp.client` — and callable context through
 `CallableContext`. They default to the real implementations and are pointed at
@@ -712,7 +724,8 @@ handling, settings, inbox, calendar/list services, calendar episode detail,
 what a calendar entry does to watch progress, viewing history ranges,
 in-memory Firestore service behaviour, watch-progress rules and controls, the
 media and person data objects, every popup under `lib/popups` except the
-profile section editor, and the reviews and Continue watching screens.
+profile section editor, the reviews and Continue watching screens, and the
+pre-commit hook itself.
 
 `npm test` in `functions/` runs the Node 22 unit tests for the playlist and
 OMDB helper modules.
@@ -745,9 +758,13 @@ regression signal is not diluted by UI code that still lacks widget tests.
 
 ## CI and releases
 
-Every pull request to `master` runs `.github/workflows/pr.yml`, which has five
-jobs — one per thing that can break:
+Every pull request to `master` runs `.github/workflows/pr.yml`, which has six
+jobs — one to work out what the change touches, and one per thing that can
+break:
 
+- **Scope** works out whether anything outside `web/downloads/` changed, and
+  the jobs below skip their real work when nothing did. See
+  [what a downloads-only change skips](#what-a-downloads-only-change-skips).
 - **Analyze, test and build** installs Flutter 3.47.1 plus the pinned Android
   NDK through `.github/actions/setup-flutter-android`, then runs
   `flutter analyze`, `flutter test --coverage`, the coverage floor, and a
@@ -864,6 +881,43 @@ the run says so in its summary and still passes: the app is already on Play by
 then, and failing would report a shipped release as a broken one. See
 [docs/releases.md](docs/releases.md#version-codes).
 
+### What a downloads-only change skips
+
+`web/downloads/` is a static site served by Firebase Hosting. No Flutter build
+reads it and no release packages it, so a change confined to it cannot alter
+what any app does. Four things follow, and each is arranged differently for a
+reason worth knowing before changing any of them.
+
+| | On a downloads-only change |
+| --- | --- |
+| `pr.yml` — Analyze, test and build | runs, skips its steps, reports |
+| `pr.yml` — Functions | runs, skips its steps, reports |
+| `pr.yml` — Build and launch on a simulator | skipped whole |
+| `release-internal.yml` | does not run: no build reaches testers |
+| `tool/check_version_bump.py` | requires no version bump |
+
+The two required jobs are gated **step by step** rather than by a path filter
+on the workflow. This is not fussiness. A workflow skipped by `paths-ignore`
+reports nothing at all, and a required check that never reports leaves the
+pull request permanently unmergeable — the same trap that took the path filter
+off the iOS workflow. Gated by step, the job still runs and still reports; it
+just has nothing to do. The iOS job is skipped whole instead, by a condition on
+the job rather than on the workflow, because a skipped job does report a
+conclusion and because starting a macOS runner to skip everything on it wastes
+the scarcest runner there is.
+
+`release-internal.yml` is the one place a plain path filter is safe: it runs
+after the merge and is nobody's required check. Without it, editing a sentence
+on a web page would put a build in front of every internal tester under a new
+version number containing nothing they could find.
+
+The version exemption is by path, not by kind. A change to a public web page is
+honestly a `feat` or a `fix`, so the kind alone would demand a minor bump the
+app has no reason to make. `tool/check_version_bump.py` therefore drops the
+requirement when nothing outside `web/downloads/` changed. Bumping anyway is
+still allowed; a version that moves backwards, or a minor bump that leaves the
+patch number behind, is still refused.
+
 ## Repo tooling
 
 - [`tool/play.py`](tool/play.py) — Google Play release helper used by the
@@ -890,7 +944,10 @@ then, and failing would report a shipped release as a broken one. See
   [`firestore-tests/`](firestore-tests/README.md) and run against the local
   emulator.
 - [`.githooks/pre-commit`](.githooks/pre-commit) — runs analyze and the tests
-  before a commit. Enable it with `git config core.hooksPath .githooks`.
+  before a commit. Enable it with `git config core.hooksPath .githooks`. It
+  clears git's own environment variables before invoking flutter, for the
+  reason [`test/pre_commit_hook_test.dart`](test/pre_commit_hook_test.dart)
+  spells out.
 
 ## Licence
 
