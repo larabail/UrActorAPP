@@ -31,6 +31,21 @@ if ! printf '%s\n' "$changed" | grep -qvE '\.(md|txt)$|^docs/'; then
   exit 0
 fi
 
+# Git points every hook at the repository being committed to by exporting
+# GIT_DIR, and the flutter tool shells out to git to discover its OWN version.
+# GIT_DIR outranks the `-C <flutter root>` flutter passes, so it reads this
+# repository, finds no Flutter tag, calls itself 0.0.0-unknown, rebuilds the
+# flutter tool and then fails pub resolution -- because no SDK constraint can
+# be satisfied by an unknown version -- all before analyze has run once. The
+# error names a package, so nothing about it points at the hook.
+#
+# This has to come after the staged file list is read, not before: a partial
+# commit or `git commit -a` builds a temporary index and tells the hook about
+# it through GIT_INDEX_FILE, so clearing the environment any earlier makes
+# `git diff --cached` inspect the wrong content instead.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY \
+  GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_COMMON_DIR
+
 echo "pre-commit: flutter analyze"
 flutter analyze
 

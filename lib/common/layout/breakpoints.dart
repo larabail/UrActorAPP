@@ -91,6 +91,24 @@ NavigationStyle navigationStyleFor(WindowSizeClass size) {
 bool usesTwoPanes(WindowSizeClass size) =>
     size == WindowSizeClass.expanded || size == WindowSizeClass.large;
 
+/// Whether a landscape window should be read as a request to fill it with a
+/// video.
+///
+/// The trailer player watches the window and goes fullscreen by itself
+/// whenever it is wider than it is tall. On a phone that is the right reading:
+/// turning the device sideways is something the user did on purpose, and a
+/// phone laid on its side has no room for anything but the video anyway.
+///
+/// A window wide enough for two panes is landscape all of the time — being
+/// wide is what put it in that class — so there is no gesture to read. The
+/// player would enter fullscreen unprompted the first time anything changed
+/// the window metrics, which on a tablet is as ordinary as the keyboard
+/// closing after a search, and a trailer sitting at the foot of a page would
+/// swallow the page. Worse, the takeover is drawn into the detail pane's own
+/// overlay while it sizes itself from the whole window, so it lands cropped
+/// and offset rather than merely unwanted.
+bool landscapeMeansFullScreen(WindowSizeClass size) => !usesTwoPanes(size);
+
 /// The aspect ratio of a poster, as width divided by height.
 ///
 /// TMDB serves posters at 500x750, so this is the shape the artwork actually
@@ -156,6 +174,46 @@ int gridColumnsFor(
   if (availableWidth <= 0 || targetTileWidth <= 0) return minColumns;
   final int fitted =
       ((availableWidth + spacing) / (targetTileWidth + spacing)).floor();
+  return fitted.clamp(minColumns, maxColumns);
+}
+
+/// The geometry of the playlist cards on the home page.
+///
+/// These live here, next to the arithmetic that consumes them, so a test can
+/// state what a real phone does with the real numbers rather than with a copy
+/// of them that can drift.
+const double kPlaylistCardMaxWidth = 360;
+const double kPlaylistGridSpacing = 10;
+const double kPlaylistGridPadding = 10;
+
+/// How many columns fit into [availableWidth] when a tile may be at most
+/// [maxTileWidth] wide, never fewer than [minColumns].
+///
+/// This is the counterpart to [gridColumnsFor]. That one aims at a tile width
+/// and lets the columns share out the surplus; this one treats the width as a
+/// ceiling and adds a column the moment tiles would exceed it. The division is
+/// the same one Flutter's own `SliverGridDelegateWithMaxCrossAxisExtent`
+/// performs, with the single thing that delegate cannot express added: a floor
+/// under the column count.
+///
+/// That floor is the whole point of having this. Without it a ceiling quietly
+/// turns into a *target* once the window is narrow enough, because one column
+/// is always enough to keep every tile under the limit. Asking for cards of at
+/// most 360 logical pixels on a 390 pixel phone gave a single column of 370
+/// pixel cards — wider than the ceiling that was asked for, twice the intended
+/// height, and no longer recognisably a grid.
+///
+/// [spacing] is the gap between columns, counted the way the framework counts
+/// it, so that a grid handed to either helper lands on the same answer.
+int gridColumnsForMaxTileWidth(
+  double availableWidth, {
+  required double maxTileWidth,
+  double spacing = 0,
+  int minColumns = 2,
+  int maxColumns = 12,
+}) {
+  if (availableWidth <= 0 || maxTileWidth <= 0) return minColumns;
+  final int fitted = (availableWidth / (maxTileWidth + spacing)).ceil();
   return fitted.clamp(minColumns, maxColumns);
 }
 

@@ -81,6 +81,30 @@ void main() {
     });
   });
 
+  group('landscapeMeansFullScreen', () {
+    // Turning a phone sideways is a deliberate act, and a phone on its side
+    // has room for the video and nothing else, so the trailer player is right
+    // to read it as a request to fill the window.
+    test('a landscape phone is asking for the video to fill the window', () {
+      expect(landscapeMeansFullScreen(WindowSizeClass.compact), isTrue);
+      expect(landscapeMeansFullScreen(WindowSizeClass.medium), isTrue);
+    });
+
+    // A tablet held horizontally is not asking for anything: landscape is
+    // where it lives. Reading it as a request made the trailer take over the
+    // detail pane on its own the first time the window metrics changed.
+    test('a window with two panes is landscape by nature, not by request', () {
+      expect(landscapeMeansFullScreen(WindowSizeClass.expanded), isFalse);
+      expect(landscapeMeansFullScreen(WindowSizeClass.large), isFalse);
+    });
+
+    test('it is the exact complement of having two panes', () {
+      for (final size in WindowSizeClass.values) {
+        expect(landscapeMeansFullScreen(size), !usesTwoPanes(size));
+      }
+    });
+  });
+
   group('poster geometry', () {
     test('a poster is two by three whatever width it is given', () {
       for (final width in <double>[104, 120, 132, 144, 300]) {
@@ -157,6 +181,90 @@ void main() {
         gridColumnsFor(320, targetTileWidth: 100, spacing: 10),
         3,
       );
+    });
+  });
+
+  group('gridColumnsForMaxTileWidth', () {
+    // The delegate this helper replaced was
+    // SliverGridDelegateWithMaxCrossAxisExtent, whose count is this same
+    // division with no floor under it. Reproduced here so the tests below can
+    // state the regression as a difference rather than as an assertion about
+    // a number nobody can place.
+    int withoutFloor(double availableWidth) =>
+        (availableWidth / (kPlaylistCardMaxWidth + kPlaylistGridSpacing))
+            .ceil();
+
+    double playlistGridWidth(double windowWidth) =>
+        windowWidth - kPlaylistGridPadding * 2;
+
+    int playlistColumns(double windowWidth) => gridColumnsForMaxTileWidth(
+          playlistGridWidth(windowWidth),
+          maxTileWidth: kPlaylistCardMaxWidth,
+          spacing: kPlaylistGridSpacing,
+          minColumns: 2,
+        );
+
+    test('a phone keeps two columns of playlists', () {
+      // The widths that regressed. Every one of these is a shipping phone,
+      // and on every one of them the home page showed a single column of
+      // cards stretched across the window.
+      for (final double width in <double>[375, 384, 390]) {
+        expect(
+          playlistColumns(width),
+          2,
+          reason: 'a $width pt window should still show a grid',
+        );
+      }
+    });
+
+    test('the floor is what a phone needed, not the division', () {
+      // States the bug in numbers: without the clamp the arithmetic really
+      // does answer one, so this test fails the moment the floor is removed.
+      expect(withoutFloor(playlistGridWidth(390)), 1);
+      expect(playlistColumns(390), 2);
+    });
+
+    test('a card never gets wider than the ceiling once past two columns', () {
+      // Above the floor the ceiling is the whole contract, so check the width
+      // the columns actually work out to rather than the count.
+      for (final double width in <double>[800, 1024, 1440, 1920]) {
+        final int columns = playlistColumns(width);
+        final double cardWidth =
+            (playlistGridWidth(width) - kPlaylistGridSpacing * (columns - 1)) /
+                columns;
+
+        expect(
+          cardWidth,
+          lessThanOrEqualTo(kPlaylistCardMaxWidth),
+          reason: 'a $width pt window stretched a card past its cap',
+        );
+      }
+    });
+
+    test('a wide window gains columns rather than bigger cards', () {
+      expect(playlistColumns(1440), greaterThan(playlistColumns(390)));
+    });
+
+    test('the count never falls as the window widens', () {
+      int previous = 0;
+      for (final double width in <double>[375, 600, 900, 1200, 1600, 2400]) {
+        final int columns = playlistColumns(width);
+        expect(columns, greaterThanOrEqualTo(previous));
+        previous = columns;
+      }
+    });
+
+    test('a very wide window does not shred the grid into slivers', () {
+      expect(
+        gridColumnsForMaxTileWidth(20000,
+            maxTileWidth: 360, spacing: 10, maxColumns: 12),
+        12,
+      );
+    });
+
+    test('a zero width falls back rather than dividing by nothing', () {
+      expect(gridColumnsForMaxTileWidth(0, maxTileWidth: 360), 2);
+      expect(gridColumnsForMaxTileWidth(400, maxTileWidth: 0), 2);
     });
   });
 

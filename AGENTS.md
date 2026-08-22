@@ -153,6 +153,15 @@ the title and the commits and taking the larger requirement. The title counts
 because pull requests are squash merged, so it is the only subject that reaches
 master.
 
+One exemption, by path rather than by kind: a pull request that changes nothing
+outside `web/downloads/` needs no bump at all. That directory is the downloads
+site, which is deployed to Firebase Hosting and never packaged into a build, so
+no version of the app differs because of it. The commit is still honestly a
+`feat` or a `fix` — it is a public web page — and bumping anyway is allowed. A
+change of that shape also skips the Flutter and iOS builds and does not reach
+internal testers; see
+[what a downloads-only change skips](README.md#what-a-downloads-only-change-skips).
+
 ## Pull requests
 
 ### Title
@@ -269,6 +278,16 @@ when you genuinely need to commit something that does not build.
   in a file, as here, is harmless; only the commit message is scanned. The
   release workflow uses it deliberately; see
   [docs/releases.md](docs/releases.md#version-codes).
+- **Git exports `GIT_DIR` into every hook**, and it beats the repository a
+  nested tool picks for itself. `flutter` asks git for its own version, so a
+  hook that runs it without clearing `GIT_DIR`, `GIT_WORK_TREE` and their
+  relatives gets an SDK that calls itself `0.0.0-unknown`, rebuilds its tool on
+  every attempt, and fails pub resolution with an error naming a package —
+  nothing in it points at the hook. `.githooks/pre-commit` unsets them, after
+  reading the staged file list and not before, because that list comes from
+  `GIT_INDEX_FILE` and clearing it first breaks the change detection instead.
+  Anything else that runs a git-aware tool from a hook needs the same
+  treatment.
 - The generated files under `lib/l10n/` are committed. Forgetting
   `flutter gen-l10n` leaves them stale and the diff looks unrelated to your
   change.

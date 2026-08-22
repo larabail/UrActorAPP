@@ -149,4 +149,56 @@ void main() {
       expect(listWidth, greaterThan(0));
     });
   });
+
+  group('each pane is told how much room it has', () {
+    // The trailer player draws its fullscreen layer into the nearest overlay,
+    // which inside the pane is the pane's own, but sizes that layer from
+    // whatever it believes the screen to be. Believing the window put a video
+    // half a window wide into a half window box, cropped down its right edge
+    // and pushed off the top. The pane has to be able to say how big it is.
+    testWidgets('so a pane filling layer fills the pane, not the window',
+        (tester) async {
+      _useWindow(tester, const Size(1600, 900));
+
+      late Size paneSize;
+      late double paneWidth;
+      await tester.pumpWidget(_app(TwoPane(
+        list: const SizedBox.expand(),
+        placeholder: Builder(
+          builder: (context) {
+            paneSize = DetailPane.maybeOf(context)!.size;
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                paneWidth = constraints.maxWidth;
+                return const SizedBox.expand();
+              },
+            );
+          },
+        ),
+      )));
+
+      expect(paneSize.width, paneWidth);
+      expect(paneSize.width, lessThan(1600));
+      expect(paneSize.height, 900);
+    });
+
+    testWidgets('and the list half reports its own width too', (tester) async {
+      _useWindow(tester, const Size(1600, 900));
+
+      late Size listSize;
+      await tester.pumpWidget(_app(TwoPane(
+        list: Builder(
+          builder: (context) {
+            listSize = DetailPane.maybeOf(context)!.size;
+            return const SizedBox.expand();
+          },
+        ),
+        placeholder: const DetailPanePlaceholder(message: 'nothing yet'),
+      )));
+
+      expect(listSize.width, lessThan(1600));
+      expect(listSize.width, greaterThan(0));
+      expect(listSize.height, 900);
+    });
+  });
 }
