@@ -3,16 +3,6 @@ import 'package:flutter/material.dart';
 import '../layout/breakpoints.dart';
 import 'scrolling_line.dart';
 
-/// The room kept under a filmography poster for the credit line.
-///
-/// Fixed rather than measured so every tile in a row is the same height
-/// whether or not it has anything to say. A row whose tiles disagree about
-/// their height centres the short ones, and the posters stop lining up.
-const double kCreditLabelHeight = 20;
-
-/// The gap between the poster and the line under it.
-const double kCreditLabelGap = 4;
-
 /// A poster from a person's filmography, with the part they played under it.
 ///
 /// The label used to be drawn *over* the artwork, near the foot of the poster.
@@ -76,7 +66,7 @@ class CreditTile extends StatelessWidget {
           padding: const EdgeInsets.only(
             left: kPosterTileMarginLeft,
             right: kPosterTileMarginRight,
-            top: kCreditLabelGap,
+            top: kPosterLabelGap,
           ),
           child: SizedBox(
             width: tileWidth,
@@ -86,7 +76,7 @@ class CreditTile extends StatelessWidget {
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
               ),
-              height: kCreditLabelHeight,
+              height: kPosterLabelHeight,
             ),
           ),
         ),
@@ -94,41 +84,56 @@ class CreditTile extends StatelessWidget {
     );
   }
 
+  /// Places [child] over the artwork, aligned within it.
+  ///
+  /// Everything drawn on top of a poster goes through here, so the stack ends
+  /// up exactly the size of the poster and a tile's width never depends on
+  /// what happens to be stamped on it. An unpositioned overlay does take part
+  /// in sizing the stack, which is how a wide stamp used to drag a whole tile
+  /// past the column it belonged in.
+  Widget _overPoster({required Alignment alignment, required Widget child}) {
+    return Positioned(
+      left: kPosterTileMarginLeft,
+      top: kPosterTileMarginTop,
+      width: tileWidth,
+      height: posterHeightFor(tileWidth),
+      child: Align(alignment: alignment, child: child),
+    );
+  }
+
   /// The wash over artwork the viewer has already seen. Darkest at the top,
   /// where the stamp sits, and clear by the bottom so the poster is still
   /// recognisable.
   Widget _dimmed() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(
-        kPosterTileMarginLeft,
-        kPosterTileMarginTop,
-        kPosterTileMarginRight,
-        0,
-      ),
-      width: tileWidth,
-      height: posterHeightFor(tileWidth),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(27),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.black.withValues(alpha: 0.85),
-            Colors.black.withValues(alpha: 0),
-          ],
+    return _overPoster(
+      alignment: Alignment.center,
+      child: SizedBox.expand(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(27),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withValues(alpha: 0.85),
+                Colors.black.withValues(alpha: 0),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
   Widget _awards() {
-    return Align(
+    return _overPoster(
       alignment: Alignment.bottomCenter,
-      child: SizedBox(
-        height: tileWidth * 0.28,
+      // A title with a shelf full of them would otherwise run off both sides
+      // of the poster; scaling down keeps the whole row on the artwork.
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
             awards,
             (index) => SizedBox(
@@ -141,27 +146,31 @@ class CreditTile extends StatelessWidget {
     );
   }
 
-  /// The "seen" stamp, high on the artwork where the wash above is darkest.
+  /// The "seen" stamp, across the top of the artwork where the wash is
+  /// darkest.
+  ///
+  /// Positioned over the poster's rectangle rather than laid out beside it.
+  /// It used to be a column carrying a hardcoded 54pt left margin, which put
+  /// it across the right half of the artwork and a few pixels past the right
+  /// edge — survivable only because every poster was exactly 104pt wide. Now
+  /// that a grid shares its width out among its columns, that margin could
+  /// exceed the poster itself, and because the stamp was an unpositioned
+  /// child it dragged the whole tile past the column it belonged in.
+  ///
+  /// A positioned child takes no part in sizing the stack, so a watched tile
+  /// is now exactly as wide as an unwatched one whatever the poster measures.
+  /// Its height along the top is unchanged; only the horizontal offset is
+  /// gone, and centring is what that offset was failing to be.
   Widget _stamp() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            margin: const EdgeInsets.fromLTRB(54.0, 10.0, 5.0, 0),
-            width: tileWidth * 0.55,
-            height: tileWidth * 0.26,
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/seen_after.png'),
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-          // Holds the stamp up near the top of the poster rather than in the
-          // middle of it.
-          SizedBox(height: posterHeightFor(tileWidth) * 0.52),
-        ],
+    return _overPoster(
+      alignment: Alignment.topCenter,
+      child: SizedBox(
+        width: tileWidth * 0.55,
+        height: tileWidth * 0.26,
+        child: Image.asset(
+          'assets/seen_after.png',
+          fit: BoxFit.contain,
+        ),
       ),
     );
   }

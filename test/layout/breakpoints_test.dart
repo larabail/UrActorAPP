@@ -174,6 +174,14 @@ void main() {
       expect(gridColumnsFor(400, targetTileWidth: 0), 2);
     });
 
+    test('an unbounded width falls back rather than throwing', () {
+      // A horizontally scrolling parent offers infinite width while it
+      // measures its children. Rounding infinity is an unsupported operation,
+      // so this crashed rather than laying anything out.
+      expect(gridColumnsFor(double.infinity, targetTileWidth: 104), 2);
+      expect(gridColumnsFor(400, targetTileWidth: double.infinity), 2);
+    });
+
     test('spacing is counted between columns and not outside them', () {
       // Three 100pt tiles with 10pt gaps need 320pt, not 330pt. A formula
       // that charges for a trailing gap drops to two columns here.
@@ -181,6 +189,99 @@ void main() {
         gridColumnsFor(320, targetTileWidth: 100, spacing: 10),
         3,
       );
+    });
+
+    test('a width that nearly fits another column gets one', () {
+      // The count is rounded rather than floored, because the leftover is
+      // handed to the tiles. Flooring here would leave 95% of a column spare
+      // and inflate three tiles to swallow it.
+      expect(
+        gridColumnsFor(419, targetTileWidth: 100, spacing: 0),
+        4,
+      );
+    });
+  });
+
+  group('posterGridMetricsFor', () {
+    // The width of an iPhone 15 Pro, which is what the defect was reported on.
+    const double phone = 393;
+
+    test('the columns divide the width exactly', () {
+      final grid = posterGridMetricsFor(phone, targetTileWidth: 104);
+
+      // The whole point: no dead space against the trailing edge. Every grid
+      // in the app used to draw fixed-width tiles and leave the remainder —
+      // here 36 logical pixels, a third of a poster — piled up on the right.
+      expect(grid.cellWidth * grid.columns, moreOrLessEquals(phone));
+    });
+
+    test('a phone still shows three posters across', () {
+      expect(posterGridMetricsFor(phone, targetTileWidth: 104).columns, 3);
+    });
+
+    test('the tiles grow to take up the slack rather than leaving it', () {
+      final grid = posterGridMetricsFor(phone, targetTileWidth: 104);
+
+      expect(grid.tileWidth, greaterThan(104));
+    });
+
+    test('a cell is its tile plus the margins the tile carries', () {
+      final grid = posterGridMetricsFor(phone, targetTileWidth: 104);
+
+      expect(grid.cellWidth, grid.tileWidth + kPosterTileMarginWidth);
+    });
+
+    test('a wider region gets more posters, not bigger ones', () {
+      final narrow = posterGridMetricsFor(phone, targetTileWidth: 104);
+      final wide = posterGridMetricsFor(840, targetTileWidth: 132);
+
+      expect(wide.columns, greaterThan(narrow.columns));
+      // A poster that kept growing with the window would be four times the
+      // size of a phone's by the time it reached a desktop.
+      expect(wide.tileWidth, lessThan(narrow.tileWidth * 2));
+    });
+
+    test('no tile strays far from the width it asked for', () {
+      // Rounding the column count bounds how far sharing out the surplus can
+      // push a tile. Flooring instead let a 320pt phone reach 145 against a
+      // 104 target, half as wide again as the same poster on a 393pt one.
+      for (double width = 200; width <= 1600; width += 1) {
+        final grid = posterGridMetricsFor(width, targetTileWidth: 104);
+        if (grid.columns <= 2 || grid.columns >= 12) continue;
+        expect(grid.tileWidth, greaterThan(104 * 0.8));
+        expect(grid.tileWidth, lessThan(104 * 1.25));
+      }
+    });
+
+    test('the count never falls as the region widens', () {
+      int previous = 0;
+      for (double width = 200; width <= 2000; width += 1) {
+        final columns =
+            posterGridMetricsFor(width, targetTileWidth: 104).columns;
+        expect(columns, greaterThanOrEqualTo(previous));
+        previous = columns;
+      }
+    });
+
+    test('a region being measured rather than laid out keeps the aim', () {
+      // A horizontally scrolling parent offers infinite width. Sharing that
+      // out gives every tile a width of NaN, which is a crash and not a
+      // layout.
+      expect(
+        posterGridMetricsFor(double.infinity, targetTileWidth: 104).tileWidth,
+        104,
+      );
+      expect(posterGridMetricsFor(0, targetTileWidth: 104).tileWidth, 104);
+      expect(posterGridMetricsFor(-50, targetTileWidth: 104).tileWidth, 104);
+    });
+
+    test('a region narrower than the margins still yields a usable tile', () {
+      // Two cells of 10pt are narrower than the 15pt of margin inside each,
+      // so the arithmetic wants a negative width. Negative is a crash rather
+      // than a small tile.
+      final grid = posterGridMetricsFor(20, targetTileWidth: 104);
+
+      expect(grid.tileWidth, greaterThan(0));
     });
   });
 

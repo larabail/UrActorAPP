@@ -134,4 +134,93 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.byType(Marquee), findsOneWidget);
   });
+
+  group('a watched tile', () {
+    Future<void> pumpWatched(WidgetTester tester, double tileWidth) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: CreditTile(
+                poster: Container(
+                  margin: const EdgeInsets.fromLTRB(
+                    kPosterTileMarginLeft,
+                    kPosterTileMarginTop,
+                    kPosterTileMarginRight,
+                    0,
+                  ),
+                  width: tileWidth,
+                  height: posterHeightFor(tileWidth),
+                  child: const ColoredBox(key: _posterKey, color: Colors.blue),
+                ),
+                label: 'Woody',
+                tileWidth: tileWidth,
+                watched: true,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+
+    testWidgets('is no wider than the cell it was given', (tester) async {
+      usePhoneSurface(tester);
+
+      // A narrow poster is reachable now that a grid shares its width out
+      // among the columns rather than drawing every tile the same size. The
+      // seen stamp used to carry a hardcoded 54pt offset that only fitted
+      // behind a 104pt poster, so a narrower one pushed the tile wider than
+      // its column and overflowed the row.
+      await pumpWatched(tester, 92);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        tester.getSize(find.byType(CreditTile)).width,
+        92 + kPosterTileMarginLeft + kPosterTileMarginRight,
+      );
+    });
+
+    testWidgets('keeps its stamp within the artwork', (tester) async {
+      usePhoneSurface(tester);
+
+      await pumpWatched(tester, 92);
+
+      final poster = tester.getRect(find.byKey(_posterKey));
+      final stamp = tester.getRect(find.byType(Image));
+
+      expect(stamp.left, greaterThanOrEqualTo(poster.left));
+      expect(stamp.right, lessThanOrEqualTo(poster.right));
+      expect(stamp.top, greaterThanOrEqualTo(poster.top));
+      expect(stamp.bottom, lessThanOrEqualTo(poster.bottom));
+    });
+
+    testWidgets('centres its stamp on the artwork', (tester) async {
+      usePhoneSurface(tester);
+
+      await pumpWatched(tester, 92);
+
+      final poster = tester.getRect(find.byKey(_posterKey));
+      final stamp = tester.getRect(find.byType(Image));
+
+      // The 54pt offset it used to carry pushed it onto the right half of the
+      // poster and out past the edge.
+      expect(stamp.center.dx, moreOrLessEquals(poster.center.dx, epsilon: 0.5));
+      // Along the top, where the wash over the artwork is darkest, which is
+      // where it sat before.
+      expect(stamp.top, moreOrLessEquals(poster.top, epsilon: 0.5));
+    });
+
+    testWidgets('is the same width as an unwatched one', (tester) async {
+      usePhoneSurface(tester);
+
+      await _pumpTile(tester, 'Woody');
+      final unwatched = tester.getSize(find.byType(CreditTile)).width;
+
+      await pumpWatched(tester, _tileWidth);
+
+      expect(tester.getSize(find.byType(CreditTile)).width, unwatched);
+    });
+  });
 }
