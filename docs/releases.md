@@ -571,7 +571,13 @@ as part of publishing the GitHub release.
 | `UrActor-<version>-macos.dmg` | run artifact | GitHub release |
 | `UrActor-<version>-windows-setup.exe` | run artifact | GitHub release |
 | `.sha256` for each | run artifact | GitHub release |
-| `index.html`, `version.json` | not built | Firebase Hosting |
+| `version.json` | not built | Firebase Hosting |
+
+The page at `downloads.uractor.com` is not in that table because nothing builds
+it. It is committed under `web/downloads/` and served as it stands, and it asks
+the GitHub releases API what to offer when someone opens it. A production run
+deploys it unchanged along with the manifest. See
+[the downloads site](../README.md#the-downloads-site).
 
 The installers are deliberately **not** on Firebase Hosting. It bills per
 gigabyte past its free tier and these files are over a hundred megabytes, so
@@ -584,8 +590,9 @@ Publishing it first would point every install at a download that 404s.
 
 The two builds are separate jobs, because macOS and Windows cannot be cross
 compiled, and publishing is a third that waits for both. A GitHub release
-carrying only one installer is worse than none: the downloads page would offer a
-link that 404s for half its visitors.
+carrying only one installer is worse than none: half of its visitors get a
+platform whose newest build is a version behind, which the page will say out
+loud on the card.
 
 ### macOS: one certificate you do not have yet
 
@@ -741,10 +748,16 @@ Only the first two are new.
 2. Enable **Keychain Sharing** on the `com.uractor.uractormacos` App ID.
 3. In the Firebase console, add a Hosting site named `uractor-downloads` and
    connect the custom domain `downloads.uractor.com`. Firebase gives you the
-   DNS records to add.
+   DNS records to add. Until this is done the domain answers with Firebase's
+   own "Site Not Found" page, which is what it does today.
 4. Check the service account behind `FIREBASE_SERVICE_ACCOUNT` has the
    **Firebase Hosting Admin** role; it was created for App Distribution and
    may not.
+
+Once the site exists, `firebase deploy --only hosting` publishes the downloads
+page on its own. It does not need a release to have happened: with nothing
+published yet it says so, and it starts listing installers the moment the first
+release exists, without being redeployed.
 
 ## Release notes
 

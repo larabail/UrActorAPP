@@ -139,6 +139,25 @@ jobs:
         working-directory: functions
         run: node -e "require('./index.js')"
 
+  # The downloads page is served exactly as it is committed -- nothing builds
+  # it -- so a mistake in its script is invisible until someone opens
+  # downloads.uractor.com and finds no download on it. Node's own test runner,
+  # so there is nothing to install.
+  downloads:
+    name: Downloads site
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Test
+        run: node --test web/downloads/
+
   # Every merge to master ships to internal testers, so a pull request that
   # changes what the app does has to say so in the version. Otherwise two
   # different builds reach testers under the same name and a bug report cannot

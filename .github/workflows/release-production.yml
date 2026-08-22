@@ -788,13 +788,18 @@ jobs:
       # are built from commit subjects, which are text somebody else wrote, and
       # a subject containing a backtick or a `$(` would otherwise be run by the
       # shell on a runner holding the deploy credentials.
-      - name: Build the downloads site
+      #
+      # The page itself is not built here. It is committed as it is served and
+      # reads the releases API in the browser, so this writes only the
+      # manifest: the file the app polls, and the page's fallback for when
+      # that API is rate limited.
+      - name: Write the update manifest
         if: ${{ !inputs.dry_run }}
         env:
           NOTES: ${{ needs.resolve.outputs.notes }}
         run: |
           set -euo pipefail
-          python tool/build_downloads_site.py \
+          python tool/build_download_manifest.py \
             --version "$VERSION" \
             --notes "$NOTES"
 
