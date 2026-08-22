@@ -39,17 +39,27 @@ void main() {
     http.on('watch/providers/movie', json: {'results': []});
   });
 
-  Future<void> openDialog(WidgetTester tester) async {
-    // The dialogue pins itself to the minimum dialogue width with a
-    // SizedBox(width: 20), so its Logout/Delete row overflows on every
-    // device. Widening the window cannot avoid it.
-    ignoreOverflowErrors();
+  /// Opens the dialogue on a window of [size] at [textScale].
+  ///
+  /// The scale is injected through `MaterialApp.builder` rather than around
+  /// `home`, because a dialogue is a route beside the home page rather than a
+  /// widget inside it, so anything wrapped around `home` never reaches it.
+  Future<void> openDialog(
+    WidgetTester tester, {
+    Size size = const Size(560, 1000),
+    double textScale = 1.0,
+  }) async {
     ignoreNetworkImageFailures();
-    usePhoneSurface(tester, size: const Size(560, 1000));
+    usePhoneSurface(tester, size: size);
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: S.localizationsDelegates,
         supportedLocales: S.supportedLocales,
+        builder: (context, child) => MediaQuery.withClampedTextScaling(
+          minScaleFactor: textScale,
+          maxScaleFactor: textScale,
+          child: child!,
+        ),
         home: Scaffold(
           body: Builder(
             builder: (context) => ElevatedButton(
@@ -107,6 +117,69 @@ void main() {
     });
   });
 
+  group('laying out', () {
+    /// The panel the dialogue actually paints, as opposed to `Dialog` itself,
+    /// which fills the screen and holds the inset.
+    Finder panel() => find
+        .descendant(of: find.byType(Dialog), matching: find.byType(Material))
+        .first;
+
+    testWidgets(
+        'takes the width the window offers rather than the framework '
+        'minimum', (tester) async {
+      // It used to wrap its column in SizedBox(width: 20). That does not make
+      // anything 20pt wide: `Dialog` imposes a 280pt minimum, so the box was
+      // clamped up to it and the dialogue rendered 280pt on every device,
+      // discarding whatever else it was offered.
+      await openDialog(tester);
+
+      expect(
+        tester.getSize(panel()).width,
+        480.0,
+        reason: 'a 560pt window leaves 480pt after the framework inset',
+      );
+    });
+
+    testWidgets('stops widening once it is wide enough to read',
+        (tester) async {
+      await openDialog(tester, size: const Size(1200, 900));
+
+      expect(
+        tester.getSize(panel()).width,
+        560.0,
+        reason: 'a desktop window should not stretch the form across it',
+      );
+    });
+
+    testWidgets(
+        'keeps the account actions inside the panel at the text scale '
+        "Android's font slider reaches", (tester) async {
+      // At 1.1 the labels grow while the icons and paddings do not, so the row
+      // used to overflow. A debug build draws a stripe over it; a release
+      // build clips silently, which is how Logout and Delete were being cut
+      // off with nobody able to report more than "the button is truncated".
+      await openDialog(tester, size: const Size(360, 640), textScale: 1.3);
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('scrolls its content in landscape instead of overflowing',
+        (tester) async {
+      // The column had no scroll view at all, so a short window overflowed it
+      // vertically no matter what the text scale was.
+      await openDialog(tester, size: const Size(900, 400));
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.descendant(
+          of: find.byType(InfoButtonDialog),
+          matching: find.byType(SingleChildScrollView),
+        ),
+        findsWidgets,
+      );
+    });
+  });
+
   group('region', () {
     testWidgets('lists the countries TMDB returned', (tester) async {
       await openDialog(tester);
@@ -123,7 +196,8 @@ void main() {
       expect(find.text('Spain'), findsWidgets);
     });
 
-    testWidgets('an account set to a country TMDB does not list falls back to '
+    testWidgets(
+        'an account set to a country TMDB does not list falls back to '
         'the first one', (tester) async {
       // Otherwise the dropdown is handed a value that is not among its items
       // and the whole dialogue fails to build.
@@ -232,7 +306,11 @@ void main() {
             'provider_name': 'Netflix',
             'provider_id': 8
           },
-          {'logo_path': '/max.jpg', 'provider_name': 'Max', 'provider_id': 1899},
+          {
+            'logo_path': '/max.jpg',
+            'provider_name': 'Max',
+            'provider_id': 1899
+          },
         ]
       });
     });
@@ -290,27 +368,14 @@ void main() {
   });
 
   group('deleting the account', () {
-    /// The Delete button sits in the row that overflows, so part of it is off
-    /// the dialogue and a tap at its centre misses. Its handler is invoked
-    /// directly instead, which still exercises what the button does.
-    Future<void> pressDelete(WidgetTester tester) async {
-      final button = find
-          .ancestor(
-            of: find.text('Delete'),
-            matching: find.byType(GestureDetector),
-          )
-          .first;
-      tester.widget<GestureDetector>(button).onTap!();
-      await tester.pumpAndSettle();
-    }
-
     testWidgets('asks for the password before it will do anything',
         (tester) async {
       // Deletion is irreversible and cannot be undone from inside the app, so
       // it must never be one tap away.
       await openDialog(tester);
 
-      await pressDelete(tester);
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
 
       expect(find.byType(AlertButtonDialogue), findsOneWidget);
       expect(find.byType(TextField), findsOneWidget);
@@ -328,7 +393,8 @@ void main() {
       });
 
       await openDialog(tester);
-      await pressDelete(tester);
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
 
