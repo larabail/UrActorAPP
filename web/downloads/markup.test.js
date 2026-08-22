@@ -74,14 +74,35 @@ describe('the markup page.js depends on', () => {
     assert.match(html, /\[hidden\]\s*\{\s*display:\s*none\s*!important/);
   });
 
-  it('degrades to the releases page with no script', () => {
-    // Every button starts life pointing somewhere real, so the page is useful
-    // before page.js runs and if it never does.
-    const buttons = [...html.matchAll(/<a class="button"[^>]*id="([^"]+)"[^>]*href="([^"]+)"/g)];
-    assert.ok(buttons.length >= 3, 'expected the hero and both platform buttons');
-    for (const [, id, href] of buttons) {
-      assert.ok(href.startsWith('https://github.com/larabail/UrActorAPP/releases'),
-        `${id} does not fall back to the releases page`);
+  it('leads somewhere real with no script', () => {
+    // Every button is useful in the served markup, before page.js runs and if
+    // it never does. Where "useful" points depends on the platform: the
+    // desktop buttons fall back to the releases page, which is where the
+    // installers actually live, while the store buttons are already final --
+    // there is no Android or iOS build on GitHub to fall back to.
+    const RELEASES = 'https://github.com/larabail/UrActorAPP/releases';
+    const expected = {
+      'hero-button': RELEASES,
+      'button-macos': RELEASES,
+      'button-windows': RELEASES,
+      'button-android': 'https://play.google.com/',
+      'button-ios': 'https://apps.apple.com/',
+    };
+
+    const found = new Map(
+      [...html.matchAll(/<a class="button"[^>]*id="([^"]+)"[^>]*href="([^"]+)"/g)]
+        .map(([, id, href]) => [id, href]),
+    );
+
+    for (const [id, href] of found) {
+      assert.ok(expected[id],
+        `${id} is a button with nowhere declared to lead without script`);
+      assert.ok(href.startsWith(expected[id]),
+        `${id} leads to ${href}, expected something under ${expected[id]}`);
+    }
+
+    for (const id of Object.keys(expected)) {
+      assert.ok(found.has(id), `${id} is missing from the page`);
     }
   });
 });
