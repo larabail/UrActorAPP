@@ -344,14 +344,13 @@ project sets `DEVELOPMENT_TEAM = Q8XY8276AC`, so that Apple Developer account
 has to be signed in to Xcode.
 
 CI covers this on macOS runners. `.github/workflows/ios.yml` builds the app
-and launches it on a simulator for pull requests that touch `ios/` or either
-pubspec file, and `.github/workflows/release-testflight.yml` ships to
-TestFlight. Both run on `macos-26`, because Apple refuses uploads built with
-an SDK older than iOS 26 and the older image defaults to Xcode 16. The pull
-request check is filtered to those paths on purpose: the macOS build takes
-around twenty-five minutes against roughly five on Linux, and a Dart-only
-change cannot break the native build without also changing pubspec. See
-[docs/releases.md](docs/releases.md).
+and launches it on a simulator for every pull request, and
+`.github/workflows/release-testflight.yml` ships to TestFlight. Both run on
+`macos-26`, because Apple refuses uploads built with an SDK older than iOS 26
+and the older image defaults to Xcode 16. The check is required to merge, which
+is why it is no longer filtered to iOS paths: a skipped workflow reports
+nothing, and a required check that never reports blocks the pull request
+forever. See [docs/releases.md](docs/releases.md).
 
 **Run `flutter clean` after any change to `ios/Podfile.lock`.** `flutter
 build` will not do it for you, and a stale `build/` directory holding the
@@ -656,13 +655,18 @@ only Markdown, docs, or `.gitignore`. The workflow has three jobs:
 
 The iOS check lives in its own workflow, `.github/workflows/ios.yml`, because
 it needs a macOS runner and that build takes around twenty-five minutes against
-roughly five on Linux. It runs only for pull requests touching `ios/`,
-`pubspec.yaml` or `pubspec.lock` — a Dart-only change is already covered on
-Linux and cannot break the native build without also changing pubspec. It
-builds for the simulator with `--no-codesign`, then installs and launches the
-app and checks it is still running fifteen seconds later, because the iOS
-failure that matters most, Firebase failing to configure, happens at launch
-rather than at compile time.
+roughly five on Linux. It runs on every pull request. It used to be filtered to
+`ios/` and the pubspec files, on the grounds that a Dart-only change cannot
+break the native build without also changing pubspec — true, but incompatible
+with requiring the check, because a workflow that skips reports nothing and a
+required check that never reports can never be satisfied. It builds for the
+simulator with `--no-codesign`, then installs and launches the app and checks
+it is still running fifteen seconds later, because the iOS failure that matters
+most, Firebase failing to configure, happens at launch rather than at compile
+time.
+
+**Required to merge**, along with the three Linux jobs from `pr.yml`. Between
+them they are the four checks branch protection on `master` waits for.
 
 There is no XCTest job. `ios/RunnerTests` still contains only the empty
 `testExample` stub that `flutter create` generates, and the app has no native
@@ -724,6 +728,12 @@ would report a shipped release as a broken one.
 
 - [`tool/play.py`](tool/play.py) — Google Play release helper used by the
   release workflows and runnable by hand. See [Releasing](docs/releases.md).
+- [`tool/generate_desktop_icons.py`](tool/generate_desktop_icons.py) — derives
+  the macOS and Windows app icons from the iOS one. `flutter create` writes a
+  Flutter logo into `macos/` and `windows/` and nothing replaces it, so both
+  desktop builds shipped with the toolchain placeholder until this existed. Run
+  it after changing the iOS icon; it needs `pip3 install --user Pillow` and is
+  deliberately not wired into CI, because the icons it produces are committed.
 - [`tools/sync-oscars`](tools/sync-oscars/README.md) — a standalone Node 18+
   script (no npm dependencies) that populates the Firestore `Oscars`
   collection from the UrActor API, resolving winners to TMDB ids. It has its
