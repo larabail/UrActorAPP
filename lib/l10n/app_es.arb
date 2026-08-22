@@ -257,5 +257,8 @@
   "detailPanePlaceholder": "Elige algo para verlo aquí",
   "userDisabledError": "Esa cuenta ha sido deshabilitada.",
   "tooManyRequestsError": "Demasiados intentos. Espera un momento y vuelve a intentarlo.",
-  "networkError": "No se pudo conectar con el servidor. Comprueba tu conexión."
+  "networkError": "No se pudo conectar con el servidor. Comprueba tu conexión.",
+  "updateAvailable": "UrActor {version} ya está disponible",
+  "updateDownload": "Descargar",
+  "updateDismiss": "Descartar"
 }

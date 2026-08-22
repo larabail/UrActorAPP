@@ -451,5 +451,23 @@
   "networkError": "Could not reach the server. Check your connection.",
   "@networkError": {
     "description": "Shown when a sign in attempt could not reach Firebase at all."
+  },
+  "updateAvailable": "UrActor {version} is available",
+  "@updateAvailable": {
+    "description": "Shown in the desktop update bar when a newer version has been published. {version} is a version number like 3.16.0.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "3.16.0"
+      }
+    }
+  },
+  "updateDownload": "Download",
+  "@updateDownload": {
+    "description": "Button in the desktop update bar that opens the downloads page."
+  },
+  "updateDismiss": "Dismiss",
+  "@updateDismiss": {
+    "description": "Button that hides the desktop update bar until the next version."
   }
 }

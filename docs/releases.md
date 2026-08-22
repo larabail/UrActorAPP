@@ -430,6 +430,209 @@ being rejected by Play. That happens when a build is uploaded to production by
 hand, which leaves production ahead of the track it is supposed to be promoted
 from; the fix is to build a newer version rather than to promote an older one.
 
+## Releasing the desktop apps
+
+macOS and Windows are built by `.github/workflows/release-desktop.yml`, which
+publishes the installers to a GitHub release and updates
+`downloads.uractor.com`.
+
+### It runs on a tag, not on a merge
+
+```bash
+# bump `version:` in pubspec.yaml first, and land it
+git tag v3.16.0 && git push origin v3.16.0
+```
+
+Unlike the mobile releases, this is not triggered by merging to `master`. Two
+reasons, and both are deliberate:
+
+- The macOS half takes around twenty-five minutes against roughly five on
+  Linux, because most of it is spent compiling gRPC and Firestore from source,
+  and it would run on every merge for a build nobody had asked to publish.
+- There is no desktop equivalent of a staged rollout. Whatever is published
+  is what people download, immediately.
+
+The tag is the source of truth for the version, and the preflight job refuses
+the run if it disagrees with `pubspec.yaml`. A release whose installer,
+download page and in-app update notice named different versions would be
+worse than no release at all.
+
+### What it produces
+
+| Artifact | Where it goes | Why there |
+|---|---|---|
+| `UrActor-<version>-macos.dmg` | GitHub release | Free CDN, no bandwidth billing |
+| `UrActor-<version>-windows-setup.exe` | GitHub release | Same |
+| `.sha256` for each | GitHub release | Lets a cautious Windows user verify the file the SmartScreen warning is about |
+| `index.html`, `version.json` | Firebase Hosting | Small, and it is where the domain already lives |
+
+The installers are deliberately **not** on Firebase Hosting. It bills per
+gigabyte past its free tier and these files are over a hundred megabytes, so
+roughly sixty downloads a month would start costing money. GitHub serves
+release assets over a CDN for nothing.
+
+`version.json` is what a running copy of the app polls to discover it is out
+of date, so it is deployed **last** — after the release and its assets exist.
+Publishing it first would point every install at a download that 404s.
+
+### macOS: one certificate you do not have yet
+
+This is the blocking prerequisite, and it is the same trap as
+[the iOS distribution certificate](#the-distribution-certificate-has-to-be-one-you-generated),
+one step further along. Signing a build for distribution **outside** the App
+Store needs a **Developer ID Application** certificate. An `Apple Development`
+certificate — the one Xcode creates for you, and the only one on the machine
+that built this — cannot do it, and the workflow fails loudly rather than
+producing something Gatekeeper will reject on a user's machine.
+
+1. Generate the key and request locally. Keychain Access → Certificate
+   Assistant does this, or equivalently:
+
+   ```bash
+   openssl req -new -newkey rsa:2048 -nodes \
+     -keyout developerid.key -out developerid.csr \
+     -subj "/emailAddress=you@example.com/CN=Your Name/C=US"
+   ```
+
+   Either way the key pair is generated **here**, which is the point: a
+   cloud-managed certificate leaves the private key with Apple, and there is
+   then nothing to put in a secret.
+2. **developer.apple.com → Certificates → + → Developer ID Application.**
+   Upload the request, download the `.cer`.
+
+   Two things to know before clicking: you must hold the **Account Holder**
+   role, and unlike other certificate types **you cannot revoke a Developer ID
+   certificate yourself** -- it needs a mail to Apple. There is a cap of five,
+   so they are not scarce, but a mistake is not something you can quietly
+   undo.
+   Choose **G2 Sub-CA**, not *Previous Sub-CA*. The page offers the older
+   intermediary for Xcode before 11.4.1, and certificates issued against it
+   expire on 2027-02-01 regardless of when they were created -- so picking the
+   default gets you a certificate that dies within months.
+
+3. Combine the downloaded certificate with the key, **including Apple's
+   intermediate**, or the signature will not chain on a runner that has never
+   had Xcode installed:
+
+   ```bash
+   curl -fsSLO https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer
+   openssl x509 -inform DER -in DeveloperIDG2CA.cer -out DeveloperIDG2CA.pem
+   openssl x509 -inform DER -in developerid.cer   -out developerid.pem
+
+   openssl pkcs12 -export -out developerid.p12 \
+     -inkey developerid.key -in developerid.pem \
+     -certfile DeveloperIDG2CA.pem
+   ```
+
+   Check the certificate and the key are a matching pair before trusting the
+   result -- a mismatch produces a `.p12` that builds fine and fails at
+   `codesign` with an error that does not say why:
+
+   ```bash
+   openssl x509 -in developerid.pem -noout -modulus | openssl md5
+   openssl rsa  -in developerid.key -noout -modulus | openssl md5   # must match
+   ```
+
+4. `base64 -i developerid.p12 | pbcopy`
+
+Verify the whole thing before relying on it. This is the chain a user's
+machine checks:
+
+```bash
+codesign -dvvv YourApp.app 2>&1 | grep -E 'Authority|TeamIdentifier'
+# Authority=Developer ID Application: ... (TEAMID)
+# Authority=Developer ID Certification Authority
+# Authority=Apple Root CA
+```
+
+Signing outside the App Store is also why the app is **notarised**: Apple
+scans the upload and issues a ticket, which `stapler` embeds so the first
+launch works with no network. Since macOS 15 Sequoia there is no way around
+this — the old right-click → Open bypass is gone, and an unsigned or
+un-notarised build is a hard block for every user, not an inconvenience.
+
+Notarisation reuses the three `APP_STORE_CONNECT_*` secrets TestFlight already
+uses. It needs **no new Apple credentials**. An app-specific password would
+also work and is what most guides show, but it breaks whenever the Apple ID's
+password or two-factor settings change, which surfaces months later in the
+middle of a release.
+
+### macOS: sign in has to be re-checked on the first notarised build
+
+`keychain-access-groups` is what lets Firebase Auth reach the keychain, and it
+is granted by the signing identity. A Developer ID build is signed with a
+*different* identity from the Apple Development build used locally, so:
+
+- the App ID `com.uractor.uractormacos` must have **Keychain Sharing** enabled
+  in the developer portal, and
+- **signing in must be tested on the notarised DMG**, not just locally.
+
+Sign in working in development does not prove it works when distributed. If it
+is broken, the symptom is `firebase_auth/keychain-error` and every correct
+password is refused. See the Platforms section of `README.md`.
+
+### Windows is not code signed yet
+
+The installer is unsigned, so Windows shows **"Windows protected your PC"** on
+first run and the user has to choose **More info → Run anyway**. The downloads
+page explains this, and the release notes repeat it, because the alternative
+is people assuming the app is malware.
+
+Signing later is a small change and does not touch the app:
+
+- **[Azure Artifact Signing](https://learn.microsoft.com/azure/artifact-signing/)**,
+  about $10/month, is the only option that works cleanly in CI. Since June 2023
+  every OV and EV certificate must live on a hardware token or HSM, which
+  rules out putting a `.pfx` in a secret.
+- Add a signing step to the `windows` job before the installer is built, and
+  delete the warning from the downloads page and the release body.
+- Reputation is per-publisher and builds with installs, so the warning fades
+  rather than vanishing the day it is signed.
+
+MSIX was rejected for now: it supports real auto-update through App Installer,
+but it cannot be sideloaded **at all** without a certificate, so today it
+would be undeliverable rather than merely warned about.
+
+### Updates are a notification, not an auto-update
+
+The app polls `downloads.uractor.com/version.json` on launch and shows a bar
+when something newer exists. It does not download or install anything.
+
+This is a deliberate first step rather than the end state. The full version is
+Sparkle on macOS and WinSparkle on Windows, through the `auto_updater`
+package, which downloads and installs in place. What that adds is an
+**EdDSA signing key that cannot be recovered**: lose it and no existing
+install can ever auto-update again, forever. That is a poor thing to take on
+before the release pipeline has been exercised a few times.
+
+Moving to it later changes the client and nothing else — the release
+workflow, the hosting and the GitHub release layout all stay as they are. The
+manifest gains a signature and becomes an appcast XML alongside the JSON.
+
+### Secrets
+
+| Secret | What it is |
+|---|---|
+| `MACOS_DEVELOPER_ID_CERT_P12_BASE64` | Developer ID Application certificate and key, base64 `.p12` |
+| `MACOS_DEVELOPER_ID_CERT_PASSWORD` | The password set when exporting it |
+| `APP_STORE_CONNECT_KEY_ID` | Already set, shared with TestFlight |
+| `APP_STORE_CONNECT_ISSUER_ID` | Already set, shared with TestFlight |
+| `APP_STORE_CONNECT_PRIVATE_KEY` | Already set, shared with TestFlight |
+| `FIREBASE_SERVICE_ACCOUNT` | Already set, shared with the internal release |
+
+Only the first two are new.
+
+### One-time setup outside the repository
+
+1. Create the Developer ID certificate, as above, and add the two secrets.
+2. Enable **Keychain Sharing** on the `com.uractor.uractormacos` App ID.
+3. In the Firebase console, add a Hosting site named `uractor-downloads` and
+   connect the custom domain `downloads.uractor.com`. Firebase gives you the
+   DNS records to add.
+4. Check the service account behind `FIREBASE_SERVICE_ACCOUNT` has the
+   **Firebase Hosting Admin** role; it was created for App Distribution and
+   may not.
+
 ## Release notes
 
 Notes are generated from commit subjects, so there is nothing to write by hand.

@@ -752,4 +752,15 @@ class SEn extends S {
   @override
   String get networkError =>
       'Could not reach the server. Check your connection.';
+
+  @override
+  String updateAvailable(String version) {
+    return 'UrActor $version is available';
+  }
+
+  @override
+  String get updateDownload => 'Download';
+
+  @override
+  String get updateDismiss => 'Dismiss';
 }

@@ -29,6 +29,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # First, because it is seconds and catches a class of mistake nothing
+      # else does. A workflow file with an invalid expression is rejected by
+      # GitHub before any job is scheduled: the run fails in about two seconds
+      # with no logs, no runner and no indication of which line is wrong, and
+      # it does that on every push regardless of the triggers the file
+      # declares. `release-desktop.yml` shipped in exactly that state and the
+      # only symptom was a red cross with nothing behind it.
+      #
+      # Shellcheck integration is off. It reports pre-existing style warnings
+      # in four of the release workflows -- unquoted expansions that are
+      # deliberate, and single quotes that are meant literally -- and turning
+      # those into a merge blocker is a separate decision from catching a
+      # workflow that cannot run at all.
+      - name: Lint the workflows
+        run: |
+          set -euo pipefail
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) >/dev/null
+          ./actionlint -shellcheck= -color
+
       - uses: ./.github/actions/setup-flutter-android
 
       - name: Analyze

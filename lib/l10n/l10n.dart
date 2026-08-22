@@ -1416,6 +1416,24 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Could not reach the server. Check your connection.'**
   String get networkError;
+
+  /// Shown in the desktop update bar when a newer version has been published. {version} is a version number like 3.16.0.
+  ///
+  /// In en, this message translates to:
+  /// **'UrActor {version} is available'**
+  String updateAvailable(String version);
+
+  /// Button in the desktop update bar that opens the downloads page.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get updateDownload;
+
+  /// Button that hides the desktop update bar until the next version.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get updateDismiss;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {
