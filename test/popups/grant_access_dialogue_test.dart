@@ -53,7 +53,6 @@ void main() {
   /// [dialogResult], which a test reads after tapping one of the buttons --
   /// awaiting the open call itself would deadlock against the taps.
   Future<void> openDialog(WidgetTester tester, Playlist list) async {
-    ignoreInkSplashAdvisory();
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(

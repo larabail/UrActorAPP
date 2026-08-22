@@ -135,8 +135,8 @@ void main() {
 
       expect(
         tester.getSize(panel()).width,
-        480.0,
-        reason: 'a 560pt window leaves 480pt after the framework inset',
+        528.0,
+        reason: 'a 560pt window leaves 528pt after the shared dialogue inset',
       );
     });
 
@@ -280,13 +280,13 @@ void main() {
   });
 
   group('streaming providers', () {
-    /// Fires the grid cell for [name].
+    /// Taps the grid cell for [name].
     ///
-    /// The cells cannot be tapped from a test: each one lays a 150px logo
-    /// inside a much shorter square, so the caption falls outside the grid's
-    /// clip and the cells paint over one another, and a hit test at the
-    /// cell's centre lands on its neighbour. The handler is invoked directly
-    /// instead, which still covers the toggle, the write and the redraw.
+    /// A tap at the centre of a cell used to be impossible: each laid a 150px
+    /// logo inside a much shorter square, so the cells painted over one
+    /// another and the hit test landed on the neighbour. The test had to call
+    /// the handler directly. Now that a tile sizes its logo to itself, the
+    /// cell can be tapped where it is drawn.
     Future<void> tapProvider(WidgetTester tester, String name) async {
       final cell = find
           .ancestor(
@@ -294,7 +294,9 @@ void main() {
             matching: find.byType(GestureDetector),
           )
           .first;
-      tester.widget<GestureDetector>(cell).onTap!();
+      await tester.ensureVisible(cell);
+      await tester.pumpAndSettle();
+      await tester.tap(cell);
       await tester.pumpAndSettle();
     }
 

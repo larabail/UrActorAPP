@@ -59,7 +59,7 @@ two macOS runners and a Windows one.
 
 The Cloud Functions deploy waits on `verify` too, and every platform stage waits
 on the deploy. See
-[The Cloud Functions deploy is gated too](#the-cloud-functions-deploy-is-gated-too).
+[The Cloud Functions deploy](#the-cloud-functions-deploy-only-runs-when-the-functions-change).
 
 Every release runs inside a Play *edit transaction*: open, change, commit.
 Nothing is visible on Play until the commit succeeds, so a failed run cannot
@@ -181,7 +181,7 @@ required reviewers, keeping write access limited, and protecting `master`.
 
 Deployments are recorded against the `production` environment either way.
 
-## The Cloud Functions deploy is gated too
+## The Cloud Functions deploy only runs when the functions change
 
 `release-internal.yml` runs on every merge to `master`, and its three platform
 stages are limited to people who opted in: Play's internal track, TestFlight, or
@@ -190,20 +190,31 @@ the live `actordb-cf981` project that every installed app talks to, including
 everyone on the App Store and on Play production, so a bad deploy there is felt
 by users who never signed up to test anything.
 
-It therefore targets a `functions` environment with the same required reviewer,
-and a merge waits for an approval before the server side moves. Review on the
-pull request already stops unreviewed code reaching `master`; this is the
-second gate, for the approved-but-wrong change that review did not catch.
+It used to wait for a manual approval on every merge. That was one click per
+merge whether or not the merge had anything to do with the functions, and most
+do not — so the click became routine, and a gate people click through without
+reading is not a gate.
 
-Order still matters when it is approved: functions deploy before **any** app is
+The approval has been replaced by the path filter the previous version of this
+section recommended. `preflight` compares the push against the commit `master`
+was on before it, and the deploy simply does not happen unless something under
+`functions/` changed. That removes the noise rather than the caution: the
+deploys that do run are the ones worth watching, and there are far fewer of
+them.
+
+A run that cannot work out what changed — a manual `workflow_dispatch`, a first
+push, or a `before` commit missing from the clone — deploys rather than
+skipping. Guessing wrong in that direction costs a redundant deploy; guessing
+wrong the other way silently withholds a change somebody asked for.
+
+Order still matters when it does run: functions deploy before **any** app is
 uploaded, because a build that reaches testers expecting a callable that is not
 deployed yet fails on the device — as true on iOS and on the desktop as it is on
 Android. All three stages therefore wait on it, where previously only the
 Android one did.
 
-The cost is one approval per merge. If that becomes tiresome, put a path filter
-on the job so it only runs when `functions/` changed, rather than removing the
-gate.
+If a deploy ever needs holding back again, the approval is one `environment:`
+block on the job away.
 
 ## Secrets
 

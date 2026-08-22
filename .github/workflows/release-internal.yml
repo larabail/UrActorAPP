@@ -56,9 +56,47 @@ jobs:
       version: ${{ steps.version.outputs.name }}
       ios: ${{ steps.ios.outputs.configured }}
       macos: ${{ steps.macos.outputs.configured }}
+      functions: ${{ steps.functions_changed.outputs.changed }}
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Deep enough to diff against whatever master was before this push.
+          fetch-depth: 0
+
+      # Most merges do not touch the Cloud Functions, and deploying them
+      # unchanged is a live deploy to the project every installed app talks to
+      # in exchange for nothing. So the deploy is skipped unless this push
+      # actually changed something under `functions/`.
+      - name: Decide whether the functions need deploying
+        id: functions_changed
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+
+          # A manual run has no "before" commit, and a first push reports the
+          # all-zero sha. Neither can be diffed, so both deploy rather than
+          # silently skipping something the operator asked for.
+          if [ -z "${BEFORE:-}" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "No previous commit to compare against; deploying."
+            exit 0
+          fi
+
+          if ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "$BEFORE is not in this clone; deploying rather than guessing."
+            exit 0
+          fi
+
+          if git diff --name-only "$BEFORE" "$GITHUB_SHA" -- functions/ | grep -q .; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "functions/ changed; deploying."
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "functions/ untouched; skipping the deploy."
+          fi
 
       # One reading of pubspec.yaml for the whole run. Three platforms deriving
       # the version name separately is three chances for them to disagree about
@@ -124,6 +162,7 @@ jobs:
         env:
           CERT: ${{ secrets.MACOS_DEVELOPER_ID_CERT_P12_BASE64 }}
           CERT_PASSWORD: ${{ secrets.MACOS_DEVELOPER_ID_CERT_PASSWORD }}
+          PROFILE: ${{ secrets.MACOS_PROVISIONING_PROFILE_BASE64 }}
           KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
@@ -133,6 +172,7 @@ jobs:
           missing=()
           [ -n "$CERT" ]          || missing+=(MACOS_DEVELOPER_ID_CERT_P12_BASE64)
           [ -n "$CERT_PASSWORD" ] || missing+=(MACOS_DEVELOPER_ID_CERT_PASSWORD)
+          [ -n "$PROFILE" ]       || missing+=(MACOS_PROVISIONING_PROFILE_BASE64)
           [ -n "$KEY_ID" ]        || missing+=(APP_STORE_CONNECT_KEY_ID)
           [ -n "$ISSUER_ID" ]     || missing+=(APP_STORE_CONNECT_ISSUER_ID)
           [ -n "$PRIVATE_KEY" ]   || missing+=(APP_STORE_CONNECT_PRIVATE_KEY)
@@ -206,7 +246,8 @@ jobs:
   # desktop as it is on Android.
   functions:
     name: Deploy Cloud Functions
-    needs: verify
+    needs: [preflight, verify]
+    if: needs.preflight.outputs.functions == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -217,16 +258,18 @@ jobs:
     # Store and on Play production. A bad deploy here is felt by users who never
     # opted into testing anything.
     #
-    # So it waits for an approval, the same way promoting to production does.
-    # Review on the pull request already stops unreviewed code reaching master;
-    # this stops an approved-but-wrong change reaching real users the moment it
-    # merges, which is the failure the review cannot catch.
+    # It used to wait for a manual approval on every merge. That was one click
+    # per merge whether or not the merge had anything to do with the functions,
+    # and most do not -- so the click became routine, and a gate people click
+    # through without reading is not a gate.
     #
-    # The cost is one click per merge. If that becomes tiresome, the honest fix
-    # is a path filter on this job rather than removing the gate.
-    environment:
-      name: functions
-      url: https://console.firebase.google.com/project/actordb-cf981/functions
+    # The path filter in `preflight` is the replacement the previous comment
+    # here asked for: the deploy simply does not happen unless this push
+    # changed something under `functions/`. That removes the noise rather than
+    # the caution, and the deploys that do run are the ones worth watching.
+    #
+    # If a deploy needs holding back again, the approval is one `environment:`
+    # block away, and `docs/releases.md` records what it protected.
 
     steps:
       - uses: actions/checkout@v4

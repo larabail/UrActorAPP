@@ -51,8 +51,9 @@ void main() {
         json: {'id': 27205, 'imdb_id': 'tt1375666', 'runtime': 148});
     http.on('1396-Breaking-Bad?', json: {'id': 1396});
     http.on('/external_ids', json: {'imdb_id': 'tt0903747'});
-    http.on('omdbLookup',
-        json: {'result': {'imdbRating': '8.8', 'Year': '2010'}});
+    http.on('omdbLookup', json: {
+      'result': {'imdbRating': '8.8', 'Year': '2010'}
+    });
     http.on('watch/providers', json: {'results': <String, dynamic>{}});
     http.on('/credits?', json: {'cast': [], 'crew': []});
     // A show reaches for `/aggregate_credits` instead, which spans every
@@ -74,7 +75,6 @@ void main() {
   }
 
   Future<void> pump(WidgetTester tester, Widget dialog) async {
-    ignoreInkSplashAdvisory();
     ignoreNetworkImageFailures();
     usePhoneSurface(tester, size: const Size(560, 1400));
     await tester.pumpWidget(
@@ -114,8 +114,8 @@ void main() {
           type: type,
         );
 
-    Future<void> searchAndPick(WidgetTester tester, String label,
-        String term) async {
+    Future<void> searchAndPick(
+        WidgetTester tester, String label, String term) async {
       await tester.enterText(find.widgetWithText(TextFormField, label), term);
       await tester.pumpAndSettle();
     }
@@ -169,15 +169,19 @@ void main() {
       // save with no explanation.
       await pump(tester, dialogue(type: 'series'));
 
-      await tester.enterText(find.widgetWithText(TextField, 'Episode (optional)'), '4');
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Episode (optional)'), '4');
       await tester.pumpAndSettle();
 
-      expect(find.text('Add a season number to record an episode.'), findsOneWidget);
+      expect(find.text('Add a season number to record an episode.'),
+          findsOneWidget);
 
-      await tester.enterText(find.widgetWithText(TextField, 'Season (optional)'), '2');
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Season (optional)'), '2');
       await tester.pumpAndSettle();
 
-      expect(find.text('Add a season number to record an episode.'), findsNothing);
+      expect(
+          find.text('Add a season number to record an episode.'), findsNothing);
     });
 
     testWidgets('accepting writes the entry to the day', (tester) async {
@@ -211,8 +215,10 @@ void main() {
         (tester) async {
       await pump(tester, dialogue(type: 'series'));
       await searchAndPick(tester, showLabel, 'breaking bad');
-      await tester.enterText(find.widgetWithText(TextField, 'Season (optional)'), '2');
-      await tester.enterText(find.widgetWithText(TextField, 'Episode (optional)'), '4');
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Season (optional)'), '2');
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Episode (optional)'), '4');
       await tester.pumpAndSettle();
       await accept(tester);
 
@@ -226,7 +232,8 @@ void main() {
         (tester) async {
       await pump(tester, dialogue(type: 'series'));
       await searchAndPick(tester, showLabel, 'breaking bad');
-      await tester.enterText(find.widgetWithText(TextField, 'Season (optional)'), '2');
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Season (optional)'), '2');
       await tester.pumpAndSettle();
       await accept(tester);
 
@@ -535,13 +542,15 @@ void main() {
 
       expect(
           tester
-              .widget<TextField>(find.widgetWithText(TextField, 'Season (optional)'))
+              .widget<TextField>(
+                  find.widgetWithText(TextField, 'Season (optional)'))
               .controller!
               .text,
           '2');
       expect(
           tester
-              .widget<TextField>(find.widgetWithText(TextField, 'Episode (optional)'))
+              .widget<TextField>(
+                  find.widgetWithText(TextField, 'Episode (optional)'))
               .controller!
               .text,
           '4');
@@ -559,7 +568,8 @@ void main() {
 
       expect(
           tester
-              .widget<TextField>(find.widgetWithText(TextField, 'Season (optional)'))
+              .widget<TextField>(
+                  find.widgetWithText(TextField, 'Season (optional)'))
               .controller!
               .text,
           isEmpty);
@@ -570,7 +580,11 @@ void main() {
       await addFriend('friend-a', 'Ana');
       user.calendar = {
         '2024-03-09': [
-          {'id': '27205', 'title': 'Inception', 'friends': ['friend-a']},
+          {
+            'id': '27205',
+            'title': 'Inception',
+            'friends': ['friend-a']
+          },
         ],
       };
 
