@@ -153,6 +153,15 @@ the title and the commits and taking the larger requirement. The title counts
 because pull requests are squash merged, so it is the only subject that reaches
 master.
 
+One exemption, by path rather than by kind: a pull request that changes nothing
+outside `web/downloads/` needs no bump at all. That directory is the downloads
+site, which is deployed to Firebase Hosting and never packaged into a build, so
+no version of the app differs because of it. The commit is still honestly a
+`feat` or a `fix` — it is a public web page — and bumping anyway is allowed. A
+change of that shape also skips the Flutter and iOS builds and does not reach
+internal testers; see
+[what a downloads-only change skips](README.md#what-a-downloads-only-change-skips).
+
 ## Pull requests
 
 ### Title

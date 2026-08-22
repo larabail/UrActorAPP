@@ -14,6 +14,12 @@ name: iOS checks
 # unmergeable rather than merely unverified. The filter is gone so the verdict
 # always arrives.
 #
+# The one exception is decided below, as a condition on the job rather than as
+# a path filter on the workflow. The difference is the whole point: a job
+# skipped by an `if:` still reports a conclusion, so branch protection is
+# satisfied either way, while a workflow skipped by paths reports nothing and
+# blocks.
+#
 # The cost is a macOS build on every pull request, including documentation-only
 # ones. Runner minutes are free on a public repository, so this is paid in
 # waiting rather than in money, and it runs in parallel with the Linux jobs.
@@ -30,8 +36,34 @@ permissions:
   contents: read
 
 jobs:
+  # Cheap, on Linux, and it decides whether the expensive job below runs at
+  # all. See the same job in pr.yml.
+  scope:
+    name: Scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      app: ${{ steps.scope.outputs.app }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: scope
+        uses: ./.github/actions/changed-scope
+        with:
+          base-sha: ${{ github.event.pull_request.base.sha }}
+          head-sha: ${{ github.event.pull_request.head.sha }}
+
   build:
     name: Build and launch on a simulator
+    needs: scope
+    # Skipped whole rather than run with its steps disabled, unlike the
+    # required Linux jobs, because this one holds a macOS runner: starting one
+    # to skip everything on it costs a scarce minute to prove nothing. A
+    # skipped job still reports, so this stays safe if the check is ever made
+    # required.
+    if: needs.scope.outputs.app == 'true'
     # macos-26 rather than macos-15, matching the release workflow. The two
     # have to agree: macos-15 defaults to Xcode 16.4, and a pull request that
     # passed there could still be rejected at upload for the SDK it was built

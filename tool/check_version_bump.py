@@ -26,6 +26,14 @@ requirement of the two wins. The title matters because pull requests are squash
 merged, so the title is the only subject that reaches master; the commits matter
 because a feature does not stop being a feature when the title undersells it.
 
+One exception, by path rather than by kind: a pull request that changes nothing
+outside `web/downloads/` requires no bump at all. That directory is the
+downloads site, which is deployed to Firebase Hosting and never packaged into a
+build, so no version of the app differs because of it. The commit is still
+honestly a `feat` or a `fix` -- it is a public web page -- but making the app
+move a minor version for it ships a rename to every internal tester with
+nothing in it they can find.
+
 A larger bump than required always passes. Judgement about what deserves MAJOR
 belongs to a person, and this refuses to overrule it.
 """
@@ -42,6 +50,21 @@ SUBJECT = re.compile(r"^\s*(?P<kind>[a-z]+)(?:\([^)]*\))?(?P<bang>!)?:", re.IGNO
 
 NONE, PATCH, MINOR, MAJOR = 0, 1, 2, 3
 LEVEL_NAMES = {NONE: "none", PATCH: "patch", MINOR: "minor", MAJOR: "major"}
+
+# Directories whose contents cannot reach a user's app.
+#
+# `web/downloads/` is the downloads site: three static files deployed to
+# Firebase Hosting, which the Flutter build never reads and no release ever
+# packages. A change confined to it is user-visible -- it is a public web page
+# -- so the commit kind is honestly `feat` or `fix`, and without this the kind
+# alone would demand a version the app has no reason to move to. Bumping to
+# 3.17.0 to reword a sentence on a web page then ships a build to every
+# internal tester under a new name containing no change they can find.
+#
+# Deliberately narrow. `tool/build_download_manifest.py` is not on this list
+# even though it also serves the site, because it writes the manifest the app
+# polls, and a mistake in it does reach an install.
+APP_IRRELEVANT_PREFIXES = ("web/downloads/",)
 
 KIND_LEVELS = {
     "feat": MINOR,
@@ -137,18 +160,39 @@ def bump_level(base, head):
     return PATCH
 
 
-def check(base_version, head_version, messages):
+def reaches_the_app(paths):
+    """Whether any of [paths] could change what a user's app does.
+
+    True when there is nothing to look at, which is the safe direction: an
+    empty list means this could not work out what changed, and exempting a
+    pull request on the strength of a question it failed to answer is how an
+    unversioned build reaches testers. Blank entries are dropped before that
+    decision rather than after, or a list of nothing but whitespace would
+    reach the `any()` below, find no path that counts, and read as exempt.
+    """
+    real = [path for path in paths or [] if path.strip()]
+    if not real:
+        return True
+    return any(not path.startswith(APP_IRRELEVANT_PREFIXES) for path in real)
+
+
+def check(base_version, head_version, messages, reaches_app=True):
     """The reasons this pull request's version is wrong, or an empty list.
 
     Collects every problem rather than stopping at the first, so a pull request
     that is wrong in two ways is not fixed twice.
+
+    [reaches_app] is False when nothing outside the exempt paths changed, which
+    drops the requirement to none. The rest of the checking still applies: a
+    version that moved backwards, or a minor bump that left the patch number
+    behind, is wrong whatever the change touched.
     """
     problems = []
 
     base = parse_version(base_version)
     head = parse_version(head_version)
 
-    needed = required_level(messages)
+    needed = required_level(messages) if reaches_app else NONE
     actual = bump_level(base, head)
 
     if actual is None:
@@ -201,6 +245,12 @@ def messages_between(base_sha, head_sha):
     return [chunk for chunk in raw.split("\0") if chunk.strip()]
 
 
+def files_between(base_sha, head_sha):
+    """Every path this pull request adds, changes, renames or deletes."""
+    raw = git("diff", "--name-only", base_sha, head_sha)
+    return [line for line in raw.splitlines() if line.strip()]
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", required=True, help="SHA of the base commit")
@@ -218,12 +268,22 @@ def main(argv=None):
     if args.title:
         messages.append(args.title)
 
-    needed = required_level(messages)
+    paths = files_between(args.base, args.head)
+    reaches_app = reaches_the_app(paths)
+
+    needed = required_level(messages) if reaches_app else NONE
     print(f"base version:     {base_version}")
     print(f"this version:     {head_version}")
     print(f"required bump:    {LEVEL_NAMES[needed]}")
+    if not reaches_app:
+        print(
+            "\nNothing outside "
+            + ", ".join(APP_IRRELEVANT_PREFIXES)
+            + " changed, so no bump is required whatever the commit kind says."
+            "\nBumping anyway is still fine."
+        )
 
-    problems = check(base_version, head_version, messages)
+    problems = check(base_version, head_version, messages, reaches_app)
     if not problems:
         print("\nVersion is fine.")
         return 0
