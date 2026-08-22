@@ -224,9 +224,17 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      # Pinned a major ahead of the rest of this file on purpose: these are the
+      # versions that actually run on Node 24, per the table in #108. The other
+      # jobs are being migrated separately. Nothing here uploads an artifact,
+      # which is the one place the obvious pin is the wrong one --
+      # upload-artifact@v5 and download-artifact@v6 still declare node20.
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      # setup-node@v5 turns caching on by itself when package.json declares a
+      # `packageManager` field. firestore-tests does not, so the cache is only
+      # what is asked for here.
+      - uses: actions/setup-node@v5
         if: needs.scope.outputs.app == 'true'
         with:
           node-version: '22'
@@ -234,7 +242,7 @@ jobs:
           cache-dependency-path: firestore-tests/package-lock.json
 
       # The Firestore emulator is a Java process.
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         if: needs.scope.outputs.app == 'true'
         with:
           distribution: temurin
