@@ -77,6 +77,11 @@ window rather than the device it is on (see [Platforms](#platforms) and
 
 - Send and receive friend requests, with an inbox and notifications
   (`lib/friends.dart`, `lib/inbox.dart`, `lib/notifications.dart`).
+- Recommend a movie or show to friends, which lands in their notifications.
+  New clients send it to the `recommendTitle` Cloud Function, which checks the
+  friendship against the recipient's own list and stamps the sender from the
+  caller's token rather than believing what the sending device claims
+  (`lib/popups/share.dart`, `functions/index.js`).
 - Look at a friend's profile, their calendar, and their thoughts on a title
   (`lib/friends_profile.dart`, `lib/friends_calendar.dart`,
   `lib/friends_thoughts.dart`).
@@ -130,7 +135,7 @@ window rather than the device it is on (see [Platforms](#platforms) and
 | `firebase_auth` | Email accounts and session restore |
 | `cloud_firestore` | Users, history, lists, reviews, friends, playlists, `Oscars` |
 | `firebase_storage` | Profile photos |
-| Cloud Functions (Node 22) | Server-verified playlist joins and playlist membership sync |
+| Cloud Functions (Node 22) | Server-verified playlist joins, playlist membership sync, and friend recommendations |
 | [TMDB API v3](https://developer.themoviedb.org/docs) | Movie, TV, person, search, credits (a show's aggregated across every season), videos, watch providers, genres |
 | `table_calendar` | The watch calendar |
 | `fl_chart` | Profile stats |
@@ -675,7 +680,8 @@ lib/
   l10n/                      app_en.arb, app_es.arb and their generated output
 
 functions/                   Cloud Functions (Node 22): OMDB lookup,
-                             playlist join, member sync, join-attempt cleanup
+                             playlist join, member sync, join-attempt cleanup,
+                             friend recommendations, favourite-people scores
 firestore-tests/              Firestore rules tests against the local emulator
 tools/sync-oscars/           Firestore Oscars sync job
 web/downloads/               downloads.uractor.com: a static page that lists
@@ -723,7 +729,7 @@ discarded rather than migrated, since everything in it can be fetched again.
 
 ## Cloud Functions
 
-`functions/` holds six gen 2 Cloud Functions for project `actordb-cf981`, all
+`functions/` holds seven gen 2 Cloud Functions for project `actordb-cf981`, all
 running on Node 22 in `us-central1`:
 
 - `omdbLookup` is a callable function. It requires auth, accepts only a narrow
@@ -734,6 +740,19 @@ running on Node 22 in `us-central1`:
   `Watchlists` by `Name`, compares the submitted code on the server, and adds
   the caller as `Approved` when it matches. The device no longer has to read
   every playlist just to test an access code.
+- `recommendTitle` is a callable function. It requires auth, bounds every field
+  of the payload, and for each recipient checks that the caller appears in
+  *that person's* `Friends` document — the recipient's list, not the caller's,
+  since anyone can write their own. It then appends one notification inside a
+  transaction, with `sender` taken from the caller's token and their own
+  `Settings` document. The sending device used to assemble `sender` itself and
+  be believed, so a friend could file a recommendation in someone's inbox
+  under a third party's name; it also rewrote the whole inbox unmerged, which
+  lost one of two recommendations sent at the same moment. This is a verified
+  route, not a closed door: builds already on people's phones still write to
+  `Notifications` directly, and the rule that would refuse a forged sender only
+  refuses one once `firestore.rules` has been deployed by hand. See
+  [Where a recommendation lands](#where-a-recommendation-lands).
 - `syncPlaylistMembers` is a Firestore `onDocumentWritten` trigger on
   `Watchlists/{listId}`. It derives a flat `memberUids` array from the legacy
   `Users` role maps so clients can query their own playlists, and it exits when
@@ -766,40 +785,28 @@ alone. The release workflow does not: it deploys all three together on every
 merge to `master` that touched `functions/`, `firestore.rules` or
 `firestore.indexes.json`. See [CI and releases](#ci-and-releases).
 
-## Deploying the rules
+### Where a recommendation lands
 
-`firestore.rules` and `firestore.indexes.json` are deployed by CI, with the
-functions, in a single command:
+A recipient's notifications live in one document, `{uid}/Notifications`, whose
+keys are `"0"`, `"1"`, `"2"` and so on. That numbering is load-bearing rather
+than cosmetic.
 
-```bash
-firebase deploy --only functions,firestore:rules,firestore:indexes
-```
+`firestore.rules` has to validate an appended notification — that `sender.uid`
+is the authenticated writer, and that `read` starts false — and to do that it
+has to read the value that was added. Rules cannot: `diff()` reports affected
+keys as a Set, and a Set cannot be indexed. The way out is that the key is
+predictable. Every writer appends at `String(number of keys already present)`,
+so `appendsOneNotificationOnly` rebuilds it as
+`string(resource.data.keys().size())` and reads the entry there.
 
-**That was not true until recently, and the way it failed is worth knowing.**
-The release pipeline deployed `--only functions`. `firebase.json` named the
-other two files but no workflow ever read them, so merging a change to
-`firestore.rules` did not change what the live database enforced — a tightened
-rule stayed inert, and so did a mistaken one. Nothing reported it either,
-because neither file has a build step it can fail. It surfaced when a composite
-index was merged in the same pull request as the scheduled function whose query
-needs it: the function failed on every five-minute run with
-`FAILED_PRECONDITION` while the index sat committed and reviewed in the
-repository. Both code comments and several issues had assumed the opposite all
-along.
-
-Deploying by hand is still occasionally the right thing — a hotfix, or a rules
-change that should not wait for a merge:
-
-```bash
-firebase deploy --only firestore:rules --project actordb-cf981
-```
-
-A deploy applies to every client at once — there is no staged rollout the way
-there is for an app release — which is why the KNOWN GAPS section at the bottom
-of `firestore.rules` gates some changes on Play Console adoption of a client
-that no longer needs the permission being removed. That is also why the suite in
-[`firestore-tests/`](firestore-tests/README.md) is run twice: once on the pull
-request, and again by the release job immediately before it deploys.
+So `recommendTitle` appends at exactly that key too, inside a transaction so
+the count it read is the count it writes against. A uuid, a timestamp or a
+random number would leave the document sparse; from then on the key the rule
+rebuilds is one that already exists, a write from a build already on someone's
+phone reads as a *change* rather than an *add*, and it is refused — silently,
+because those builds swallow the error. For the same reason nothing deletes a
+notification, and a document that is somehow already sparse is skipped rather
+than written over.
 
 ### Favourite actors, directors and writers
 
@@ -858,6 +865,45 @@ record's existence is the marker, so it happens exactly once per account.
 Push notifications are not implemented. The old friend-request notification
 trigger was removed because the app never registers an FCM token and the legacy
 FCM send API it used was decommissioned.
+
+## Deploying the rules
+
+`firestore.rules` and `firestore.indexes.json` are deployed by CI, together with
+the Cloud Functions, in a single command on every merge to `master` that touched
+any of the three:
+
+```bash
+firebase deploy --only functions,firestore:rules,firestore:indexes
+```
+
+**That was not always true, and the way it failed is worth knowing.** The
+release pipeline deployed `--only functions`. `firebase.json` named the other
+two files but no workflow ever read them, so merging a change to
+`firestore.rules` did not change what the live database enforced — a tightened
+rule stayed inert, and so did a mistaken one. Nothing reported it either,
+because neither file has a build step it can fail. It surfaced when a composite
+index was merged in the same pull request as the scheduled function whose query
+needs it: the function failed on every five-minute run with
+`FAILED_PRECONDITION` while the index sat committed and reviewed in the
+repository. Both the code comments and several issues had assumed the opposite
+all along, which is why this section used to say the reverse.
+
+Deploying by hand is still occasionally the right thing — a hotfix, or a rules
+change that should not wait for a merge:
+
+```bash
+firebase deploy --only firestore:rules --project actordb-cf981
+```
+
+The rules suite in [`firestore-tests/`](firestore-tests/README.md) runs twice:
+once on the pull request, and again in the release job immediately before it
+deploys, on the reasoning that a merge commit is a combination neither branch
+tested on its own.
+
+A deploy applies to every client at once — there is no staged rollout the way
+there is for an app release — which is why the KNOWN GAPS section at the bottom
+of `firestore.rules` gates some changes on Play Console adoption of a client
+that no longer needs the permission being removed.
 
 ## Localization
 
@@ -977,10 +1023,9 @@ break:
 - **Functions** installs Node 22 dependencies in `functions/`, runs `npm test`,
   and confirms `index.js` loads.
 - **Firestore rules** installs Node 22 dependencies in `firestore-tests/` and
-  runs the rules suite against the Firestore emulator, which needs a JDK.
-  Nothing in CI deploys `firestore.rules` — the release workflow deploys
-  `--only functions` — so this job is the only automated check they get, and
-  merging a rules change does not make it live. See
+  runs the rules suite against the Firestore emulator, which needs a JDK. The
+  release workflow runs the same suite again before it deploys the rules, so
+  this is the first of two checks rather than the only one. See
   [Deploying the rules](#deploying-the-rules).
 - **Downloads site** runs `node --test web/downloads/*.test.js`. The page at
   `downloads.uractor.com` is served exactly as it is committed, so nothing else

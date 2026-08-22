@@ -1189,6 +1189,18 @@ abstract class S {
   /// **'Join List'**
   String get joinListTitle;
 
+  /// Shown when recommending a title to friends reached nobody, because the server refused the call or could not be reached.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send your recommendation. Please try again.'**
+  String get recommendationSendFailed;
+
+  /// Shown when a recommendation reached some of the chosen friends but not all of them, usually because one of them is no longer a friend.
+  ///
+  /// In en, this message translates to:
+  /// **'Some of your friends could not be sent this.'**
+  String get recommendationSendPartial;
+
   /// No description provided for @enterListName.
   ///
   /// In en, this message translates to:
@@ -1212,6 +1224,12 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Add'**
   String get add;
+
+  /// Confirm button on the share sheet, which sends the chosen friends a recommendation.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get accept;
 
   /// No description provided for @confirmWatchedToday.
   ///

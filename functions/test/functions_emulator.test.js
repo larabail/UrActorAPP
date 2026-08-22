@@ -7,6 +7,7 @@ const admin = require('firebase-admin');
 
 const {MAX_FAILURES, FAILURE_WINDOW_MS} = require('../playlist_members');
 const {MAX_CREDIT_ATTEMPTS} = require('../people_scores');
+const {MAX_USERNAME_LENGTH} = require('../friend_writes');
 
 // Uids for the favourite-people tests. Each test takes a fresh one because
 // they own top-level collections named after themselves, like every real user,
@@ -180,6 +181,282 @@ if (!USING_EMULATOR) {
     assert.equal(blocked.body.error.status, 'RESOURCE_EXHAUSTED');
     assert.equal((await joinAttempt('blocked-user').get()).data().failures, MAX_FAILURES);
   });
+
+  // -------------------------------------------------------------------------
+  // Recommending a title to a friend.
+  //
+  // The client used to write into the recipient's inbox itself, with a
+  // `sender` built on its own device. What matters here is that the server
+  // now decides who the sender is, who is allowed to be written to, and where
+  // in the document the entry lands.
+  // -------------------------------------------------------------------------
+
+  test('recommendTitle delivers, and derives the sender itself', async () => {
+    const {sender, recipient} = recommendationPair();
+    await db.collection(sender).doc('Settings').set({username: 'Alice'});
+    await befriend(recipient, sender);
+
+    const response = await callRecommend(recommendation([recipient]), sender);
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.body.result, {delivered: 1, skipped: []});
+
+    const inbox = (await notifications(recipient).get()).data();
+    assert.deepEqual(Object.keys(inbox), ['0']);
+    assert.equal(inbox['0'].id, '27205');
+    assert.equal(inbox['0'].type, 'movie');
+    assert.equal(inbox['0'].title, 'Inception');
+    assert.equal(inbox['0'].coverPhoto, '/cover.jpg');
+    assert.deepEqual(inbox['0'].sender, {uid: sender, username: 'Alice'});
+    assert.equal(inbox['0'].read, false);
+    assert.ok(inbox['0'].timestamp, 'the inbox orders by timestamp');
+  });
+
+  test('recommendTitle ignores a sender supplied by the caller', async () => {
+    // The defect the whole callable exists for: a friend could file a
+    // recommendation in your inbox attributed to somebody else entirely.
+    const {sender, recipient} = recommendationPair();
+    await db.collection(sender).doc('Settings').set({username: 'Mallory'});
+    await db.collection('impostor').doc('Settings').set({username: 'Alice'});
+    await befriend(recipient, sender);
+
+    const response = await callRecommend(
+      {
+        ...recommendation([recipient]),
+        sender: {uid: 'impostor', username: 'Alice'},
+      },
+      sender,
+    );
+
+    assert.equal(response.status, 200);
+    const inbox = (await notifications(recipient).get()).data();
+    assert.deepEqual(inbox['0'].sender, {uid: sender, username: 'Mallory'});
+  });
+
+  test('recommendTitle skips someone who has not listed the caller', async () => {
+    // The target's own friends list decides, not the caller's -- the same
+    // asymmetry as friendOf() in firestore.rules, because anyone can write
+    // themselves into their own list.
+    const {sender, recipient} = recommendationPair();
+    await db.collection(sender).doc('Friends').set({friends: [recipient]});
+    await befriend(recipient, 'somebody-else');
+
+    const response = await callRecommend(recommendation([recipient]), sender);
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.body.result, {delivered: 0, skipped: [recipient]});
+    assert.equal((await notifications(recipient).get()).exists, false);
+  });
+
+  test('recommendTitle delivers to the friends in a mixed list', async () => {
+    // One stranger in the list must not cost the real friends their copy.
+    const {sender, recipient} = recommendationPair();
+    const stranger = `${recipient}-stranger`;
+    await befriend(recipient, sender);
+
+    const response = await callRecommend(
+      recommendation([stranger, recipient]),
+      sender,
+    );
+
+    assert.deepEqual(response.body.result, {delivered: 1, skipped: [stranger]});
+    assert.equal(Object.keys((await notifications(recipient).get()).data()).length, 1);
+    assert.equal((await notifications(stranger).get()).exists, false);
+  });
+
+  test('recommendTitle refuses an unauthenticated caller', async () => {
+    const {sender, recipient} = recommendationPair();
+    await befriend(recipient, sender);
+
+    const response = await callRecommend(recommendation([recipient]));
+
+    assert.equal(response.status, 401);
+    assert.equal(response.body.error.status, 'UNAUTHENTICATED');
+    assert.equal((await notifications(recipient).get()).exists, false);
+  });
+
+  test('recommendTitle refuses a malformed payload', async () => {
+    const {sender, recipient} = recommendationPair();
+    await befriend(recipient, sender);
+
+    const payloads = [
+      {...recommendation([recipient]), title: ''},
+      {...recommendation([recipient]), id: ''},
+      // 'series' is not what the app sends, and notifications.dart would
+      // render it as a show rather than reject it.
+      {...recommendation([recipient]), type: 'series'},
+      {...recommendation([recipient]), friends: []},
+      {...recommendation([recipient]), friends: recipient},
+      {},
+    ];
+
+    for (const payload of payloads) {
+      const response = await callRecommend(payload, sender);
+      assert.equal(
+        response.status,
+        400,
+        `accepted ${JSON.stringify(payload)}`,
+      );
+      assert.equal(response.body.error.status, 'INVALID_ARGUMENT');
+    }
+
+    assert.equal((await notifications(recipient).get()).exists, false);
+  });
+
+  test('recommendTitle appends at consecutive dense keys', async () => {
+    // LOAD-BEARING, and the reason this test exists rather than being implied
+    // by the one above. appendsOneNotificationOnly() in firestore.rules
+    // validates an appended notification by rebuilding its key as
+    // string(resource.data.keys().size()), which only ever names the right
+    // entry while the keys are 0, 1, 2, ... with no gaps. Builds already on
+    // people's phones append the same way (lib/popups/share.dart), so a uuid
+    // or a timestamp here would make every later write from one of them read
+    // as a change rather than an add -- refused, silently, forever.
+    const {sender, recipient} = recommendationPair();
+    await befriend(recipient, sender);
+
+    await callRecommend(recommendation([recipient], {id: '1'}), sender);
+    await callRecommend(recommendation([recipient], {id: '2'}), sender);
+    await callRecommend(recommendation([recipient], {id: '3'}), sender);
+
+    const inbox = (await notifications(recipient).get()).data();
+    assert.deepEqual(Object.keys(inbox).sort(), ['0', '1', '2']);
+    assert.deepEqual(
+      ['0', '1', '2'].map((key) => inbox[key].id),
+      ['1', '2', '3'],
+    );
+  });
+
+  test('recommendTitle loses neither of two simultaneous recommendations',
+      async () => {
+        // The old client read the whole document, added a key and wrote the
+        // whole thing back unmerged, so whichever of these finished second
+        // erased the other. Both keys have to be here, and densely.
+        const {sender, recipient} = recommendationPair();
+        const other = `${sender}-other`;
+        await db.collection(recipient).doc('Friends')
+            .set({friends: [sender, other]});
+
+        await Promise.all([
+          callRecommend(recommendation([recipient], {id: '1'}), sender),
+          callRecommend(recommendation([recipient], {id: '2'}), other),
+        ]);
+
+        const inbox = (await notifications(recipient).get()).data();
+        assert.deepEqual(Object.keys(inbox).sort(), ['0', '1']);
+        assert.deepEqual(
+          ['0', '1'].map((key) => inbox[key].id).sort(),
+          ['1', '2'],
+        );
+      });
+
+  test('recommendTitle creates an inbox that does not exist yet', async () => {
+    // A friend who has never been sent anything has no Notifications
+    // document. The old client threw on the missing data and swallowed it, so
+    // they could never receive a first recommendation at all.
+    const {sender, recipient} = recommendationPair();
+    await befriend(recipient, sender);
+    assert.equal((await notifications(recipient).get()).exists, false);
+
+    const response = await callRecommend(recommendation([recipient]), sender);
+
+    assert.deepEqual(response.body.result, {delivered: 1, skipped: []});
+    assert.deepEqual(Object.keys((await notifications(recipient).get()).data()), ['0']);
+  });
+
+  test('recommendTitle refuses to write into a collection the app owns',
+      async () => {
+        // The uid names a top-level collection the server writes to with admin
+        // credentials. Without a check, a caller who can create
+        // `Watchlists/Friends` listing themselves gets a junk
+        // `Watchlists/Notifications` written on their behalf.
+        const {sender} = recommendationPair();
+        await db.collection('Watchlists').doc('Friends')
+            .set({friends: [sender]});
+
+        const response = await callRecommend(
+          recommendation(['Watchlists']),
+          sender,
+        );
+
+        assert.equal(response.status, 400);
+        assert.equal(response.body.error.status, 'INVALID_ARGUMENT');
+        assert.equal(
+          (await db.collection('Watchlists').doc('Notifications').get()).exists,
+          false,
+        );
+      });
+
+  test('recommendTitle refuses a uid that is really a path', async () => {
+    const {sender} = recommendationPair();
+
+    const response = await callRecommend(
+      recommendation(['Oscars/best/Notifications']),
+      sender,
+    );
+
+    assert.equal(response.status, 400);
+    assert.equal(response.body.error.status, 'INVALID_ARGUMENT');
+  });
+
+  test('recommendTitle refuses to write over a sparse inbox', async () => {
+    // {0, 2} has two keys, so the dense key is '2' -- already taken. Writing
+    // there would destroy a notification the recipient may not have read, and
+    // writing at '3' would leave the document permanently unwritable by an
+    // old client. Skipping is the only option that loses nothing.
+    const {sender, recipient} = recommendationPair();
+    await befriend(recipient, sender);
+    await notifications(recipient).set({
+      0: {id: '603', read: true},
+      2: {id: '604', read: false},
+    });
+
+    const response = await callRecommend(recommendation([recipient]), sender);
+
+    assert.deepEqual(response.body.result, {delivered: 0, skipped: [recipient]});
+    const inbox = (await notifications(recipient).get()).data();
+    assert.deepEqual(Object.keys(inbox).sort(), ['0', '2']);
+    assert.equal(inbox['2'].id, '604');
+  });
+
+  test('recommendTitle refuses a gap the dense key does not land on',
+      async () => {
+        // {0, 3} is the shape that a "is String(count) taken?" check waves
+        // through: the count is 2 and '2' is free. Appending there produces
+        // {0, 2, 3}, whose dense key IS taken -- so a build already on
+        // someone's phone could append to this inbox before the call and never
+        // again after it. Nothing may be written here.
+        const {sender, recipient} = recommendationPair();
+        await befriend(recipient, sender);
+        await notifications(recipient).set({
+          0: {id: '603', read: true},
+          3: {id: '604', read: false},
+        });
+
+        const response = await callRecommend(recommendation([recipient]), sender);
+
+        assert.deepEqual(response.body.result,
+            {delivered: 0, skipped: [recipient]});
+        assert.deepEqual(
+          Object.keys((await notifications(recipient).get()).data()).sort(),
+          ['0', '3'],
+        );
+      });
+
+  test('recommendTitle bounds the username it copies into an inbox',
+      async () => {
+        // The sender writes their own Settings document, so its size is
+        // theirs to choose. One call fans it into every recipient.
+        const {sender, recipient} = recommendationPair();
+        await db.collection(sender).doc('Settings')
+            .set({username: 'A'.repeat(5000)});
+        await befriend(recipient, sender);
+
+        await callRecommend(recommendation([recipient]), sender);
+
+        const inbox = (await notifications(recipient).get()).data();
+        assert.equal(inbox['0'].sender.username.length, MAX_USERNAME_LENGTH);
+      });
 
   test('syncPlaylistMembers handles legacy, added, and removed members', async () => {
     await playlist('sync').set({
@@ -449,6 +726,40 @@ function joinAttempt(uid) {
   return db.collection('JoinAttempts').doc(uid);
 }
 
+function notifications(uid) {
+  return db.collection(uid).doc('Notifications');
+}
+
+// Fresh uids per recommendation test, for the same reason nextViewer() exists:
+// every user owns a top-level collection named after themselves, and a
+// document one test left behind is one the next test would append after.
+let recommendationCount = 0;
+function recommendationPair() {
+  recommendationCount += 1;
+  return {
+    sender: `recommender-${recommendationCount}`,
+    recipient: `recipient-${recommendationCount}`,
+  };
+}
+
+// Writes `friend` into `uid`'s own friends list, which is the direction that
+// counts: recommendTitle reads the TARGET's list to decide who may write to
+// them, never the caller's.
+async function befriend(uid, friend) {
+  await db.collection(uid).doc('Friends').set({friends: [friend]});
+}
+
+function recommendation(friends, overrides = {}) {
+  return {
+    id: '27205',
+    type: 'movie',
+    title: 'Inception',
+    coverPhoto: '/cover.jpg',
+    friends,
+    ...overrides,
+  };
+}
+
 async function clearCollection(name) {
   const snapshot = await db.collection(name).get();
   if (snapshot.empty) return;
@@ -459,10 +770,18 @@ async function clearCollection(name) {
 }
 
 async function callJoin(data, uid) {
+  return callFunction('joinPlaylist', data, uid);
+}
+
+async function callRecommend(data, uid) {
+  return callFunction('recommendTitle', data, uid);
+}
+
+async function callFunction(name, data, uid) {
   const headers = {'Content-Type': 'application/json'};
   if (uid) headers.Authorization = `Bearer ${unsignedToken(uid)}`;
 
-  const response = await fetch(functionUrl('joinPlaylist'), {
+  const response = await fetch(functionUrl(name), {
     method: 'POST',
     headers,
     body: JSON.stringify({data}),
