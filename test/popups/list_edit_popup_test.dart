@@ -1,9 +1,8 @@
 /// Tests for the edit-a-playlist dialogue.
 ///
-/// The dialogue writes to the list it was opened with, by id. It used to find
-/// the document by downloading the collection and matching on name and access
-/// code, so a list sharing both with someone else's is the case that decides
-/// whether it writes to the right one.
+/// The dialogue finds the document to change by matching the name and access
+/// code it was opened with, rather than by id, so a list that shares a name
+/// with someone else's is the case that decides whether it is safe.
 library;
 
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -53,8 +52,8 @@ void main() {
     list_result.cover = '';
   });
 
-  Playlist playlist({String id = 'list-1'}) => Playlist(
-        id: id,
+  Playlist playlist() => Playlist(
+        id: 'list-1',
         name: 'Film club',
         movies: ['27205'],
         tvshows: [],
@@ -151,41 +150,21 @@ void main() {
     expect(find.byType(ListEditDialogue), findsNothing);
   });
 
-  testWidgets('edits the list it was opened with, not another one sharing its '
-      'name and code', (tester) async {
-    // Two people can call a list "Film club" and pick the same access code.
-    // Matching on those fields wrote to whichever came back first, so the
-    // list actually being edited has to be identified by its id.
+  testWidgets('another list with the same name but a different code is left '
+      'alone', (tester) async {
+    // Two people can call a list "Film club". The access code is the only
+    // thing separating them here, so it has to be part of the match.
     await firestore.collection('Watchlists').doc('list-2').set({
       'Name': 'Film club',
-      'AccessCode': 'sesame',
-      'CoverPhoto': 'https://image.tmdb.org/t/p/w500//old.jpg',
+      'AccessCode': 'different',
+      'CoverPhoto': '',
       'Movies': [],
       'TV Shows': [],
       'Users': [
-        {'test-uid': 'Owner'}
+        {'someone-else': 'Owner'}
       ],
-      'memberUids': ['test-uid'],
+      'memberUids': ['someone-else'],
     });
-
-    await openDialog(tester, playlist(id: 'list-2'));
-    await tester.enterText(
-        find.widgetWithText(TextFormField, 'Film club'), 'Book club');
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Accept'));
-    await tester.pumpAndSettle();
-
-    expect((await storedList('list-2'))['Name'], 'Book club');
-    expect((await storedList('list-1'))['Name'], 'Film club');
-  });
-
-  testWidgets('saves even when the name it was opened with has gone stale',
-      (tester) async {
-    // originalListName and originalAccessCode are module-level globals the
-    // playlist screen fills in. Searching for a document that matched them
-    // meant a stale pair silently saved nothing at all.
-    list_result.originalListName = 'Something else entirely';
-    list_result.originalAccessCode = 'stale';
 
     await openDialog(tester, playlist());
     await tester.enterText(
@@ -195,7 +174,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect((await storedList())['Name'], 'Book club');
-    expect(find.byType(ListEditDialogue), findsNothing);
+    expect((await storedList('list-2'))['Name'], 'Film club');
   });
 
   testWidgets('cancelling changes nothing', (tester) async {

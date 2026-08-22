@@ -800,10 +800,7 @@ running on Node 22 in `us-central1`:
 - `syncPlaylistMembers` is a Firestore `onDocumentWritten` trigger on
   `Watchlists/{listId}`. It derives a flat `memberUids` array from the legacy
   `Users` role maps so clients can query their own playlists, and it exits when
-  the projection is already current to avoid recursion. Reads of `Watchlists`
-  are restricted to members, and because a query is only allowed when its own
-  filters prove the result readable, `memberUids` is what makes asking for your
-  own lists possible at all — the `Users` maps cannot be filtered on.
+  the projection is already current to avoid recursion.
 - `cleanupJoinAttempts` is a scheduled function that runs every 24 hours and
   deletes stale join-throttle documents.
 - `markPeopleScoresDirty` is a Firestore `onDocumentWritten` trigger on
