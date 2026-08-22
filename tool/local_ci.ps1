@@ -221,6 +221,13 @@ function Invoke-PrChecks {
                 & flutter build appbundle --release @placeholderDefines
             }
         }
+
+        # pr.yml gained the iOS simulator build when the separate iOS workflow
+        # was folded into it. It cannot run here at any cost -- it needs Xcode
+        # and a macOS host -- so it is reported rather than left out, because a
+        # green local run that silently omits a gate is worse than one that
+        # says which gate it could not answer.
+        $results += New-SkippedGate 'Build and launch on a simulator' 'SKIPPED (needs a macOS runner with Xcode)'
     }
     finally {
         Pop-Location
