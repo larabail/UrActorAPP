@@ -551,15 +551,25 @@ jobs:
           # entitlement stripped instead the app builds, signs and launches
           # and then refuses every correct password, which is the worse
           # failure because it looks like the app working.
-          PROFILES="$HOME/Library/MobileDevice/Provisioning Profiles"
-          mkdir -p "$PROFILES"
           echo "$PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/profile.provisionprofile"
 
           # Xcode locates a profile by its UUID as the filename, not by the
           # name inside it, so the UUID is read back out rather than assumed.
           UUID=$(security cms -D -i "$RUNNER_TEMP/profile.provisionprofile" \
             | plutil -extract UUID raw -o - -)
-          cp "$RUNNER_TEMP/profile.provisionprofile" "$PROFILES/$UUID.provisionprofile"
+
+          # Installed to both directories, for the same reason the iOS stage
+          # does it: Xcode 16 reads profiles from its own directory and older
+          # tooling still reads the MobileDevice one, and which applies is a
+          # detail of the image rather than something to depend on.
+          for dir in \
+            "$HOME/Library/MobileDevice/Provisioning Profiles" \
+            "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          do
+            mkdir -p "$dir"
+            cp "$RUNNER_TEMP/profile.provisionprofile" "$dir/$UUID.provisionprofile"
+          done
+
           rm -f "$RUNNER_TEMP/profile.provisionprofile"
           echo "installed provisioning profile $UUID"
 
@@ -662,7 +672,7 @@ jobs:
             UrActor-*.dmg.sha256
           if-no-files-found: error
 
-      - name: Remove the keychain
+      - name: Remove the signing material
         if: always()
         run: |
           # Unconditional: a failed build leaves the same key material behind
@@ -674,6 +684,13 @@ jobs:
           # leave a keychain full of private key behind on the runner.
           security delete-keychain "$RUNNER_TEMP/desktop-release.keychain-db" \
             2>/dev/null || true
+
+          # The profile goes too, matching what the iOS stage does. It carries
+          # no private key, but everything a secret wrote to this runner is
+          # removed on the way out rather than sometimes.
+          rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/"*.provisionprofile
+          rm -f "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/"*.provisionprofile
+          rm -f "$RUNNER_TEMP/profile.provisionprofile"
 
   desktop_windows:
     name: '3 · Desktop → build Windows'

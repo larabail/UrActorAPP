@@ -437,14 +437,16 @@ A simulator build needs no code signing. A device or release build does: the
 project sets `DEVELOPMENT_TEAM = Q8XY8276AC`, so that Apple Developer account
 has to be signed in to Xcode.
 
-CI covers this on macOS runners. `.github/workflows/ios.yml` builds the app
-and launches it on a simulator for every pull request, and the iOS stage of
+CI covers this on macOS runners. The **Build and launch on a simulator** job in
+`.github/workflows/pr.yml` builds the app and launches it on a simulator for
+every pull request, and the iOS stage of
 `.github/workflows/release-internal.yml` ships to TestFlight. Both run on
 `macos-26`, because Apple refuses uploads built with an SDK older than iOS 26
-and the older image defaults to Xcode 16. The check is not required to merge
-yet, but it is no longer filtered to iOS paths so that it can be: a skipped
-workflow reports nothing, and a required check that never reports would block
-the pull request forever. See [docs/releases.md](docs/releases.md).
+and the older image defaults to Xcode 16. The pull request workflow carries no
+path filter at all: a check skipped by one is left pending rather than reported,
+and a required check that never reports would block the pull request forever.
+The iOS job is not required to merge yet, and not filtering it is what makes it
+requirable. See [docs/releases.md](docs/releases.md).
 
 **Run `flutter clean` after any change to `ios/Podfile.lock`.** `flutter
 build` will not do it for you, and a stale `build/` directory holding the
@@ -743,8 +745,8 @@ regression signal is not diluted by UI code that still lacks widget tests.
 
 ## CI and releases
 
-Pull requests to `master` run `.github/workflows/pr.yml` unless the change is
-only Markdown, docs, or `.gitignore`. The workflow has four jobs:
+Every pull request to `master` runs `.github/workflows/pr.yml`, which has five
+jobs — one per thing that can break:
 
 - **Analyze, test and build** installs Flutter 3.47.1 plus the pinned Android
   NDK through `.github/actions/setup-flutter-android`, then runs
@@ -759,32 +761,38 @@ only Markdown, docs, or `.gitignore`. The workflow has four jobs:
   in CI would notice its script breaking.
 - **Version** runs the unit tests under `tool/` and then enforces the version
   policy from [AGENTS.md](AGENTS.md#versioning) against the pull request title
-  and commits. Do not edit the `+BUILD` suffix: the release workflow builds
+  and commits. Do not edit the `+BUILD` suffix: the release pipeline builds
   with a code derived from Play and opens a pull request recording it.
+- **Build and launch on a simulator** builds for the iOS simulator on a macOS
+  runner, then installs and launches the app and checks it is still running
+  fifteen seconds later — because the iOS failure that matters most, Firebase
+  failing to configure, happens at launch rather than at compile time. No
+  signing: a pull request must never hold the distribution certificate, and the
+  branch may come from a fork.
 
-The iOS check lives in its own workflow, `.github/workflows/ios.yml`, because
-it needs a macOS runner and that build takes around twenty-five minutes against
-roughly five on Linux. It runs on every pull request. It used to be filtered to
-`ios/` and the pubspec files, on the grounds that a Dart-only change cannot
-break the native build without also changing pubspec — true, but incompatible
-with requiring the check, because a workflow that skips reports nothing and a
-required check that never reports can never be satisfied. It builds for the
-simulator with `--no-codesign`, then installs and launches the app and checks
-it is still running fifteen seconds later, because the iOS failure that matters
-most, Firebase failing to configure, happens at launch rather than at compile
-time.
+The iOS job used to be a separate workflow, because a macOS build takes around
+twenty-five minutes against roughly five on Linux and path filters apply to a
+workflow rather than to a job. It runs alongside the Linux jobs now, and the
+workflow has **no path filter at all**. A required check skipped by a path
+filter is left pending forever rather than reported as passing, so filtering out
+Markdown and `docs/` did not save five minutes on a documentation-only pull
+request — it made one unmergeable. The iOS check had already dropped its filter
+for that reason; the Linux jobs have now followed.
 
-It is **not** yet required to merge. Branch protection on `master` waits for the
-three Linux jobs from `pr.yml` — `Analyze, test and build`, `Functions` and
-`Version` — and nothing else. Running on every pull request is what makes the
-check requirable; adding it to the required list is a separate, deliberate step,
+Three of them are **required to merge**: branch protection on `master` waits for
+`Analyze, test and build`, `Functions` and `Version`, and nothing else. It
+matches them by name, so renaming one silently stops it being required — which
+is why none of the names changed when the two workflows were merged.
+
+The iOS job is **not** required yet. Running on every pull request is what makes
+it requirable; adding it to the required list is a separate, deliberate step,
 and it would make a macOS build the slowest gate on every pull request.
 
 There is no XCTest job. `ios/RunnerTests` still contains only the empty
 `testExample` stub that `flutter create` generates, and the app has no native
 code beyond an `AppDelegate` that registers plugins, so running it would spend
 macOS minutes asserting nothing. If real Swift is ever added to `ios/Runner`,
-that is the point to wire `xcodebuild test` into the iOS workflow.
+that is the point to wire `xcodebuild test` into the iOS job.
 
 Xcode Cloud used to archive the app as well, reporting as
 `uractorapp | Default | Archive - iOS`, and was removed. It never gated
@@ -808,9 +816,8 @@ itself.
 Every merge to `master` that is not docs-only runs
 `.github/workflows/release-internal.yml`, the one pipeline that puts a build in
 front of testers on all three platforms. It analyzes and tests once, on Linux,
-then deploys Cloud Functions to `actordb-cf981` — behind an approval, because
-that project serves every installed app rather than only testers — and only then
-starts the three platform stages:
+then deploys Cloud Functions to `actordb-cf981`, and only then starts the three
+platform stages:
 
 1. **Android** builds a signed app bundle with a Play-derived version code,
    generates release notes and uploads to Play internal testing.
