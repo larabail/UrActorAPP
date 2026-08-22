@@ -138,8 +138,7 @@ void installFakeCallableContext({
 /// so on a landscape surface they overflow and the framework reports that as
 /// an error before a single assertion runs. A portrait window is both closer
 /// to the device the app ships on and tall enough to lay the dialogue out.
-void usePhoneSurface(WidgetTester tester,
-    {Size size = const Size(400, 900)}) {
+void usePhoneSurface(WidgetTester tester, {Size size = const Size(400, 900)}) {
   tester.view.devicePixelRatio = 1.0;
   tester.view.physicalSize = size;
   addTearDown(() {
@@ -147,31 +146,6 @@ void usePhoneSurface(WidgetTester tester,
     tester.view.resetDevicePixelRatio();
   });
 }
-
-/// Stops the framework's "ink splashes may be invisible" advisory from failing
-/// the current test.
-///
-/// Several popups paint their own dark panel with a `Container` and then put
-/// `CheckboxListTile`s on top of it, which leaves the nearest `Material`
-/// above the panel rather than below it. The framework points that out on
-/// every frame in debug builds. It is a note about where a tap ripple gets
-/// drawn, not a failure of anything these tests assert, and silencing it here
-/// is narrower than restyling four popups from a test change.
-void ignoreInkSplashAdvisory() => _ignoreFlutterErrors(
-    (details) =>
-        details.exceptionAsString().contains('ink splashes may be invisible'));
-
-/// Stops a layout overflow from failing the current test.
-///
-/// Use this only where the popup under test overflows at *every* window size,
-/// so no surface can avoid it -- the settings dialogue pins itself to the
-/// minimum dialogue width and its bottom row does not fit inside that. That is
-/// a real defect, but it is one this change is not fixing, and leaving it
-/// fatal would mean the dialogue could not be covered at all.
-///
-/// Prefer [usePhoneSurface] wherever a taller or wider window is enough.
-void ignoreOverflowErrors() => _ignoreFlutterErrors(
-    (details) => details.exceptionAsString().contains('RenderFlex overflowed'));
 
 /// Stops a failed network image from failing the current test.
 ///

@@ -17,6 +17,7 @@ import 'common/firebase/settings_service.dart';
 import 'common/home_media_section.dart';
 import 'common/navigation/appbar.dart';
 import 'common/playlist_order.dart';
+import 'common/widgets/app_dialog.dart';
 import 'calendar.dart';
 import 'continue_watching_section.dart';
 import 'favorites.dart';
@@ -136,6 +137,10 @@ class _MyAppState extends State<MyApp> {
           }),
           checkColor: WidgetStateProperty.all<Color>(Colors.white),
         ),
+        // Dialog's own default inset is 40 a side, so 80 of a 411pt phone was
+        // gone before a popup had spent any padding of its own. Setting it
+        // here reaches the dialogues the framework builds as well as ours.
+        dialogTheme: const DialogThemeData(insetPadding: kAppDialogInset),
       ),
       home: const MyHomePage(),
     );

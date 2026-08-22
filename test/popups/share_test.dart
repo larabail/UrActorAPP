@@ -36,15 +36,15 @@ void main() {
   }
 
   Future<void> openShare(WidgetTester tester) async {
-    ignoreInkSplashAdvisory();
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: Builder(
-            // A modal bottom sheet is how the media page opens this, and the
-            // sheet is what supplies the Material the checkbox rows need.
+            // A dialogue is how the media page opens this. It used to be a
+            // modal bottom sheet, which capped itself at 9/16 of the screen
+            // and gave the friend list 233pt of the 500 it asked for.
             builder: (context) => ElevatedButton(
-              onPressed: () => showModalBottomSheet<bool>(
+              onPressed: () => showDialog<bool>(
                 context: context,
                 builder: (_) => Share(
                   item: Movie(

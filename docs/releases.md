@@ -59,7 +59,7 @@ two macOS runners and a Windows one.
 
 The Cloud Functions deploy waits on `verify` too, and every platform stage waits
 on the deploy. See
-[The Cloud Functions deploy is gated too](#the-cloud-functions-deploy-is-gated-too).
+[The Cloud Functions deploy](#the-cloud-functions-deploy-only-runs-when-the-functions-change).
 
 Every release runs inside a Play *edit transaction*: open, change, commit.
 Nothing is visible on Play until the commit succeeds, so a failed run cannot
@@ -75,28 +75,80 @@ therefore drifts out of date and collides — which is exactly what happened to
 build 45. The workflow asks Play for the highest code ever used and adds one.
 
 The `version:` line in `pubspec.yaml` supplies the user-facing name (`3.5.4`);
-the `+build` half is not read when building a release. It is written, though:
-after a successful upload the workflow commits the code it just shipped back
-onto `master`, so the file records the last build testers received rather than
-drifting for months. Nobody edits it by hand.
+the `+build` half is not read when building a release. It is recorded, though:
+after a successful upload the workflow opens a pull request setting the suffix
+to the code it just shipped, so the file records the last build testers received
+rather than drifting for months. Nobody edits it by hand.
 
 That write-back is a separate job in `release-internal.yml`, and the only place
 in either pipeline outside the desktop stage that a token can write to the
-repository:
+repository.
 
-- **It pushes with the built-in `GITHUB_TOKEN`.** GitHub does not start new
-  workflow runs from pushes made with that token, and that is the only reason
-  a workflow triggered by `master` can commit to `master` without releasing
-  forever. A personal access token, a deploy key or a GitHub App token would
-  all remove that protection. The `[skip ci]` in the commit subject is a
-  second guard, not the mechanism.
-- **A rejected push is retried.** An ordinary merge can land between the
-  checkout and the push. The job fetches `master` again, re-applies the number
-  and retries, three times, then gives up.
+**It arrives as a pull request rather than a push, and that is not a style
+choice.** `master` requires a pull request, and `github-actions[bot]` cannot be
+excused from that rule on this repository. Both mechanisms refuse it, for the
+same underlying reason — the GitHub Actions app is not *installed* on a
+user-owned account, so there is no identity to name:
+
+- **Classic branch protection** accepts bypass entries only for GitHub Apps
+  installed on the repository. Adding `github-actions` to
+  `bypass_pull_request_allowances` is accepted by the API and then silently
+  dropped; reading the setting back returns an empty `apps` list.
+- **A repository ruleset** refuses it outright rather than silently, with
+  `422 Actor GitHub Actions integration must be part of the ruleset source or
+  owner organization`. Rulesets do support bypass actors properly — but only for
+  actors the account has, which here means repository roles and deploy keys.
+
+What was rejected, and why:
+
+- **A personal access token or a GitHub App key** would work, and puts a
+  long-lived credential with write access to `master` into repository secrets.
+  A worse trade than a stale integer, and worse than a pull request to approve.
+- **Moving `master` off its protection**, or granting the bypass to a deploy
+  key, weakens the rule that stops unreviewed code shipping to testers. The
+  point of the rule is that it has no exceptions.
+- **Dropping the write-back entirely** was the honest alternative and remains
+  one. It was kept because the promotion path reads the number back out.
+
+The job:
+
+- **Depends on one repository setting.** *Settings → Actions → General →
+  Workflow permissions → "Allow GitHub Actions to create and approve pull
+  requests"* must stay on. It gates creation as well as approval, despite the
+  name, and `permissions: pull-requests: write` in the workflow does not
+  override it. Turned off, every release pushes the branch and then fails to
+  open anything, reporting it in the run summary. It is safe to have on here:
+  `CODEOWNERS` covers `*` and review from code owners is required, so an
+  approval from `github-actions[bot]` cannot satisfy the review gate.
+- **Rebuilds one branch, `chore/build-number`, from `master` every release**
+  and force-pushes it, so the pull request is always exactly "master plus this
+  build number" — one commit, one line. There is at most one open at a time; if
+  several releases go by unmerged, the newest simply overwrites the branch, and
+  merging it records the latest build. A branch per release would leave a queue
+  of pull requests recording builds that have already been superseded.
+- **Can conflict, and that is not worth fixing.** A version name bump landing
+  on `master` after the branch is pushed touches the same `version:` line, so
+  the pull request becomes unmergeable until the next release rewrites the
+  branch. Close it, or leave it; the number is a record, never an input, so
+  nothing is lost by skipping one.
+- **Cannot start a release, but merging it can.** The bot never pushes to
+  `master`, so nothing it does triggers anything. A person merging the pull
+  request does push to `master`, and `pubspec.yaml` is not in the workflow's
+  `paths-ignore`, so without a guard that merge would ship a fresh build and
+  open another one of these. The skip-ci marker in the subject is what stops
+  it, and it is now the mechanism rather than a second line of defence. It is
+  in the pull request title as well as the commit subject, because a squash
+  merge takes its subject from one or the other.
+- **Its checks do not start on their own.** GitHub does not trigger workflow
+  runs for a pull request opened with the built-in `GITHUB_TOKEN`, so the
+  required contexts never report and the merge button stays blocked. Close and
+  reopen the pull request to make them run as normal, or merge it with the
+  administrator override. The pull request body says so each time.
 - **It never fails the run.** The bundle is already on Play before this job
-  starts. A write-back that cannot be made is reported loudly in the run
-  summary and left for a person, rather than turning a release that shipped
-  into a red run.
+  starts. A record that cannot be made is reported loudly in the run summary
+  and left for a person, rather than turning a release that shipped into a red
+  run. The job is `continue-on-error` as well, so that a step failing before
+  the script runs cannot redden it either.
 
 ## Restricting production to you
 
@@ -129,7 +181,7 @@ required reviewers, keeping write access limited, and protecting `master`.
 
 Deployments are recorded against the `production` environment either way.
 
-## The Cloud Functions deploy is gated too
+## The Cloud Functions deploy only runs when the functions change
 
 `release-internal.yml` runs on every merge to `master`, and its three platform
 stages are limited to people who opted in: Play's internal track, TestFlight, or
@@ -138,42 +190,38 @@ the live `actordb-cf981` project that every installed app talks to, including
 everyone on the App Store and on Play production, so a bad deploy there is felt
 by users who never signed up to test anything.
 
-It therefore targets a `functions` environment with the same required reviewer,
-and a merge waits for an approval before the server side moves. Review on the
-pull request already stops unreviewed code reaching `master`; this is the
-second gate, for the approved-but-wrong change that review did not catch.
+It used to wait for a manual approval on every merge. That was one click per
+merge whether or not the merge had anything to do with the functions, and most
+do not — so the click became routine, and a gate people click through without
+reading is not a gate.
 
-Order still matters when it is approved: functions deploy before **any** app is
+The approval has been replaced by the path filter the previous version of this
+section recommended. `preflight` compares the push against the commit `master`
+was on before it, and the deploy simply does not happen unless something under
+`functions/` changed. That removes the noise rather than the caution: the
+deploys that do run are the ones worth watching, and there are far fewer of
+them.
+
+A run that cannot work out what changed — a manual `workflow_dispatch`, a first
+push, or a `before` commit missing from the clone — deploys rather than
+skipping. Guessing wrong in that direction costs a redundant deploy; guessing
+wrong the other way silently withholds a change somebody asked for.
+
+Order still matters when it does run: functions deploy before **any** app is
 uploaded, because a build that reaches testers expecting a callable that is not
 deployed yet fails on the device — as true on iOS and on the desktop as it is on
 Android. All three stages therefore wait on it, where previously only the
 Android one did.
 
-The cost is one approval per merge. If that becomes tiresome, put a path filter
-on the job so it only runs when `functions/` changed, rather than removing the
-gate.
-
-## The build number is no longer written back
-
-The `record` job used to push the Play-assigned build number to `master`.
-Branch protection now requires a pull request for every push to `master`, and
-`github-actions[bot]` is not a bypass actor, so that push is refused.
-
-Nothing about a release depends on it. The workflow asks Play for the next free
-code on every run, so the number in `pubspec.yaml` was only ever a record of the
-last build that reached testers, never an input. The step was already written so
-that it cannot fail a run that has already shipped, so it reports the refusal in
-the run summary and stops there.
-
-The consequence is that the `+BUILD` suffix on `master` now goes stale. Read the
-run summary, not `pubspec.yaml`, for the code a build actually shipped with.
-
-> Repository secrets are readable by any workflow that runs. Treat write access
-> to this repo as equivalent to holding the signing key.
+If a deploy ever needs holding back again, the approval is one `environment:`
+block on the job away.
 
 ## Secrets
 
 Set these under **Settings → Secrets and variables → Actions**.
+
+> Repository secrets are readable by any workflow that runs. Treat write access
+> to this repo as equivalent to holding the signing key.
 
 | Secret | What it is |
 |---|---|
