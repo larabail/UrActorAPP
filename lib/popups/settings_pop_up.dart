@@ -1,7 +1,5 @@
 // ignore_for_file: must_be_immutable
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/l10n/l10n.dart';
 import 'dart:convert';
@@ -361,21 +359,13 @@ class _AlertButtonDialogueState extends State<AlertButtonDialogue> {
         ElevatedButton(
           onPressed: () async {
             final navigator = Navigator.of(context);
-            CollectionReference collectionRef =
-                FirestoreCore.db.collection(currentUser.uid);
-            QuerySnapshot snapshot = await collectionRef.get();
-            for (DocumentSnapshot docSnapshot in snapshot.docs) {
-              await docSnapshot.reference.delete();
-            }
-            User? user = FirebaseAuth.instance.currentUser;
-            AuthCredential credential = EmailAuthProvider.credential(
-              email: user!.email as String,
+
+            // The order of the four steps this runs is load bearing, and the
+            // reasoning lives with them in AuthSession.deleteAccount.
+            await AuthSession.deleteAccount(
+              uid: currentUser.uid,
               password: passwordController.text,
             );
-            await user.reauthenticateWithCredential(credential);
-
-            await user.delete();
-            await AuthSession.clearPerUserCaches();
 
             if (!context.mounted) return;
             navigator.pop();
