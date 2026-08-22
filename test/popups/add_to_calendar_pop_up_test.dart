@@ -647,13 +647,161 @@ void main() {
       await tester.tap(find.widgetWithText(CheckboxListTile, 'Ana'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Accept'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Just me'));
+
+      // Not `pumpAndSettle` from here: the save is under way, so Accept is
+      // showing a spinner, and a progress indicator animates forever. The
+      // question is asked once for the user's own calendar and once for the
+      // friend's, so both have to be answered before the save finishes.
+      Future<void> answerJustMe() async {
+        final prompt = find.text('Just me');
+        // Long enough for a prompt already answered to finish leaving, so the
+        // wait below is for the next one rather than the last one.
+        await tester.pump(const Duration(milliseconds: 400));
+        for (var i = 0; i < 40 && prompt.evaluate().isEmpty; i++) {
+          await tester.pump(const Duration(milliseconds: 50));
+        }
+        await tester.tap(prompt);
+      }
+
+      await answerJustMe();
+      await answerJustMe();
       await tester.pumpAndSettle();
 
       final mine = (await calendarOf('test-uid'))!['2024-03-09'] as List;
       expect(mine, hasLength(1));
       expect(mine.single['friends'], isEmpty);
+    });
+  });
+
+  group('a save that takes its time', () {
+    // Logging a title is a dozen round trips -- the user's calendar, every
+    // tagged friend's calendar, both seen lists, the rewatch counter, the
+    // seen-with record, progress -- each waiting on the last. The dialogue
+    // used to sit there looking exactly as it did before the tap for all of
+    // it, so the obvious reading was that the tap had missed.
+
+    /// Holds the details lookup open, which every save waits on before it
+    /// writes anything. That leaves the dialogue mid-flight for as long as the
+    /// test wants to look at it.
+    void slowLookup() {
+      http.on(
+        '27205-Inception?',
+        json: {'id': 27205, 'imdb_id': 'tt1375666', 'runtime': 148},
+        delay: const Duration(seconds: 2),
+      );
+    }
+
+    Finder acceptButton() => find.widgetWithText(TextButton, 'Accept');
+
+    Future<void> openCalendarDialogueOn(WidgetTester tester) async {
+      await pump(
+        tester,
+        const CalendarAddDialogue(
+          dateForMap: '2024-03-09',
+          dateRange: '',
+          type: 'movie',
+        ),
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Name of The Movie You\'d Like to Add'),
+        'inception',
+      );
+      await tester.pumpAndSettle();
+    }
+
+    /// Lets everything queued behind the slow lookup finish.
+    ///
+    /// Deliberately not `pumpAndSettle` alone: while the save runs there is a
+    /// spinner on screen, and a progress indicator animates forever, so
+    /// settling waits on a frame that never stops coming.
+    Future<void> finishSaving(WidgetTester tester) async {
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the button says so while the entry is being written',
+        (tester) async {
+      slowLookup();
+      await openCalendarDialogueOn(tester);
+
+      await tester.tap(find.text('Accept'));
+      await tester.pump();
+
+      expect(
+        find.descendant(
+          of: acceptButton(),
+          matching: find.byType(CircularProgressIndicator),
+        ),
+        findsOneWidget,
+        reason: 'the only thing telling the user the tap registered',
+      );
+      expect(tester.widget<TextButton>(acceptButton()).onPressed, isNull);
+
+      await finishSaving(tester);
+    });
+
+    testWidgets('an impatient second tap does not log the film twice',
+        (tester) async {
+      slowLookup();
+      await openCalendarDialogueOn(tester);
+
+      await tester.tap(find.text('Accept'));
+      await tester.pump();
+      await tester.tap(find.text('Accept'), warnIfMissed: false);
+      await tester.tap(find.text('Accept'), warnIfMissed: false);
+      await finishSaving(tester);
+
+      final day = (await calendarOf('test-uid'))!['2024-03-09'] as List;
+      expect(day, hasLength(1));
+      expect(user.rewatchedMovies['27205'], 1,
+          reason: 'and it was not counted as three rewatches either');
+    });
+
+    testWidgets('the dialogue cannot be dropped by tapping outside it',
+        (tester) async {
+      // The other way out, and the one that touches no button at all. Leaving
+      // this way abandoned the entry half fanned out with nothing left on
+      // screen to say whether it landed.
+      slowLookup();
+      await openCalendarDialogueOn(tester);
+
+      await tester.tap(find.text('Accept'));
+      await tester.pump();
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pump();
+
+      expect(find.byType(CalendarAddDialogue), findsOneWidget);
+
+      await finishSaving(tester);
+
+      expect(find.byType(CalendarAddDialogue), findsNothing,
+          reason: 'it still closes itself once the entry is written');
+    });
+
+    testWidgets('the title-page dialogue refuses a second tap too',
+        (tester) async {
+      slowLookup();
+      await pump(
+        tester,
+        AddToCalendar(
+          media: Movie(id: '27205', title: 'Inception', coverPhoto: ''),
+          dateForMap: '2024-03-09',
+          modifying: false,
+          friends: const [],
+          type: 'movie',
+        ),
+      );
+
+      await tester.tap(find.text('Accept'));
+      await tester.pump();
+
+      expect(tester.widget<TextButton>(acceptButton()).onPressed, isNull);
+
+      await tester.tap(find.text('Accept'), warnIfMissed: false);
+      await finishSaving(tester);
+
+      final day = (await calendarOf('test-uid'))!['2024-03-09'] as List;
+      expect(day, hasLength(1));
     });
   });
 }

@@ -306,6 +306,21 @@ What the shell settles once, so no popup has to:
 - **The panel is the `Dialog`'s own `Material`.** Painting it with a
   `Container` instead puts the `Material` above the list tiles, and their ink
   splashes have nothing to land on.
+- **A busy action spins and stops answering.** Set `busy` on the
+  `AppDialogAction` that is running and the shell swaps its icon for a spinner
+  and drops its handler, whether or not the caller also nulled it.
+
+**A save that leaves the dialogue open has to say it is running.** Logging a
+title is a dozen round trips — the user's calendar, every tagged friend's
+calendar, both seen lists, the rewatch counter, the seen-with record, progress
+— each waiting on the last. A dialogue that looks untouched for that long reads
+as a tap that missed, and the second tap wrote the entry again. Mix
+`SingleSubmission` (`lib/common/single_submission.dart`) into the state, call
+`submit` instead of `runVisibleAsyncAction`, and drive `busy` and
+`dismissible: !submitting` from it. The mixin ignores a call that arrives while
+one is already running, so the guard does not depend on the buttons alone;
+`dismissible` closes the two ways out that never touch them, the back gesture
+and the barrier.
 
 The same rule as tiles applies inside one: **never give a list a fixed
 height.** A vertical list should shrink-wrap and let the dialogue scroll —
@@ -683,7 +698,7 @@ cd ..
 node --test web/downloads/*.test.js
 ```
 
-`flutter test` currently runs 658 tests with no emulator, credentials or
+`flutter test` currently runs 804 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
 `FirestoreCore.db` and `AppHttp.client` — and callable context through
 `CallableContext`. They default to the real implementations and are pointed at

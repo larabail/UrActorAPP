@@ -62,6 +62,7 @@ class AppDialogAction {
     required this.onPressed,
     this.icon,
     this.tone = AppDialogTone.neutral,
+    this.busy = false,
   });
 
   /// Already localized by the caller. The shell has no opinion about text.
@@ -74,6 +75,18 @@ class AppDialogAction {
   final VoidCallback? onPressed;
 
   final AppDialogTone tone;
+
+  /// Whether this action is running right now.
+  ///
+  /// A busy action shows a spinner where its icon was and refuses taps. Both
+  /// halves matter: the spinner is the only thing telling the user their tap
+  /// registered, and refusing further taps is what stops the same write being
+  /// started three times while the first one is still travelling.
+  final bool busy;
+
+  /// What the button is actually given, so a caller cannot leave a busy
+  /// action live by forgetting to null its handler as well.
+  VoidCallback? get _handler => busy ? null : onPressed;
 
   Color get _iconColor => switch (tone) {
         AppDialogTone.neutral => Colors.white,
@@ -95,6 +108,7 @@ class AppDialog extends StatelessWidget {
     this.actions = const <AppDialogAction>[],
     this.maxWidth = 560.0,
     this.padding = const EdgeInsets.all(20.0),
+    this.dismissible = true,
   });
 
   /// Sits above the body and does not scroll with it. Already localized.
@@ -122,57 +136,70 @@ class AppDialog extends StatelessWidget {
   /// Space between the panel edge and the content.
   final EdgeInsetsGeometry padding;
 
+  /// Whether the user may back out of the dialogue without pressing anything.
+  ///
+  /// False closes the two other ways out -- the system back gesture and a tap
+  /// on the barrier -- which a dialogue does while its save is in flight.
+  /// Disabling the buttons alone is not enough: leaving by the back gesture
+  /// disposes the dialogue with the write half done and nothing left on screen
+  /// to say whether it landed.
+  final bool dismissible;
+
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      // The panel is the Dialog's own Material rather than a Container painted
-      // on top of one. A Container leaves the nearest Material *above* the
-      // list tiles, so their ink splashes have no surface to land on and the
-      // framework reports that on every frame.
-      backgroundColor: kAppDialogPanelColor,
-      surfaceTintColor: Colors.transparent,
-      insetPadding: kAppDialogInset,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(kAppDialogRadius)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: Padding(
-          padding: padding,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            // Stretch is what makes the panel fill the width it is given.
-            // Without it the Column shrinks to its widest child and the
-            // dialogue lands back on the 280pt minimum.
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (title != null) ...[
-                Text(
-                  title!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+    return PopScope(
+      canPop: dismissible,
+      child: Dialog(
+        // The panel is the Dialog's own Material rather than a Container
+        // painted on top of one. A Container leaves the nearest Material
+        // *above* the list tiles, so their ink splashes have no surface to
+        // land on and the framework reports that on every frame.
+        backgroundColor: kAppDialogPanelColor,
+        surfaceTintColor: Colors.transparent,
+        insetPadding: kAppDialogInset,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(kAppDialogRadius)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: Padding(
+            padding: padding,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              // Stretch is what makes the panel fill the width it is given.
+              // Without it the Column shrinks to its widest child and the
+              // dialogue lands back on the 280pt minimum.
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (title != null) ...[
+                  Text(
+                    title!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
+                  const SizedBox(height: 12),
+                ],
+                Flexible(child: SingleChildScrollView(child: child)),
+                if (actions.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  OverflowBar(
+                    alignment: MainAxisAlignment.end,
+                    overflowAlignment: OverflowBarAlignment.center,
+                    spacing: 8,
+                    overflowSpacing: 4,
+                    children: [
+                      for (final action in actions)
+                        _ActionButton(action: action),
+                    ],
+                  ),
+                ],
               ],
-              Flexible(child: SingleChildScrollView(child: child)),
-              if (actions.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                OverflowBar(
-                  alignment: MainAxisAlignment.end,
-                  overflowAlignment: OverflowBarAlignment.center,
-                  spacing: 8,
-                  overflowSpacing: 4,
-                  children: [
-                    for (final action in actions) _ActionButton(action: action),
-                  ],
-                ),
-              ],
-            ],
+            ),
           ),
         ),
       ),
@@ -184,6 +211,21 @@ class _ActionButton extends StatelessWidget {
   const _ActionButton({required this.action});
 
   final AppDialogAction action;
+
+  /// The spinner that stands in for the icon while the action runs.
+  ///
+  /// Sized to the icon it replaces so the row does not jump on the tap, which
+  /// would move the neighbouring button out from under the user's finger.
+  Widget get _spinner => SizedBox.square(
+        dimension: 24.0,
+        child: Padding(
+          padding: const EdgeInsets.all(2.0),
+          child: CircularProgressIndicator(
+            strokeWidth: 2.0,
+            color: action._iconColor,
+          ),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -199,17 +241,19 @@ class _ActionButton extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     );
-    if (action.icon == null) {
+    // An action with no icon still has to show it is running, so it grows one
+    // for as long as it is busy rather than looking untouched.
+    if (action.icon == null && !action.busy) {
       return TextButton(
-        onPressed: action.onPressed,
+        onPressed: action._handler,
         style: style,
         child: label,
       );
     }
     return TextButton.icon(
-      onPressed: action.onPressed,
+      onPressed: action._handler,
       style: style,
-      icon: Icon(action.icon, color: action._iconColor),
+      icon: action.busy ? _spinner : Icon(action.icon, color: action._iconColor),
       label: label,
     );
   }
