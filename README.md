@@ -647,7 +647,7 @@ npm install
 npm test
 
 cd ..
-node --test web/downloads/
+node --test web/downloads/*.test.js
 ```
 
 `flutter test` currently runs 658 tests with no emulator, credentials or
@@ -673,7 +673,7 @@ passing tests. If port 8080 is already held by an emulator you started
 separately, run `npx mocha rules.test.js --timeout 20000` from
 `firestore-tests/` instead.
 
-`node --test web/downloads/` runs the downloads page's release logic — which
+`node --test web/downloads/*.test.js` runs the downloads page's release logic — which
 installer belongs to which platform, which of two versions is newer, and what
 the page falls back to when the GitHub API cannot be reached. No dependencies
 and no browser: it uses Node's own test runner against the same module the
@@ -706,7 +706,7 @@ only Markdown, docs, or `.gitignore`. The workflow has four jobs:
   checked to ensure no release signing material is present.
 - **Functions** installs Node 22 dependencies in `functions/`, runs `npm test`,
   and confirms `index.js` loads.
-- **Downloads site** runs `node --test web/downloads/`. The page at
+- **Downloads site** runs `node --test web/downloads/*.test.js`. The page at
   `downloads.uractor.com` is served exactly as it is committed, so nothing else
   in CI would notice its script breaking.
 - **Version** runs the unit tests under `tool/` and then enforces the version

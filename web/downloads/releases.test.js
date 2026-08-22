@@ -1,7 +1,7 @@
 /**
  * Tests for the downloads page's release logic.
  *
- * Run with: node --test web/downloads/
+ * Run with: node --test web/downloads/*.test.js
  *
  * These cover the decisions the page cannot be eyeballed for. Whether it looks
  * right is answered by opening it; whether it offers the newest build, the

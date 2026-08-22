@@ -257,11 +257,11 @@ void main() {
 
   group('the manifest the release actually publishes', () {
     test('is one this parser accepts', () {
-      // Byte for byte the shape `tool/build_downloads_site.py` writes. The two
-      // are generated and parsed by different languages in different repos'
-      // worth of tooling, so the contract between them is pinned on both
-      // sides: `tool/test_build_downloads_site.py` asserts the shape going
-      // out, and this asserts it coming in.
+      // Byte for byte the shape `tool/build_download_manifest.py` writes. The
+      // two are generated and parsed by different languages in different
+      // repos' worth of tooling, so the contract between them is pinned on
+      // both sides: `tool/test_build_download_manifest.py` asserts the shape
+      // going out, and this asserts it coming in.
       const published = '''
 {
   "version": "3.16.0",

@@ -155,8 +155,14 @@ jobs:
         with:
           node-version: '22'
 
+      # A glob, not the directory. Node 22 dropped the directory argument the
+      # test runner used to take: it now treats its arguments as glob patterns
+      # and `web/downloads/` resolves to the directory itself, which it then
+      # tries to run as a test file and reports as a failure. Left unquoted so
+      # the shell expands it, which also keeps the command working on the
+      # older Node someone may have locally.
       - name: Test
-        run: node --test web/downloads/
+        run: node --test web/downloads/*.test.js
 
   # Every merge to master ships to internal testers, so a pull request that
   # changes what the app does has to say so in the version. Otherwise two
