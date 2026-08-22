@@ -1,7 +1,25 @@
 name: Release to internal testing
 
-# Every merge to master ships to internal testers. Production is a separate,
-# manual workflow, so nothing here can reach real users.
+# The one pipeline that puts a build in front of testers, on all three
+# platforms. It used to be three files -- Play, TestFlight and a tag-triggered
+# desktop release -- which meant a single merge produced two runs plus a manual
+# third, each with its own idea of what "this release" was. A tester reporting a
+# bug had to be told which of them to look at, and the desktop half was so easy
+# to forget that it lagged the other two by weeks.
+#
+#   1. Android  -> Play internal testing
+#   2. iOS      -> TestFlight
+#   3. Desktop  -> macOS and Windows installers on the run
+#
+# The numbering is the order they are reported in, not the order they run in.
+# All three start together behind the same gates, because nothing one of them
+# does can affect another and serialising them would make every merge cost the
+# sum of the three -- roughly fifty-five minutes -- instead of the longest,
+# roughly twenty-five. A failure in one therefore does not stop the others; the
+# `summary` job at the end is what states plainly which platforms shipped.
+#
+# Production is a separate, manual workflow, so nothing here can reach anyone
+# who did not opt in.
 on:
   push:
     branches: [master]
@@ -11,40 +29,201 @@ on:
       - '.gitignore'
   workflow_dispatch:
 
-# Two runs uploading at once would pick the same version code and the second
-# would be rejected, so releases are serialised. In-progress runs are allowed
-# to finish rather than being cancelled, because a cancelled run can leave an
-# uploaded-but-unassigned version code behind.
+# Shared with `release-production.yml`. Two runs uploading at once would pick
+# the same Play version code and the second would be rejected, and a promotion
+# racing an upload would decide what "latest on internal" means by accident.
+# In-progress runs are allowed to finish rather than being cancelled, because a
+# cancelled run can leave an uploaded-but-unassigned version code behind, or a
+# build half-processed on Apple's side.
 concurrency:
-  group: play-release
+  group: release
   cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
-  # Deployed before the app is uploaded, and the upload is blocked if this
-  # fails. The order matters: a build that reaches testers expecting a callable
-  # that is not deployed yet fails on the device, so the server side goes first.
+  # Linux, seconds, and no secrets used beyond checking that they exist. It runs
+  # first so that a mistyped version or an unfinished credential setup is
+  # reported before twenty-five minutes of macOS time is spent discovering the
+  # same thing.
+  preflight:
+    name: Check the release is configured
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    outputs:
+      version: ${{ steps.version.outputs.name }}
+      ios: ${{ steps.ios.outputs.configured }}
+      macos: ${{ steps.macos.outputs.configured }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # One reading of pubspec.yaml for the whole run. Three platforms deriving
+      # the version name separately is three chances for them to disagree about
+      # what this release is called.
+      - name: Read the version name
+        id: version
+        run: |
+          set -euo pipefail
+          NAME=$(sed -n 's/^version: *\([0-9][^+]*\).*/\1/p' pubspec.yaml)
+          if [ -z "$NAME" ]; then
+            echo "::error::Could not read a version name from pubspec.yaml"
+            exit 1
+          fi
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "Releasing $NAME"
+
+      # Missing credentials skip a stage rather than failing it. The iOS and
+      # desktop halves were both committed before their secrets existed, and a
+      # release pipeline that goes red on every merge until someone finishes
+      # gathering certificates trains people to ignore it.
+      - name: Look for the App Store secrets
+        id: ios
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+          CERT: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          set -euo pipefail
+
+          missing=()
+          [ -n "$KEY_ID" ]        || missing+=(APP_STORE_CONNECT_KEY_ID)
+          [ -n "$ISSUER_ID" ]     || missing+=(APP_STORE_CONNECT_ISSUER_ID)
+          [ -n "$PRIVATE_KEY" ]   || missing+=(APP_STORE_CONNECT_PRIVATE_KEY)
+          [ -n "$CERT" ]          || missing+=(IOS_DIST_CERT_P12_BASE64)
+          [ -n "$CERT_PASSWORD" ] || missing+=(IOS_DIST_CERT_PASSWORD)
+          [ -n "$PROFILE" ]       || missing+=(IOS_PROVISIONING_PROFILE_BASE64)
+
+          if [ ${#missing[@]} -eq 0 ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "configured=false" >> "$GITHUB_OUTPUT"
+          {
+            echo '### iOS stage skipped'
+            echo ''
+            echo 'Missing repository secrets:'
+            echo ''
+            for name in "${missing[@]}"; do echo "- \`$name\`"; done
+            echo ''
+            echo 'See `docs/releases.md`, under "Releasing to TestFlight".'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Windows needs nothing: its installer is unsigned, which the download
+      # page explains. macOS cannot be shipped unsigned at all -- since Sequoia
+      # an un-notarised build is a hard block rather than an inconvenience -- so
+      # the macOS half is what these secrets decide.
+      - name: Look for the macOS signing secrets
+        id: macos
+        env:
+          CERT: ${{ secrets.MACOS_DEVELOPER_ID_CERT_P12_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.MACOS_DEVELOPER_ID_CERT_PASSWORD }}
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+
+          missing=()
+          [ -n "$CERT" ]          || missing+=(MACOS_DEVELOPER_ID_CERT_P12_BASE64)
+          [ -n "$CERT_PASSWORD" ] || missing+=(MACOS_DEVELOPER_ID_CERT_PASSWORD)
+          [ -n "$KEY_ID" ]        || missing+=(APP_STORE_CONNECT_KEY_ID)
+          [ -n "$ISSUER_ID" ]     || missing+=(APP_STORE_CONNECT_ISSUER_ID)
+          [ -n "$PRIVATE_KEY" ]   || missing+=(APP_STORE_CONNECT_PRIVATE_KEY)
+
+          if [ ${#missing[@]} -eq 0 ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "configured=false" >> "$GITHUB_OUTPUT"
+          {
+            echo '### macOS stage skipped'
+            echo ''
+            echo 'Missing repository secrets:'
+            echo ''
+            for name in "${missing[@]}"; do echo "- \`$name\`"; done
+            echo ''
+            echo 'See `docs/releases.md`, under "Releasing the desktop apps".'
+            echo 'The three `APP_STORE_CONNECT_*` secrets are the ones'
+            echo 'TestFlight already uses; notarisation reuses them.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Analyze and test once for the whole release rather than once per platform.
+  # These checks are platform independent and already ran on the pull request,
+  # but a merge commit is a combination neither branch tested on its own, so
+  # they are repeated here -- on Linux, where they cost five minutes rather
+  # than being paid three times over on two macOS runners and a Windows one.
+  verify:
+    name: Analyze and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-flutter-android
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test --coverage
+
+      # Coverage is only useful if something reads it. The floor covers the
+      # tested layers rather than the whole project, because most of lib/ is
+      # widget code with no widget tests and a project-wide number would have
+      # to be set too low to catch anything. It is the same floor pr.yml
+      # enforces, and the two are meant to move together.
+      - name: Coverage summary
+        run: |
+          # pipefail matters here: without it tee returns 0 and the coverage
+          # floor below would never fail the build.
+          set -o pipefail
+          echo '### Coverage' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          python tool/coverage_summary.py --min 68 | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/lcov.info
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # Deployed before any app is uploaded, and every platform stage waits for it.
+  # The order matters: a build that reaches testers expecting a callable that is
+  # not deployed yet fails on the device, and that is as true on iOS and on the
+  # desktop as it is on Android.
   functions:
     name: Deploy Cloud Functions
+    needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
-    # The one job here that is not limited to testers. `release` below uploads
-    # to Play's internal track, which reaches the handful of people on it; this
-    # deploys to the live Firebase project that every installed app talks to,
-    # including everyone on the App Store and on Play production. A bad deploy
-    # here is felt by users who never opted into testing anything.
+    # The one job here that is not limited to testers. The platform stages below
+    # reach the handful of people on Play's internal track, on TestFlight, or
+    # downloading a build from this run; this deploys to the live Firebase
+    # project that every installed app talks to, including everyone on the App
+    # Store and on Play production. A bad deploy here is felt by users who never
+    # opted into testing anything.
     #
     # So it waits for an approval, the same way promoting to production does.
     # Review on the pull request already stops unreviewed code reaching master;
     # this stops an approved-but-wrong change reaching real users the moment it
     # merges, which is the failure the review cannot catch.
     #
-    # The cost is one click per merge that touches functions/. If that becomes
-    # tiresome, the honest fix is a path filter on this job rather than removing
-    # the gate.
+    # The cost is one click per merge. If that becomes tiresome, the honest fix
+    # is a path filter on this job rather than removing the gate.
     environment:
       name: functions
       url: https://console.firebase.google.com/project/actordb-cf981/functions
@@ -101,17 +280,21 @@ jobs:
         if: always()
         run: rm -f "$RUNNER_TEMP/firebase-service-account.json"
 
-  release:
-    name: Build and upload to internal
-    needs: functions
+  # ---------------------------------------------------------------- 1. Android
+
+  android:
+    name: '1 · Android → Play internal'
+    needs: [preflight, verify, functions]
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
     # The version code is decided here, by asking Play, and is needed by the
-    # job that records it afterwards.
+    # jobs that record it afterwards.
     outputs:
       code: ${{ steps.version.outputs.code }}
-      name: ${{ steps.version.outputs.name }}
+
+    env:
+      VERSION: ${{ needs.preflight.outputs.version }}
 
     steps:
       - uses: actions/checkout@v4
@@ -128,36 +311,6 @@ jobs:
 
       - name: Install Play API client
         run: pip install --quiet google-auth requests
-
-      # A failing build must not reach testers, so verification gates the upload.
-      - name: Analyze
-        run: flutter analyze
-
-      - name: Test
-        run: flutter test --coverage
-
-      # Coverage is only useful if something reads it. The floor covers the
-      # tested layers rather than the whole project, because most of lib/ is
-      # widget code with no widget tests and a project-wide number would have
-      # to be set too low to catch anything.
-      - name: Coverage summary
-        run: |
-          # pipefail matters here: without it tee returns 0 and the coverage
-          # floor below would never fail the build.
-          set -o pipefail
-          echo '### Coverage' >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          python tool/coverage_summary.py --min 68 | tee -a "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Keep the coverage report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage
-          path: coverage/lcov.info
-          retention-days: 30
-          if-no-files-found: ignore
 
       - name: Restore signing keystore
         env:
@@ -182,11 +335,10 @@ jobs:
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
+          set -euo pipefail
           CODE=$(python tool/play.py next-code)
           echo "code=$CODE" >> "$GITHUB_OUTPUT"
-          NAME=$(grep '^version:' pubspec.yaml | sed 's/version: *//' | cut -d+ -f1)
-          echo "name=$NAME" >> "$GITHUB_OUTPUT"
-          echo "Building $NAME ($CODE)"
+          echo "Building $VERSION ($CODE)"
 
       - name: Build app bundle
         env:
@@ -194,7 +346,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           flutter build appbundle --release \
-            --build-name="${{ steps.version.outputs.name }}" \
+            --build-name="$VERSION" \
             --build-number="${{ steps.version.outputs.code }}" \
             --dart-define=TMDB_API_KEY="$TMDB_API_KEY" \
             --dart-define=OPENAI_API_KEY="$OPENAI_API_KEY"
@@ -216,37 +368,596 @@ jobs:
             --aab build/app/outputs/bundle/release/app-release.aab \
             --track internal \
             --status completed \
-            --release-name "${{ steps.version.outputs.name }} (${{ steps.version.outputs.code }})" \
+            --release-name "$VERSION (${{ steps.version.outputs.code }})" \
             --notes build/release_notes.json
-
-      # Tags belong to production releases only, so nothing is tagged here.
-      # Promotion still needs to know which commit produced a version code, so
-      # the mapping is recorded in the run summary and passed to the production
-      # workflow by hand.
-      - name: Record what was built
-        run: |
-          {
-            echo '### Built'
-            echo ''
-            echo "- version: ${{ steps.version.outputs.name }}"
-            echo "- version code: ${{ steps.version.outputs.code }}"
-            echo "- commit: $GITHUB_SHA"
-            echo ''
-            echo "To promote this build, run the production workflow with"
-            echo "version code \`${{ steps.version.outputs.code }}\` and commit"
-            echo "\`$GITHUB_SHA\`."
-          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Keep the bundle for inspection
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-${{ steps.version.outputs.code }}
+          name: android-${{ steps.version.outputs.code }}
           path: build/app/outputs/bundle/release/app-release.aab
           retention-days: 30
 
       - name: Remove signing material
         if: always()
         run: rm -f android/app/upload-keystore.jks android/key.properties
+
+  # -------------------------------------------------------------------- 2. iOS
+
+  ios:
+    name: '2 · iOS → TestFlight'
+    needs: [preflight, verify, functions]
+    if: needs.preflight.outputs.ios == 'true'
+    # macos-26, not macos-15. Apple refuses any upload built against an SDK
+    # older than iOS 26, and macos-15 defaults to Xcode 16.4, which carries the
+    # iOS 18.5 SDK. That rejection arrives from App Store Connect as a 409
+    # after the archive has already been built and uploaded, so the runner
+    # image is what decides whether a release is possible at all.
+    runs-on: macos-26
+    timeout-minutes: 90
+
+    outputs:
+      build: ${{ steps.version.outputs.build }}
+
+    env:
+      BUNDLE_ID: com.uractor.uractorios
+      TEAM_ID: Q8XY8276AC
+      # Named so the pull request check can assert it never exists there.
+      KEYCHAIN: ios-signing.keychain-db
+      VERSION: ${{ needs.preflight.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-flutter-ios
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install the App Store Connect client
+        run: pip install --quiet "pyjwt[crypto]" requests
+
+      # Checked before anything expensive happens. Apple refuses an upload
+      # built against an SDK older than iOS 26, and it refuses it at the very
+      # end — a 409 from App Store Connect after the archive is built and
+      # sent, roughly fifteen minutes in. Reading the SDK off the selected
+      # Xcode turns that into a failure in the first few seconds, with a
+      # message that says which Xcode was chosen.
+      #
+      # Apple raises this floor roughly once a year, a few months after each
+      # iOS release. When it moves, raise MINIMUM_IOS_SDK and, if the image
+      # default is behind, select a newer Xcode from /Applications.
+      - name: Check the iOS SDK is new enough to upload
+        env:
+          MINIMUM_IOS_SDK: 26
+        run: |
+          set -euo pipefail
+
+          echo "Xcode: $(xcodebuild -version | head -1) at $(xcode-select -p)"
+          SDK=$(xcrun --sdk iphoneos --show-sdk-version)
+          echo "iOS SDK: $SDK"
+
+          if [ "${SDK%%.*}" -lt "$MINIMUM_IOS_SDK" ]; then
+            echo "::error::Built against the iOS $SDK SDK, but App Store Connect requires iOS $MINIMUM_IOS_SDK or later. Available Xcodes: $(ls -d /Applications/Xcode*.app 2>/dev/null | tr '\n' ' ')"
+            exit 1
+          fi
+
+      # Everything from here holds signing material, so every step that writes
+      # a secret to disk has a matching removal in the cleanup step at the end,
+      # which runs even when the build fails.
+      - name: Import the signing certificate
+        env:
+          CERT_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          # Random, and never leaves the run: this keychain lives for one job.
+          KEYCHAIN_PASSWORD=$(uuidgen)
+          echo "::add-mask::$KEYCHAIN_PASSWORD"
+          echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> "$GITHUB_ENV"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          # Without a timeout the keychain relocks partway through a long
+          # archive and codesign fails somewhere in the middle of it.
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+
+          echo "$CERT_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" \
+            -k "$KEYCHAIN" \
+            -P "$CERT_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          rm -f "$RUNNER_TEMP/cert.p12"
+
+          # Without this, codesign finds the key and then blocks on a GUI
+          # prompt that no one is there to answer, and the job hangs until it
+          # times out rather than failing.
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+
+          # Added to the search list rather than replacing it: dropping the
+          # login keychain takes the Apple intermediate certificates with it,
+          # and the signature then fails to chain.
+          security list-keychains -d user -s "$KEYCHAIN" \
+            $(security list-keychains -d user | tr -d '"')
+
+          security find-identity -v -p codesigning "$KEYCHAIN"
+
+          # Read back rather than assumed. A certificate issued before 2019 is
+          # named "iPhone Distribution" and a current one "Apple Distribution",
+          # and naming the wrong one fails the archive with an identity-not-
+          # found error that says nothing about which name was expected.
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN" \
+            | sed -n 's/.*"\(.*\)"$/\1/p' | head -1)
+          if [ -z "$IDENTITY" ]; then
+            echo "the imported certificate has no code signing identity" >&2
+            exit 1
+          fi
+          echo "SIGNING_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+          echo "signing as '$IDENTITY'"
+
+      - name: Install the provisioning profile
+        env:
+          PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          set -euo pipefail
+
+          echo "$PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/profile.mobileprovision"
+
+          # Xcode 16 reads profiles from its own directory; older tooling still
+          # reads the MobileDevice one. Installed to both, because which one is
+          # consulted is a detail of the Xcode on the image rather than
+          # something this workflow should depend on.
+          for dir in \
+            "$HOME/Library/MobileDevice/Provisioning Profiles" \
+            "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          do
+            mkdir -p "$dir"
+            cp "$RUNNER_TEMP/profile.mobileprovision" "$dir/"
+          done
+
+          # The export step has to name the profile, and the name is inside the
+          # profile rather than something the workflow gets to choose.
+          security cms -D -i "$RUNNER_TEMP/profile.mobileprovision" > "$RUNNER_TEMP/profile.plist"
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$RUNNER_TEMP/profile.plist")
+          echo "PROFILE_NAME=$PROFILE_NAME" >> "$GITHUB_ENV"
+          echo "using provisioning profile '$PROFILE_NAME'"
+
+      - name: Install the App Store Connect API key
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          # altool takes a key id, not a path, and looks for the file itself in
+          # a fixed set of directories. This is one of them.
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          printf '%s\n' "$PRIVATE_KEY" \
+            > "$HOME/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8"
+          chmod 600 "$HOME/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8"
+
+      # Asked of Apple rather than read from pubspec.yaml, for the same reason
+      # the Android stage asks Play: a build number that has ever been uploaded
+      # is burned forever, so the committed suffix drifts and collides. Note
+      # that the `+BUILD` suffix in pubspec.yaml is Play's number and is not
+      # written back to from here — the two stores count separately, and one
+      # overwriting the other's record would make both meaningless.
+      - name: Determine the next build number
+        id: version
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+
+          APP_ID=$(python tool/appstore.py app-id)
+          BUILD=$(python tool/appstore.py next-build --app-id "$APP_ID")
+
+          {
+            echo "app-id=$APP_ID"
+            echo "build=$BUILD"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Building $VERSION ($BUILD) for app $APP_ID"
+
+      - name: Write the export options
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>teamID</key>
+            <string>${TEAM_ID}</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>${BUNDLE_ID}</key>
+              <string>${PROFILE_NAME}</string>
+            </dict>
+            <key>uploadSymbols</key>
+            <true/>
+          </dict>
+          </plist>
+          PLIST
+
+      # `ExportOptions.plist` governs only the export half of `flutter build
+      # ipa`. The archive before it uses the project's own settings, and the
+      # Runner target sets no CODE_SIGN_STYLE at all, so Xcode falls back to
+      # Automatic — which resolves profiles by asking the developer portal
+      # through an Apple account signed into Xcode. A hosted runner has no
+      # such account, so the archive fails before the export options are ever
+      # consulted. The project also pins CODE_SIGN_IDENTITY to "iPhone
+      # Developer", which no distribution certificate matches.
+      #
+      # Written into the xcconfig at build time rather than committed, because
+      # automatic signing is the right default for someone building locally in
+      # Xcode. The target's Release configuration uses this file as its base
+      # configuration, which outranks the project-level settings it has to
+      # override.
+      - name: Force manual signing for the archive
+        run: |
+          set -euo pipefail
+          cat >> ios/Flutter/Release.xcconfig <<XCCONFIG
+
+          // Appended by the release workflow. Never committed.
+          CODE_SIGN_STYLE = Manual
+          DEVELOPMENT_TEAM = ${TEAM_ID}
+          PROVISIONING_PROFILE_SPECIFIER = ${PROFILE_NAME}
+          CODE_SIGN_IDENTITY = ${SIGNING_IDENTITY}
+          CODE_SIGN_IDENTITY[sdk=iphoneos*] = ${SIGNING_IDENTITY}
+          XCCONFIG
+
+          tail -7 ios/Flutter/Release.xcconfig
+
+      - name: Build the IPA
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          flutter build ipa --release \
+            --build-name="$VERSION" \
+            --build-number="${{ steps.version.outputs.build }}" \
+            --export-options-plist="$RUNNER_TEMP/ExportOptions.plist" \
+            --dart-define=TMDB_API_KEY="$TMDB_API_KEY" \
+            --dart-define=OPENAI_API_KEY="$OPENAI_API_KEY"
+
+      # altool rather than the App Store Connect API: the API has no endpoint
+      # that accepts a binary. `--upload-package` rather than `--upload-app`,
+      # which Xcode 16 marks deprecated; the newer form wants the identifiers
+      # stated rather than read back out of the archive.
+      - name: Upload to TestFlight
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+
+          # Options before the path predicate: BSD find (which is what macOS
+          # has) does not accept -maxdepth after -name.
+          IPA=$(find build/ios/ipa -maxdepth 1 -name '*.ipa' | head -1)
+          if [ -z "$IPA" ]; then
+            echo "no .ipa was produced" >&2
+            exit 1
+          fi
+          echo "uploading $IPA"
+
+          xcrun altool --upload-package "$IPA" \
+            --type ios \
+            --apple-id "${{ steps.version.outputs.app-id }}" \
+            --bundle-id "$BUNDLE_ID" \
+            --bundle-version "${{ steps.version.outputs.build }}" \
+            --bundle-short-version-string "$VERSION" \
+            --apiKey "$KEY_ID" \
+            --apiIssuer "$ISSUER_ID"
+
+      - name: Keep the IPA for inspection
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-${{ steps.version.outputs.build }}
+          path: build/ios/ipa/*.ipa
+          retention-days: 30
+
+      # Unconditional: a failed build leaves the same private key and the same
+      # certificate on the runner as a successful one.
+      - name: Remove signing material
+        if: always()
+        run: |
+          security delete-keychain "$KEYCHAIN" 2>/dev/null || true
+          rm -rf "$HOME/.appstoreconnect/private_keys"
+          rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision
+          rm -f "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/"*.mobileprovision
+          # Also covered here rather than only inline after the import, because
+          # a wrong certificate password fails that step before its own `rm`.
+          rm -f "$RUNNER_TEMP/cert.p12"
+          rm -f "$RUNNER_TEMP/profile.mobileprovision" "$RUNNER_TEMP/profile.plist"
+
+  # ---------------------------------------------------------------- 3. Desktop
+
+  # Desktop has no store, and therefore no test track to upload to. Its
+  # equivalent is this: the installers are built, signed and notarised exactly
+  # as a production one is, and left as artifacts on the run for a tester to
+  # download. Nothing is published and `downloads.uractor.com` is untouched, so
+  # no existing install learns there is a new version -- which is the whole
+  # difference between internal testing and a release for a platform with no
+  # staged rollout to hold anything back with.
+  #
+  # Two jobs rather than one because macOS and Windows cannot be cross compiled;
+  # each has to be built on its own runner.
+
+  desktop_macos:
+    name: '3 · Desktop → macOS'
+    needs: [preflight, verify, functions]
+    if: needs.preflight.outputs.macos == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 90
+
+    env:
+      VERSION: ${{ needs.preflight.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pinned to the same version the mobile stages use. Left on whatever
+      # `stable` happens to be, a single release could ship a desktop build
+      # from a different Flutter than the phone build beside it, and the first
+      # sign of it would be a behaviour difference nobody could reproduce.
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.1
+          channel: stable
+          cache: true
+
+      - name: Import the Developer ID certificate
+        env:
+          CERT_BASE64: ${{ secrets.MACOS_DEVELOPER_ID_CERT_P12_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.MACOS_DEVELOPER_ID_CERT_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          # Set here rather than in the job's `env:`. The `runner` context does
+          # not exist until a step is running, so referring to runner.temp in
+          # a job-level `env:` is rejected when the file is parsed -- which
+          # fails the whole workflow before any job is scheduled, with no logs
+          # to debug from. (Written without the expression braces on purpose:
+          # they would be expanded here too, since a run script is templated
+          # before it reaches the shell.)
+          #
+          # $RUNNER_TEMP is an ordinary variable inside a script and is the
+          # same directory. It is outside the workspace, so the keychain cannot
+          # be swept up by an artifact upload.
+          KEYCHAIN="$RUNNER_TEMP/desktop-release.keychain-db"
+          echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+
+          KEYCHAIN_PASSWORD=$(uuidgen)
+          echo "::add-mask::$KEYCHAIN_PASSWORD"
+          echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> "$GITHUB_ENV"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          # Without a timeout the keychain relocks partway through a long
+          # build and codesign fails in the middle of it.
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+
+          echo "$CERT_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" \
+            -k "$KEYCHAIN" \
+            -P "$CERT_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          rm -f "$RUNNER_TEMP/cert.p12"
+
+          # Without this, codesign finds the key and then blocks on a GUI
+          # prompt no one is there to answer, and the job hangs until timeout
+          # rather than failing.
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+
+          # Added to the search list rather than replacing it: dropping the
+          # login keychain takes Apple's intermediates with it and the
+          # signature then fails to chain.
+          security list-keychains -d user -s "$KEYCHAIN" \
+            $(security list-keychains -d user | tr -d '"')
+
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN" \
+            | sed -n 's/.*"\(Developer ID Application:.*\)"$/\1/p' | head -1)
+          if [ -z "$IDENTITY" ]; then
+            echo "No Developer ID Application identity in the keychain." >&2
+            echo "An 'Apple Development' certificate cannot sign a build for" >&2
+            echo "distribution outside the App Store. See docs/releases.md." >&2
+            security find-identity -v -p codesigning "$KEYCHAIN" >&2
+            exit 1
+          fi
+          echo "SIGNING_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+          echo "signing as '$IDENTITY'"
+
+      - name: Build
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter build macos --release \
+            --dart-define=TMDB_API_KEY="$TMDB_API_KEY" \
+            --dart-define=OPENAI_API_KEY="$OPENAI_API_KEY"
+
+      - name: Sign with the hardened runtime
+        run: |
+          set -euo pipefail
+          APP="build/macos/Build/Products/Release/UrActor.app"
+
+          # Notarisation refuses anything without the hardened runtime, and
+          # every nested framework has to be signed before the bundle that
+          # contains them -- signing outside-in leaves the inner ones unsigned
+          # and the staple fails much later with a vaguer error.
+          find "$APP/Contents/Frameworks" -name "*.framework" -o -name "*.dylib" 2>/dev/null \
+            | while read -r item; do
+                codesign --force --timestamp --options runtime \
+                  --sign "$SIGNING_IDENTITY" "$item"
+              done || true
+
+          codesign --force --deep --timestamp --options runtime \
+            --entitlements macos/Runner/Release.entitlements \
+            --sign "$SIGNING_IDENTITY" "$APP"
+
+          codesign --verify --strict --verbose=2 "$APP"
+
+      - name: Package as a DMG
+        run: |
+          set -euo pipefail
+          APP="build/macos/Build/Products/Release/UrActor.app"
+          DMG="UrActor-${VERSION}-macos.dmg"
+
+          STAGING="$RUNNER_TEMP/dmg"
+          mkdir -p "$STAGING"
+          cp -R "$APP" "$STAGING/"
+          # The Applications symlink is what makes the window a drag target
+          # rather than a folder someone has to work out what to do with.
+          ln -s /Applications "$STAGING/Applications"
+
+          hdiutil create -volname "UrActor" -srcfolder "$STAGING" \
+            -ov -format UDZO "$DMG"
+
+          # The DMG is signed too. Notarisation staples the ticket to the
+          # container, and an unsigned container cannot carry one.
+          codesign --force --timestamp --sign "$SIGNING_IDENTITY" "$DMG"
+          echo "DMG=$DMG" >> "$GITHUB_ENV"
+
+      # Notarised even though this build is never published. A tester on
+      # Sequoia or later cannot open an un-notarised app at all -- the
+      # right-click-to-open bypass is gone -- so skipping it here would produce
+      # an internal build nobody could install.
+      - name: Notarise and staple
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+
+          # The same App Store Connect key TestFlight uses. An app-specific
+          # password would also work and is what most guides show, but it
+          # breaks whenever the Apple ID's password or 2FA changes, which is
+          # exactly the sort of failure that surfaces months later during a
+          # release nobody has time to debug.
+          KEY_PATH="$RUNNER_TEMP/asc.p8"
+          printf '%s' "$PRIVATE_KEY" > "$KEY_PATH"
+
+          xcrun notarytool submit "$DMG" \
+            --key "$KEY_PATH" \
+            --key-id "$KEY_ID" \
+            --issuer "$ISSUER_ID" \
+            --wait \
+            --timeout 45m
+
+          rm -f "$KEY_PATH"
+
+          # Stapling puts the ticket inside the DMG, so the first launch works
+          # on a machine with no network. Without it Gatekeeper has to ask
+          # Apple, and an offline user is blocked.
+          xcrun stapler staple "$DMG"
+          xcrun stapler validate "$DMG"
+
+          # What a user's machine will actually conclude.
+          spctl --assess --type open --context context:primary-signature \
+            --verbose=2 "$DMG"
+
+      - name: Checksum
+        run: shasum -a 256 "$DMG" | tee "$DMG.sha256"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-macos
+          path: |
+            UrActor-*.dmg
+            UrActor-*.dmg.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Remove the keychain
+        if: always()
+        run: |
+          # Unconditional: a failed build leaves the same key material behind
+          # as a successful one.
+          #
+          # The path is recomputed rather than read from the environment, so
+          # this still works if the import step died before it managed to
+          # export KEYCHAIN -- which is exactly the run that would otherwise
+          # leave a keychain full of private key behind on the runner.
+          security delete-keychain "$RUNNER_TEMP/desktop-release.keychain-db" \
+            2>/dev/null || true
+
+  desktop_windows:
+    name: '3 · Desktop → Windows'
+    needs: [preflight, verify, functions]
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    env:
+      VERSION: ${{ needs.preflight.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.1
+          channel: stable
+          cache: true
+
+      - name: Build
+        shell: bash
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter build windows --release \
+            --dart-define=TMDB_API_KEY="$TMDB_API_KEY" \
+            --dart-define=OPENAI_API_KEY="$OPENAI_API_KEY"
+
+      # Inno Setup rather than MSIX. MSIX can auto-update through App Installer,
+      # but it cannot be sideloaded without a code signing certificate at all --
+      # so while this build is unsigned, MSIX would be undeliverable rather than
+      # merely warned about.
+      - name: Build the installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" `
+            "/DAppVersion=$env:VERSION" `
+            windows\installer\uractor.iss
+
+      - name: Checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd build/windows/installer
+          sha256sum UrActor-*-windows-setup.exe | tee UrActor-"$VERSION"-windows-setup.exe.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows
+          path: |
+            build/windows/installer/UrActor-*-windows-setup.exe
+            build/windows/installer/*.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+  # ------------------------------------------------------------------ epilogue
 
   # The version code exists only inside the run that asked Play for it, which
   # is why the committed `+BUILD` suffix sat at 47 while Play was serving codes
@@ -258,7 +969,7 @@ jobs:
   # Play credentials should not also hold a token that can write to master.
   record:
     name: Record the build number on master
-    needs: release
+    needs: android
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # Only after the bundle is on Play, and only for master. A
@@ -292,7 +1003,7 @@ jobs:
 
       - name: Write the build number back to master
         env:
-          CODE: ${{ needs.release.outputs.code }}
+          CODE: ${{ needs.android.outputs.code }}
         run: |
           set -uo pipefail
 
@@ -330,10 +1041,10 @@ jobs:
             "decision, enforced on pull requests by tool/check_version_bump.py." \
             > "$MESSAGE"
 
-          # Releases are serialised by the play-release concurrency group, but
-          # an ordinary merge to master can still land between the checkout and
-          # the push and have it rejected. Bounded, because a push that keeps
-          # being rejected is a busy branch, not something to sit and retry on.
+          # Releases are serialised by the concurrency group, but an ordinary
+          # merge to master can still land between the checkout and the push
+          # and have it rejected. Bounded, because a push that keeps being
+          # rejected is a busy branch, not something to sit and retry on.
           for attempt in 1 2 3; do
             # Each attempt starts again from master as it is now instead of
             # rebasing the commit the last one made: the only line this touches
@@ -379,3 +1090,64 @@ jobs:
           done
 
           give_up 'Three pushes in a row were rejected because `master` kept moving.'
+
+  # The point of one pipeline instead of three. The stages run in parallel and
+  # can fail independently, so without this the only way to find out whether a
+  # given merge reached iOS is to read three job results and know which of them
+  # were meant to run. This states it in one place, in the order the stages are
+  # numbered, and is also where a promotion gets the version code and commit it
+  # has to be given.
+  #
+  # Tags belong to production releases only, so nothing here is tagged.
+  summary:
+    name: Report what shipped
+    needs: [preflight, android, ios, desktop_macos, desktop_windows]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Write the summary
+        env:
+          VERSION: ${{ needs.preflight.outputs.version }}
+          CODE: ${{ needs.android.outputs.code }}
+          IOS_BUILD: ${{ needs.ios.outputs.build }}
+          ANDROID: ${{ needs.android.result }}
+          IOS: ${{ needs.ios.result }}
+          MACOS: ${{ needs.desktop_macos.result }}
+          WINDOWS: ${{ needs.desktop_windows.result }}
+        run: |
+          set -euo pipefail
+
+          # skipped means "not configured", which is a different thing from
+          # failed and should not read as one.
+          mark() {
+            case "$1" in
+              success)   echo ':white_check_mark: shipped' ;;
+              skipped)   echo ':heavy_minus_sign: not configured' ;;
+              cancelled) echo ':black_circle: cancelled' ;;
+              *)         echo ':x: failed' ;;
+            esac
+          }
+
+          {
+            echo "### Internal testing — $VERSION"
+            echo ''
+            echo '| # | Platform | Result | Build |'
+            echo '|---|---|---|---|'
+            echo "| 1 | Android · Play internal | $(mark "$ANDROID") | ${CODE:-—} |"
+            echo "| 2 | iOS · TestFlight | $(mark "$IOS") | ${IOS_BUILD:-—} |"
+            echo "| 3 | Desktop · macOS | $(mark "$MACOS") | run artifact |"
+            echo "| 3 | Desktop · Windows | $(mark "$WINDOWS") | run artifact |"
+            echo ''
+            echo "Commit: \`$GITHUB_SHA\`"
+            echo ''
+            echo 'The desktop installers are attached to this run rather than'
+            echo 'published: nothing on `downloads.uractor.com` moves until a'
+            echo 'production release.'
+            echo ''
+            if [ -n "${CODE:-}" ]; then
+              echo 'To promote this build, run **Release to production** with'
+              echo "version code \`$CODE\` and commit \`$GITHUB_SHA\`."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
