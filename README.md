@@ -1007,6 +1007,21 @@ workflows at all — GitHub reads the whole message, not just the subject. The
 merge succeeds, no run is created, and there is nothing to go red because there
 is no run to be red.
 
+**This bites at merge, not at review.** A pull request that touches only
+workflow files still gets its checks, and they run the edited definitions: the
+workflow above has no path filter, and a pull request is evaluated from its own
+merge commit. Workflow changes are self-verifying at review time. It is the
+push to `master` that can silently produce nothing — from a message carrying
+the marker, which is confirmed, or from integration-token suppression, which is
+documented in general but is not what the evidence here isolates. Green checks
+say the workflow is right; they say nothing about whether merging it releases.
+
+One consequence worth knowing: **`release-internal.yml` cannot verify a change
+to itself.** Its merge is exactly the push that may produce no run, and its
+`record` job only runs after a successful upload, so a bad edit to it is
+invisible until the next unrelated merge. Dispatch it by hand after changing it.
+The watchdog below is what notices when nobody does.
+
 `.github/workflows/check-release-gap.yml` is the backstop. Once a day, and on
 demand, it collects the head commits of every recent `Release to internal
 testing` run and walks `master` back from its tip to the first commit that has

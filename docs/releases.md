@@ -180,6 +180,21 @@ investigation got both wrong:
   request from shipping a second build. A marker in a subject is a decision; a
   marker in a body is an accident.
 
+It is also worth being exact about *when* this happens, because the natural
+guess is wrong. A pull request touching only workflow files still gets its
+checks, and they run the edited definitions — `pr.yml` has no path filter and a
+pull request is evaluated from its own merge commit. Workflow changes are
+self-verifying at review time. The failure is at the **merge push**, so green
+checks on the pull request are no evidence at all that merging it will produce a
+release.
+
+That leaves one workflow unable to check itself: **`release-internal.yml`**. A
+change to it merges through the same push that may silently produce no run, and
+its `record` job only reports after a successful upload, so a mistake in it
+stays invisible until some later, unrelated merge trips over it. Dispatch it by
+hand after changing it, and read the summary. The watchdog below is the backstop
+for the times nobody does.
+
 ### The watchdog
 
 `.github/workflows/check-release-gap.yml` runs daily and on demand. It asks the

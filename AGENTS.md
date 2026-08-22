@@ -297,6 +297,16 @@ when you genuinely need to commit something that does not build.
   documenting the trap is the likeliest place for it. It is tempting to
   remember it as "changing a workflow file skips the release", because the one
   commit it happened to did both; nothing establishes that half.
+
+  And note *where* it bites. A pull request that touches only workflow files
+  still gets its checks, and those checks run the edited definitions, because
+  `pr.yml` has no path filter and a pull request is evaluated from its own merge
+  commit. **Workflow changes are self-verifying at review time.** The hole is
+  the push to `master` at merge — either from a message carrying the marker,
+  which is confirmed, or from integration-token suppression, which is
+  documented in general but is not what the evidence here isolates. Green checks
+  on the pull request tell you the workflow is correct; they tell you nothing
+  about whether merging it will produce a release.
 - **Git exports `GIT_DIR` into every hook**, and it beats the repository a
   nested tool picks for itself. `flutter` asks git for its own version, so a
   hook that runs it without clearing `GIT_DIR`, `GIT_WORK_TREE` and their
