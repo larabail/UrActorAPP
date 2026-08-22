@@ -280,10 +280,11 @@ dangling. Its display name says what it does.
 The job now runs the `firestore-tests/` rules suite before deploying, alongside
 the functions tests it already ran, on the same reasoning: a merge commit is a
 combination neither branch tested alone, and this job pushes the result at the
-live project. It is also the only place that suite runs — `pr.yml` has no job
-for it — so a rules change gets its one automated check on the way out of the
-door. The suite needs a JDK for the Firestore emulator, which is why the job
-sets up Temurin 21 to match the pull request workflow.
+live project. `pr.yml` gained a `Firestore rules` job at much the same time, so
+this is a repeat of a pull request check rather than the only run of it — which
+is exactly the relationship the functions tests already had. It uses the same
+`npm run test:ci` script, and needs a JDK for the Firestore emulator, which is
+why the job sets up Temurin 21.
 
 ### Indexes are accepted, not finished
 

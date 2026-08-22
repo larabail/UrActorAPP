@@ -17,7 +17,13 @@ npm test
 ```
 
 `npm test` runs the whole suite (`emulators:exec` starts the Firestore
-emulator, runs the mocha tests against it, then shuts the emulator down).
+emulator, runs the mocha tests against it, then shuts the emulator down). It
+expects `firebase-tools` on PATH.
+
+CI has no global `firebase-tools`, so it runs `npm run test:ci`, which does the
+same thing through `npx` with the CLI version pinned — the same approach the
+functions suite uses. That command works locally too if you would rather not
+install the CLI.
 
 If you already have an emulator running separately on port 8080, you can run
 `npx mocha rules.test.js --timeout 20000` directly instead.

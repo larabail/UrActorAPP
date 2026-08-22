@@ -330,31 +330,17 @@ jobs:
       # returns an error to one screen, a broken rule locks every installed app
       # out of its own data or lets it read somebody else's.
       #
-      # Note this is the only place the suite runs. `pr.yml` has no job for
-      # `firestore-tests/` -- its `Functions` job runs the emulator suite in
-      # `functions/`, which is a different thing -- so unlike the step above,
-      # this is not a repeat of a check the pull request already made. Adding it
-      # there as well is worth doing and is not this change.
-      #
-      # `firestore-tests` calls `firebase` from its `test` script but does not
-      # depend on firebase-tools, so something has to put it on PATH first.
-      # `npx --package ... -- npm test` does that from npx's own cache. The
-      # obvious alternative, installing it into `firestore-tests/`, was tried
-      # and rejected: firebase-tools ships Dart templates under its own
-      # `node_modules`, `flutter analyze` reads any `.dart` file in the tree it
-      # is pointed at, and six errors then come out of a package nobody wrote.
-      # It is a different job and a different runner here, so it would not
-      # actually break this workflow -- but it breaks the checkout of anyone who
-      # copies the command locally, which is how it was found.
-      #
-      # The CLI finds the repository's `firebase.json`, and through it
-      # `firestore.rules`, by walking up from the working directory.
+      # `test:ci` rather than `test` because the documented local command
+      # expects `firebase` already on PATH, which a runner does not have. Same
+      # script and same pinned CLI as the `Firestore rules` job in `pr.yml`;
+      # installing firebase-tools into `firestore-tests/` instead is a trap,
+      # because it vendors Dart templates that `flutter analyze` then reads.
       - name: Test the security rules
         working-directory: firestore-tests
         run: |
           set -euo pipefail
           npm ci
-          npx --yes --package firebase-tools@15 -- npm test
+          npm run test:ci
 
       # One command for all three, not three commands. `firebase deploy` orders
       # a combined deploy itself and puts the rules and the indexes ahead of the

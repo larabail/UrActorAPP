@@ -5,6 +5,7 @@ import '../../main.dart';
 import '../constants.dart';
 import '../firebase/callable_context.dart';
 import '../firebase/omdb_lookup.dart';
+import '../media_sort_loader.dart';
 import 'http_client.dart';
 
 class ApiUtils {
@@ -301,7 +302,74 @@ class ApiUtils {
     if (movieResponse.statusCode != 200) {
       throw Exception('Failed to load movie details');
     }
-    return jsonDecode(movieResponse.body);
+    final Map<String, dynamic> details = jsonDecode(movieResponse.body);
+    _rememberForSorting(movieId, type, lang.toString(), details);
+    return details;
+  }
+
+  /// Hands a detail page's answer to the media grids' sort cache.
+  ///
+  /// The grids hold nothing but `[type, id]` pairs, so sorting them by title
+  /// or release date means fetching every item -- unless something already
+  /// did. This is that something: the fields are already in hand here, and
+  /// throwing them away is what made the first sort of every session slow.
+  ///
+  /// Guarded and silent, because a detail page's job is to show a detail page.
+  /// A cache that will not accept an entry is not a reason to fail one.
+  static void _rememberForSorting(
+    String movieId,
+    String type,
+    String language,
+    Map details,
+  ) {
+    try {
+      final bool isMovie = type == "movie";
+      MediaSortLoader.remember(
+        type: isMovie ? "Movies" : "TVShows",
+        id: movieId,
+        language: language,
+        title: (isMovie ? details['title'] : details['name'])?.toString(),
+        releaseDate: _sortableDate(
+            isMovie ? details['release_date'] : details['first_air_date']),
+        imdbId: details['imdb_id']?.toString(),
+      );
+    } catch (_) {
+      // Nothing here is worth interrupting a detail page for.
+    }
+  }
+
+  /// Records the IMDb id and rating a detail page resolved, which is the
+  /// expensive half: an OMDB request, plus a TMDB `external_ids` request for
+  /// every show. Opening a detail page therefore pre-pays for the slowest sort
+  /// in the app.
+  static void _rememberImdbForSorting(
+    String movieId,
+    String type,
+    String? imdbId,
+    dynamic rawRating,
+  ) {
+    try {
+      final String raw = rawRating?.toString() ?? 'N/A';
+      MediaSortLoader.remember(
+        type: type == "movie" ? "Movies" : "TVShows",
+        id: movieId,
+        language: (currentUser.settings['language'] ?? 'en').toString(),
+        imdbId: imdbId,
+        imdbRating: raw == 'N/A' ? null : double.tryParse(raw),
+        // Resolved even when there is no rating to be had, matching how a sort
+        // treats it: a title with no IMDb entry must not be looked up again on
+        // every single sort.
+        imdbResolved: true,
+      );
+    } catch (_) {
+      // As above.
+    }
+  }
+
+  static DateTime? _sortableDate(dynamic raw) {
+    final value = raw?.toString();
+    if (value == null || value.isEmpty) return null;
+    return DateTime.tryParse(value);
   }
 
   /// Fetches additional metadata including IMDb rating, release year, streaming providers, cast/crew, and trailer.
@@ -329,9 +397,12 @@ class ApiUtils {
       additionalData['imdb_rating'] =
           omdbData["imdbRating"] != "N/A" ? omdbData["imdbRating"] : "0.0";
       additionalData['year'] = omdbData['Year'] ?? "None";
+      _rememberImdbForSorting(
+          movieId, type, imdbId.toString(), omdbData["imdbRating"]);
     } else {
       additionalData['imdb_rating'] = "0.0";
       additionalData['year'] = "None";
+      _rememberImdbForSorting(movieId, type, null, null);
     }
 
     additionalData['providers'] =

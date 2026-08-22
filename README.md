@@ -137,6 +137,7 @@ window rather than the device it is on (see [Platforms](#platforms) and
 | `youtube_player_flutter` | Trailer playback |
 | `image_picker` + `image_cropper` | Profile photo capture |
 | `cached_network_image` | Poster and backdrop caching |
+| `path_provider` | Locates the on-device file the media sort cache is kept in |
 | `flutter_localizations` + `intl` | EN/ES localization |
 
 State is handled with plain `StatefulWidget`, `setState`, and
@@ -647,6 +648,13 @@ lib/
     viewing_history_widgets.dart    The range shown above a show's history
     playlist_grid.dart              The home page's playlist grid, and how many
                                     columns it fits into the space it is given
+    media_sort.dart                 Pure ordering rules for the media grids
+    media_sort_loader.dart          Looks up what those rules need, from the
+                                    cache first and the network only for what
+                                    is missing
+    media_metadata_cache.dart       The stored form of that cache: versioning,
+                                    the 30-day staleness rule, eviction
+    media_metadata_store.dart       Reads and writes it, one file per account
     api/apiutils.dart        All TMDB HTTP calls; a show's credits come from
                              aggregate_credits and are flattened to the shape
                              /credits returns
@@ -677,6 +685,41 @@ assets/                      Logos, tab icons, the cover and person
                              placeholders, oscars_api.json
 test/                        Flutter tests
 ```
+
+### Sorting the media grids
+
+The Seen, Watchlist and Favorites grids store nothing but `[type, id]` pairs,
+so ordering them by anything other than the order things were added means
+looking every title up first. Sorting by IMDb rating costs more again: TMDB
+details do not carry a rating, so each title needs an OMDB call, and a show
+needs a third call to `/external_ids` because only films carry an `imdb_id`.
+
+Those answers are now kept on the device, in a JSON file per account under the
+app support directory, so a cold start reads them instead of fetching them
+(`lib/common/media_metadata_store.dart`). The detail pages write through to the
+same cache, since they already fetch exactly these fields — so a title you have
+opened is usually free to sort by. Only what is missing is fetched, still six
+requests at a time.
+
+Three things are worth knowing about it:
+
+- **Your own rating is never stored.** It is read from the signed-in user on
+  every load instead. That is the only field belonging to a person rather than
+  a title, so keeping it out of the file means no cache can show one account
+  another's data — the file is also named per account, and deleted on sign-out,
+  but neither of those has to work for that guarantee to hold.
+- **Entries last 30 days.** Release dates get corrected and ratings drift.
+  Anything older is simply fetched again by the same path that fetches a title
+  never seen before, so there is no separate refresh to go wrong.
+- **The file records the language its titles were fetched in.** A detail page
+  asks TMDB in the user's language and the sort does not, and a grid ordered by
+  a mixture of Spanish and English names would sort by whichever titles you had
+  happened to open. A mismatched entry has its name refetched; its IMDb id and
+  rating, which have no language, are kept.
+
+A cache that cannot be read or written is never fatal — the app fetches exactly
+as it did before it existed. A file from an older version of the format is
+discarded rather than migrated, since everything in it can be fetched again.
 
 ## Cloud Functions
 
@@ -718,17 +761,45 @@ npm test
 npm run deploy
 ```
 
-That command deploys only the functions. `firestore.rules` and
-`firestore.indexes.json` are deployed from the repository root, and a release
-now ships all three together — see
-[CI and releases](#ci-and-releases). Deploying a function that queries a
-collection without the index its query needs leaves it failing on every run
-with `FAILED_PRECONDITION`, so deploy the whole backend rather than the
-functions alone:
+`npm run deploy` is `--only functions`, so it leaves the rules and the indexes
+alone. The release workflow does not: it deploys all three together on every
+merge to `master` that touched `functions/`, `firestore.rules` or
+`firestore.indexes.json`. See [CI and releases](#ci-and-releases).
+
+## Deploying the rules
+
+`firestore.rules` and `firestore.indexes.json` are deployed by CI, with the
+functions, in a single command:
 
 ```bash
 firebase deploy --only functions,firestore:rules,firestore:indexes
 ```
+
+**That was not true until recently, and the way it failed is worth knowing.**
+The release pipeline deployed `--only functions`. `firebase.json` named the
+other two files but no workflow ever read them, so merging a change to
+`firestore.rules` did not change what the live database enforced — a tightened
+rule stayed inert, and so did a mistaken one. Nothing reported it either,
+because neither file has a build step it can fail. It surfaced when a composite
+index was merged in the same pull request as the scheduled function whose query
+needs it: the function failed on every five-minute run with
+`FAILED_PRECONDITION` while the index sat committed and reviewed in the
+repository. Both code comments and several issues had assumed the opposite all
+along.
+
+Deploying by hand is still occasionally the right thing — a hotfix, or a rules
+change that should not wait for a merge:
+
+```bash
+firebase deploy --only firestore:rules --project actordb-cf981
+```
+
+A deploy applies to every client at once — there is no staged rollout the way
+there is for an app release — which is why the KNOWN GAPS section at the bottom
+of `firestore.rules` gates some changes on Play Console adoption of a client
+that no longer needs the permission being removed. That is also why the suite in
+[`firestore-tests/`](firestore-tests/README.md) is run twice: once on the pull
+request, and again by the release job immediately before it deploys.
 
 ### Favourite actors, directors and writers
 
@@ -837,7 +908,7 @@ cd ..
 node --test web/downloads/*.test.js
 ```
 
-`flutter test` currently runs 847 tests with no emulator, credentials or
+`flutter test` currently runs 971 tests with no emulator, credentials or
 network access. Firestore and HTTP are reached through two seams —
 `FirestoreCore.db` and `AppHttp.client` — and callable context through
 `CallableContext`. They default to the real implementations and are pointed at
@@ -848,9 +919,10 @@ HTTP client, auth/session helpers, search and playlist ordering, playlist join
 handling, settings, inbox, calendar/list services, calendar episode detail,
 what a calendar entry does to watch progress, viewing history ranges,
 in-memory Firestore service behaviour, watch-progress rules and controls, the
-media and person data objects, every popup under `lib/popups` except the
-profile section editor, the reviews and Continue watching screens, and the
-pre-commit hook itself.
+media sort cache — including that a warm start makes no requests at all and
+that one account's cache cannot outlive its sign-out — the media and person
+data objects, every popup under `lib/popups` except the profile section editor,
+the reviews and Continue watching screens, and the pre-commit hook itself.
 
 `npm test` in `functions/` runs the Node 22 unit tests for the playlist, OMDB
 and people-score helper modules. `npm run test:emulator` additionally runs the
@@ -860,12 +932,12 @@ functions at it with `TMDB_API_BASE_URL`, so nothing in CI touches the real,
 rate-limited API.
 
 `npm test` in `firestore-tests/` starts the Firestore emulator with
-`firebase emulators:exec` and runs the rules suite. It currently reports 83
-passing tests, and needs a JDK on the PATH like the functions emulator suite
+`firebase emulators:exec` and runs the rules suite. It currently reports 97
+passing tests. It expects `firebase` already on PATH; CI runs `npm run test:ci`
+instead, which uses the same pinned CLI through `npx` that the functions suite
 does. If port 8080 is already held by an emulator you started separately, run
-`npx mocha rules.test.js --timeout 20000` from `firestore-tests/` instead. No
-pull request check runs this suite; the release pipeline does, immediately
-before it deploys the rules.
+`npx mocha rules.test.js --timeout 20000` from `firestore-tests/` instead. The
+release job runs it a second time, immediately before it deploys the rules.
 
 `node --test web/downloads/*.test.js` runs the downloads page's release logic — which
 installer belongs to which platform, which of two versions is newer, and what
@@ -904,6 +976,12 @@ break:
   checked to ensure no release signing material is present.
 - **Functions** installs Node 22 dependencies in `functions/`, runs `npm test`,
   and confirms `index.js` loads.
+- **Firestore rules** installs Node 22 dependencies in `firestore-tests/` and
+  runs the rules suite against the Firestore emulator, which needs a JDK.
+  Nothing in CI deploys `firestore.rules` — the release workflow deploys
+  `--only functions` — so this job is the only automated check they get, and
+  merging a rules change does not make it live. See
+  [Deploying the rules](#deploying-the-rules).
 - **Downloads site** runs `node --test web/downloads/*.test.js`. The page at
   `downloads.uractor.com` is served exactly as it is committed, so nothing else
   in CI would notice its script breaking.
@@ -993,8 +1071,9 @@ file has a build step it can fail. It is not hypothetical: a scheduled function
 was merged alongside the composite index its query needs, and failed on every
 five-minute run with `FAILED_PRECONDITION` until the index was deployed by
 hand. The deploy stage still does nothing at all unless the push changed
-`functions/`, `firestore.rules` or `firestore.indexes.json`, and it now runs
-the `firestore-tests/` rules suite as well as the functions tests first, since
+`functions/`, `firestore.rules` or `firestore.indexes.json`, and it re-runs both
+the functions tests and the `firestore-tests/` rules suite before deploying —
+the same reasoning that already applied to the functions, with more force, since
 a mistake in the rules reaches every installed app rather than one screen.
 
 Worth knowing when reading a failure shortly after a release: `firebase deploy`
@@ -1140,11 +1219,11 @@ patch number behind, is still refused.
   collection from the UrActor API, resolving winners to TMDB ids. It has its
   own README covering name resolution, overrides, and known gaps.
 - [`firestore.rules`](firestore.rules) — the checked-in Firestore security
-  rules. They constrain both who may write and, for friend writes, the shape of
-  what may be written. Read the rules' own KNOWN GAPS section before treating
-  them as complete. The matching tests live in
-  [`firestore-tests/`](firestore-tests/README.md) and run against the local
-  emulator.
+  rules. They constrain who may write, the shape of what a friend may write,
+  and — wherever the written key can be named — the value inside it. Read the
+  rules' own KNOWN GAPS section before treating them as complete. The matching
+  tests live in [`firestore-tests/`](firestore-tests/README.md) and run against
+  the local emulator, on every pull request.
 - [`.githooks/pre-commit`](.githooks/pre-commit) — runs analyze and the tests
   before a commit. Enable it with `git config core.hooksPath .githooks`. It
   clears git's own environment variables before invoking flutter, for the
