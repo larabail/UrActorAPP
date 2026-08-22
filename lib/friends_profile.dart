@@ -20,6 +20,7 @@ import 'movie_result.dart';
 
 import 'seen_together.dart';
 import 'tvshow_result.dart';
+import 'watching_together_section.dart';
 import 'common/layout/breakpoints.dart';
 import 'common/layout/responsive.dart';
 import 'common/navigation/app_scaffold.dart';
@@ -347,6 +348,10 @@ class _FriendProfileState extends State<FriendProfile> {
                 ),
               ]),
               const SizedBox(height: 10),
+              // Above Seen Together, because what is still running matters
+              // more than what is already finished, and because the two read
+              // as one story of this friendship in that order.
+              WatchingTogetherSection.forFriend(widget.friendUid),
               if (currentUser.seenWith.containsKey(friendUid))
                 buildMainPageContainer(
                   "Seen Together",

@@ -108,6 +108,31 @@
       }
     }
   },
+  "watchingTogether": "Watching together",
+  "@watchingTogether": {
+    "description": "Title of the friends section listing shows started with a friend and not finished"
+  },
+  "watchingWith": "With {names}",
+  "@watchingWith": {
+    "description": "Shown under a show in Watching together, naming the friends it is shared with",
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "watchingWithMore": "{count, plural, one{With {names} and 1 more} other{With {names} and {count} more}}",
+  "@watchingWithMore": {
+    "description": "Shown under a show in Watching together when there are more friends than fit on the line",
+    "placeholders": {
+      "names": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "notifications": "Notifications",
   "totalContent": "{totalContent, plural, one{{totalContent} item} other{{totalContent} items}}",
   "@totalContent": {

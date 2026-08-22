@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'l10n.dart';
 
 // ignore_for_file: type=lint
@@ -149,6 +150,25 @@ class SEn extends S {
   @override
   String nextEpisode(int season, int episode) {
     return 'Next: S$season E$episode';
+  }
+
+  @override
+  String get watchingTogether => 'Watching together';
+
+  @override
+  String watchingWith(String names) {
+    return 'With $names';
+  }
+
+  @override
+  String watchingWithMore(String names, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'With $names and $count more',
+      one: 'With $names and 1 more',
+    );
+    return '$_temp0';
   }
 
   @override

@@ -84,6 +84,12 @@ window rather than the device it is on (see [Platforms](#platforms) and
   already seen a title (`lib/seenTogether.dart`,
   `lib/popups/add_friends_seen_with_popup.dart`,
   `SocialService.friendsWhoHaveSeen`).
+- Keep track of the series you are part way through together. The friends page
+  and each friend's profile carry a Watching together row of the shows that are
+  started, unfinished, and recorded as watched with a friend, naming the next
+  unwatched episode and who it is shared with. Films are left out, and the row
+  is absent rather than empty when nothing is shared
+  (`lib/watching_together_section.dart`, `lib/common/watching_together.dart`).
 
 ### Browsing
 
@@ -594,6 +600,7 @@ lib/
   continue_watching_section.dart  Home page "Continue watching" row
   calendar.dart              Watch calendar
   seenTogether.dart          Titles watched with a given friend
+  watching_together_section.dart  "Watching together" row on the friends pages
   friends.dart  friends_profile.dart  friends_calendar.dart  friends_thoughts.dart
   inbox.dart  notifications.dart
   profile.dart               Profile photo, stats charts
@@ -604,6 +611,8 @@ lib/
                              --dart-define
     utils.dart
     continue_watching.dart   Continue watching ordering and TMDB derivations
+    watching_together.dart   Which shared shows are still in progress, and who
+                             with
     item_container.dart  mediaitembuilder.dart  tabView.dart
     watch_progress_view.dart        Pure watch-progress rules
     watch_progress_controller.dart  Per-show episode tick state

@@ -10,6 +10,7 @@ import 'common/reorder_toggle.dart';
 import 'friends_profile.dart';
 import 'inbox.dart';
 import 'main.dart';
+import 'watching_together_section.dart';
 import 'common/firebase/firestore_core.dart';
 import 'common/navigation/app_scaffold.dart';
 import 'common/layout/two_pane.dart';
@@ -31,6 +32,11 @@ class _FriendsState extends State<Friends> {
   bool _isReordering = false;
 
   late Future<List<FriendProfileSummary>> _profiles;
+
+  /// The friend list as plain strings, which is what the Watching together
+  /// section keys and scopes itself on.
+  List<String> get _friendUids =>
+      currentUser.friends.map((uid) => uid.toString()).toList();
 
   @override
   void initState() {
@@ -170,9 +176,25 @@ class _FriendsState extends State<Friends> {
           );
         }
         return ListView.builder(
-          itemCount: friends.length,
-          itemBuilder: (context, index) =>
-              _buildFriendRow(context, friends[index], index),
+          // The Watching together row rides at the top of the list rather than
+          // sitting above it in the surrounding column. Fixed above an
+          // Expanded list, a row of posters plus its captions is enough to
+          // squeeze the friends off a short window; as the first item it
+          // simply scrolls away, and the pull to refresh still covers it.
+          itemCount: friends.length + 1,
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              return WatchingTogetherSection(
+                // Keyed on the friend list so that removing a friend, or a
+                // refresh that brings back a different one, rebuilds the row
+                // instead of leaving it showing shows shared with someone who
+                // is gone.
+                key: ValueKey(_friendUids.join(',')),
+                friendUids: _friendUids,
+              );
+            }
+            return _buildFriendRow(context, friends[index - 1], index - 1);
+          },
         );
       },
     );
