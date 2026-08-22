@@ -11,6 +11,8 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../objects/media.dart';
 import '../objects/movie.dart';
 import 'constants.dart';
+import 'layout/breakpoints.dart';
+import 'layout/two_pane.dart';
 import 'platform/capabilities.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -441,9 +443,41 @@ class _TrailerState extends State<_Trailer> {
       );
     }
 
+    // The window, not the pane the player happens to sit in: a detail pane on
+    // a tablet is phone sized, and reading the rule from it would put the
+    // tablet straight back where it started.
+    final bool fullScreenOnGesture = landscapeMeansFullScreen(
+      windowSizeClassFor(MediaQuery.sizeOf(context).width),
+    );
+
+    Widget player = YoutubePlayer(
+      controller: controller,
+      autoFullScreen: fullScreenOnGesture,
+      enableFullScreenOnVerticalDrag: fullScreenOnGesture,
+    );
+
+    // Going fullscreen puts the video in the nearest overlay, which inside a
+    // detail pane is the pane's own, while the size it goes to is read from
+    // the window. The two disagree by exactly the list beside it, so the video
+    // arrives half a window wide in a half window box: cropped down its right
+    // edge and pushed off the top. Telling it the pane is its screen is what
+    // makes the two agree, and it fills the pane rather than fighting it.
+    final DetailPane? pane = DetailPane.maybeOf(context);
+    if (pane != null && pane.isInsidePane) {
+      player = MediaQuery(
+        data: MediaQuery.of(context).copyWith(size: pane.size),
+        child: player,
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.fromLTRB(20.0, 5.0, 20.0, 20.0),
-      child: YoutubePlayer(controller: controller),
+      // Both of the player's own gestures into fullscreen are read from the
+      // window: turning the device sideways, and flicking upwards over the
+      // video. Neither means anything on a window that is landscape all the
+      // time and holds more than the video, so there the button is left as the
+      // only way in — the one route that is a decision rather than a guess.
+      child: player,
     );
   }
 }

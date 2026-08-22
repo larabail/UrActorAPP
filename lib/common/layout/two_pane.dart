@@ -25,6 +25,7 @@ class DetailPane extends InheritedWidget {
     super.key,
     required this.open,
     required this.isInsidePane,
+    required this.size,
     required super.child,
   });
 
@@ -37,12 +38,22 @@ class DetailPane extends InheritedWidget {
   /// film behind it — whereas one opened from the list replaces it.
   final bool isInsidePane;
 
+  /// The room this half of the layout actually has.
+  ///
+  /// Anything inside a pane that needs to know how big its world is should ask
+  /// here rather than the window, because the pane is its world: it has its
+  /// own [Navigator], and therefore its own overlay, so a layer that thinks it
+  /// covers the screen is in fact drawn into this box and cropped by it.
+  final Size size;
+
   static DetailPane? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<DetailPane>();
 
   @override
   bool updateShouldNotify(DetailPane oldWidget) =>
-      oldWidget.open != open || oldWidget.isInsidePane != isInsidePane;
+      oldWidget.open != open ||
+      oldWidget.isInsidePane != isInsidePane ||
+      oldWidget.size != size;
 }
 
 /// Opens [page], in the detail pane if there is one and as a full screen route
@@ -87,6 +98,9 @@ class TwoPane extends StatefulWidget {
   State<TwoPane> createState() => _TwoPaneState();
 }
 
+/// The rule between the two panes.
+const double _dividerWidth = 1;
+
 class _TwoPaneState extends State<TwoPane> {
   final GlobalKey<NavigatorState> _detailNavigator =
       GlobalKey<NavigatorState>();
@@ -107,9 +121,15 @@ class _TwoPaneState extends State<TwoPane> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final double total = constraints.maxWidth;
+        // The divider sits between the panes and takes its pixel out of the
+        // detail half, so it comes off the top rather than being split over.
+        // Left in, every width here is a pixel wider than the pane it
+        // describes, which is invisible in a grid of posters and not at all
+        // invisible to something sizing a video to fill the pane.
+        final double total = constraints.maxWidth - _dividerWidth;
         final double detailWidth = detailPaneWidthFor(total);
         final double listWidth = total - detailWidth;
+        final double height = constraints.maxHeight;
 
         return Row(
           children: [
@@ -124,17 +144,19 @@ class _TwoPaneState extends State<TwoPane> {
                 child: DetailPane(
                   open: _open,
                   isInsidePane: false,
+                  size: Size(listWidth, height),
                   child: widget.list,
                 ),
               ),
             ),
-            const VerticalDivider(width: 1, thickness: 1),
+            const VerticalDivider(width: _dividerWidth, thickness: 1),
             Expanded(
               child: LayoutScope.forWidth(
                 width: detailWidth,
                 child: DetailPane(
                   open: _open,
                   isInsidePane: true,
+                  size: Size(detailWidth, height),
                   child: Navigator(
                     key: _detailNavigator,
                     onGenerateRoute: (settings) => MaterialPageRoute<void>(
