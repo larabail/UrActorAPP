@@ -66,7 +66,7 @@ jobs:
       backend: ${{ steps.backend_changed.outputs.changed }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           # Deep enough to diff against whatever master was before this push.
           fetch-depth: 0
@@ -224,7 +224,7 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: ./.github/actions/setup-flutter-android
 
@@ -251,7 +251,7 @@ jobs:
 
       - name: Keep the coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: coverage
           path: coverage/lcov.info
@@ -297,9 +297,9 @@ jobs:
     # block away, and `docs/releases.md` records what it protected.
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: npm
@@ -431,7 +431,7 @@ jobs:
       VERSION: ${{ needs.preflight.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           # Release notes are derived from the commits since the previous build
           # tag, which needs full history and tags rather than a shallow clone.
@@ -439,7 +439,7 @@ jobs:
 
       - uses: ./.github/actions/setup-flutter-android
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -506,7 +506,7 @@ jobs:
             --notes build/release_notes.json
 
       - name: Keep the bundle for inspection
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: android-${{ steps.version.outputs.code }}
           path: build/app/outputs/bundle/release/app-release.aab
@@ -549,11 +549,11 @@ jobs:
       VERSION: ${{ needs.preflight.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: ./.github/actions/setup-flutter-ios
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -804,7 +804,7 @@ jobs:
 
       - name: Keep the IPA for inspection
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ios-${{ steps.version.outputs.build }}
           path: build/ios/ipa/*.ipa
@@ -856,7 +856,7 @@ jobs:
       VERSION: ${{ needs.preflight.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Pinned to the same version the mobile stages use. Left on whatever
       # `stable` happens to be, a single release could ship a desktop build
@@ -1069,7 +1069,7 @@ jobs:
       - name: Checksum
         run: shasum -a 256 "$DMG" | tee "$DMG.sha256"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: desktop-macos
           path: |
@@ -1117,7 +1117,7 @@ jobs:
       VERSION: ${{ needs.preflight.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: subosito/flutter-action@v2
         with:
@@ -1156,7 +1156,7 @@ jobs:
           cd build/windows/installer
           sha256sum UrActor-*-windows-setup.exe | tee UrActor-"$VERSION"-windows-setup.exe.sha256
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: desktop-windows
           path: |
@@ -1216,7 +1216,7 @@ jobs:
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           # master as it is now rather than the commit that was built: another
           # merge can land during the half hour the build takes, and its
@@ -1224,7 +1224,7 @@ jobs:
           ref: master
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 

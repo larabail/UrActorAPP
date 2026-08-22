@@ -278,6 +278,25 @@ when you genuinely need to commit something that does not build.
   in a file, as here, is harmless; only the commit message is scanned. The
   release workflow uses it deliberately; see
   [docs/releases.md](docs/releases.md#version-codes).
+
+  This has already cost a release. `7347803` is the commit that added this very
+  warning, and its body explains that the marker in the write-back's subject is
+  a second line of defence — a sentence that is itself a marker. It merged, no
+  workflow ran, and nothing reached internal testers. Nobody noticed for
+  weeks, because a run that never starts leaves nothing to go red.
+
+  On `master` the consequence is worse than a pull request with no checks: the
+  merge ships nothing, and the next release quietly carries two changes under
+  one build. **If you merge something and no release run appears, dispatch
+  "Release to internal testing" by hand from the Actions tab.**
+  `.github/workflows/check-release-gap.yml` also notices within a day and files
+  an issue, but it is a backstop, not a substitute for looking.
+
+  Note what the rule is *not*. This is about the commit message, and it can
+  happen to any commit touching any file — a feature branch whose author was
+  documenting the trap is the likeliest place for it. It is tempting to
+  remember it as "changing a workflow file skips the release", because the one
+  commit it happened to did both; nothing establishes that half.
 - **Git exports `GIT_DIR` into every hook**, and it beats the repository a
   nested tool picks for itself. `flutter` asks git for its own version, so a
   hook that runs it without clearing `GIT_DIR`, `GIT_WORK_TREE` and their
