@@ -208,8 +208,13 @@ oversight: it is a single page of prose with no localization machinery behind
 it, and wiring up `.arb` files for a static page is a larger change than adding
 Spanish text to it.
 
-Because nothing generates it, it can be deployed at any time with
-`firebase deploy --only hosting` and does not need a release to be correct.
+Because nothing generates it, it does not need a release to be correct.
+`.github/workflows/deploy-downloads.yml` publishes it on any push to `master`
+that touches `web/downloads/` or `firebase.json`, and can be run by hand from
+the Actions tab. That workflow rebuilds `version.json` before deploying — a
+Hosting deploy replaces the whole site, and the manifest is not in the
+repository, so deploying a page change without it would delete the file every
+running desktop copy polls for updates.
 
 ### Notes on the desktop builds
 
@@ -781,6 +786,16 @@ skipped rather than failed, and the run summary states which platforms shipped.
 Internal builds are not tagged; that summary records the version code and the
 commit, which is what a production promotion is given. Production is a separate,
 manual pipeline. See [docs/releases.md](docs/releases.md).
+
+`.github/workflows/deploy-downloads.yml` publishes
+[the downloads site](#the-downloads-site) on any push to `master` touching
+`web/downloads/` or `firebase.json`, and can be run by hand from the Actions
+tab. It is separate from the release pipelines because the page is static and
+has nothing to do with a release, and because it was previously deployable only
+by running a full production release — which also tags, publishes a GitHub
+release and ships to both stores. It creates the Hosting site if it is missing,
+and rebuilds `version.json` before deploying, since a Hosting deploy replaces
+the whole site and that file is not in the repository.
 
 Once the Android upload succeeds, a last job commits the version code that
 shipped into `pubspec.yaml` on `master`, so the `+BUILD` suffix in the repository

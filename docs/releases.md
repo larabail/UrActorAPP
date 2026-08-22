@@ -746,18 +746,25 @@ Only the first two are new.
 
 1. Create the Developer ID certificate, as above, and add the two secrets.
 2. Enable **Keychain Sharing** on the `com.uractor.uractormacos` App ID.
-3. In the Firebase console, add a Hosting site named `uractor-downloads` and
-   connect the custom domain `downloads.uractor.com`. Firebase gives you the
-   DNS records to add. Until this is done the domain answers with Firebase's
-   own "Site Not Found" page, which is what it does today.
+3. In the Firebase console, connect the custom domain `downloads.uractor.com`
+   to the `uractor-downloads` Hosting site and add the DNS records Firebase
+   gives you at the registrar. Until this is done the domain answers with
+   Firebase's own "Site Not Found" page, which is what it does today, and the
+   site is reachable only at `uractor-downloads.web.app`.
 4. Check the service account behind `FIREBASE_SERVICE_ACCOUNT` has the
    **Firebase Hosting Admin** role; it was created for App Distribution and
    may not.
 
-Once the site exists, `firebase deploy --only hosting` publishes the downloads
-page on its own. It does not need a release to have happened: with nothing
-published yet it says so, and it starts listing installers the moment the first
-release exists, without being redeployed.
+The Hosting site itself is not on that list: `deploy-downloads.yml` creates it
+if it is missing, so the first deploy makes it rather than failing against a
+site nobody remembered to add.
+
+That workflow is how the page reaches production. It runs on any push to
+`master` touching `web/downloads/` or `firebase.json`, and can be run by hand
+from the Actions tab. It does not need a release to have happened — with
+nothing published the page says so, and it starts listing installers the moment
+the first release exists, without being redeployed. A production release still
+deploys the site too, because that is when `version.json` changes.
 
 ## Release notes
 
