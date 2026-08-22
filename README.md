@@ -77,6 +77,11 @@ window rather than the device it is on (see [Platforms](#platforms) and
 
 - Send and receive friend requests, with an inbox and notifications
   (`lib/friends.dart`, `lib/inbox.dart`, `lib/notifications.dart`).
+- Recommend a movie or show to friends, which lands in their notifications.
+  New clients send it to the `recommendTitle` Cloud Function, which checks the
+  friendship against the recipient's own list and stamps the sender from the
+  caller's token rather than believing what the sending device claims
+  (`lib/popups/share.dart`, `functions/index.js`).
 - Look at a friend's profile, their calendar, and their thoughts on a title
   (`lib/friends_profile.dart`, `lib/friends_calendar.dart`,
   `lib/friends_thoughts.dart`).
@@ -130,7 +135,7 @@ window rather than the device it is on (see [Platforms](#platforms) and
 | `firebase_auth` | Email accounts and session restore |
 | `cloud_firestore` | Users, history, lists, reviews, friends, playlists, `Oscars` |
 | `firebase_storage` | Profile photos |
-| Cloud Functions (Node 22) | Server-verified playlist joins and playlist membership sync |
+| Cloud Functions (Node 22) | Server-verified playlist joins, playlist membership sync, and friend recommendations |
 | [TMDB API v3](https://developer.themoviedb.org/docs) | Movie, TV, person, search, credits (a show's aggregated across every season), videos, watch providers, genres |
 | `table_calendar` | The watch calendar |
 | `fl_chart` | Profile stats |
@@ -687,7 +692,8 @@ lib/
   l10n/                      app_en.arb, app_es.arb and their generated output
 
 functions/                   Cloud Functions (Node 22): OMDB lookup,
-                             playlist join, member sync, join-attempt cleanup
+                             playlist join, member sync, join-attempt cleanup,
+                             friend recommendations, favourite-people scores
 firestore-tests/              Firestore rules tests against the local emulator
 tools/sync-oscars/           Firestore Oscars sync job
 web/downloads/               downloads.uractor.com: a static page that lists
@@ -735,7 +741,7 @@ discarded rather than migrated, since everything in it can be fetched again.
 
 ## Cloud Functions
 
-`functions/` holds six gen 2 Cloud Functions for project `actordb-cf981`, all
+`functions/` holds seven gen 2 Cloud Functions for project `actordb-cf981`, all
 running on Node 22 in `us-central1`:
 
 - `omdbLookup` is a callable function. It requires auth, accepts only a narrow
@@ -746,6 +752,19 @@ running on Node 22 in `us-central1`:
   `Watchlists` by `Name`, compares the submitted code on the server, and adds
   the caller as `Approved` when it matches. The device no longer has to read
   every playlist just to test an access code.
+- `recommendTitle` is a callable function. It requires auth, bounds every field
+  of the payload, and for each recipient checks that the caller appears in
+  *that person's* `Friends` document — the recipient's list, not the caller's,
+  since anyone can write their own. It then appends one notification inside a
+  transaction, with `sender` taken from the caller's token and their own
+  `Settings` document. The sending device used to assemble `sender` itself and
+  be believed, so a friend could file a recommendation in someone's inbox
+  under a third party's name; it also rewrote the whole inbox unmerged, which
+  lost one of two recommendations sent at the same moment. This is a verified
+  route, not a closed door: builds already on people's phones still write to
+  `Notifications` directly, and the rule that would refuse a forged sender only
+  refuses one once `firestore.rules` has been deployed by hand. See
+  [Where a recommendation lands](#where-a-recommendation-lands).
 - `syncPlaylistMembers` is a Firestore `onDocumentWritten` trigger on
   `Watchlists/{listId}`. It derives a flat `memberUids` array from the legacy
   `Users` role maps so clients can query their own playlists, and it exits when
@@ -777,30 +796,28 @@ The release workflow also deploys the functions automatically on every merge to
 `master` that touched `functions/`. Nothing else in `firebase.json` is deployed
 by any workflow — see below.
 
-## Deploying the rules
+### Where a recommendation lands
 
-**`firestore.rules` is not deployed by CI.** The only Firebase deploy in the
-release pipeline is `--only functions`, and the downloads workflow deploys
-hosting. `firebase.json` names the rules file, but no automation acts on it.
+A recipient's notifications live in one document, `{uid}/Notifications`, whose
+keys are `"0"`, `"1"`, `"2"` and so on. That numbering is load-bearing rather
+than cosmetic.
 
-That is worth stating plainly because both the code comments and several issues
-have assumed the opposite. Merging a change to `firestore.rules` does not change
-what the live database enforces. A tightened rule stays inert, and so does a
-mistaken one. Someone has to run:
+`firestore.rules` has to validate an appended notification — that `sender.uid`
+is the authenticated writer, and that `read` starts false — and to do that it
+has to read the value that was added. Rules cannot: `diff()` reports affected
+keys as a Set, and a Set cannot be indexed. The way out is that the key is
+predictable. Every writer appends at `String(number of keys already present)`,
+so `appendsOneNotificationOnly` rebuilds it as
+`string(resource.data.keys().size())` and reads the entry there.
 
-```bash
-firebase deploy --only firestore:rules --project actordb-cf981
-```
-
-Two consequences follow. A rules change is not finished when its pull request
-merges, so whoever merges one owns deploying it. And the rules suite in
-[`firestore-tests/`](firestore-tests/README.md), which the pull request workflow
-runs, is the only automated check this file gets at any point.
-
-A deploy applies to every client at once — there is no staged rollout the way
-there is for an app release — which is why the KNOWN GAPS section at the bottom
-of `firestore.rules` gates some changes on Play Console adoption of a client
-that no longer needs the permission being removed.
+So `recommendTitle` appends at exactly that key too, inside a transaction so
+the count it read is the count it writes against. A uuid, a timestamp or a
+random number would leave the document sparse; from then on the key the rule
+rebuilds is one that already exists, a write from a build already on someone's
+phone reads as a *change* rather than an *add*, and it is refused — silently,
+because those builds swallow the error. For the same reason nothing deletes a
+notification, and a document that is somehow already sparse is skipped rather
+than written over.
 
 ### Favourite actors, directors and writers
 
@@ -859,6 +876,31 @@ record's existence is the marker, so it happens exactly once per account.
 Push notifications are not implemented. The old friend-request notification
 trigger was removed because the app never registers an FCM token and the legacy
 FCM send API it used was decommissioned.
+
+## Deploying the rules
+
+**`firestore.rules` is not deployed by CI.** The only Firebase deploy in the
+release pipeline is `--only functions`, and the downloads workflow deploys
+hosting. `firebase.json` names the rules file, but no automation acts on it.
+
+That is worth stating plainly because both the code comments and several issues
+have assumed the opposite. Merging a change to `firestore.rules` does not change
+what the live database enforces. A tightened rule stays inert, and so does a
+mistaken one. Someone has to run:
+
+```bash
+firebase deploy --only firestore:rules --project actordb-cf981
+```
+
+Two consequences follow. A rules change is not finished when its pull request
+merges, so whoever merges one owns deploying it. And the rules suite in
+[`firestore-tests/`](firestore-tests/README.md), which the pull request workflow
+runs, is the only automated check this file gets at any point.
+
+A deploy applies to every client at once — there is no staged rollout the way
+there is for an app release — which is why the KNOWN GAPS section at the bottom
+of `firestore.rules` gates some changes on Play Console adoption of a client
+that no longer needs the permission being removed.
 
 ## Localization
 
