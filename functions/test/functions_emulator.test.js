@@ -391,10 +391,14 @@ if (!USING_EMULATOR) {
     assert.equal((await peopleScoreJob(viewer).get()).data().dirty, true,
       'a deferred user has to stay queued');
 
-    for (let attempt = 1; attempt < MAX_CREDIT_ATTEMPTS; attempt++) {
+    // The run that gives up on the title is also the one that finally scores
+    // its owner, so the whole thing takes exactly MAX_CREDIT_ATTEMPTS runs.
+    for (let attempt = 2; attempt <= MAX_CREDIT_ATTEMPTS; attempt++) {
       await runPeopleScores();
     }
 
+    const cached = await db.collection('Credits').doc('Movies_807').get();
+    assert.equal(cached.data().missing, true);
     assert.deepEqual((await favDoc(viewer, 'FavActors')).data(), {819: 2});
     assert.equal((await peopleScoreJob(viewer).get()).data().dirty, false);
   });

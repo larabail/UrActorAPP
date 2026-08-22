@@ -726,9 +726,9 @@ up:
    use `/aggregate_credits`, since `/tv/{id}/credits` only answers for the
    newest season. An id TMDB does not recognise is cached as missing so it is
    not asked about again, and one that keeps failing for some other reason is
-   written off after five attempts — nothing is stored until every title
-   resolves, so a single broken id would otherwise hold a whole library back
-   forever. A rejected key is the one failure never blamed on a title: it
+   written off on its fifth attempt, in the same run that then scores its
+   owner — nothing is stored until every title resolves, so a single broken id
+   would otherwise hold a whole library back forever. A rejected key is the one failure never blamed on a title: it
    stops the run and is logged as an error, because it would otherwise write
    off every title in the database.
 4. Every title scores as it always did — 2 for having seen it, or the rewatch

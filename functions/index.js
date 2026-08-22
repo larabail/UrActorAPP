@@ -342,7 +342,7 @@ async function readCachedCredits(titles) {
 }
 
 // Counts a temporary failure against a title, and writes it off once it has
-// failed often enough.
+// failed often enough. Returns true when it has been written off.
 //
 // Nothing is written for a user until every one of their titles resolves, so
 // without this a single id that always answers 500 would defer that user on
@@ -362,13 +362,14 @@ async function recordCreditFailure(ref, error) {
       attempts,
       message: error?.message,
     });
-    return;
+    return true;
   }
 
   await ref.set(
     {attempts, failedAt: FieldValue.serverTimestamp()},
     {merge: true},
   );
+  return false;
 }
 
 // Fetches one title's credits and caches the trimmed result.
@@ -399,7 +400,12 @@ async function fetchAndCacheCredits(type, id, apiKey) {
     // against it. Everything else -- a rate limit, an outage, a socket that
     // never answered -- counts as one failed attempt.
     if (error instanceof CreditsAuthError) throw error;
-    await recordCreditFailure(ref, error);
+    if (await recordCreditFailure(ref, error)) {
+      // Written off on this attempt. Treating it as resolved here rather than
+      // waiting for the next run to read the marker means the run that gives
+      // up on a title is also the run that finally scores its owner.
+      return {key, credits: null};
+    }
     throw error;
   }
 }
