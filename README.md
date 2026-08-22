@@ -718,6 +718,35 @@ npm test
 npm run deploy
 ```
 
+The release workflow also deploys the functions automatically on every merge to
+`master` that touched `functions/`. Nothing else in `firebase.json` is deployed
+by any workflow — see below.
+
+## Deploying the rules
+
+**`firestore.rules` is not deployed by CI.** The only Firebase deploy in the
+release pipeline is `--only functions`, and the downloads workflow deploys
+hosting. `firebase.json` names the rules file, but no automation acts on it.
+
+That is worth stating plainly because both the code comments and several issues
+have assumed the opposite. Merging a change to `firestore.rules` does not change
+what the live database enforces. A tightened rule stays inert, and so does a
+mistaken one. Someone has to run:
+
+```bash
+firebase deploy --only firestore:rules --project actordb-cf981
+```
+
+Two consequences follow. A rules change is not finished when its pull request
+merges, so whoever merges one owns deploying it. And the rules suite in
+[`firestore-tests/`](firestore-tests/README.md), which the pull request workflow
+runs, is the only automated check this file gets at any point.
+
+A deploy applies to every client at once — there is no staged rollout the way
+there is for an app release — which is why the KNOWN GAPS section at the bottom
+of `firestore.rules` gates some changes on Play Console adoption of a client
+that no longer needs the permission being removed.
+
 ### Favourite actors, directors and writers
 
 The three lists on your profile used to be written by the person page: opening
@@ -848,10 +877,11 @@ functions at it with `TMDB_API_BASE_URL`, so nothing in CI touches the real,
 rate-limited API.
 
 `npm test` in `firestore-tests/` starts the Firestore emulator with
-`firebase emulators:exec` and runs the rules suite. It currently reports 84
-passing tests. If port 8080 is already held by an emulator you started
-separately, run `npx mocha rules.test.js --timeout 20000` from
-`firestore-tests/` instead.
+`firebase emulators:exec` and runs the rules suite. It currently reports 97
+passing tests. It expects `firebase` already on PATH; CI runs `npm run test:ci`
+instead, which uses the same pinned CLI through `npx` that the functions suite
+does. If port 8080 is already held by an emulator you started separately, run
+`npx mocha rules.test.js --timeout 20000` from `firestore-tests/` instead.
 
 `node --test web/downloads/*.test.js` runs the downloads page's release logic — which
 installer belongs to which platform, which of two versions is newer, and what
@@ -890,6 +920,12 @@ break:
   checked to ensure no release signing material is present.
 - **Functions** installs Node 22 dependencies in `functions/`, runs `npm test`,
   and confirms `index.js` loads.
+- **Firestore rules** installs Node 22 dependencies in `firestore-tests/` and
+  runs the rules suite against the Firestore emulator, which needs a JDK.
+  Nothing in CI deploys `firestore.rules` — the release workflow deploys
+  `--only functions` — so this job is the only automated check they get, and
+  merging a rules change does not make it live. See
+  [Deploying the rules](#deploying-the-rules).
 - **Downloads site** runs `node --test web/downloads/*.test.js`. The page at
   `downloads.uractor.com` is served exactly as it is committed, so nothing else
   in CI would notice its script breaking.
@@ -1135,11 +1171,11 @@ patch number behind, is still refused.
   collection from the UrActor API, resolving winners to TMDB ids. It has its
   own README covering name resolution, overrides, and known gaps.
 - [`firestore.rules`](firestore.rules) — the checked-in Firestore security
-  rules. They constrain both who may write and, for friend writes, the shape of
-  what may be written. Read the rules' own KNOWN GAPS section before treating
-  them as complete. The matching tests live in
-  [`firestore-tests/`](firestore-tests/README.md) and run against the local
-  emulator.
+  rules. They constrain who may write, the shape of what a friend may write,
+  and — wherever the written key can be named — the value inside it. Read the
+  rules' own KNOWN GAPS section before treating them as complete. The matching
+  tests live in [`firestore-tests/`](firestore-tests/README.md) and run against
+  the local emulator, on every pull request.
 - [`.githooks/pre-commit`](.githooks/pre-commit) — runs analyze and the tests
   before a commit. Enable it with `git config core.hooksPath .githooks`. It
   clears git's own environment variables before invoking flutter, for the
