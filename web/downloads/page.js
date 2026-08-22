@@ -14,14 +14,18 @@
  */
 
 import {
+  ANDROID,
+  IOS,
   MACOS,
   PLATFORMS,
   RELEASES_API,
   RELEASES_PAGE,
+  STORES,
   WINDOWS,
   detectPlatform,
   formatDate,
   formatSize,
+  isStorePlatform,
   latestFor,
   manifestRelease,
   selectReleases,
@@ -131,6 +135,18 @@ function renderHero(releases, yours) {
   const meta = el('hero-meta');
   const latest = releases[0];
 
+  // A phone or tablet. There is no installer to offer and no releases API
+  // answer that would help, so lead with the store it installs from -- which
+  // is the whole point of noticing the device in the first place.
+  if (isStorePlatform(yours)) {
+    const store = STORES[yours];
+    button.href = store.url;
+    button.textContent = `Get UrActor on ${store.store}`;
+    meta.textContent =
+      `Looks like you are on ${store.name}. The desktop builds are below.`;
+    return;
+  }
+
   if (!latest) {
     button.textContent = 'Browse the releases on GitHub';
     button.href = RELEASES_PAGE;
@@ -162,6 +178,23 @@ function renderHero(releases, yours) {
     secondary.href = otherRelease.downloads[other].url;
     secondary.textContent = `Also for ${PLATFORM_NAMES[other]}`;
     el('hero-actions').appendChild(secondary);
+  }
+}
+
+/**
+ * Badges the store card for the device someone is on.
+ *
+ * The ids are written out rather than built from the platform name, so that
+ * markup.test.js -- which reads the required ids straight out of this file --
+ * can see them.
+ */
+function markStore(yours) {
+  if (yours === ANDROID) {
+    el('card-android').classList.add('yours');
+    el('badge-android').hidden = false;
+  } else if (yours === IOS) {
+    el('card-ios').classList.add('yours');
+    el('badge-ios').hidden = false;
   }
 }
 
@@ -222,10 +255,13 @@ function renderHistory(releases) {
 }
 
 function render({ releases, source }) {
-  const yours = detectPlatform(navigator.userAgent);
+  // navigator.maxTouchPoints is what separates an iPad in desktop mode from
+  // an actual Mac; the user agent alone claims to be a Macintosh.
+  const yours = detectPlatform(navigator.userAgent, navigator.maxTouchPoints);
 
   renderHero(releases, yours);
   for (const platform of PLATFORMS) renderCard(platform, releases, yours);
+  markStore(yours);
   renderNotes(releases[0]);
   if (source === 'github') renderHistory(releases);
 
@@ -236,12 +272,25 @@ function render({ releases, source }) {
   } else if (source === 'empty') {
     showStatus('No desktop build has been published yet. The buttons lead to '
       + 'the releases page, where the first one will appear.');
-    el('hero-meta').textContent = '';
+    clearHeroMeta(yours);
   } else if (source === 'unavailable') {
     showStatus('The download list could not be loaded. Every installer is on '
       + 'the releases page.');
-    el('hero-meta').textContent = '';
+    clearHeroMeta(yours);
   }
+}
+
+/**
+ * Clears the line under the hero button, unless it is saying which store the
+ * device in someone's hand installs from.
+ *
+ * That line is the only thing that survives the releases API being down on a
+ * phone: there is no desktop build to describe, and wiping it would leave a
+ * store button with nothing explaining why it is the one being offered.
+ */
+function clearHeroMeta(yours) {
+  if (isStorePlatform(yours)) return;
+  el('hero-meta').textContent = '';
 }
 
 loadReleases().then(render).catch((error) => {

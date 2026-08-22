@@ -14,13 +14,19 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import {
+  ANDROID,
+  IOS,
   MACOS,
+  PLATFORMS,
+  STORES,
+  STORE_PLATFORMS,
   WINDOWS,
   assetPlatform,
   compareVersions,
   detectPlatform,
   formatDate,
   formatSize,
+  isStorePlatform,
   latestFor,
   manifestRelease,
   normalizeRelease,
@@ -327,17 +333,44 @@ describe('detectPlatform', () => {
       detectPlatform('Mozilla/5.0 (Windows NT 10.0; Win64; x64)'), WINDOWS);
   });
 
-  it('does not offer a disk image to a phone', () => {
-    // An iPhone says "like Mac OS X" and an iPad in desktop mode says
-    // "Macintosh" outright, so a naive match pushes a 150MB .dmg at a device
-    // that cannot open it.
+  it('never offers a disk image to a phone', () => {
+    // An iPhone says "like Mac OS X", so a naive match pushes a 150MB .dmg at
+    // a device that cannot open it.
     assert.equal(
       detectPlatform('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)'),
-      null,
+      IOS,
     );
     assert.equal(
-      detectPlatform('Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X)'), null);
-    assert.equal(detectPlatform('Mozilla/5.0 (Linux; Android 14; Pixel 8)'), null);
+      detectPlatform('Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X)'), IOS);
+    assert.equal(
+      detectPlatform('Mozilla/5.0 (Linux; Android 14; Pixel 8)'), ANDROID);
+  });
+
+  it('tells an iPad in desktop mode from a Mac', () => {
+    // iPadOS 13 and later claim to be a Macintosh outright, with no iPad
+    // anywhere in the string. Touch points are the only thing left: a Mac has
+    // none, an iPad reports five.
+    const pretendsToBeAMac = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)';
+    assert.equal(detectPlatform(pretendsToBeAMac, 5), IOS);
+    assert.equal(detectPlatform(pretendsToBeAMac, 0), MACOS);
+  });
+
+  it('treats a missing touch count as a desktop', () => {
+    // navigator.maxTouchPoints is absent on old browsers; guessing iPad from
+    // its absence would send every one of them to the App Store.
+    const mac = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)';
+    assert.equal(detectPlatform(mac), MACOS);
+    assert.equal(detectPlatform(mac, undefined), MACOS);
+    assert.equal(detectPlatform(mac, NaN), MACOS);
+  });
+
+  it('reads Android before anything else', () => {
+    // An Android tablet's user agent carries "Linux" and reports touch
+    // points, and some carry "Mac OS X" in a webview string.
+    assert.equal(
+      detectPlatform('Mozilla/5.0 (Linux; Android 14; Pixel Tablet)', 5),
+      ANDROID,
+    );
   });
 
   it('is null for anything else', () => {
@@ -382,5 +415,40 @@ describe('formatDate', () => {
     assert.equal(formatDate('soon'), '');
     assert.equal(formatDate(''), '');
     assert.equal(formatDate(null), '');
+  });
+});
+
+describe('the store platforms', () => {
+  it('are not in the list that reads the releases API', () => {
+    // PLATFORMS drives every lookup against a GitHub release. An entry there
+    // with no asset to find would render a card stuck on "Checking...".
+    for (const platform of STORE_PLATFORMS) {
+      assert.ok(!PLATFORMS.includes(platform),
+        `${platform} must not be in PLATFORMS`);
+    }
+  });
+
+  it('know where they are installed from', () => {
+    for (const platform of STORE_PLATFORMS) {
+      const store = STORES[platform];
+      assert.ok(store, `no store entry for ${platform}`);
+      assert.ok(store.url.startsWith('https://'), `${platform} url is not https`);
+      assert.ok(store.name, `${platform} has no name`);
+      assert.ok(store.store, `${platform} does not say which store`);
+    }
+  });
+
+  it('point at the real listings', () => {
+    assert.match(STORES[ANDROID].url, /play\.google\.com/);
+    assert.match(STORES[IOS].url, /apps\.apple\.com/);
+  });
+
+  it('are the ones isStorePlatform recognises', () => {
+    for (const platform of STORE_PLATFORMS) {
+      assert.equal(isStorePlatform(platform), true, platform);
+    }
+    for (const platform of [MACOS, WINDOWS, null, undefined, '']) {
+      assert.equal(isStorePlatform(platform), false, String(platform));
+    }
   });
 });

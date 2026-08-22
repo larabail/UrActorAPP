@@ -29,6 +29,30 @@ export const WINDOWS = 'windows';
 export const PLATFORMS = [MACOS, WINDOWS];
 
 /**
+ * The mobile platforms, which are installed from a store rather than
+ * downloaded. They are deliberately not in PLATFORMS: that list drives
+ * everything that reads the releases API, and there is no GitHub asset to
+ * find for either of these.
+ */
+export const ANDROID = 'android';
+export const IOS = 'ios';
+export const STORE_PLATFORMS = [ANDROID, IOS];
+
+/** Where each mobile build actually comes from. */
+export const STORES = {
+  [ANDROID]: {
+    name: 'Android',
+    store: 'Google Play',
+    url: 'https://play.google.com/store/apps/details?id=com.uractor.uractorapp',
+  },
+  [IOS]: {
+    name: 'iPhone & iPad',
+    store: 'the App Store',
+    url: 'https://apps.apple.com/app/uractor/id6503330070',
+  },
+};
+
+/**
  * The installer extensions each platform is recognised by.
  *
  * Wider than what CI currently produces -- a `.dmg` and an Inno Setup `.exe`.
@@ -307,19 +331,39 @@ export function manifestRelease(manifest) {
 }
 
 /**
- * The platform [userAgent] is running, or null when it is not a desktop one.
+ * The platform [userAgent] is running, or null if it is none of them.
  *
- * Phones and tablets get null on purpose. An iPhone's user agent says "like
- * Mac OS X", and an iPad in desktop mode says "Macintosh" outright, so a
- * naive match offers a 150MB disk image to a device that cannot open it. Null
- * means the page leads with the app stores instead.
+ * Returns a store platform for phones and tablets, not null. The page ships
+ * every build UrActor has, and a phone arriving here wants the store rather
+ * than nothing.
+ *
+ * [maxTouchPoints] disambiguates the one case a user agent cannot. An iPad in
+ * desktop mode says "Macintosh; Intel Mac OS X" with no iPad token anywhere,
+ * so a string match alone hands it a 150MB disk image it cannot open. A Mac
+ * reports 0 touch points; an iPad reports 5. Pass `navigator.maxTouchPoints`.
  */
-export function detectPlatform(userAgent) {
+export function detectPlatform(userAgent, maxTouchPoints = 0) {
   if (typeof userAgent !== 'string' || !userAgent) return null;
-  if (/iPhone|iPad|iPod|Android/i.test(userAgent)) return null;
+
+  // Before the Apple checks: an Android tablet's user agent can carry "Linux"
+  // and touch points too, and Android is unambiguous when it is present.
+  if (/Android/i.test(userAgent)) return ANDROID;
+
+  if (/iPhone|iPad|iPod/i.test(userAgent)) return IOS;
+
+  const appleDesktop = /Mac OS X|Macintosh|macOS/i.test(userAgent);
+  // An iPad pretending to be a Mac. Macs have no touch screen, so any touch
+  // capability on a "Macintosh" means this is iPadOS.
+  if (appleDesktop && Number(maxTouchPoints) > 1) return IOS;
+
   if (/Windows|Win64|Win32/i.test(userAgent)) return WINDOWS;
-  if (/Mac OS X|Macintosh|macOS/i.test(userAgent)) return MACOS;
+  if (appleDesktop) return MACOS;
   return null;
+}
+
+/** True when [platform] is installed from a store rather than downloaded. */
+export function isStorePlatform(platform) {
+  return platform === ANDROID || platform === IOS;
 }
 
 /** [bytes] as something a person reads, or '' when the size is unknown. */
