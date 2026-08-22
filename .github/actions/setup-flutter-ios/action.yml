@@ -42,7 +42,7 @@ runs:
     # happens. `pod install` rebuilds the tree from these archives without
     # going back to the network, which is where nearly all the time went.
     - name: Cache the CocoaPods downloads
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/Library/Caches/CocoaPods
         key: cocoapods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock') }}

@@ -50,7 +50,7 @@ jobs:
     outputs:
       app: ${{ steps.scope.outputs.app }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           # The comparison is against the merge base, which a shallow clone
           # does not have.
@@ -69,7 +69,7 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # First, because it is seconds and catches a class of mistake nothing
       # else does. A workflow file with an invalid expression is rejected by
@@ -117,7 +117,7 @@ jobs:
 
       - name: Upload coverage
         if: always() && needs.scope.outputs.app == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: coverage
           path: coverage/lcov.info
@@ -174,18 +174,18 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Matches the "engines" field in functions/package.json, which is also
       # the runtime Cloud Functions gives the deployed code.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         if: needs.scope.outputs.app == 'true'
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: functions/package-lock.json
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         if: needs.scope.outputs.app == 'true'
         with:
           distribution: temurin
@@ -271,9 +271,9 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
 
@@ -301,13 +301,13 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           # The check reads the commits this branch adds, which a shallow
           # clone does not have.
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -378,7 +378,7 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: ./.github/actions/setup-flutter-ios
 

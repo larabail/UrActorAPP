@@ -110,46 +110,18 @@ jobs:
             exit 1
           fi
 
-  # One approval for the whole release, rather than one per platform. This job
-  # does nothing except hold the `production` environment: every stage below
-  # waits on it, so approving here approves the release on all three platforms
-  # at once.
-  #
-  # The alternative -- putting `environment: production` on each stage -- would
-  # record a deployment per store, which is genuinely nicer to read afterwards,
-  # but it asks for the approval once per job. Three clicks to answer one
-  # question is how people learn to click through approvals without reading
-  # them, which is the opposite of what the gate is for.
-  approve:
-    name: Wait for release approval
-    needs: authorize
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    environment:
-      name: production
-      url: https://play.google.com/store/apps/details?id=com.uractor.uractorapp
-
-    steps:
-      - name: Note what is being released
-        env:
-          VERSION_CODE: ${{ inputs.version_code }}
-          COMMIT: ${{ inputs.commit }}
-        run: |
-          echo "Play version code: ${VERSION_CODE:-latest on internal}"
-          echo "Commit: ${COMMIT:-not given}"
-          echo "Android: ${{ inputs.android }} at ${{ inputs.rollout }} (${{ inputs.status }})"
-          echo "iOS: ${{ inputs.ios_action }}"
-          echo "Desktop: ${{ inputs.desktop }}"
-          echo "Dry run: ${{ inputs.dry_run }}"
-
   # Resolved once for the whole run. Three stages working out for themselves
   # which commit and which version this release is would be three chances to
   # disagree, and the disagreement would only be visible afterwards, in an
   # installer and a store listing that named different versions.
+  #
+  # Ahead of the approval gate rather than behind it, because everything here
+  # only reads: it works out what would be released so that the approver, and
+  # the pre-flight below, are told which version that is. Nothing downstream of
+  # the gate can begin until it has been passed.
   resolve:
     name: Resolve the release
-    needs: approve
+    needs: authorize
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -159,7 +131,7 @@ jobs:
       notes: ${{ steps.notes.outputs.text }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -239,11 +211,132 @@ jobs:
       # Carried to the Android stage rather than regenerated there, so the
       # store listing and the GitHub release cannot describe the same release
       # differently.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: release-notes
           path: build/release_notes.json
           retention-days: 30
+
+  # The cheapest failure in the pipeline, moved to where it is cheap. Apple
+  # refuses to edit a version once it is in review, and refuses to create one
+  # while a different version holds its single editable slot -- both in about
+  # four seconds, and both from facts that are true before anybody clicks
+  # approve.
+  #
+  # Behind the gate, as this used to be, those four seconds arrived last: after
+  # a reviewer had approved the release and after Play and the desktop stage
+  # had already written to their stores. The run then ended red having shipped
+  # two platforms out of three, for a reason that was knowable at the start.
+  #
+  # Read only, and it stays that way -- the version record is created in the
+  # iOS stage below, after the gate, so that nothing is written to any store
+  # until the release has been approved. This only decides whether it could be.
+  #
+  # No job-level `if`. A skipped job skips everything that needs it, which would
+  # take the approval gate and the whole release with it whenever iOS was left
+  # out. The steps opt out instead, and the job still reports green.
+  preflight:
+    name: Check Apple will accept this
+    needs: resolve
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+      VERSION: ${{ needs.resolve.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v5
+        if: inputs.ios_action != 'skip'
+
+      - uses: actions/setup-python@v6
+        if: inputs.ios_action != 'skip'
+        with:
+          python-version: '3.12'
+
+      - name: Install the App Store Connect client
+        if: inputs.ios_action != 'skip'
+        run: pip install --quiet "pyjwt[crypto]" requests
+
+      - name: Check the version exists and is ours to change
+        if: inputs.ios_action != 'skip'
+        env:
+          ACTION: ${{ inputs.ios_action }}
+          REQUESTED_BUILD: ${{ inputs.ios_build }}
+        run: |
+          set -uo pipefail
+          if python tool/appstore.py check \
+               --version "$VERSION" \
+               --action "$ACTION" \
+               --build "$REQUESTED_BUILD"; then
+            echo "App Store pre-flight passed for $VERSION."
+            exit 0
+          fi
+          {
+            echo "### App Store pre-flight failed"
+            echo ""
+            cat <<EOF
+          Nothing has been released, and nothing will be: \`$VERSION\` cannot be
+          the subject of a \`$ACTION\` as things stand, so the run stopped rather
+          than ask anyone to approve a release that cannot happen.
+
+          A version already with Apple has to be withdrawn deliberately, and a
+          different version holding Apple's single editable slot has to be
+          finished or renamed. Neither is something to do unattended. Then
+          start this run again.
+          EOF
+            echo ""
+            echo '```'
+            python tool/appstore.py status || echo '(could not read state)'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      - name: Note that iOS was skipped
+        if: inputs.ios_action == 'skip'
+        run: echo "ios_action is 'skip', so there is nothing to check with Apple."
+
+  # One approval for the whole release, rather than one per platform. This job
+  # does nothing except hold the `production` environment: every stage below
+  # waits on it, so approving here approves the release on all three platforms
+  # at once.
+  #
+  # The alternative -- putting `environment: production` on each stage -- would
+  # record a deployment per store, which is genuinely nicer to read afterwards,
+  # but it asks for the approval once per job. Three clicks to answer one
+  # question is how people learn to click through approvals without reading
+  # them, which is the opposite of what the gate is for.
+  #
+  # It waits on `resolve` and `preflight` so the question put to a human is the
+  # real one. An approver should be told the version being shipped rather than
+  # the blank box the form was submitted with, and should not be asked to
+  # approve a release that already cannot happen.
+  approve:
+    name: Wait for release approval
+    needs: [resolve, preflight]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    environment:
+      name: production
+      url: https://play.google.com/store/apps/details?id=com.uractor.uractorapp
+
+    steps:
+      - name: Note what is being released
+        env:
+          VERSION_CODE: ${{ inputs.version_code }}
+          VERSION: ${{ needs.resolve.outputs.version }}
+          REF: ${{ needs.resolve.outputs.ref }}
+        run: |
+          echo "Version: $VERSION"
+          echo "Commit: $REF"
+          echo "Play version code: ${VERSION_CODE:-latest on internal}"
+          echo "Android: ${{ inputs.android }} at ${{ inputs.rollout }} (${{ inputs.status }})"
+          echo "iOS: ${{ inputs.ios_action }}"
+          echo "Desktop: ${{ inputs.desktop }}"
+          echo "Dry run: ${{ inputs.dry_run }}"
 
   # ---------------------------------------------------------------- 1. Android
 
@@ -256,7 +349,7 @@ jobs:
   # built from a `master` nobody asked to ship.
   android:
     name: '1 · Android → Play production'
-    needs: resolve
+    needs: [approve, resolve]
     if: inputs.android == 'promote'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -270,18 +363,18 @@ jobs:
       code: ${{ steps.promote.outputs.version-code }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
       - name: Install Play API client
         run: pip install --quiet google-auth requests
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: release-notes
           path: build
@@ -343,7 +436,7 @@ jobs:
   # minutes.
   ios:
     name: '2 · iOS → App Store'
-    needs: resolve
+    needs: [approve, resolve]
     if: inputs.ios_action != 'skip'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -355,9 +448,9 @@ jobs:
       VERSION: ${{ needs.resolve.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -395,6 +488,33 @@ jobs:
             echo "no build given; using the latest Apple holds: $BUILD"
           fi
           echo "number=$BUILD" >> "$GITHUB_OUTPUT"
+
+      # The step that used to be a person in App Store Connect. It is safe to
+      # automate for a reason that was measured rather than assumed: a version
+      # created through the API arrives already holding the previous version's
+      # description, keywords, support URL and every screenshot set, exactly as
+      # it does when created in the web UI. `whatsNew` is the only field that
+      # comes back empty, and it is the only one that should differ per
+      # release -- so it is filled from the same notes Play gets, generated
+      # once in `resolve` and carried here rather than regenerated.
+      #
+      # After the approval gate, deliberately. A version record is invisible to
+      # users, but it is also not deletable once any build exists for the
+      # platform, so creating one is not a thing to do speculatively before
+      # someone has said the release is going ahead.
+      - name: Make sure the version record exists
+        if: inputs.ios_action == 'submit'
+        env:
+          NOTES: ${{ needs.resolve.outputs.notes }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$NOTES" > /tmp/whats_new.txt
+          echo "release notes ($(wc -c < /tmp/whats_new.txt) bytes):"
+          cat /tmp/whats_new.txt
+          python tool/appstore.py ensure-version \
+            --version "$VERSION" \
+            --whats-new-file /tmp/whats_new.txt \
+            ${{ inputs.dry_run && '--dry-run' || '' }}
 
       # Set to MANUAL release inside the tool, so approval leaves the version
       # waiting rather than putting it in front of users. Releasing is the
@@ -459,7 +579,7 @@ jobs:
 
   desktop_macos:
     name: '3 · Desktop → build macOS'
-    needs: resolve
+    needs: [approve, resolve]
     if: inputs.desktop == 'publish'
     runs-on: macos-latest
     timeout-minutes: 90
@@ -468,7 +588,7 @@ jobs:
       VERSION: ${{ needs.resolve.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.resolve.outputs.ref }}
 
@@ -664,7 +784,7 @@ jobs:
       - name: Checksum
         run: shasum -a 256 "$DMG" | tee "$DMG.sha256"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: desktop-macos
           path: |
@@ -694,7 +814,7 @@ jobs:
 
   desktop_windows:
     name: '3 · Desktop → build Windows'
-    needs: resolve
+    needs: [approve, resolve]
     if: inputs.desktop == 'publish'
     runs-on: windows-latest
     timeout-minutes: 60
@@ -703,7 +823,7 @@ jobs:
       VERSION: ${{ needs.resolve.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.resolve.outputs.ref }}
 
@@ -744,7 +864,7 @@ jobs:
           cd build/windows/installer
           sha256sum UrActor-*-windows-setup.exe | tee UrActor-"$VERSION"-windows-setup.exe.sha256
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: desktop-windows
           path: |
@@ -754,7 +874,7 @@ jobs:
 
   desktop_publish:
     name: '3 · Desktop → publish'
-    needs: [resolve, desktop_macos, desktop_windows]
+    needs: [approve, resolve, desktop_macos, desktop_windows]
     if: inputs.desktop == 'publish'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -767,11 +887,11 @@ jobs:
       VERSION: ${{ needs.resolve.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.resolve.outputs.ref }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           pattern: desktop-*
           path: artifacts
@@ -810,7 +930,7 @@ jobs:
       # master happened to be when the run started.
       - name: Publish the GitHub release
         if: ${{ !inputs.dry_run }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ env.VERSION }}
           target_commitish: ${{ needs.resolve.outputs.ref }}
