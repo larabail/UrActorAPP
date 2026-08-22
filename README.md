@@ -718,6 +718,35 @@ npm test
 npm run deploy
 ```
 
+The release workflow also deploys the functions automatically on every merge to
+`master` that touched `functions/`. Nothing else in `firebase.json` is deployed
+by any workflow — see below.
+
+## Deploying the rules
+
+**`firestore.rules` is not deployed by CI.** The only Firebase deploy in the
+release pipeline is `--only functions`, and the downloads workflow deploys
+hosting. `firebase.json` names the rules file, but no automation acts on it.
+
+That is worth stating plainly because both the code comments and several issues
+have assumed the opposite. Merging a change to `firestore.rules` does not change
+what the live database enforces. A tightened rule stays inert, and so does a
+mistaken one. Someone has to run:
+
+```bash
+firebase deploy --only firestore:rules --project actordb-cf981
+```
+
+Two consequences follow. A rules change is not finished when its pull request
+merges, so whoever merges one owns deploying it. And the rules suite in
+[`firestore-tests/`](firestore-tests/README.md), which the pull request workflow
+runs, is the only automated check this file gets at any point.
+
+A deploy applies to every client at once — there is no staged rollout the way
+there is for an app release — which is why the KNOWN GAPS section at the bottom
+of `firestore.rules` gates some changes on Play Console adoption of a client
+that no longer needs the permission being removed.
+
 ### Favourite actors, directors and writers
 
 The three lists on your profile used to be written by the person page: opening
@@ -892,9 +921,11 @@ break:
 - **Functions** installs Node 22 dependencies in `functions/`, runs `npm test`,
   and confirms `index.js` loads.
 - **Firestore rules** installs Node 22 dependencies in `firestore-tests/` and
-  runs the rules suite against the Firestore emulator, which needs a JDK. The
-  rules are deployed on merge, so a change that opens a hole is caught here
-  rather than in production.
+  runs the rules suite against the Firestore emulator, which needs a JDK.
+  Nothing in CI deploys `firestore.rules` — the release workflow deploys
+  `--only functions` — so this job is the only automated check they get, and
+  merging a rules change does not make it live. See
+  [Deploying the rules](#deploying-the-rules).
 - **Downloads site** runs `node --test web/downloads/*.test.js`. The page at
   `downloads.uractor.com` is served exactly as it is committed, so nothing else
   in CI would notice its script breaking.
