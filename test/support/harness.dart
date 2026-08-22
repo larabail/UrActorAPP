@@ -61,11 +61,17 @@ class HttpStub {
   ///
   /// Later registrations win for the same substring, which lets a test set up
   /// broad defaults and then override one route.
+  ///
+  /// [delay] holds the response back for that long on the fake clock, which is
+  /// how a test gets to look at the app while a request is still in flight --
+  /// spinners, disabled buttons, and anything else that only exists between
+  /// the tap and the answer.
   void on(
     String urlContains, {
     Object? json,
     String? body,
     int status = 200,
+    Duration delay = Duration.zero,
   }) {
     _routes.insert(
       0,
@@ -73,6 +79,7 @@ class HttpStub {
         urlContains,
         status,
         body ?? (json == null ? '' : jsonEncode(json)),
+        delay,
       ),
     );
   }
@@ -89,6 +96,9 @@ class HttpStub {
       final url = request.url.toString();
       for (final route in _routes) {
         if (url.contains(route.urlContains)) {
+          if (route.delay > Duration.zero) {
+            await Future<void>.delayed(route.delay);
+          }
           return http.Response(
             route.body,
             route.status,
@@ -106,11 +116,12 @@ class HttpStub {
 }
 
 class _Route {
-  _Route(this.urlContains, this.status, this.body);
+  _Route(this.urlContains, this.status, this.body, this.delay);
 
   final String urlContains;
   final int status;
   final String body;
+  final Duration delay;
 }
 
 /// Installs [stub] as the client for the current test.

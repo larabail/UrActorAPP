@@ -17,11 +17,16 @@ import '../support/harness.dart';
 void main() {
   /// Opens [dialog] over a window of [size], with the dialogue inset installed
   /// the way `main.dart` installs it.
+  ///
+  /// [settle] is off for a dialogue showing a spinner: a progress indicator
+  /// animates forever, so `pumpAndSettle` waits for a frame that never stops
+  /// coming and times the test out instead of failing on anything real.
   Future<void> open(
     WidgetTester tester,
     AppDialog dialog, {
     Size size = const Size(360, 800),
     TextScaler textScaler = TextScaler.noScaling,
+    bool settle = true,
   }) async {
     usePhoneSurface(tester, size: size);
     await tester.pumpWidget(
@@ -48,7 +53,12 @@ void main() {
       ),
     );
     await tester.tap(find.text('open'));
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
   }
 
   /// The panel -- the Material the [Dialog] paints, whose edges are what the
@@ -206,6 +216,83 @@ void main() {
       );
     });
 
+    testWidgets('a busy action spins where its icon was', (tester) async {
+      // The only thing telling the user their tap registered while a save
+      // travels. Without it the dialogue looks untouched for several seconds
+      // and the natural response is to press again.
+      await open(
+        tester,
+        AppDialog(
+          title: 'Settings',
+          actions: [
+            AppDialogAction(
+              label: 'Accept',
+              icon: Icons.check,
+              tone: AppDialogTone.confirm,
+              busy: true,
+              onPressed: () {},
+            ),
+          ],
+          child: const Text('body'),
+        ),
+        settle: false,
+      );
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byIcon(Icons.check), findsNothing);
+    });
+
+    testWidgets('a busy action refuses the tap even with a handler set',
+        (tester) async {
+      // The flag alone has to be enough. A caller that sets `busy` and forgets
+      // to null the handler as well would otherwise still run the save twice,
+      // which is the exact bug this is here to prevent.
+      var accepted = 0;
+      await open(
+        tester,
+        AppDialog(
+          title: 'Settings',
+          actions: [
+            AppDialogAction(
+              label: 'Accept',
+              icon: Icons.check,
+              tone: AppDialogTone.confirm,
+              busy: true,
+              onPressed: () => accepted++,
+            ),
+          ],
+          child: const Text('body'),
+        ),
+        settle: false,
+      );
+
+      expect(
+        tester
+            .widget<TextButton>(find.widgetWithText(TextButton, 'Accept'))
+            .onPressed,
+        isNull,
+      );
+      expect(accepted, 0);
+    });
+
+    testWidgets('an action with no icon still shows it is running',
+        (tester) async {
+      await open(
+        tester,
+        AppDialog(
+          title: 'Settings',
+          actions: [
+            AppDialogAction(label: 'Ok', busy: true, onPressed: () {}),
+          ],
+          child: const Text('body'),
+        ),
+        settle: false,
+      );
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('Ok'), findsOneWidget);
+    });
+
     testWidgets('is left out entirely when a popup has no buttons',
         (tester) async {
       await open(
@@ -214,6 +301,50 @@ void main() {
       );
 
       expect(find.byType(OverflowBar), findsNothing);
+    });
+  });
+
+  group('backing out of a dialogue', () {
+    AppDialog saving({required bool dismissible}) => AppDialog(
+          title: 'Settings',
+          dismissible: dismissible,
+          actions: [
+            AppDialogAction(label: 'Accept', onPressed: () {}),
+          ],
+          child: const Text('body'),
+        );
+
+    testWidgets('the barrier and the back gesture close it by default',
+        (tester) async {
+      await open(tester, saving(dismissible: true));
+
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(Dialog), findsNothing);
+    });
+
+    testWidgets('a locked dialogue ignores a tap on the barrier',
+        (tester) async {
+      // Disabling the buttons is not enough on its own: the barrier is a way
+      // out that never touches them, so a save in flight could still be left
+      // behind with nothing on screen saying whether it landed.
+      await open(tester, saving(dismissible: false));
+
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(Dialog), findsOneWidget);
+    });
+
+    testWidgets('a locked dialogue ignores the system back gesture',
+        (tester) async {
+      await open(tester, saving(dismissible: false));
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(Dialog), findsOneWidget);
     });
   });
 

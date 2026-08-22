@@ -1,7 +1,6 @@
 // ignore_for_file: use_build_context_synchronously, non_constant_identifier_names
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:uractor/common/async_action.dart';
 import 'package:uractor/common/calendar_episode.dart';
 import 'package:uractor/common/firebase/calendar_progress_service.dart';
 import 'package:uractor/common/firebase/calendar_service.dart';
@@ -9,6 +8,7 @@ import 'package:uractor/common/firebase/progress_service.dart';
 import 'package:uractor/common/firebase/social_service.dart';
 import 'package:uractor/common/firebase/watched_service.dart';
 import 'package:uractor/common/item_container.dart';
+import 'package:uractor/common/single_submission.dart';
 import 'package:uractor/common/watch_progress_view.dart';
 import 'package:uractor/common/widgets/app_dialog.dart';
 import 'package:uractor/common/widgets/friend_picker.dart';
@@ -39,7 +39,8 @@ class CalendarAddDialogue extends StatefulWidget {
   State<CalendarAddDialogue> createState() => _CalendarAddDialogueState();
 }
 
-class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
+class _CalendarAddDialogueState extends State<CalendarAddDialogue>
+    with SingleSubmission {
   FirebaseFirestore db = FirestoreCore.db;
   final myController = TextEditingController(text: "");
   final _seasonController = TextEditingController();
@@ -61,7 +62,15 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
     super.dispose();
   }
 
-  String _searchTermMovie = '';
+  /// The search behind the poster strip, held rather than started afresh on
+  /// every build.
+  ///
+  /// A `FutureBuilder` handed a call rather than a value re-runs it on each
+  /// rebuild, and this dialogue rebuilds whenever a friend is ticked, an
+  /// episode number is typed or a save begins. That was a TMDB request per
+  /// keystroke, and it dropped the strip back to a spinner mid-interaction.
+  late Future<List> _searchResults = searchData('');
+
   Map _movie = {};
   Future<List> searchData(String searchTerm) async {
     if (searchTerm != "") {
@@ -234,20 +243,23 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
     bool isMovie = widget.type == "movie";
     return AppDialog(
       title: isMovie ? 'Add a Movie' : "Add a Show",
+      // The entry is already being written; there is nothing useful left to
+      // back out to.
+      dismissible: !submitting,
       actions: [
         AppDialogAction(
           label: "Cancel",
           icon: Icons.cancel,
           tone: AppDialogTone.cancel,
-          onPressed: () => Navigator.pop(context, true),
+          onPressed: submitting ? null : () => Navigator.pop(context, true),
         ),
         AppDialogAction(
           label: "Accept",
           icon: Icons.check,
           tone: AppDialogTone.confirm,
+          busy: submitting,
           onPressed: () async {
-            final saved = await runVisibleAsyncAction(
-              context,
+            final saved = await submit(
               () async {
                 MediaItem tempMovie = widget.type == "movie"
                     ? Movie(
@@ -302,7 +314,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
             ),
             onChanged: (value) {
               setState(() {
-                _searchTermMovie = value;
+                _searchResults = searchData(value);
               });
             },
           ),
@@ -313,7 +325,7 @@ class _CalendarAddDialogueState extends State<CalendarAddDialogue> {
             // than that was clamped away and meant nothing.
             height: 190,
             child: FutureBuilder<List>(
-              future: searchData(_searchTermMovie),
+              future: _searchResults,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
@@ -400,7 +412,7 @@ class AddToCalendar extends StatefulWidget {
   State<AddToCalendar> createState() => _AddToCalendarState();
 }
 
-class _AddToCalendarState extends State<AddToCalendar> {
+class _AddToCalendarState extends State<AddToCalendar> with SingleSubmission {
   FirebaseFirestore db = FirestoreCore.db;
   Map<String, bool> selectedFriends = {};
   final _seasonController = TextEditingController();
@@ -450,20 +462,23 @@ class _AddToCalendarState extends State<AddToCalendar> {
   Widget build(BuildContext context) {
     return AppDialog(
       title: "Did you watch it with anyone?",
+      // Backing out mid-write would leave the entry half fanned out across
+      // friends' calendars with nothing on screen saying so.
+      dismissible: !submitting,
       actions: [
         AppDialogAction(
           label: "Cancel",
           icon: Icons.cancel,
           tone: AppDialogTone.cancel,
-          onPressed: () => Navigator.pop(context, true),
+          onPressed: submitting ? null : () => Navigator.pop(context, true),
         ),
         AppDialogAction(
           label: "Accept",
           icon: Icons.check,
           tone: AppDialogTone.confirm,
+          busy: submitting,
           onPressed: () async {
-            final saved = await runVisibleAsyncAction(
-              context,
+            final saved = await submit(
               () async {
                 Map data = await widget.media.getExtendedData();
                 if (!widget.modifying) {
