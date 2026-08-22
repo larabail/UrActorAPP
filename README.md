@@ -674,27 +674,24 @@ code beyond an `AppDelegate` that registers plugins, so running it would spend
 macOS minutes asserting nothing. If real Swift is ever added to `ios/Runner`,
 that is the point to wire `xcodebuild test` into the iOS workflow.
 
-Xcode Cloud archives the app as well, and reports on pull requests as
-`uractorapp | Default | Archive - iOS`. It is configured in App Store Connect
-rather than in this repository, and it runs `xcodebuild` against
-`ios/Runner.xcworkspace` on a bare clone, knowing nothing about Flutter. What
-makes that work is
-[`ios/ci_scripts/ci_post_clone.sh`](ios/ci_scripts/ci_post_clone.sh), which
-Xcode Cloud runs after cloning: it installs the pinned Flutter SDK, resolves
-packages, writes `ios/Flutter/Generated.xcconfig` through
-`flutter build ios --config-only`, and installs the pods. None of those are
-committed, so without the script the archive fails on the missing files rather
-than on anything in the change. The directory and file names are fixed by Xcode
-Cloud, and the file has to stay executable in git; renamed, moved, or
-non-executable, it is skipped with no explanation and the build fails exactly
-as it did before. Its Flutter version is pinned to the same one as
-`.github/actions/setup-flutter-ios`, and the two are meant to move together.
+Xcode Cloud used to archive the app as well, reporting as
+`uractorapp | Default | Archive - iOS`, and was removed. It never gated
+anything — it was not a required check — and it told us strictly less than the
+workflow above: no analyze, no tests, and no launch check, which is the iOS
+failure that matters most. On `master` it rebuilt what
+`release-testflight.yml` already builds and then discarded the archive, because
+its distribution was set to None. Every failure it ever reported was about its
+own configuration rather than the app.
 
-The three API keys reach that build as Xcode Cloud environment variables set on
-the workflow in App Store Connect, not as GitHub Actions secrets. The script
-warns instead of failing when one is missing, because an archive built without
-them is still a valid archive — it is the app that throws at startup, and
-failing the build there would report an unset workflow variable as broken code.
+If it is ever reconnected, note that it runs `xcodebuild` on a bare clone and
+knows nothing about Flutter, so it needs a `ios/ci_scripts/ci_post_clone.sh` to
+install the SDK, write `ios/Flutter/Generated.xcconfig` and install the pods —
+none of which are committed. There was one; `git log -- ios/ci_scripts` has it.
+Two things that cost a day the first time: the workflow must point at
+`Runner.xcworkspace` and not `Runner.xcodeproj`, or the pods never enter the
+build graph and every plugin module comes back not found, and CocoaPods has to
+be installed before `flutter build --config-only`, which runs `pod install`
+itself.
 
 Every merge to `master` that is not docs-only runs
 `.github/workflows/release-internal.yml`. It deploys Cloud Functions to
