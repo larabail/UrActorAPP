@@ -689,7 +689,7 @@ describe('D4. The value inside a friend-written key', () => {
   });
 });
 
-describe('D3. Progress is owner-only', () => {
+describe('D3. Progress is owner-only to WRITE, but readable by a friend', () => {
   const progress = {
     Movies: { m1: { started: '2026-01-01', finished: null, updated: '2026-01-01' } },
     TVShows: { s1: { started: '2026-01-02', finished: null, updated: '2026-01-02', episodes: { 1: [1, 2] } } },
@@ -707,9 +707,28 @@ describe('D3. Progress is owner-only', () => {
     await assertSucceeds(setDoc(doc(alice, `${ALICE}/Progress`), progress, { merge: true }));
   });
 
-  it('does not let a friend read or write Progress', async () => {
+  // Regression test for #121.
+  //
+  // Progress used to be hidden from friends. That looked correct here and in
+  // the Rules simulator, and took friend features down in production: a
+  // document a friend may not read cannot sit in a collection a friend lists,
+  // because production fails the whole query rather than omitting the document.
+  //
+  // The emulator does not model that, so this asserts the property the fix
+  // actually relies on -- the friend can read every document -- rather than
+  // the query failure, which cannot be reproduced locally.
+  it('lets a friend read Progress, so a whole-collection list cannot be denied', async () => {
     const bob = ctxFor(BOB).firestore();
-    await assertFails(getDoc(doc(bob, `${ALICE}/Progress`)));
+    await assertSucceeds(getDoc(doc(bob, `${ALICE}/Progress`)));
+  });
+
+  it('lets a friend list the collection when it contains Progress', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertSucceeds(getDocs(collection(bob, ALICE)));
+  });
+
+  it('does not let a friend write Progress', async () => {
+    const bob = ctxFor(BOB).firestore();
     await assertFails(setDoc(doc(bob, `${ALICE}/Progress`), progress, { merge: true }));
   });
 
