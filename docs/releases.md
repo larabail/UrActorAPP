@@ -170,15 +170,38 @@ investigation got both wrong:
 - **It has nothing to do with touching a workflow file.** `7347803` did modify
   `.github/workflows/`, and issue #58 built its explanation on that, proposing
   that a push modifying workflow files with an integration token creates no run.
-  That suppression rule is real in general, but nothing about this incident
-  establishes that it played any part: the commit had two properties and only
-  one of them is known to be sufficient. Remembering the rule as "workflow
-  changes skip the release" leaves you confident and unprotected while writing
-  the marker into the body of an ordinary feature branch.
+  The commit had two properties and only one of them is known to be sufficient.
+  There is now a direct counterexample: `5612c18`, the merge that added
+  `check-release-gap.yml`, also modified `.github/workflows/` and produced a
+  release run normally. Remembering the rule as "workflow changes skip the
+  release" leaves you confident and unprotected while writing the marker into
+  the body of an ordinary feature branch.
+- **The credential may still matter; the diff does not.** GitHub documents that
+  pushes made with an *integration* token — `GITHUB_TOKEN` or a GitHub App —
+  create no workflow run, and that rule is what stops the write-back below from
+  releasing itself. `5612c18` was merged with a personal access token, which is
+  not an integration token, so it says nothing either way about the merge
+  button. Treat that path as untested rather than as cleared: if it applies, it
+  turns on how the push was made, not on what was in it.
 - **The write-back's own use of the marker is deliberate and stays.** It is in
   the subject, where it is the mechanism that stops merging the record pull
   request from shipping a second build. A marker in a subject is a decision; a
   marker in a body is an accident.
+
+It is also worth being exact about *when* this happens, because the natural
+guess is wrong. A pull request touching only workflow files still gets its
+checks, and they run the edited definitions — `pr.yml` has no path filter and a
+pull request is evaluated from its own merge commit. Workflow changes are
+self-verifying at review time. The failure is at the **merge push**, so green
+checks on the pull request are no evidence at all that merging it will produce a
+release.
+
+That leaves one workflow unable to check itself: **`release-internal.yml`**. A
+change to it merges through the same push that may silently produce no run, and
+its `record` job only reports after a successful upload, so a mistake in it
+stays invisible until some later, unrelated merge trips over it. Dispatch it by
+hand after changing it, and read the summary. The watchdog below is the backstop
+for the times nobody does.
 
 ### The watchdog
 
@@ -191,6 +214,11 @@ tested against both this incident and an ordinary healthy `master`.
 It deliberately never asks *why* a run is missing, only whether one happened.
 That is what let it survive its own founding diagnosis being wrong, and it is
 why it will still work if there turns out to be a third cause.
+
+Its unit tests cover the logic but not the workflow — the YAML, the permissions
+and the API call are only exercised by running it. Dispatch it by hand after
+changing it. The first dispatch, against `5612c18`, read 67 release runs and
+reported no gap in eighteen seconds.
 
 It alerts and never releases, which is not timidity. A `workflow_dispatch` sent
 with the built-in `GITHUB_TOKEN` creates no run — the same suppression that

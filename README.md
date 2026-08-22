@@ -1158,6 +1158,34 @@ workflows at all — GitHub reads the whole message, not just the subject. The
 merge succeeds, no run is created, and there is nothing to go red because there
 is no run to be red.
 
+**This bites at merge, not at review.** A pull request that touches only
+workflow files still gets its checks, and they run the edited definitions: the
+workflow above has no path filter, and a pull request is evaluated from its own
+merge commit. Workflow changes are self-verifying at review time. It is the
+push to `master` that can silently produce nothing. Green checks say the
+workflow is right; they say nothing about whether merging it releases.
+
+**What is actually known about the cause**, since it is easy to learn the wrong
+lesson here:
+
+- **Confirmed:** a commit message mentioning the marker anywhere suppresses
+  every workflow. That is what happened to `7347803`, whose body explains the
+  marker while using it.
+- **Not the cause on its own:** touching `.github/workflows/`. The merge that
+  added this very watchdog (`5612c18`) added a workflow file and produced a
+  release run normally.
+- **Undetermined:** GitHub does document that pushes made with an *integration*
+  token — `GITHUB_TOKEN` or a GitHub App — create no run. `5612c18` was merged
+  with a personal access token, which is not one, so it neither demonstrates
+  nor refutes that path for the merge button. If it applies, it depends on the
+  credential that pushed, not on what the diff touched.
+
+One consequence worth knowing: **`release-internal.yml` cannot verify a change
+to itself.** Its merge is exactly the push that may produce no run, and its
+`record` job only runs after a successful upload, so a bad edit to it is
+invisible until the next unrelated merge. Dispatch it by hand after changing it.
+The watchdog below is what notices when nobody does.
+
 `.github/workflows/check-release-gap.yml` is the backstop. Once a day, and on
 demand, it collects the head commits of every recent `Release to internal
 testing` run and walks `master` back from its tip to the first commit that has
