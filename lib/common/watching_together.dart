@@ -21,6 +21,15 @@ import 'firebase/progress_service.dart';
 /// many friends a heavy user has watched things with.
 const int kWatchingTogetherLimit = 10;
 
+/// How many shared shows the friends list resolves titles for.
+///
+/// Higher than [kWatchingTogetherLimit] because the friends list spreads its
+/// titles across every friend rather than concentrating them in one row: a cap
+/// of ten would leave the friends further down the list looking as though
+/// nothing is running with them. It is still a cap, because each distinct show
+/// costs one TMDB request.
+const int kWatchingTogetherLineLimit = 20;
+
 /// One show being watched together, and who with.
 ///
 /// [friendUids] is a list rather than a single uid because the same show can
@@ -117,43 +126,59 @@ List<String> _showIdsSharedWith(Map<dynamic, dynamic> seenWith, String uid) {
   return shows.map((id) => id.toString()).toList();
 }
 
-/// The caption naming who a show is being watched with.
+/// The shared shows grouped by friend, for a surface that lists friends
+/// rather than shows.
 ///
-/// Beyond two names the line is longer than the poster it sits under, so the
-/// rest become a count. The formatting itself belongs to the caller, which has
-/// the `BuildContext` needed to localize it; this only decides how many names
-/// are worth showing and how many are left over.
+/// The poster row asks "what are we watching together" and answers it one tile
+/// per show. A friend list asks the same question the other way round — under
+/// each name, what is running with that person — and needs the same data
+/// inverted. Deriving it here rather than re-deriving from `seenWith` means
+/// both surfaces agree on what counts as shared and in progress.
 ///
-/// @param names The friends' display names, in the order to show them.
-/// @param maxNames How many names to spell out before counting the rest.
-/// @return The names to show and how many are not shown.
-WatchingTogetherNames watchingTogetherNames(
-  List<String> names, {
-  int maxNames = 2,
-}) {
-  final usable = names
-      .map((name) => name.trim())
-      .where((name) => name.isNotEmpty)
-      .toList();
-  if (usable.length <= maxNames) {
-    return WatchingTogetherNames(shown: usable, othersCount: 0);
+/// A show shared with two friends appears under both, which is correct: it is
+/// running with each of them.
+///
+/// @param shows The shared shows, in display order.
+/// @return Friend uid to that friend's share of the shows, order preserved.
+///         A friend with nothing shared is absent rather than mapped to an
+///         empty list, so a caller can test presence.
+Map<String, List<String>> watchingTogetherByFriend(
+  List<WatchingTogetherShow> shows,
+) {
+  final byFriend = <String, List<String>>{};
+  for (final show in shows) {
+    for (final uid in show.friendUids) {
+      byFriend.putIfAbsent(uid, () => <String>[]).add(show.id);
+    }
   }
-  return WatchingTogetherNames(
-    shown: usable.take(maxNames).toList(),
-    othersCount: usable.length - maxNames,
-  );
+  return <String, List<String>>{
+    for (final entry in byFriend.entries)
+      entry.key: List<String>.unmodifiable(entry.value),
+  };
 }
 
-/// The outcome of [watchingTogetherNames].
-class WatchingTogetherNames {
-  const WatchingTogetherNames({
-    required this.shown,
-    required this.othersCount,
-  });
-
-  /// The names to spell out.
-  final List<String> shown;
-
-  /// How many further names were left out, or zero when all of them fit.
-  final int othersCount;
+/// The titles to put on one friend's line, in the order the shows were given.
+///
+/// Ids TMDB would not resolve are dropped rather than written as "Unknown". On
+/// a poster row an unresolved title still has a tile worth showing and a
+/// placeholder to put in it; on a line of names it would just be a word that
+/// says nothing, scrolling past between two real ones.
+///
+/// @param showIds The shared shows for this friend, in display order.
+/// @param titles Show id to title, for the ids that resolved.
+/// @return The titles to show, deduplicated, in order.
+List<String> watchingTogetherTitles(
+  List<String> showIds,
+  Map<String, String> titles,
+) {
+  final line = <String>[];
+  for (final id in showIds) {
+    final title = titles[id]?.trim();
+    if (title == null || title.isEmpty) continue;
+    // Two ids can carry the same name after a TMDB merge, and the same name
+    // twice on one line reads as a mistake.
+    if (line.contains(title)) continue;
+    line.add(title);
+  }
+  return List<String>.unmodifiable(line);
 }

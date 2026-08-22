@@ -243,39 +243,107 @@ void main() {
     });
   });
 
-  group('watchingTogetherNames', () {
-    test('spells out every name when they fit', () {
-      final names = watchingTogetherNames(['Ana', 'Luis']);
+  group('watchingTogetherByFriend', () {
+    test('groups the shows under the friend they are shared with', () {
+      final byFriend = watchingTogetherByFriend([
+        const WatchingTogetherShow(
+          id: '1399',
+          friendUids: ['ana'],
+          updated: '2026-01-02',
+        ),
+        const WatchingTogetherShow(
+          id: '66732',
+          friendUids: ['luis'],
+          updated: '2026-01-01',
+        ),
+      ]);
 
-      expect(names.shown, ['Ana', 'Luis']);
-      expect(names.othersCount, 0);
+      expect(byFriend['ana'], ['1399']);
+      expect(byFriend['luis'], ['66732']);
     });
 
-    test('counts the rest once the line would outgrow the poster', () {
-      final names = watchingTogetherNames(['Ana', 'Luis', 'Sam', 'Kim']);
+    test('puts a show shared with two friends under both', () {
+      // It is running with each of them, so each of their lines should say so.
+      final byFriend = watchingTogetherByFriend([
+        const WatchingTogetherShow(
+          id: '1399',
+          friendUids: ['ana', 'luis'],
+          updated: '2026-01-02',
+        ),
+      ]);
 
-      expect(names.shown, ['Ana', 'Luis']);
-      expect(names.othersCount, 2);
+      expect(byFriend['ana'], ['1399']);
+      expect(byFriend['luis'], ['1399']);
     });
 
-    test('drops blank names instead of leaving a gap in the line', () {
-      final names = watchingTogetherNames(['Ana', '   ', '']);
+    test('keeps the order the shows arrived in', () {
+      final byFriend = watchingTogetherByFriend([
+        const WatchingTogetherShow(
+          id: 'newest',
+          friendUids: ['ana'],
+          updated: '2026-03-01',
+        ),
+        const WatchingTogetherShow(
+          id: 'oldest',
+          friendUids: ['ana'],
+          updated: '2026-01-01',
+        ),
+      ]);
 
-      expect(names.shown, ['Ana']);
-      expect(names.othersCount, 0);
+      expect(byFriend['ana'], ['newest', 'oldest']);
     });
 
-    test('trims names so a stray space does not offset the join', () {
-      final names = watchingTogetherNames([' Ana ']);
+    test('leaves out a friend with nothing shared rather than mapping empty',
+        () {
+      final byFriend = watchingTogetherByFriend(const []);
 
-      expect(names.shown, ['Ana']);
+      expect(byFriend.containsKey('ana'), isFalse);
+    });
+  });
+
+  group('watchingTogetherTitles', () {
+    test('names the shows in the order they were given', () {
+      final titles = watchingTogetherTitles(
+        ['1399', '66732'],
+        {'1399': 'Severance', '66732': 'Stranger Things'},
+      );
+
+      expect(titles, ['Severance', 'Stranger Things']);
     });
 
-    test('no names at all leaves nothing to say', () {
-      final names = watchingTogetherNames(const <String>[]);
+    test('drops an id TMDB would not name', () {
+      // On a line of names, "Unknown" is just a word that says nothing,
+      // scrolling past between two real ones.
+      final titles = watchingTogetherTitles(
+        ['1399', '404'],
+        {'1399': 'Severance'},
+      );
 
-      expect(names.shown, isEmpty);
-      expect(names.othersCount, 0);
+      expect(titles, ['Severance']);
+    });
+
+    test('drops a name that is only whitespace', () {
+      final titles = watchingTogetherTitles(
+        ['1399', '2'],
+        {'1399': 'Severance', '2': '   '},
+      );
+
+      expect(titles, ['Severance']);
+    });
+
+    test('says a name once when two ids share it', () {
+      // Two ids can carry the same name after a TMDB merge, and the same name
+      // twice on one line reads as a mistake.
+      final titles = watchingTogetherTitles(
+        ['1399', '1400'],
+        {'1399': 'Severance', '1400': 'Severance'},
+      );
+
+      expect(titles, ['Severance']);
+    });
+
+    test('nothing named leaves nothing to write', () {
+      expect(watchingTogetherTitles(['404'], const {}), isEmpty);
     });
   });
 }

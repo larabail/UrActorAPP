@@ -57,7 +57,7 @@ void main() {
 
   Future<void> pumpSection(
     WidgetTester tester, {
-    String? friendProfile,
+    String friend = 'ana',
     Locale? locale,
   }) async {
     await tester.pumpWidget(
@@ -67,9 +67,7 @@ void main() {
         supportedLocales: S.supportedLocales,
         home: Scaffold(
           body: SingleChildScrollView(
-            child: friendProfile == null
-                ? const WatchingTogetherSection()
-                : WatchingTogetherSection.forFriend(friendProfile),
+            child: WatchingTogetherSection.forFriend(friend),
           ),
         ),
       ),
@@ -135,7 +133,7 @@ void main() {
     expect(find.text('Watching together'), findsNothing);
   });
 
-  testWidgets('a shared show in progress names where to resume and who with',
+  testWidgets('a shared show in progress names where to resume',
       (tester) async {
     seedSeenWith({
       'ana': ['1399'],
@@ -168,7 +166,7 @@ void main() {
     expect(find.text('Watching together'), findsOneWidget);
     // Season 1 episodes 1 and 2 are watched, and the specials season is not
     // counted, so the show resumes at S1 E3.
-    expect(find.text('Next: S1 E3\nWith Ana'), findsOneWidget);
+    expect(find.text('Next: S1 E3'), findsOneWidget);
   });
 
   testWidgets('a movie watched together never reaches the row', (tester) async {
@@ -219,10 +217,9 @@ void main() {
     );
   });
 
-  testWidgets('a friend profile drops the caption naming that friend',
-      (tester) async {
-    // The page already says whose profile it is, so repeating the name under
-    // every poster says nothing.
+  testWidgets('draws only the shows shared with this friend', (tester) async {
+    // The page already says whose profile it is, so the tiles never repeat the
+    // name; scoping is the whole of what the friend uid does here.
     seedSeenWith({
       'ana': ['1399'],
       'luis': ['66732'],
@@ -237,46 +234,22 @@ void main() {
     );
     http.on('/3/tv/1399', json: {'id': 1399, 'name': 'Severance'});
 
-    await pumpSection(tester, friendProfile: 'ana');
+    await pumpSection(tester);
 
     expect(tester.takeException(), isNull);
     expect(find.text('Severance'), findsOneWidget);
-    expect(find.textContaining('With'), findsNothing);
     // The other friend's show belongs to the other profile.
     expect(http.countFor('/3/tv/66732'), 0);
   });
 
-  testWidgets('a show shared with several friends is drawn once', (tester) async {
-    seedSeenWith({
-      'ana': ['1399'],
-      'luis': ['1399'],
-    });
-    await seedFriend('ana', 'Ana');
-    await seedFriend('luis', 'Luis');
-    await seedProgress(
-      shows: {
-        '1399': {'started': '2026-01-01', 'updated': '2026-01-02'},
-      },
-    );
-    http.on('/3/tv/1399', json: {'id': 1399, 'name': 'Severance'});
-
-    await pumpSection(tester);
-
-    expect(find.byKey(const ValueKey('watchingTogether-1399')), findsOneWidget);
-    expect(find.text('With Ana, Luis'), findsOneWidget);
-    expect(http.countFor('/3/tv/1399'), 1);
-  });
-
-  testWidgets('more friends than fit on the line become a count',
+  testWidgets('a show shared with two friends appears on either profile',
       (tester) async {
     seedSeenWith({
       'ana': ['1399'],
       'luis': ['1399'],
-      'sam': ['1399'],
     });
     await seedFriend('ana', 'Ana');
     await seedFriend('luis', 'Luis');
-    await seedFriend('sam', 'Sam');
     await seedProgress(
       shows: {
         '1399': {'started': '2026-01-01', 'updated': '2026-01-02'},
@@ -284,9 +257,10 @@ void main() {
     );
     http.on('/3/tv/1399', json: {'id': 1399, 'name': 'Severance'});
 
-    await pumpSection(tester);
+    await pumpSection(tester, friend: 'luis');
 
-    expect(find.text('With Ana, Luis and 1 more'), findsOneWidget);
+    expect(find.byKey(const ValueKey('watchingTogether-1399')), findsOneWidget);
+    expect(http.countFor('/3/tv/1399'), 1);
   });
 
   testWidgets('an id TMDB no longer resolves stays readable and inert',
@@ -313,27 +287,6 @@ void main() {
     // Opening a detail page for an id TMDB has never heard of is what leaves
     // the user staring at an empty screen, so the tile does not respond.
     expect(tile.onTap, isNull);
-  });
-
-  testWidgets('a friend whose profile cannot be read leaves no blank caption',
-      (tester) async {
-    // No Settings document for the friend, so there is no name to write.
-    seedSeenWith({
-      'ana': ['1399'],
-      'ghost': ['1399'],
-    });
-    await seedFriend('ana', 'Ana');
-    await seedProgress(
-      shows: {
-        '1399': {'started': '2026-01-01', 'updated': '2026-01-02'},
-      },
-    );
-    http.on('/3/tv/1399', json: {'id': 1399, 'name': 'Severance'});
-
-    await pumpSection(tester);
-
-    expect(tester.takeException(), isNull);
-    expect(find.text('With Ana'), findsOneWidget);
   });
 
   testWidgets('a title on the watchlist carries its badge', (tester) async {
@@ -379,6 +332,6 @@ void main() {
     await pumpSection(tester, locale: const Locale('es'));
 
     expect(find.text('Viendo juntos'), findsOneWidget);
-    expect(find.text('Siguiente: T1 E1\nCon Ana'), findsOneWidget);
+    expect(find.text('Siguiente: T1 E1'), findsOneWidget);
   });
 }

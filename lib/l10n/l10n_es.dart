@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'l10n.dart';
 
 // ignore_for_file: type=lint
@@ -157,19 +156,8 @@ class SEs extends S {
   String get watchingTogether => 'Viendo juntos';
 
   @override
-  String watchingWith(String names) {
-    return 'Con $names';
-  }
-
-  @override
-  String watchingWithMore(String names, int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Con $names y $count más',
-      one: 'Con $names y 1 más',
-    );
-    return '$_temp0';
+  String watchingTogetherTitles(String titles) {
+    return 'Viendo juntos: $titles';
   }
 
   @override

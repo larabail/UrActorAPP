@@ -63,7 +63,7 @@ import 'l10n_es.dart';
 /// property.
 abstract class S {
   S(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -85,16 +85,16 @@ abstract class S {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('es'),
+    Locale('es')
   ];
 
   /// No description provided for @addTVShowToCalendar.
@@ -331,17 +331,11 @@ abstract class S {
   /// **'Watching together'**
   String get watchingTogether;
 
-  /// Shown under a show in Watching together, naming the friends it is shared with
+  /// The scrolling line under a friend's name on the friends list, naming the shows in progress with them
   ///
   /// In en, this message translates to:
-  /// **'With {names}'**
-  String watchingWith(String names);
-
-  /// Shown under a show in Watching together when there are more friends than fit on the line
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{With {names} and 1 more} other{With {names} and {count} more}}'**
-  String watchingWithMore(String names, int count);
+  /// **'Watching together: {titles}'**
+  String watchingTogetherTitles(String titles);
 
   /// No description provided for @notifications.
   ///
@@ -1480,9 +1474,8 @@ S lookupS(Locale locale) {
   }
 
   throw FlutterError(
-    'S.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
-  );
+      'S.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }

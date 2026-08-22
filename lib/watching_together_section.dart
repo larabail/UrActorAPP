@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'common/api/http_client.dart';
 import 'common/constants.dart';
 import 'common/continue_watching.dart';
-import 'common/firebase/friends_service.dart';
 import 'common/firebase/progress_service.dart';
 import 'common/item_container.dart';
 import 'common/layout/responsive.dart';
@@ -20,9 +19,9 @@ import 'tvshow_result.dart';
 /// The room a tile's caption is given under it.
 ///
 /// Matches Continue watching, so the two rows line up when a screen shows
-/// both. Two lines is enough for either the episode pointer or a pair of
-/// friends' names at this size, and the caption is clipped rather than allowed
-/// to push the row taller than it was told to be.
+/// both. Two lines is enough for the episode pointer at this size, and the
+/// caption is clipped rather than allowed to push the row taller than it was
+/// told to be.
 const double _kCaptionHeight = 38;
 
 /// One resolved tile: the shared show, what TMDB says about it, and where to
@@ -41,40 +40,24 @@ class WatchingTogetherTile {
   final WatchProgressEpisode? nextEpisode;
 }
 
-/// The Watching together row.
+/// The Watching together row on a friend's profile.
 ///
 /// Shows the series that are started, unfinished, and recorded as watched with
-/// a friend — the ones people lose track of between episodes — most recent
+/// this friend — the ones people lose track of between episodes — most recent
 /// activity first, with the episode to play next written under each.
 ///
+/// It draws posters because a profile is a page someone opened in order to
+/// browse. The friends list says the same thing as one scrolling line of
+/// titles under each name instead: there the point is to scan the friends, and
+/// a row of artwork per friend would bury them.
+///
 /// The section removes itself when there is nothing shared and unfinished
-/// rather than drawing a heading over an empty strip. The friends page is
-/// otherwise a plain list, and a permanent blank row on it would be a standing
-/// advertisement for a feature the user may never use.
+/// rather than drawing a heading over an empty strip.
 class WatchingTogetherSection extends StatefulWidget {
-  const WatchingTogetherSection({
-    super.key,
-    this.friendUids,
-    this.showFriendNames = true,
-  });
+  const WatchingTogetherSection.forFriend(this.friendUid, {super.key});
 
-  /// The section as it appears on one friend's own profile.
-  ///
-  /// Scoped to them, and without the "With ..." caption: the page already says
-  /// whose it is, so repeating the name under every poster says nothing. This
-  /// is a separate constructor rather than inferred from a single uid, because
-  /// a user with exactly one friend is still on the friends page and still
-  /// wants to be told who a show is shared with.
-  WatchingTogetherSection.forFriend(String friendUid, {super.key})
-      : friendUids = <String>[friendUid],
-        showFriendNames = false;
-
-  /// Which friends to draw shared shows for. Null means every friend, in the
-  /// order the user arranged their friends list in.
-  final List<String>? friendUids;
-
-  /// Whether a tile says who the show is being watched with.
-  final bool showFriendNames;
+  /// The friend whose shared shows this draws.
+  final String friendUid;
 
   @override
   State<WatchingTogetherSection> createState() =>
@@ -89,68 +72,33 @@ class _WatchingTogetherSectionState extends State<WatchingTogetherSection> {
   final Map<String, Future<WatchingTogetherTile>> _tiles =
       <String, Future<WatchingTogetherTile>>{};
 
-  /// Resolved once for the whole row, because several shared shows usually
-  /// mean the same one or two friends and a lookup per tile would read the
-  /// same Settings documents over and over.
-  late Future<Map<String, String>> _names;
-
   @override
   void initState() {
     super.initState();
     _shows = _loadShows();
-    _names = _loadNames();
   }
 
   @override
   void didUpdateWidget(WatchingTogetherSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!_sameFriends(oldWidget.friendUids, widget.friendUids)) {
+    if (oldWidget.friendUid != widget.friendUid) {
       _tiles.clear();
       _shows = _loadShows();
-      _names = _loadNames();
     }
   }
 
-  List<dynamic> get _friends => widget.friendUids ?? currentUser.friends;
-
   /// A progress document that cannot be read is treated as nothing shared. The
-  /// alternative is an error state on the friends page for a section that is
-  /// optional to begin with.
+  /// alternative is an error state on a profile for a section that is optional
+  /// to begin with.
   Future<List<WatchingTogetherShow>> _loadShows() async {
-    final friends = List<dynamic>.from(_friends);
-    if (friends.isEmpty) return const <WatchingTogetherShow>[];
     try {
       return watchingTogetherShows(
         await ProgressService.inProgressItems(),
         currentUser.seenWith,
-        friends: friends,
+        friends: <String>[widget.friendUid],
       );
     } catch (_) {
       return const <WatchingTogetherShow>[];
-    }
-  }
-
-  /// Display names for the friends in scope, keyed by uid.
-  ///
-  /// A friend whose profile cannot be read has no name to write, and is left
-  /// out of the map so the caption falls back to naming the others rather than
-  /// showing a blank where a name should be.
-  Future<Map<String, String>> _loadNames() async {
-    // A surface that does not caption its tiles has no use for the names, and
-    // reading a Settings document per friend to throw them away is a cost the
-    // friend profile page should not pay.
-    if (!widget.showFriendNames) return const <String, String>{};
-    final friends = List<dynamic>.from(_friends);
-    if (friends.isEmpty) return const <String, String>{};
-    try {
-      final profiles = await FriendsService.loadProfiles(friends);
-      return <String, String>{
-        for (final FriendProfileSummary profile in profiles)
-          if (profile.userName.trim().isNotEmpty)
-            profile.uid: profile.userName,
-      };
-    } catch (_) {
-      return const <String, String>{};
     }
   }
 
@@ -204,28 +152,6 @@ class _WatchingTogetherSectionState extends State<WatchingTogetherSection> {
         ),
       ),
     );
-  }
-
-  /// The line naming who a show is shared with, or null when there is nobody
-  /// left to name — an unreadable profile, or a surface that has already said
-  /// whose shows these are.
-  String? _withCaption(
-    BuildContext context,
-    WatchingTogetherShow show,
-    Map<String, String> names,
-  ) {
-    if (!widget.showFriendNames) return null;
-    final resolved = watchingTogetherNames(
-      [
-        for (final uid in show.friendUids)
-          if (names[uid] != null) names[uid]!,
-      ],
-    );
-    if (resolved.shown.isEmpty) return null;
-    final joined = resolved.shown.join(', ');
-    return resolved.othersCount == 0
-        ? S.of(context)!.watchingWith(joined)
-        : S.of(context)!.watchingWithMore(joined, resolved.othersCount);
   }
 
   @override
@@ -295,78 +221,45 @@ class _WatchingTogetherSectionState extends State<WatchingTogetherSection> {
         final itemData = media.itemData(title);
         final next = tile.nextEpisode;
 
-        return FutureBuilder<Map<String, String>>(
-          future: _names,
-          builder: (context, namesSnapshot) {
-            final withLine = _withCaption(
-              context,
-              show,
-              namesSnapshot.data ?? const <String, String>{},
-            );
-            // Two lines at most, which is what the caption box is sized for:
-            // where to resume, and who with. Both are worth saying — the point
-            // of the row is that these are the shows someone else is waiting
-            // on — and neither is worth a taller row than Continue watching.
-            final lines = <String>[
-              if (next != null)
-                S.of(context)!.nextEpisode(
-                      next.seasonNumber,
-                      next.episodeNumber,
-                    ),
-              if (withLine != null) withLine,
-            ];
-
-            return GestureDetector(
-              key: ValueKey('watchingTogether-${show.id}'),
-              onTap: media.missing ? null : () => _openDetails(media, title),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // The type is known to be a show, so the pair is stated
-                  // rather than inferred from the item map: a title TMDB would
-                  // not resolve renders through `ContinueWatchingMedia.missing`,
-                  // where there is no name left to infer from. Such a tile
-                  // still gets its badges — it is no longer reachable, but
-                  // whether it is a favorite or on the watchlist remains true
-                  // and is the more useful thing to say.
-                  getItemContainer(
-                    context,
-                    itemData,
-                    'media',
-                    mediaPair: mediaPairForData(
-                      itemData,
-                      containerType: progressTVShowsKey,
-                    ),
-                  ),
-                  if (lines.isNotEmpty)
-                    SizedBox(
-                      height: _kCaptionHeight,
-                      child: Text(
-                        lines.join('\n'),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                ],
+        return GestureDetector(
+          key: ValueKey('watchingTogether-${show.id}'),
+          onTap: media.missing ? null : () => _openDetails(media, title),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // The type is known to be a show, so the pair is stated rather
+              // than inferred from the item map: a title TMDB would not resolve
+              // renders through `ContinueWatchingMedia.missing`, where there is
+              // no name left to infer from. Such a tile still gets its badges —
+              // it is no longer reachable, but whether it is a favorite or on
+              // the watchlist remains true and is the more useful thing to say.
+              getItemContainer(
+                context,
+                itemData,
+                'media',
+                mediaPair: mediaPairForData(
+                  itemData,
+                  containerType: progressTVShowsKey,
+                ),
               ),
-            );
-          },
+              if (next != null)
+                SizedBox(
+                  height: _kCaptionHeight,
+                  child: Text(
+                    S.of(context)!.nextEpisode(
+                          next.seasonNumber,
+                          next.episodeNumber,
+                        ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                ),
+            ],
+          ),
         );
       },
     );
   }
-}
-
-bool _sameFriends(List<String>? a, List<String>? b) {
-  if (a == null || b == null) return a == b;
-  if (a.length != b.length) return false;
-  for (var index = 0; index < a.length; index++) {
-    if (a[index] != b[index]) return false;
-  }
-  return true;
 }
