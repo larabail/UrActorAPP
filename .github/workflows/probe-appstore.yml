@@ -1,0 +1,81 @@
+name: Probe App Store version creation
+
+# THROWAWAY. Delete this file and tool/probe_appstore_version.py once the
+# question is answered.
+#
+# It settles one thing the documentation does not state: whether a version
+# record created through the App Store Connect API inherits the previous
+# version's description, keywords and screenshots the way the web UI does. The
+# answer decides whether the manual step in the middle of every iOS release is
+# necessary or merely assumed.
+#
+# It writes to the live app, and then undoes it. Creating a version leaves it in
+# PREPARE_FOR_SUBMISSION, which no user can see, and an unsubmitted version can
+# be deleted -- which the script does unless told to keep it. Nothing here
+# submits anything, and the version that is live stays live.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to create, read back and then delete'
+        required: true
+        default: '3.18.0'
+        type: string
+      keep:
+        description: 'Keep the version instead of deleting it'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+# Shared with the release pipelines, so this cannot run while a release is
+# being made. Creating and deleting a version underneath a submission would be
+# a genuinely bad way to find out what the API does.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    name: Create a version, read it back, delete it
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install the App Store Connect client
+        run: pip install --quiet "pyjwt[crypto]" requests
+
+      - name: Probe
+        working-directory: tool
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          # No `pipefail` on purpose: it would let the failing python status
+          # propagate through the pipeline and, with bash -e, end the step
+          # before the summary is written. PIPESTATUS carries the real answer.
+          set -u
+          python probe_appstore_version.py \
+            --version "$VERSION" \
+            ${{ inputs.keep && '--keep' || '' }} 2>&1 | tee /tmp/probe.log
+          STATUS=${PIPESTATUS[0]}
+          {
+            echo '### App Store version creation probe'
+            echo ''
+            echo '```'
+            cat /tmp/probe.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$STATUS"
