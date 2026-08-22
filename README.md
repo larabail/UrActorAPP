@@ -275,6 +275,35 @@ the sandbox off, signing ad hoc with a team set, and matching the bundle
 identifier to the one in `FirebaseOptions`. All three were tried; the keychain
 access group is the actual requirement.
 
+### macOS sign in is also blocked by the API key restriction
+
+The keychain entitlement above is necessary but not sufficient, and it is no
+longer the first thing to suspect. A macOS build that is correctly signed and
+entitled still cannot sign anybody in, because `lib/firebase_options.dart`
+points macOS at the **iOS** registration and that key is restricted to a list
+of iOS bundle identifiers. `com.uractor.uractormacos` is not on it, so Identity
+Toolkit answers every attempt with
+
+```
+403 PERMISSION_DENIED — API_KEY_IOS_APP_BLOCKED
+"Requests from this iOS client application com.uractor.uractormacos are blocked."
+```
+
+before the password is looked at. The two failures are easy to confuse, since
+both refuse every correct password, so tell them apart by the error rather than
+by guessing: `keychain-error` is the entitlement, a wrapped `internal-error`
+carrying `API_KEY_IOS_APP_BLOCKED` is the key. The app now names the second one
+in the interface instead of offering the generic "please try again", which was
+advice that could not work.
+
+Fixing it is a console change, not a repository one — no edit here can lift the
+restriction. Either add `com.uractor.uractormacos` to that key's iOS
+application restrictions, or register a macOS app in the Firebase project and
+regenerate `lib/firebase_options.dart` from it. The second is preferable: the
+macOS entry currently carries `iosBundleId: 'com.example.uractor'`, a template
+leftover matching neither platform, and sharing the iOS key means any future
+tightening of it breaks macOS again.
+
 ## Layout
 
 The app lays itself out from the width of the window rather than from the
@@ -1140,6 +1169,34 @@ marker anywhere**, including in a body explaining what the marker does, runs no
 workflows at all — GitHub reads the whole message, not just the subject. The
 merge succeeds, no run is created, and there is nothing to go red because there
 is no run to be red.
+
+**This bites at merge, not at review.** A pull request that touches only
+workflow files still gets its checks, and they run the edited definitions: the
+workflow above has no path filter, and a pull request is evaluated from its own
+merge commit. Workflow changes are self-verifying at review time. It is the
+push to `master` that can silently produce nothing. Green checks say the
+workflow is right; they say nothing about whether merging it releases.
+
+**What is actually known about the cause**, since it is easy to learn the wrong
+lesson here:
+
+- **Confirmed:** a commit message mentioning the marker anywhere suppresses
+  every workflow. That is what happened to `7347803`, whose body explains the
+  marker while using it.
+- **Not the cause on its own:** touching `.github/workflows/`. The merge that
+  added this very watchdog (`5612c18`) added a workflow file and produced a
+  release run normally.
+- **Undetermined:** GitHub does document that pushes made with an *integration*
+  token — `GITHUB_TOKEN` or a GitHub App — create no run. `5612c18` was merged
+  with a personal access token, which is not one, so it neither demonstrates
+  nor refutes that path for the merge button. If it applies, it depends on the
+  credential that pushed, not on what the diff touched.
+
+One consequence worth knowing: **`release-internal.yml` cannot verify a change
+to itself.** Its merge is exactly the push that may produce no run, and its
+`record` job only runs after a successful upload, so a bad edit to it is
+invisible until the next unrelated merge. Dispatch it by hand after changing it.
+The watchdog below is what notices when nobody does.
 
 `.github/workflows/check-release-gap.yml` is the backstop. Once a day, and on
 demand, it collects the head commits of every recent `Release to internal

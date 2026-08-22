@@ -477,6 +477,10 @@
   "@networkError": {
     "description": "Shown when a sign in attempt could not reach Firebase at all."
   },
+  "blockedAppError": "This build of the app is not allowed to sign in. Trying again will not help.",
+  "@blockedAppError": {
+    "description": "Shown when Firebase refuses the app itself rather than the credentials, because this build is not on its API key's list of permitted callers. Says plainly that retrying is pointless, since every account and every correct password fails identically."
+  },
   "updateAvailable": "UrActor {version} is available",
   "@updateAvailable": {
     "description": "Shown in the desktop update bar when a newer version has been published. {version} is a version number like 3.16.0.",

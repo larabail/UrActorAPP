@@ -53,6 +53,79 @@ void main() {
       );
     });
 
+    test('names a caller the API key refuses, whatever code carries it', () {
+      // What a macOS build actually gets today. It borrows the iOS Firebase
+      // registration, and its bundle id is not on that key's iOS app list, so
+      // Identity Toolkit answers 403 before looking at the password. The SDK
+      // wraps that in a generic `internal-error`, so only the reason token
+      // inside the message says what happened.
+      expect(
+        classifyAuthError(
+          FirebaseAuthException(
+            code: 'internal-error',
+            message:
+                'Error Domain=FIRAuthErrorDomain Code=17999 UserInfo={'
+                'reason = "API_KEY_IOS_APP_BLOCKED"; status = "PERMISSION_DENIED"; '
+                'message = "Requests from this iOS client application '
+                'com.uractor.uractormacos are blocked.";}',
+          ),
+        ),
+        AuthFailure.blockedApp,
+      );
+
+      // The same refusal on the other platforms the app ships to. None of
+      // these has been met in the wild; they are the sibling reasons Google
+      // documents for the identical cause, and cost nothing to answer for.
+      for (final reason in <String>[
+        'API_KEY_ANDROID_APP_BLOCKED',
+        'API_KEY_HTTP_REFERRER_BLOCKED',
+        'API_KEY_SERVICE_BLOCKED',
+      ]) {
+        expect(
+          classifyAuthError(
+            FirebaseAuthException(code: 'internal-error', message: reason),
+          ),
+          AuthFailure.blockedApp,
+          reason: '$reason should be recognised as a blocked caller',
+        );
+      }
+    });
+
+    test('does not mistake an ordinary internal error for a blocked app', () {
+      // The check is on the reason token, not on the code, so a genuine
+      // server-side fault has to keep falling through to the generic message.
+      // Reading `internal-error` itself as "blocked" would tell people to give
+      // up on a failure that retrying may well clear.
+      expect(
+        classifyAuthError(FirebaseAuthException(code: 'internal-error')),
+        AuthFailure.unknown,
+      );
+      expect(
+        classifyAuthError(
+          FirebaseAuthException(
+            code: 'internal-error',
+            message: 'An internal error has occurred.',
+          ),
+        ),
+        AuthFailure.unknown,
+      );
+    });
+
+    test('a blocked caller outranks the code it arrived wrapped in', () {
+      // The 403 is the real failure and the code is only its wrapper, so the
+      // reason has to be read first. Were the switch consulted first this
+      // would come back as `network` and invite a pointless retry.
+      expect(
+        classifyAuthError(
+          FirebaseAuthException(
+            code: 'network-request-failed',
+            message: 'reason = "API_KEY_IOS_APP_BLOCKED"',
+          ),
+        ),
+        AuthFailure.blockedApp,
+      );
+    });
+
     test('classifies a code it has never seen rather than giving up', () {
       // Firebase returns this instead of user-not-found and wrong-password
       // when email enumeration protection is on, which is the default for new
@@ -86,6 +159,7 @@ void main() {
         'too-many-requests',
         'network-request-failed',
         'keychain-error',
+        'internal-error',
         'anything-else',
       ]) {
         expect(

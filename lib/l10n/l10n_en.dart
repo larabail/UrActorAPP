@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'l10n.dart';
 
 // ignore_for_file: type=lint
@@ -771,6 +772,10 @@ class SEn extends S {
   @override
   String get networkError =>
       'Could not reach the server. Check your connection.';
+
+  @override
+  String get blockedAppError =>
+      'This build of the app is not allowed to sign in. Trying again will not help.';
 
   @override
   String updateAvailable(String version) {
