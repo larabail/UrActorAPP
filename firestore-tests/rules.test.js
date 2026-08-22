@@ -15,6 +15,7 @@ const {
   updateDoc,
   deleteDoc,
   collection,
+  serverTimestamp,
 } = require('firebase/firestore');
 
 let testEnv;
@@ -497,6 +498,193 @@ describe('D2b. Calendar entries may record a season and an episode', () => {
     await assertSucceeds(setDoc(doc(alice, `${ALICE}/Calendar`), {
       '2026-01-01': [oldShapeEntry],
       '2026-01-02': [newShapeEntry, seasonOnlyEntry],
+    }));
+  });
+});
+
+// The value inside the key, which is what the shape checks above never
+// reached. A friend was previously free to put anything there: an arbitrary
+// notification attributed to a third party, a calendar entry that did not
+// admit who wrote it, a rewatch counter that was not a count.
+//
+// Everything proved here works against the write shapes installed clients
+// already send, so none of it waits on adoption. What is NOT here is the
+// update path for Calendar and SeenWith, where the changed key is only
+// reachable as a Set and so cannot be named -- see KNOWN GAPS.
+describe('D4. The value inside a friend-written key', () => {
+  const entry = {
+    id: 'm1', title: 'Movie', runtime: 90, rating: 7.5, friends: [BOB], type: 'movie',
+  };
+  const notification0 = {
+    type: 'movie', id: 'm0', title: 'Old', coverPhoto: '/old.jpg',
+    sender: { username: 'bob', uid: BOB }, read: false,
+    timestamp: new Date('2026-01-01T00:00:00Z'),
+  };
+  const notification1 = {
+    type: 'movie', id: 'm1', title: 'New', coverPhoto: '/new.jpg',
+    sender: { username: 'bob', uid: BOB }, read: false,
+    timestamp: new Date('2026-01-02T00:00:00Z'),
+  };
+
+  beforeEach(async () => {
+    await seed(async (db) => {
+      await setDoc(doc(db, `${ALICE}/Friends`), { friends: [BOB] });
+      await setDoc(doc(db, `${ALICE}/Notifications`), { 0: notification0 });
+    });
+  });
+
+  // The one that matters most. `sender` is what the inbox shows as "who
+  // recommended this", and it was the writer's word alone.
+  it('does not let a friend send a notification attributed to someone else', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(setDoc(doc(bob, `${ALICE}/Notifications`), {
+      0: notification0,
+      1: { ...notification1, sender: { username: 'carol', uid: CAROL } },
+    }));
+  });
+
+  it('does not let a friend send a notification with no sender at all', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(setDoc(doc(bob, `${ALICE}/Notifications`), {
+      0: notification0,
+      1: { ...notification1, sender: 'bob' },
+    }));
+    const { sender, ...senderless } = notification1;
+    await assertFails(setDoc(doc(bob, `${ALICE}/Notifications`), {
+      0: notification0,
+      1: senderless,
+    }));
+  });
+
+  it('does not let a friend deliver a notification already marked read', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(setDoc(doc(bob, `${ALICE}/Notifications`), {
+      0: notification0,
+      1: { ...notification1, read: true },
+    }));
+  });
+
+  it('does not let a friend put arbitrary content in a notification', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(setDoc(doc(bob, `${ALICE}/Notifications`), {
+      0: notification0,
+      1: 'just a string',
+    }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Notifications`), {
+      0: notification0,
+      1: { ...notification1, title: 42 },
+    }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Notifications`), {
+      0: notification0,
+      1: { ...notification1, id: 99 },
+    }));
+  });
+
+  // The key is what makes the value reachable at all: the client appends at
+  // the current key count, so anything else is refused rather than waved
+  // through unexamined.
+  it('does not let a friend append a notification at an arbitrary key', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(setDoc(doc(bob, `${ALICE}/Notifications`), {
+      0: notification0,
+      99: notification1,
+    }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Notifications`), {
+      0: notification0,
+      urgent: notification1,
+    }));
+  });
+
+  it('still lets a friend send a real recommendation', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Notifications`), {
+      0: notification0,
+      1: notification1,
+    }));
+  });
+
+  // What the app actually sends is FieldValue.serverTimestamp(), which the
+  // rule sees already resolved. Pinning it separately means the timestamp
+  // check cannot start refusing the real client without this failing first.
+  // Its own test because the append key is derived from how many keys are
+  // already there, so two appends in one test collide on key 1.
+  it('still lets a friend send a recommendation stamped by the server', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Notifications`), {
+      0: notification0,
+      1: { ...notification1, timestamp: serverTimestamp() },
+    }));
+  });
+
+  it('does not let a friend create a calendar entry that hides who wrote it', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [{ ...entry, friends: [CAROL] }],
+    }, { merge: true }));
+    const { friends, ...friendless } = entry;
+    await assertFails(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [friendless],
+    }, { merge: true }));
+  });
+
+  it('does not let a friend create a SeenWith record that hides who wrote it', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(setDoc(doc(bob, `${ALICE}/SeenWith`), {
+      Movies: { m1: { friends: [CAROL] } },
+    }, { merge: true }));
+  });
+
+  it('does not let a friend create a SeenWith record of any other shape', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(setDoc(doc(bob, `${ALICE}/SeenWith`), {
+      Movies: { m1: { friends: [BOB], hacked: true } },
+    }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/SeenWith`), {
+      Movies: { m1: 'watched it' },
+    }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/SeenWith`), {
+      Movies: { m1: { friends: [BOB] }, m2: { friends: [BOB] } },
+    }, { merge: true }));
+  });
+
+  it('does not let a friend create a rewatch counter that is not a count', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(setDoc(doc(bob, `${ALICE}/Rewatched`), { m1: 'lots' }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Rewatched`), { m1: 0 }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Rewatched`), { m1: -5 }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/RewatchedTV`), { t1: 1.5 }, { merge: true }));
+  });
+
+  it('does not let a friend create a watched list holding anything but a media id', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertFails(setDoc(doc(bob, `${ALICE}/Movies`), { Seen: [42] }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/TVShows`), { Seen: [{ id: 't1' }] }, { merge: true }));
+    await assertFails(setDoc(doc(bob, `${ALICE}/Seen`), { Movies: [null] }, { merge: true }));
+  });
+
+  it('still lets a friend make every write the installed client makes', async () => {
+    const bob = ctxFor(BOB).firestore();
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Calendar`), {
+      '2026-01-02': [entry],
+    }, { merge: true }));
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/SeenWith`), {
+      Movies: { m1: { friends: [ALICE, BOB] } },
+    }, { merge: true }));
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Rewatched`), { m1: 1 }, { merge: true }));
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Movies`), { Seen: ['m1'] }, { merge: true }));
+    await assertSucceeds(setDoc(doc(bob, `${ALICE}/Seen`), { Movies: ['m1'] }, { merge: true }));
+  });
+
+  // The owner is not bound by any of this: they rewrite these documents whole
+  // whenever an entry is deleted, and always have.
+  it('does not constrain what the owner writes to their own documents', async () => {
+    const alice = ctxFor(ALICE).firestore();
+    await assertSucceeds(setDoc(doc(alice, `${ALICE}/Rewatched`), { m1: 7, m2: 3 }));
+    await assertSucceeds(setDoc(doc(alice, `${ALICE}/SeenWith`), {
+      Movies: { m1: { friends: [CAROL] } },
+    }));
+    await assertSucceeds(setDoc(doc(alice, `${ALICE}/Notifications`), {
+      0: { ...notification0, read: true },
     }));
   });
 });
