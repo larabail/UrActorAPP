@@ -108,6 +108,19 @@
       }
     }
   },
+  "watchingTogether": "Watching together",
+  "@watchingTogether": {
+    "description": "Title of the friends section listing shows started with a friend and not finished"
+  },
+  "watchingTogetherTitles": "Watching together: {titles}",
+  "@watchingTogetherTitles": {
+    "description": "The scrolling line under a friend's name on the friends list, naming the shows in progress with them",
+    "placeholders": {
+      "titles": {
+        "type": "String"
+      }
+    }
+  },
   "notifications": "Notifications",
   "totalContent": "{totalContent, plural, one{{totalContent} item} other{{totalContent} items}}",
   "@totalContent": {

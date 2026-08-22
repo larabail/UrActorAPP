@@ -84,6 +84,13 @@ window rather than the device it is on (see [Platforms](#platforms) and
   already seen a title (`lib/seenTogether.dart`,
   `lib/popups/add_friends_seen_with_popup.dart`,
   `SocialService.friendsWhoHaveSeen`).
+- Keep track of the series you are part way through together. Each friend on the
+  friends list carries a scrolling line of the shows that are started,
+  unfinished, and recorded as watched with them, and their profile shows the
+  same thing as a row of posters naming the next unwatched episode. Films are
+  left out, and a friend with nothing running gets no line
+  (`lib/friends.dart`, `lib/watching_together_section.dart`,
+  `lib/common/watching_together.dart`).
 
 ### Browsing
 
@@ -356,6 +363,13 @@ height.** A vertical list should shrink-wrap and let the dialogue scroll —
 it is what the four hardcoded 125pt friend lists became. Only a horizontal
 strip needs to be told how tall it is.
 
+`ScrollingLine` (`lib/common/widgets/scrolling_line.dart`) is a one-line label
+that scrolls itself when it does not fit and sits still when it does. Use it
+where a subtitle has to say more than its width allows and a second row would
+push the thing above it around. Note that a scrolling line never stops
+animating, so a widget test on a screen containing one must pump fixed
+durations rather than call `pumpAndSettle`.
+
 ## Getting started
 
 ### Prerequisites
@@ -611,6 +625,7 @@ lib/
   continue_watching_section.dart  Home page "Continue watching" row
   calendar.dart              Watch calendar
   seenTogether.dart          Titles watched with a given friend
+  watching_together_section.dart  "Watching together" row on a friend's profile
   friends.dart  friends_profile.dart  friends_calendar.dart  friends_thoughts.dart
   inbox.dart  notifications.dart
   profile.dart               Profile photo, stats charts
@@ -621,6 +636,8 @@ lib/
                              --dart-define
     utils.dart
     continue_watching.dart   Continue watching ordering and TMDB derivations
+    watching_together.dart   Which shared shows are still in progress, and how
+                             they group under each friend
     item_container.dart  mediaitembuilder.dart  tabView.dart
     watch_progress_view.dart        Pure watch-progress rules
     watch_progress_controller.dart  Per-show episode tick state
@@ -633,6 +650,8 @@ lib/
     api/apiutils.dart        All TMDB HTTP calls; a show's credits come from
                              aggregate_credits and are flattened to the shape
                              /credits returns
+    api/tmdb_titles.dart     Cached show-name lookups, for surfaces that want a
+                             title and nothing else
     navigation/              appbar.dart, app_scaffold.dart, destinations.dart
     layout/                  breakpoints.dart (pure window-size rules),
                              responsive.dart (LayoutScope, poster helpers),

@@ -38,6 +38,8 @@
   "seen": "Vistas",
   "continueWatching": "Seguir viendo",
   "nextEpisode": "Siguiente: T{season} E{episode}",
+  "watchingTogether": "Viendo juntos",
+  "watchingTogetherTitles": "Viendo juntos: {titles}",
   "notifications": "Notificaciones",
   "totalContent": "{totalContent, plural, one{{totalContent} elemento} other{{totalContent} elementos}}",
   "reviews": "Reseñas",

@@ -3,10 +3,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uractor/l10n/l10n.dart';
+import 'common/api/tmdb_titles.dart';
 import 'common/async_action.dart';
 import 'common/firebase/friends_service.dart';
+import 'common/firebase/progress_service.dart';
 import 'common/navigation/appbar.dart';
 import 'common/reorder_toggle.dart';
+import 'common/watching_together.dart';
+import 'common/widgets/scrolling_line.dart';
 import 'friends_profile.dart';
 import 'inbox.dart';
 import 'main.dart';
@@ -15,6 +19,13 @@ import 'common/navigation/app_scaffold.dart';
 import 'common/layout/two_pane.dart';
 
 String friendUid = "";
+
+/// The room the "Watching together" line under a friend's name is given.
+///
+/// Fixed, and the same whether the line scrolls or sits still, so that a row
+/// does not change height when TMDB answers and shove the rest of the list
+/// down under the reader's finger.
+const double _kWatchingLineHeight = 18;
 
 class Friends extends StatefulWidget {
   const Friends();
@@ -32,10 +43,53 @@ class _FriendsState extends State<Friends> {
 
   late Future<List<FriendProfileSummary>> _profiles;
 
+  /// Friend uid to the titles of the shows in progress with them.
+  ///
+  /// Loaded once for the whole page rather than per row. Several friends
+  /// usually share the same show, and a lookup per row would ask TMDB for the
+  /// same name once for each of them.
+  late Future<Map<String, List<String>>> _watchingTogether;
+
+  /// The friend list as plain strings.
+  List<String> get _friendUids =>
+      currentUser.friends.map((uid) => uid.toString()).toList();
+
   @override
   void initState() {
     super.initState();
     _profiles = FriendsService.loadProfiles(currentUser.friends);
+    _watchingTogether = _loadWatchingTogether();
+  }
+
+  /// Crosses what is started and unfinished with who it was watched alongside,
+  /// then names the result.
+  ///
+  /// Anything unreadable is treated as nothing shared. The friends list is
+  /// about friends; a progress document that will not load should cost the
+  /// subtitles, not the page.
+  Future<Map<String, List<String>>> _loadWatchingTogether() async {
+    final friends = _friendUids;
+    if (friends.isEmpty) return const <String, List<String>>{};
+    try {
+      final shows = watchingTogetherShows(
+        await ProgressService.inProgressItems(),
+        currentUser.seenWith,
+        friends: friends,
+        limit: kWatchingTogetherLineLimit,
+      );
+      if (shows.isEmpty) return const <String, List<String>>{};
+
+      final byFriend = watchingTogetherByFriend(shows);
+      final titles = await TmdbTitles.forShows(shows.map((show) => show.id));
+      final lines = <String, List<String>>{};
+      for (final entry in byFriend.entries) {
+        final line = watchingTogetherTitles(entry.value, titles);
+        if (line.isNotEmpty) lines[entry.key] = line;
+      }
+      return lines;
+    } catch (_) {
+      return const <String, List<String>>{};
+    }
   }
 
   Future<void> _onReorder(int oldIndex, int newIndex) async {
@@ -86,6 +140,7 @@ class _FriendsState extends State<Friends> {
     BuildContext context,
     FriendProfileSummary friend,
     int index,
+    List<String> watchingTogether,
   ) {
     final avatar = ClipOval(
       child: friend.profilePhoto != ""
@@ -119,9 +174,29 @@ class _FriendsState extends State<Friends> {
             avatar,
             const SizedBox(width: 16.0),
             Expanded(
-              child: Text(
-                friend.userName,
-                style: const TextStyle(fontSize: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    friend.userName,
+                    style: const TextStyle(fontSize: 16.0),
+                  ),
+                  // A friend with nothing running gets no line at all, rather
+                  // than an empty one holding a gap open under their name.
+                  if (watchingTogether.isNotEmpty)
+                    ScrollingLine(
+                      key: ValueKey('watchingTogether-${friend.uid}'),
+                      text: S.of(context)!.watchingTogetherTitles(
+                            watchingTogether.join(' • '),
+                          ),
+                      style: const TextStyle(
+                        fontSize: 12.0,
+                        color: Colors.grey,
+                      ),
+                      height: _kWatchingLineHeight,
+                    ),
+                ],
               ),
             ),
             if (_isReordering)
@@ -153,26 +228,48 @@ class _FriendsState extends State<Friends> {
             ],
           );
         }
-        if (_isReordering) {
-          return ReorderableListView.builder(
-            itemCount: friends.length,
-            // Deliberately still onReorder. onReorderItem pre-adjusts newIndex,
-            // so migrating means removing the compensation inside
-            // FriendsService.reorder and rewriting the tests that pin it. That
-            // changes drag behaviour, which nothing here covers at the widget
-            // level, so it belongs in its own change rather than in a toolchain
-            // upgrade.
-            // ignore: deprecated_member_use
-            onReorder: _onReorder,
-            buildDefaultDragHandles: false,
-            itemBuilder: (context, index) =>
-                _buildFriendRow(context, friends[index], index),
-          );
-        }
-        return ListView.builder(
-          itemCount: friends.length,
-          itemBuilder: (context, index) =>
-              _buildFriendRow(context, friends[index], index),
+        // The friends are drawn as soon as they are known and the lines appear
+        // underneath when TMDB answers. Waiting for the titles before drawing
+        // anything would hold the whole list behind a network call for a
+        // subtitle.
+        return FutureBuilder<Map<String, List<String>>>(
+          future: _watchingTogether,
+          builder: (context, watchingSnapshot) {
+            final watching =
+                watchingSnapshot.data ?? const <String, List<String>>{};
+            List<String> linesFor(FriendProfileSummary friend) =>
+                watching[friend.uid] ?? const <String>[];
+
+            if (_isReordering) {
+              return ReorderableListView.builder(
+                itemCount: friends.length,
+                // Deliberately still onReorder. onReorderItem pre-adjusts
+                // newIndex, so migrating means removing the compensation inside
+                // FriendsService.reorder and rewriting the tests that pin it.
+                // That changes drag behaviour, which nothing here covers at the
+                // widget level, so it belongs in its own change rather than in
+                // a toolchain upgrade.
+                // ignore: deprecated_member_use
+                onReorder: _onReorder,
+                buildDefaultDragHandles: false,
+                itemBuilder: (context, index) => _buildFriendRow(
+                  context,
+                  friends[index],
+                  index,
+                  linesFor(friends[index]),
+                ),
+              );
+            }
+            return ListView.builder(
+              itemCount: friends.length,
+              itemBuilder: (context, index) => _buildFriendRow(
+                context,
+                friends[index],
+                index,
+                linesFor(friends[index]),
+              ),
+            );
+          },
         );
       },
     );
@@ -187,6 +284,11 @@ class _FriendsState extends State<Friends> {
     setState(() {
       currentUser.friends = currentUser.friends;
       _profiles = FriendsService.loadProfiles(currentUser.friends);
+      // Refreshed alongside the friends, so that a friend who has just been
+      // removed takes their line with them and one newly added gets theirs.
+      // Titles stay cached, so this costs a progress read rather than a
+      // request per show.
+      _watchingTogether = _loadWatchingTogether();
     });
   }
 

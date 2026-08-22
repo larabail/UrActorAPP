@@ -48,7 +48,7 @@ export const STORES = {
   [IOS]: {
     name: 'iPhone & iPad',
     store: 'the App Store',
-    url: 'https://apps.apple.com/app/uractor/id6503330070',
+    url: 'https://apps.apple.com/us/app/uractor/id6473752767',
   },
 };
 
