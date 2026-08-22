@@ -349,189 +349,203 @@ class _CalendarState extends State<Calendar> {
           context: context,
           builder: (_) {
             return SingleChildScrollView(
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height * 0.375,
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    children: [
-                      Text(
-                        S.of(context)!.seenOn(_selectedDay),
-                        style: const TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      Expanded(
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: [
-                            ...movies.map(
-                              (event) => Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 8.0),
-                                child: Column(
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () {
-                                        var tempMedia =
-                                            event.containsKey("title")
-                                                ? Movie(
-                                                    id: event["id"].toString(),
-                                                    title: event['title'],
-                                                    coverPhoto:
-                                                        event["poster_path"] ??
-                                                            UNKNOWN_COVER)
-                                                : TVShow(
-                                                    id: event["id"].toString(),
-                                                    title: event['name'],
-                                                    coverPhoto:
-                                                        event["poster_path"] ??
-                                                            UNKNOWN_COVER);
-                                        openDetail(
-                                            context,
-                                            event.containsKey("title")
-                                                ? MovieResult(
-                                                    movie: tempMedia as Movie)
-                                                : TVShowResult(
-                                                    tvshow:
-                                                        tempMedia as TVShow));
-                                      },
-                                      child: Stack(
-                                        children: [
-                                          ClipRRect(
-                                            borderRadius:
-                                                BorderRadius.circular(30),
-                                            child: getItemContainer(
-                                                context, event, "media",
-                                                scale: 1.15,
-                                                mediaPair:
-                                                    mediaPairForData(event)),
-                                          ),
-                                          if (event.containsKey("friends"))
-                                            Positioned(
-                                              bottom: 8,
-                                              left: 8,
-                                              right: 8,
-                                              child: Row(
-                                                children: [
-                                                  Expanded(
-                                                    child: FutureBuilder<
-                                                        List<String>>(
-                                                      future: FirebaseUtils
-                                                          .getProfilePhotos(
-                                                              event["friends"]),
-                                                      builder:
-                                                          (context, snapshot) {
-                                                        if (snapshot
-                                                                .connectionState ==
-                                                            ConnectionState
-                                                                .waiting) {
-                                                          return const SizedBox(
-                                                            height: 32.0,
-                                                            child: Center(
-                                                                child:
-                                                                    CircularProgressIndicator()),
-                                                          );
-                                                        } else if (snapshot
-                                                            .hasError) {
-                                                          return SizedBox(
-                                                            height: 32.0,
-                                                            child: Center(
-                                                                child: Text(S
-                                                                    .of(context)!
-                                                                    .errorLoadingImages)),
-                                                          );
-                                                        } else if (snapshot
-                                                            .hasData) {
-                                                          var images =
-                                                              snapshot.data!;
-                                                          return SizedBox(
-                                                            height: 32.0,
-                                                            child: Stack(
-                                                              children:
-                                                                  List.generate(
-                                                                      images
-                                                                          .length,
-                                                                      (index) {
-                                                                double offset =
-                                                                    index *
-                                                                        10.0;
-                                                                return Positioned(
-                                                                  left: offset,
-                                                                  child:
-                                                                      ClipOval(
-                                                                    child: images[index] !=
-                                                                            ""
-                                                                        ? Image
-                                                                            .network(
-                                                                            images[index],
-                                                                            height:
-                                                                                25,
-                                                                            width:
-                                                                                25,
-                                                                            fit:
-                                                                                BoxFit.cover,
-                                                                          )
-                                                                        : Image
-                                                                            .asset(
-                                                                            'assets/main_profile.png',
-                                                                            height:
-                                                                                25,
-                                                                            width:
-                                                                                25,
-                                                                            fit:
-                                                                                BoxFit.cover,
-                                                                          ),
-                                                                  ),
-                                                                );
-                                                              }),
-                                                            ),
-                                                          );
-                                                        } else {
-                                                          return const SizedBox
-                                                              .shrink();
-                                                        }
-                                                      },
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                    CalendarEpisodeBadge(entry: event),
-                                    IconButton(
-                                      style: IconButton.styleFrom(
-                                          backgroundColor: Colors.transparent),
-                                      onPressed: () async {
-                                        String type = event.containsKey("title")
-                                            ? "movie"
-                                            : "series";
-                                        await runVisibleAsyncAction(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      S.of(context)!.seenOn(_selectedDay),
+                      style: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    // The same mistake as the month grid, in the other
+                    // direction: a box 37.5% of the window tall, holding a
+                    // row of cards whose height comes from the poster size,
+                    // the episode badge and the delete button. On a short
+                    // window that was less than a card needed and the row was
+                    // clipped; on a tall one it was a band of empty sheet
+                    // under them.
+                    //
+                    // A horizontally scrolling Row rather than the sized
+                    // ListView it replaces, because the cards are built
+                    // eagerly either way -- a day holds a handful of titles,
+                    // not a library -- and a Row measures them instead of
+                    // being told a number that could be wrong. The scroll
+                    // view already wrapped around all of this then takes care
+                    // of a sheet the modal will not make tall enough.
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ...movies.map(
+                            (event) => Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: Column(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      var tempMedia =
+                                          event.containsKey("title")
+                                              ? Movie(
+                                                  id: event["id"].toString(),
+                                                  title: event['title'],
+                                                  coverPhoto:
+                                                      event["poster_path"] ??
+                                                          UNKNOWN_COVER)
+                                              : TVShow(
+                                                  id: event["id"].toString(),
+                                                  title: event['name'],
+                                                  coverPhoto:
+                                                      event["poster_path"] ??
+                                                          UNKNOWN_COVER);
+                                      openDetail(
                                           context,
-                                          () => deleteMovieSubmit(
-                                              event['id'].toString(),
-                                              type == "movie"
-                                                  ? event['title'].toString()
-                                                  : event['name'].toString()),
-                                          S.of(context)!.genericAuthError,
-                                        );
-                                      },
-                                      icon: const Icon(Icons.delete),
-                                      color: Colors.red,
+                                          event.containsKey("title")
+                                              ? MovieResult(
+                                                  movie: tempMedia as Movie)
+                                              : TVShowResult(
+                                                  tvshow:
+                                                      tempMedia as TVShow));
+                                    },
+                                    child: Stack(
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(30),
+                                          child: getItemContainer(
+                                              context, event, "media",
+                                              scale: 1.15,
+                                              mediaPair:
+                                                  mediaPairForData(event)),
+                                        ),
+                                        if (event.containsKey("friends"))
+                                          Positioned(
+                                            bottom: 8,
+                                            left: 8,
+                                            right: 8,
+                                            child: Row(
+                                              children: [
+                                                Expanded(
+                                                  child: FutureBuilder<
+                                                      List<String>>(
+                                                    future: FirebaseUtils
+                                                        .getProfilePhotos(
+                                                            event["friends"]),
+                                                    builder:
+                                                        (context, snapshot) {
+                                                      if (snapshot
+                                                              .connectionState ==
+                                                          ConnectionState
+                                                              .waiting) {
+                                                        return const SizedBox(
+                                                          height: 32.0,
+                                                          child: Center(
+                                                              child:
+                                                                  CircularProgressIndicator()),
+                                                        );
+                                                      } else if (snapshot
+                                                          .hasError) {
+                                                        return SizedBox(
+                                                          height: 32.0,
+                                                          child: Center(
+                                                              child: Text(S
+                                                                  .of(context)!
+                                                                  .errorLoadingImages)),
+                                                        );
+                                                      } else if (snapshot
+                                                          .hasData) {
+                                                        var images =
+                                                            snapshot.data!;
+                                                        return SizedBox(
+                                                          height: 32.0,
+                                                          child: Stack(
+                                                            children:
+                                                                List.generate(
+                                                                    images
+                                                                        .length,
+                                                                    (index) {
+                                                              double offset =
+                                                                  index *
+                                                                      10.0;
+                                                              return Positioned(
+                                                                left: offset,
+                                                                child:
+                                                                    ClipOval(
+                                                                  child: images[index] !=
+                                                                          ""
+                                                                      ? Image
+                                                                          .network(
+                                                                          images[index],
+                                                                          height:
+                                                                              25,
+                                                                          width:
+                                                                              25,
+                                                                          fit:
+                                                                              BoxFit.cover,
+                                                                        )
+                                                                      : Image
+                                                                          .asset(
+                                                                          'assets/main_profile.png',
+                                                                          height:
+                                                                              25,
+                                                                          width:
+                                                                              25,
+                                                                          fit:
+                                                                              BoxFit.cover,
+                                                                        ),
+                                                                ),
+                                                              );
+                                                            }),
+                                                          ),
+                                                        );
+                                                      } else {
+                                                        return const SizedBox
+                                                            .shrink();
+                                                      }
+                                                    },
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                      ],
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                  CalendarEpisodeBadge(entry: event),
+                                  IconButton(
+                                    style: IconButton.styleFrom(
+                                        backgroundColor: Colors.transparent),
+                                    onPressed: () async {
+                                      String type = event.containsKey("title")
+                                          ? "movie"
+                                          : "series";
+                                      await runVisibleAsyncAction(
+                                        context,
+                                        () => deleteMovieSubmit(
+                                            event['id'].toString(),
+                                            type == "movie"
+                                                ? event['title'].toString()
+                                                : event['name'].toString()),
+                                        S.of(context)!.genericAuthError,
+                                      );
+                                    },
+                                    icon: const Icon(Icons.delete),
+                                    color: Colors.red,
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             );
@@ -546,43 +560,51 @@ class _CalendarState extends State<Calendar> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.57,
-              child: TableCalendar(
-                  firstDay: DateTime.utc(1990, 10, 16),
-                  lastDay: DateTime.utc(2030, 3, 14),
-                  headerStyle: const HeaderStyle(
-                    formatButtonVisible: false,
-                    titleCentered: true,
-                  ),
-                  eventLoader: (date) {
-                    final dayKey = date.toIso8601String().split('T')[0];
-                    final items = currentUser.calendar[dayKey] ?? [];
-                    return items.map((item) => item['title'] ?? '').toList();
-                  },
-                  focusedDay: _focusedDay,
-                  selectedDayPredicate: (day) =>
-                      isSameDay(DateTime.parse(_selectedDay), day),
-                  onPageChanged: (focusedDay) {
-                    setState(() {
-                      _focusedDay = focusedDay;
-                      _updateMonthlyStats(focusedDay);
-                    });
-                  },
-                  onDaySelected: (selectedDay, focusedDay) async {
-                    setState(() {
-                      _selectedDay =
-                          selectedDay.toIso8601String().split('T')[0];
-                      _focusedDay = focusedDay;
-                      _updateMonthlyStats(focusedDay);
-                    });
-                    await runVisibleAsyncAction(
-                      context,
-                      () => _onDaySelected(selectedDay, focusedDay),
-                      S.of(context)!.genericAuthError,
-                    );
-                  }),
-            ),
+            // No height of our own. A month grid is as tall as its header, its
+            // day-of-week strip and however many week rows the month needs --
+            // four to six, decided by the calendar, changing as you page
+            // through the year. Given a box instead, TableCalendar draws the
+            // rows at their full height anyway and lets its own column
+            // overflow, so a six row month spilled over the stats below it.
+            //
+            // The fraction of the window this used to ask for could not have
+            // been right: the app bar and, on a desktop window, the navigation
+            // rail take their share before the body sees any of it, and 57% of
+            // the whole window is not 57% of what is left. A five row month
+            // happened to fit, which is what made it look intermittent.
+            TableCalendar(
+                firstDay: DateTime.utc(1990, 10, 16),
+                lastDay: DateTime.utc(2030, 3, 14),
+                headerStyle: const HeaderStyle(
+                  formatButtonVisible: false,
+                  titleCentered: true,
+                ),
+                eventLoader: (date) {
+                  final dayKey = date.toIso8601String().split('T')[0];
+                  final items = currentUser.calendar[dayKey] ?? [];
+                  return items.map((item) => item['title'] ?? '').toList();
+                },
+                focusedDay: _focusedDay,
+                selectedDayPredicate: (day) =>
+                    isSameDay(DateTime.parse(_selectedDay), day),
+                onPageChanged: (focusedDay) {
+                  setState(() {
+                    _focusedDay = focusedDay;
+                    _updateMonthlyStats(focusedDay);
+                  });
+                },
+                onDaySelected: (selectedDay, focusedDay) async {
+                  setState(() {
+                    _selectedDay = selectedDay.toIso8601String().split('T')[0];
+                    _focusedDay = focusedDay;
+                    _updateMonthlyStats(focusedDay);
+                  });
+                  await runVisibleAsyncAction(
+                    context,
+                    () => _onDaySelected(selectedDay, focusedDay),
+                    S.of(context)!.genericAuthError,
+                  );
+                }),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(

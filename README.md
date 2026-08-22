@@ -309,6 +309,18 @@ Two things follow from this that are worth knowing before changing a screen:
   1210pt iPad while being drawn into a 565pt pane, so every card overflowed.
   The two failures above are the same mistake twice: deciding from a number
   that is not the width of the box.
+- **Never size a panel as a fraction of the window's height either.** The rule
+  above is usually said about width, but height is where it bites hardest,
+  because the app bar and the navigation rail have already taken their share
+  before the body sees any of the window. A month grid is as tall as its
+  header, its day-of-week strip and however many week rows the month has; a
+  row of cards is as tall as a card. Let the content say so — inside a scroll
+  view a widget with an intrinsic height needs no box at all, and a
+  horizontally scrolling row that has to have one takes it from
+  `posterRowHeight`, not from `MediaQuery`. The calendar gave its grid 57% of
+  the window and the sheet a day opens 37.5%; the first clipped any month
+  needing six week rows, and the second clipped its cards on a short window
+  and left a band of empty sheet under them on a tall one.
 - **Open detail pages with `openDetail`, not `Navigator.push`.** It puts the
   page in the detail pane when there is one and over the whole window when
   there is not, so a call site does not have to know which layout it is in. A
