@@ -29,5 +29,25 @@
       "enabled": false
     },
     "singleProjectMode": true
+  },
+  "hosting": {
+    "public": "web/downloads",
+    "site": "uractor-downloads",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "headers": [
+      {
+        "source": "/version.json",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=300"
+          }
+        ]
+      }
+    ]
   }
 }

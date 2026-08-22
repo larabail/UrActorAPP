@@ -132,9 +132,13 @@ State is handled with plain `StatefulWidget`, `setState`, and
 | Platform | Status |
 | --- | --- |
 | Android, iOS | Shipped to testers by CI on every merge to `master` |
-| macOS, Windows | Buildable and supported; not part of the release workflow |
+| macOS, Windows | Downloadable from [downloads.uractor.com](https://downloads.uractor.com), released by tag |
 | Linux | Not a target — see below |
-| Web | Not a target; no `web/` directory |
+| Web | Not a target |
+
+The desktop apps are released by pushing a tag rather than by merging, and
+they tell users about new versions themselves — there is no store to do it for
+them. See [Releasing the desktop apps](docs/releases.md#releasing-the-desktop-apps).
 
 ### Why not Linux
 

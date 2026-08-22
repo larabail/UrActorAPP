@@ -760,4 +760,15 @@ class SEs extends S {
   @override
   String get networkError =>
       'No se pudo conectar con el servidor. Comprueba tu conexión.';
+
+  @override
+  String updateAvailable(String version) {
+    return 'UrActor $version ya está disponible';
+  }
+
+  @override
+  String get updateDownload => 'Descargar';
+
+  @override
+  String get updateDismiss => 'Descartar';
 }

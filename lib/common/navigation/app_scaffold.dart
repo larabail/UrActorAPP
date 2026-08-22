@@ -7,10 +7,13 @@
 // a window is short and wide, and it pins navigation to the far corner of a
 // large display rather than beside the content.
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../layout/breakpoints.dart';
 import '../layout/responsive.dart';
 import '../layout/two_pane.dart';
+import '../platform/capabilities.dart';
+import '../update/update_banner.dart';
 import 'destinations.dart';
 
 /// A [Scaffold] whose navigation adapts to the width of the window.
@@ -68,7 +71,7 @@ class AppScaffold extends StatelessWidget {
       return Scaffold(
         appBar: appBar,
         backgroundColor: backgroundColor,
-        body: body,
+        body: _withUpdateBanner(body),
         floatingActionButton: floatingActionButton,
         bottomNavigationBar: _BottomDestinations(selectedIndex: selectedIndex),
       );
@@ -98,15 +101,68 @@ class AppScaffold extends StatelessWidget {
                 // taken its share -- deciding from the window would split a
                 // space too narrow to hold either half properly.
                 if (placeholder != null && usesTwoPanes(available)) {
-                  return TwoPane(list: body, placeholder: placeholder);
+                  return _withUpdateBanner(
+                      TwoPane(list: body, placeholder: placeholder));
                 }
-                return body;
+                return _withUpdateBanner(body);
               },
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// Puts the desktop update notice above [content], on the screens where it
+  /// belongs.
+  ///
+  /// Only on the four top level destinations: a notice repeated on every media
+  /// page would be nagging, and one shown only on the home page would be
+  /// missed by anyone who lands somewhere else. It costs nothing when there is
+  /// no update, and nothing at all off desktop, where the stores handle this.
+  Widget _withUpdateBanner(Widget content) {
+    if (selectedIndex < 0 || !Capabilities.isDesktop) return content;
+
+    return Column(
+      children: [
+        const _ResolvedUpdateBanner(),
+        Expanded(child: content),
+      ],
+    );
+  }
+}
+
+/// Looks up the running version, then hands it to the banner.
+///
+/// Read from the bundle rather than compiled in, so it cannot disagree with
+/// what was actually shipped.
+class _ResolvedUpdateBanner extends StatefulWidget {
+  const _ResolvedUpdateBanner();
+
+  @override
+  State<_ResolvedUpdateBanner> createState() => _ResolvedUpdateBannerState();
+}
+
+class _ResolvedUpdateBannerState extends State<_ResolvedUpdateBanner> {
+  String? _version;
+
+  @override
+  void initState() {
+    super.initState();
+    PackageInfo.fromPlatform().then((info) {
+      if (!mounted) return;
+      setState(() => _version = info.version);
+    }).catchError((Object _) {
+      // Without a version there is nothing to compare against, so the banner
+      // simply never appears. Not worth surfacing.
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final version = _version;
+    if (version == null) return const SizedBox.shrink();
+    return UpdateBanner(currentVersion: version);
   }
 }
 
