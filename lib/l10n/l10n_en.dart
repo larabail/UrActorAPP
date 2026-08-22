@@ -152,6 +152,14 @@ class SEn extends S {
   }
 
   @override
+  String get watchingTogether => 'Watching together';
+
+  @override
+  String watchingTogetherTitles(String titles) {
+    return 'Watching together: $titles';
+  }
+
+  @override
   String get notifications => 'Notifications';
 
   @override

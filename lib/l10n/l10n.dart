@@ -325,6 +325,18 @@ abstract class S {
   /// **'Next: S{season} E{episode}'**
   String nextEpisode(int season, int episode);
 
+  /// Title of the friends section listing shows started with a friend and not finished
+  ///
+  /// In en, this message translates to:
+  /// **'Watching together'**
+  String get watchingTogether;
+
+  /// The scrolling line under a friend's name on the friends list, naming the shows in progress with them
+  ///
+  /// In en, this message translates to:
+  /// **'Watching together: {titles}'**
+  String watchingTogetherTitles(String titles);
+
   /// No description provided for @notifications.
   ///
   /// In en, this message translates to:

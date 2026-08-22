@@ -153,6 +153,14 @@ class SEs extends S {
   }
 
   @override
+  String get watchingTogether => 'Viendo juntos';
+
+  @override
+  String watchingTogetherTitles(String titles) {
+    return 'Viendo juntos: $titles';
+  }
+
+  @override
   String get notifications => 'Notificaciones';
 
   @override
