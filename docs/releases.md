@@ -81,8 +81,10 @@ to the code it just shipped, so the file records the last build testers received
 rather than drifting for months. Nobody edits it by hand.
 
 That write-back is a separate job in `release-internal.yml`, and the only place
-in either pipeline outside the desktop stage that a token can write to the
-repository.
+in either pipeline that a token writes to a *file* in the repository. The
+pipelines also write refs — the `build-*`, `released-*` and `v*` tags — which
+is a different permission and comes with a restriction of its own, described in
+[a promotion cannot tag a commit that has no ref](#a-promotion-cannot-tag-a-commit-that-has-no-ref).
 
 **It arrives as a pull request rather than a push, and that is not a style
 choice.** `master` requires a pull request, and `github-actions[bot]` cannot be
@@ -844,6 +846,51 @@ Not the same thing on each platform, and worth knowing before relying on it.
 - **Desktop** builds both installers, which is most of the value, and skips the
   GitHub release, the tag and the hosting deploy.
 
+### A promotion cannot tag a commit that has no ref
+
+Both writes this pipeline makes to the repository create a git ref at the
+commit being promoted: the `released-<code>` tag that marks where production
+reached, and the `v<version>` tag that comes with the desktop stage's GitHub
+release.
+
+GitHub refuses to let an Actions token create **any** ref — tag or branch, by
+`git push` or through the REST API — pointing at a commit that no ref already
+points at and whose `.github/workflows/` differ from the tip of the default
+branch. It does not matter that the commit is already on `master` and that
+nothing is being uploaded; the refusal is about what the new ref would make
+visible.
+
+The permission that lifts it is `workflows`, and **`GITHUB_TOKEN` cannot be
+granted it** — it is not one of the keys the `permissions:` block accepts, so
+raising permissions is not a fix. Only a personal access token with the
+`workflow` scope, or a GitHub App installation token with `workflows: write`,
+can do it, and this repository holds neither.
+
+The refusal is reported differently depending on the path, and neither message
+names the real cause:
+
+| Path | What you see |
+|---|---|
+| `git push` of a tag | `refusing to allow a GitHub App to create or update workflow ... without workflows permission` |
+| Releases API | `403 Resource not accessible by integration`, which reads like a missing `contents: write` |
+
+This is why every internal build tags itself `build-<code>` at the moment it is
+uploaded. That is the one instant the ref is permitted — the commit is the tip
+of `master` — and once any ref points at a commit the refusal no longer applies
+to it, which is what lets the promotion add its own tags later.
+
+The `resolve` job checks for the case before anything is written to a store,
+because the alternative is worse than a failed run. On 2026-08-23 a promotion
+reached Play production and was then refused its tag, so the release shipped
+with no record of it, and the next promotion's notes would have repeated
+everything users had already read. A commit built before internal tagging
+existed still has no `build-*` tag; to promote one, push a ref at it yourself
+first:
+
+```bash
+git push origin <commit>:refs/tags/build-<version code>
+```
+
 ## Releasing the desktop apps
 
 Stage 3 of both pipelines. Internally, the installers are built, signed and
@@ -1226,8 +1273,9 @@ Everything else — `chore`, `ci`, `refactor`, `test`, `docs`, `build`, `style` 
 is dropped, along with any subject that is not a conventional commit, since a
 dependency bump means nothing to someone reading a store listing.
 
-Internal builds cover commits since the previous `build-*` tag. Production
-covers commits since the last `released-*` tag, so a user who skipped several
+Internal builds cover commits since the previous `build-*` tag, which the
+internal run creates for itself once the upload succeeds. Production covers
+commits since the last `released-*` tag, so a user who skipped several
 test builds still sees everything that changed for them, and the range ends at
 the promoted build's tag rather than at `HEAD`, so the notes never describe
 code that is not in the artifact being shipped.

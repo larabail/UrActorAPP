@@ -413,6 +413,11 @@ jobs:
     outputs:
       code: ${{ steps.version.outputs.code }}
 
+    # Tagging the build. See the step at the end of this job for why the tag
+    # has to be created here rather than when the build is promoted.
+    permissions:
+      contents: write
+
     env:
       VERSION: ${{ needs.preflight.outputs.version }}
 
@@ -490,6 +495,47 @@ jobs:
             --status completed \
             --release-name "$VERSION (${{ steps.version.outputs.code }})" \
             --notes build/release_notes.json
+
+      # Two things need this tag, and neither can create it for itself.
+      #
+      # GitHub refuses to let an Actions token create any ref -- tag or branch,
+      # by `git push` or through the API -- pointing at a commit that no ref
+      # already points at and whose `.github/workflows/` differ from the tip of
+      # the default branch. The `workflows` permission that would lift the
+      # refusal cannot be granted to GITHUB_TOKEN; it is not one of the keys
+      # `permissions:` accepts. So the promotion run cannot tag the commit it
+      # promotes: by then master has usually moved, and one merge touching any
+      # workflow file is enough. Here the commit is master's tip, which is the
+      # one moment the ref is allowed, and once a ref exists at a commit the
+      # refusal no longer applies to it -- which is what lets the production
+      # run add `released-<code>` and the `v<version>` release later.
+      #
+      # It also gives `tool/release_notes.py` the baseline it looks for by
+      # default, so an internal build's notes cover the commits since the
+      # previous build rather than since the last build that happened to be
+      # tagged.
+      #
+      # After the upload rather than before it, so the tag marks a build that
+      # reached testers, and because the notes above are generated from the
+      # range ending at the previous build tag. A build that fails before this
+      # point burns no version code, so the next run is handed the same one and
+      # moves the tag to where it belongs.
+      - name: Tag the build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ github.sha }}
+          CODE: ${{ steps.version.outputs.code }}
+        run: |
+          set -euo pipefail
+          TAG="build-$CODE"
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG" \
+              -f "sha=$SHA" -F force=true >/dev/null
+          else
+            gh api "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f "ref=refs/tags/$TAG" -f "sha=$SHA" >/dev/null
+          fi
+          echo "tagged $TAG at $SHA"
 
       - name: Keep the bundle for inspection
         uses: actions/upload-artifact@v6
