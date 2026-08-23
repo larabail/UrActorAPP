@@ -86,8 +86,19 @@ import sys
 # not this file's.
 BL_TAG = re.compile(r"\[bl-[0-9a-z]+\]", re.IGNORECASE)
 
-# Anchored to the start of a line, because a body that discusses the trailer --
-# as this repository's own documentation commits do -- is prose, not attribution.
+# Two things keep this off the prose that discusses trailers rather than
+# carrying one, and both are load bearing.
+#
+# The colon is required, which is what excuses `16f5bf4` -- the commit that
+# added AGENTS.md, and so the commit whose body contains the phrase "no
+# Co-authored-by trailer" while introducing the rule forbidding them. A grep for
+# the phrase alone reports five such commits on master; four is the true count.
+#
+# The match is anchored to the start of a line, for the same sentence written
+# with a colon in it. Git only reads a trailer as a trailer at the head of a
+# line, and so does GitHub, so a mid-sentence mention is discussion however it
+# is punctuated. Without this, the one file most likely to quote the rule --
+# the one that states it -- is the one that cannot be committed.
 COAUTHOR_TRAILER = re.compile(r"^[ \t]*co-authored-by:", re.IGNORECASE | re.MULTILINE)
 
 # GitHub's own committer identity on a commit it created for an account.

@@ -114,6 +114,29 @@ class RecognisingATrailer(unittest.TestCase):
         )
         self.assertFalse(carries_coauthor_trailer(message))
 
+    def test_the_commit_that_wrote_the_rule_down_is_not_refused(self):
+        # `16f5bf4`, verbatim and abridged: the commit that added AGENTS.md, and
+        # therefore the commit whose body says "no Co-authored-by trailer" while
+        # introducing the rule against them.
+        #
+        # It is the cheapest possible false positive to write and the most
+        # embarrassing to ship -- a check that cannot accept the document
+        # stating its own rule. A grep for the phrase reports five commits on
+        # master; four is the true count, and this is the fifth. The colon is
+        # what excuses it here, and the line anchor covers the same sentence
+        # written with one.
+        message = (
+            "docs: write down how work gets done in this repository\n"
+            "\n"
+            "AGENTS.md states the rules that actually get changes rejected: no\n"
+            "commits on master, tests alongside new code, both arb files\n"
+            "whenever a string is added, no Co-authored-by trailer, and the\n"
+            "conventional-commit format with a body that explains why rather\n"
+            "than listing files.\n"
+        )
+        self.assertFalse(carries_coauthor_trailer(message))
+        self.assertEqual(check([commit(sha="16f5bf4", message=message)]), [])
+
     def test_an_ordinary_message_carries_none(self):
         self.assertFalse(carries_coauthor_trailer("feat(search): rank by relevance"))
 
