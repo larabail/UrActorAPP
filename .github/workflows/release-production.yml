@@ -19,6 +19,17 @@ name: Release to production
 # exception and rebuilds, because its internal builds only ever existed as
 # artifacts on a run and those expire; it is rebuilt from the promoted commit
 # so it is at least the same source.
+#
+# `targets` chooses which half of that goes out: `phone` is Android and iOS,
+# `computer` is the desktop installers, and `both` -- the default -- is a normal
+# release. It exists because the two halves fail and recover on different
+# timescales. A desktop publish that died on a signing certificate can be sent
+# again on its own without promoting Play a second time, and the second run of
+# an App Store release, days after the first, must not drag desktop along with
+# it. Doing that by hand means setting two or three per-stage inputs correctly
+# every time and being ruined by one of them left at its default; `targets` is
+# one choice that cannot half-apply. The per-stage inputs still narrow things
+# further within whatever it allows.
 on:
   workflow_dispatch:
     inputs:
@@ -30,6 +41,12 @@ on:
         description: 'Commit that built it (blank = fall back, see workflow)'
         required: false
         type: string
+      targets:
+        description: 'What to release: both, phone = Android + iOS, computer = macOS + Windows'
+        required: true
+        default: 'both'
+        type: choice
+        options: ['both', 'phone', 'computer']
       rollout:
         description: 'Android: share of users to release to'
         required: true
@@ -129,11 +146,60 @@ jobs:
       ref: ${{ steps.source.outputs.ref }}
       version: ${{ steps.version.outputs.name }}
       notes: ${{ steps.notes.outputs.text }}
+      android: ${{ steps.plan.outputs.android }}
+      ios_action: ${{ steps.plan.outputs.ios_action }}
+      desktop: ${{ steps.plan.outputs.desktop }}
 
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
+      # `targets` and the three per-stage inputs are combined once, here, and
+      # every gate below reads the answer rather than the form. Written the
+      # obvious way -- `inputs.android == 'promote' && inputs.targets !=
+      # 'computer'` on each job -- the same rule would be spelled out in eight
+      # places across a thousand lines, and the failure mode of getting one of
+      # them wrong is a platform that ships when the release manager said it
+      # should not. There is nothing to keep consistent if it is only said once.
+      #
+      # `targets` only ever subtracts. It cannot turn a stage on that its own
+      # input turned off, so `targets: phone` with `android: skip` is an iOS
+      # release and not an argument to be resolved.
+      - name: Work out which platforms this release is for
+        id: plan
+        env:
+          TARGETS: ${{ inputs.targets }}
+          ANDROID: ${{ inputs.android }}
+          IOS_ACTION: ${{ inputs.ios_action }}
+          DESKTOP: ${{ inputs.desktop }}
+        run: |
+          set -euo pipefail
+          case "$TARGETS" in
+            both)     ;;
+            phone)    DESKTOP=skip ;;
+            computer) ANDROID=skip; IOS_ACTION=skip ;;
+            *)
+              echo "::error::targets '$TARGETS' is not one of both, phone, computer"
+              exit 1
+              ;;
+          esac
+
+          # Every stage off is not a cautious release, it is a run that will
+          # spend half an hour asking someone to approve nothing. Said here so
+          # it is said before the approval gate rather than in the summary
+          # afterwards.
+          if [ "$ANDROID" = skip ] && [ "$IOS_ACTION" = skip ] && [ "$DESKTOP" = skip ]; then
+            echo "::error::This release would ship nothing: targets is '$TARGETS' and every stage it allows is set to skip."
+            exit 1
+          fi
+
+          {
+            echo "android=$ANDROID"
+            echo "ios_action=$IOS_ACTION"
+            echo "desktop=$DESKTOP"
+          } >> "$GITHUB_OUTPUT"
+          echo "targets '$TARGETS' -> android=$ANDROID ios=$IOS_ACTION desktop=$DESKTOP"
 
       # Internal builds are tagged `build-<code>` by the run that produces
       # them, so a version code can be turned back into the commit it was
@@ -210,8 +276,24 @@ jobs:
           REF: ${{ steps.source.outputs.ref }}
           VERSION: ${{ steps.version.outputs.name }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          ANDROID: ${{ steps.plan.outputs.android }}
+          DESKTOP: ${{ steps.plan.outputs.desktop }}
         run: |
           set -euo pipefail
+
+          # Only two stages create a ref: Android's `released-<code>` and the
+          # `v<version>` the desktop release hangs off. An iOS-only run makes
+          # neither, and that is not a hypothetical -- it is the second run of
+          # an App Store release, days after the first, by which time master's
+          # workflows have very likely moved past the promoted commit. Checking
+          # regardless would fail that run for a tag it was never going to
+          # create, which is the one run that cannot simply be started again:
+          # Apple has already approved the version.
+          if [ "$ANDROID" != promote ] && [ "$DESKTOP" != publish ]; then
+            echo "This release creates no tag -- Android is not promoting and desktop is not publishing -- so there is nothing to check."
+            exit 0
+          fi
+
           git fetch --quiet origin "$DEFAULT_BRANCH"
           TAG="v$VERSION"
           AT=$(git ls-remote origin "refs/tags/$TAG" "refs/tags/$TAG^{}" |
@@ -289,24 +371,25 @@ jobs:
       APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
       APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
       VERSION: ${{ needs.resolve.outputs.version }}
+      IOS_ACTION: ${{ needs.resolve.outputs.ios_action }}
 
     steps:
       - uses: actions/checkout@v5
-        if: inputs.ios_action != 'skip'
+        if: needs.resolve.outputs.ios_action != 'skip'
 
       - uses: actions/setup-python@v6
-        if: inputs.ios_action != 'skip'
+        if: needs.resolve.outputs.ios_action != 'skip'
         with:
           python-version: '3.12'
 
       - name: Install the App Store Connect client
-        if: inputs.ios_action != 'skip'
+        if: needs.resolve.outputs.ios_action != 'skip'
         run: pip install --quiet "pyjwt[crypto]" requests
 
       - name: Check the version exists and is ours to change
-        if: inputs.ios_action != 'skip'
+        if: needs.resolve.outputs.ios_action != 'skip'
         env:
-          ACTION: ${{ inputs.ios_action }}
+          ACTION: ${{ needs.resolve.outputs.ios_action }}
           REQUESTED_BUILD: ${{ inputs.ios_build }}
         run: |
           set -uo pipefail
@@ -338,8 +421,8 @@ jobs:
           exit 1
 
       - name: Note that iOS was skipped
-        if: inputs.ios_action == 'skip'
-        run: echo "ios_action is 'skip', so there is nothing to check with Apple."
+        if: needs.resolve.outputs.ios_action == 'skip'
+        run: echo "This release leaves iOS out, so there is nothing to check with Apple."
 
   # One approval for the whole release, rather than one per platform. This job
   # does nothing except hold the `production` environment: every stage below
@@ -376,9 +459,10 @@ jobs:
           echo "Version: $VERSION"
           echo "Commit: $REF"
           echo "Play version code: ${VERSION_CODE:-latest on internal}"
-          echo "Android: ${{ inputs.android }} at ${{ inputs.rollout }} (${{ inputs.status }})"
-          echo "iOS: ${{ inputs.ios_action }}"
-          echo "Desktop: ${{ inputs.desktop }}"
+          echo "Targets: ${{ inputs.targets }}"
+          echo "Android: ${{ needs.resolve.outputs.android }} at ${{ inputs.rollout }} (${{ inputs.status }})"
+          echo "iOS: ${{ needs.resolve.outputs.ios_action }}"
+          echo "Desktop: ${{ needs.resolve.outputs.desktop }}"
           echo "Dry run: ${{ inputs.dry_run }}"
 
   # ------------------------------------------------------------ 0. Release tag
@@ -416,7 +500,7 @@ jobs:
 
     steps:
       - name: Stake the tag at the promoted commit
-        if: ${{ inputs.desktop == 'publish' && !inputs.dry_run }}
+        if: ${{ needs.resolve.outputs.desktop == 'publish' && !inputs.dry_run }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REF: ${{ needs.resolve.outputs.ref }}
@@ -452,10 +536,15 @@ jobs:
   # Otherwise the second run promotes whatever internal builds landed during
   # Apple's review straight to Play production, and publishes a desktop release
   # built from a `master` nobody asked to ship.
+  #
+  # Every gate from here down reads `needs.resolve.outputs.*` rather than
+  # `inputs.*`, because the input is only half the answer once `targets` is in
+  # play. Reading the form directly is how a stage `targets` excluded ships
+  # anyway, and it would look right in review.
   android:
     name: '1 · Android → Play production'
     needs: [approve, resolve, reserve]
-    if: inputs.android == 'promote'
+    if: needs.resolve.outputs.android == 'promote'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -558,7 +647,7 @@ jobs:
   ios:
     name: '2 · iOS → App Store'
     needs: [approve, resolve, reserve]
-    if: inputs.ios_action != 'skip'
+    if: needs.resolve.outputs.ios_action != 'skip'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -594,7 +683,7 @@ jobs:
       # a release normally means.
       - name: Resolve the build to attach
         id: build
-        if: inputs.ios_action == 'submit'
+        if: needs.resolve.outputs.ios_action == 'submit'
         env:
           REQUESTED: ${{ inputs.ios_build }}
         run: |
@@ -624,7 +713,7 @@ jobs:
       # platform, so creating one is not a thing to do speculatively before
       # someone has said the release is going ahead.
       - name: Make sure the version record exists
-        if: inputs.ios_action == 'submit'
+        if: needs.resolve.outputs.ios_action == 'submit'
         env:
           NOTES: ${{ needs.resolve.outputs.notes }}
         run: |
@@ -641,7 +730,7 @@ jobs:
       # waiting rather than putting it in front of users. Releasing is the
       # separate run below, which is the point of splitting the two.
       - name: Submit for review
-        if: inputs.ios_action == 'submit'
+        if: needs.resolve.outputs.ios_action == 'submit'
         run: |
           python tool/appstore.py submit \
             --version "$VERSION" \
@@ -649,7 +738,7 @@ jobs:
             ${{ inputs.dry_run && '--dry-run' || '' }}
 
       - name: Release to the App Store
-        if: inputs.ios_action == 'release'
+        if: needs.resolve.outputs.ios_action == 'release'
         run: |
           python tool/appstore.py release \
             --version "$VERSION" \
@@ -662,9 +751,9 @@ jobs:
           {
             echo '### App Store after this run'
             echo ''
-            echo "- action: \`${{ inputs.ios_action }}\`"
+            echo "- action: \`${{ needs.resolve.outputs.ios_action }}\`"
             echo "- version: \`$VERSION\`"
-            if [ "${{ inputs.ios_action }}" = "submit" ]; then
+            if [ "${{ needs.resolve.outputs.ios_action }}" = "submit" ]; then
               echo "- build: \`${{ steps.build.outputs.number }}\`"
             fi
             echo "- dry run: \`${{ inputs.dry_run }}\`"
@@ -673,15 +762,15 @@ jobs:
             python tool/appstore.py status || echo '(could not read state)'
             echo '```'
             echo ''
-            if [ "${{ inputs.ios_action }}" = "submit" ]; then
+            if [ "${{ needs.resolve.outputs.ios_action }}" = "submit" ]; then
               echo 'Apple reviews this on its own schedule, usually a day or two.'
               echo 'It was submitted for **manual** release, so approval leaves it'
               echo 'at PENDING_DEVELOPER_RELEASE rather than going live. Run this'
               echo 'pipeline again with `ios_action: release` when you want users'
-              echo 'to have it — and set `android: skip` and `desktop: skip` on'
-              echo 'that run, or it will promote whatever has landed on `master`'
-              echo 'in the meantime to Play production and publish a desktop'
-              echo 'release nobody asked for.'
+              echo 'to have it — and set `targets: phone` on that run, or it will'
+              echo 'publish a desktop release built from whatever has landed on'
+              echo '`master` in the meantime. Leave `android: skip` set too, since'
+              echo '`targets: phone` still allows the Play promotion.'
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -701,7 +790,7 @@ jobs:
   desktop_macos:
     name: '3 · Desktop → build macOS'
     needs: [approve, resolve]
-    if: inputs.desktop == 'publish'
+    if: needs.resolve.outputs.desktop == 'publish'
     runs-on: macos-latest
     timeout-minutes: 90
 
@@ -971,7 +1060,7 @@ jobs:
   desktop_windows:
     name: '3 · Desktop → build Windows'
     needs: [approve, resolve]
-    if: inputs.desktop == 'publish'
+    if: needs.resolve.outputs.desktop == 'publish'
     runs-on: windows-latest
     timeout-minutes: 60
 
@@ -1031,7 +1120,7 @@ jobs:
   desktop_publish:
     name: '3 · Desktop → publish'
     needs: [approve, resolve, reserve, desktop_macos, desktop_windows]
-    if: inputs.desktop == 'publish'
+    if: needs.resolve.outputs.desktop == 'publish'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -1170,6 +1259,7 @@ jobs:
           DESKTOP_WINDOWS: ${{ needs.desktop_windows.result }}
           DESKTOP_PUBLISH: ${{ needs.desktop_publish.result }}
           DRY_RUN: ${{ inputs.dry_run }}
+          TARGETS: ${{ inputs.targets }}
         run: |
           set -euo pipefail
 
@@ -1208,10 +1298,16 @@ jobs:
               echo '> **Dry run.** Nothing was written to any store.'
               echo ''
             fi
+            # Said before the table, because a row reading "skipped" is
+            # otherwise indistinguishable from a stage that was meant to run.
+            if [ "$TARGETS" != both ]; then
+              echo "> **$TARGETS only.** The other platforms are still on their previous release."
+              echo ''
+            fi
             echo '| # | Platform | Result | Detail |'
             echo '|---|---|---|---|'
             echo "| 1 | Android · Play | $(mark "$ANDROID") | ${CODE:-—} — $ANDROID_DETAIL |"
-            echo "| 2 | iOS · App Store | $(mark "$IOS") | \`${{ inputs.ios_action }}\` |"
+            echo "| 2 | iOS · App Store | $(mark "$IOS") | \`${{ needs.resolve.outputs.ios_action }}\` |"
             echo "| 3 | Desktop | $(mark "$DESKTOP") | \`v$VERSION\` and downloads.uractor.com |"
             echo ''
             echo "Promoted from commit \`$REF\`."

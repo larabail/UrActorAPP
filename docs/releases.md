@@ -618,16 +618,21 @@ is deliberately two runs rather than one.
 | Input | Meaning |
 | --- | --- |
 | `ios_action` | `submit` sends a version to Apple for review; `release` publishes one Apple has already approved; `skip` leaves iOS alone |
+| `targets` | Set to `phone` on the second run, so desktop stays out of it |
 | `version` | Marketing version, e.g. `3.14.2`. Created in App Store Connect if it is not there yet. Blank reads it from the promoted commit |
 | `ios_build` | Only for `submit`. Blank uses the newest build Apple holds |
 | `dry_run` | Resolves and checks everything, then stops before writing |
 
-The second run is the one that catches people out. **Set `android: skip` and
-`desktop: skip` on it.** Left at their defaults, the Android stage promotes
+The second run is the one that catches people out. **Set `targets: phone` and
+`android: skip` on it.** Left at their defaults, the Android stage promotes
 whatever internal builds landed during Apple's day or two of review — code
 nobody chose to release — straight to Play production, and the desktop stage
 publishes a GitHub release and a downloads-site manifest built from `master` as
 it is now rather than from what Apple approved.
+
+`targets: phone` covers the desktop half of that on its own; the Play promotion
+is a phone target too, so `android: skip` is still needed alongside it. That is
+one field fewer to get right than it used to be, not none.
 
 Neither is a rejected write that fails loudly. Play accepts a higher version
 code happily, so the first sign of it would be users on a build that was never
@@ -816,6 +821,7 @@ platforms.
 |---|---|
 | `version_code` | Play version code to promote. Blank promotes the latest internal build |
 | `commit` | The commit that produced it, from the internal run's summary |
+| `targets` | `both`, `phone` (Android + iOS), or `computer` (macOS + Windows). See [Releasing to one half](#releasing-to-one-half) |
 | `rollout` | Android: share of users; start small. `100%` releases to everyone |
 | `status` | Android: `inProgress` goes live, `draft` stages it in Play for review |
 | `android` | `promote` or `skip` |
@@ -828,6 +834,36 @@ platforms.
 Every stage can be skipped independently, and that is load bearing rather than a
 convenience — see [Releasing to the App Store](#releasing-to-the-app-store) for
 the run where it matters.
+
+### Releasing to one half
+
+`targets` is the coarse version of those three inputs, and the one to reach for
+first. `both` is a normal release and is the default; `phone` is Android and
+iOS; `computer` is the desktop installers.
+
+It exists because the halves fail and recover on different timescales. A desktop
+publish that died on an expired signing certificate wants sending again on its
+own, without promoting Play a second time. The second run of an App Store
+release, days after the first, must not drag desktop along with it. Both were
+already possible by setting two or three per-stage inputs correctly, which is
+exactly the kind of thing that goes wrong once and ships a platform nobody chose
+— and does so quietly, because Play accepts a higher version code happily.
+
+`targets` only ever subtracts. It cannot switch a stage on that its own input
+turned off, so `targets: phone` with `android: skip` is an iOS release rather
+than an argument between two fields. Use the per-stage inputs to narrow further
+within it.
+
+A combination that would ship nothing — `targets: computer` with
+`desktop: skip` — fails in `resolve`, before anyone is asked to approve a run
+with nothing in it.
+
+The three inputs are resolved into a plan once, in `resolve`, and every gate
+reads that plan rather than the form. Written the obvious way the same rule
+would be spelled out in eight places, and getting one of them wrong releases a
+platform `targets` excluded — a mistake that looks correct in review and
+survives a dry run. `tool/test_release_production_targets.py` fails on any gate
+that reads `inputs.android`, `inputs.ios_action` or `inputs.desktop` directly.
 
 Approve the deployment when prompted — once, for the whole release. To widen or
 halt an Android rollout afterwards, use the Play Console: a halted rollout stops
