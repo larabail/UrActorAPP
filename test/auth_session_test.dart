@@ -136,4 +136,60 @@ void main() {
       expect(metadata['Movies:1']!.title, 'Account B title');
     });
   });
+
+  group('AuthSession.deleteAccount', () {
+    late FakeFirebaseFirestore firestore;
+    var deleteCalls = 0;
+
+    setUp(() {
+      deleteCalls = 0;
+      installTestUser(uid: 'closing');
+      firestore = installFakeFirestore();
+      installHttpStub();
+      AuthSession.setAccountDeletionForTest(
+        reauthenticate: (password) async {
+          if (password != 'correct') {
+            throw StateError('wrong-password');
+          }
+        },
+        authDelete: () async {
+          deleteCalls++;
+        },
+      );
+      addTearDown(AuthSession.resetForTest);
+    });
+
+    test('the right password erases the data and then the login', () async {
+      await seedUserDoc(firestore, 'closing', 'Movies', {
+        'Movies': ['27205'],
+      });
+
+      await AuthSession.deleteAccount(uid: 'closing', password: 'correct');
+
+      expect((await firestore.collection('closing').get()).docs, isEmpty);
+      expect(deleteCalls, 1);
+    });
+
+    test('a wrong password destroys nothing', () async {
+      // This is the bug the ordering exists to prevent. The wipe used to run
+      // before the password was checked, so a typo deleted the whole diary
+      // and then failed to delete the account, leaving the user signed in to
+      // an empty one with no way back.
+      await seedUserDoc(firestore, 'closing', 'Movies', {
+        'Movies': ['27205'],
+      });
+
+      await expectLater(
+        AuthSession.deleteAccount(uid: 'closing', password: 'mistyped'),
+        throwsA(isA<StateError>()),
+      );
+
+      final left = await firestore.collection('closing').get();
+      expect(left.docs, hasLength(1));
+      expect(left.docs.single.data(), {
+        'Movies': ['27205'],
+      });
+      expect(deleteCalls, 0, reason: 'the account must still exist');
+    });
+  });
 }

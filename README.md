@@ -126,6 +126,9 @@ window rather than the device it is on (see [Platforms](#platforms) and
   ranks (`functions/people_scores.js`, `lib/profile.dart`).
 - English and Spanish, switchable at runtime from settings
   (`lib/popups/settings_pop_up.dart`).
+- Delete your account, from Settings, confirmed with your password
+  (`lib/common/auth_session.dart`). See
+  [Deleting an account](#deleting-an-account).
 
 ## Tech stack
 
@@ -714,7 +717,9 @@ lib/
     firebase/                One service per domain: calendar, favorites,
                              OMDB lookup, playlist, progress,
                              recommendation, review, social, watched,
-                             watchlist, plus firestore_core and firebaseutils
+                             watchlist, plus account_deletion (everything an
+                             account leaves behind), firestore_core and
+                             firebaseutils
   popups/                    Dialogs: add to calendar, add friends seen with,
                              rating, share, settings, list add/edit/join,
                              grant access, movie add, tv add, profile sections
@@ -924,6 +929,58 @@ record's existence is the marker, so it happens exactly once per account.
 Push notifications are not implemented. The old friend-request notification
 trigger was removed because the app never registers an FCM token and the legacy
 FCM send API it used was decommissioned.
+
+## Deleting an account
+
+Google Play requires that an app offering accounts also deletes them, and that
+the deletion reaches the data as well as the login. The data model makes that
+less obvious than it sounds, so the whole sequence lives in one place —
+`AuthSession.deleteAccount`, which calls `AccountDeletionService.purge`
+(`lib/common/firebase/account_deletion_service.dart`).
+
+A user owns a top-level collection named after their uid, and it is tempting to
+believe deleting it is the job. It is not. Three things sit elsewhere and used
+to survive an account in full:
+
+| What | Where it lives | Why the collection wipe missed it |
+| --- | --- | --- |
+| Playlists | `Watchlists/{listId}` | Top-level, not under the owner |
+| The claimed username | `usernames/{docId}` | Top-level, and it holds the uid |
+| Friend requests | `{uid}/Friends/FriendRequests/{senderUid}` | A subcollection, and Firestore does not delete those with their parent document |
+
+The uid also stayed in the `friends` array of everyone who had added the
+account, leaving a friends-list entry that could never load.
+
+The purge deletes the playlists the account owned, steps it out of the ones it
+had merely joined rather than destroying someone else's list, releases the
+username so the name can be claimed again, drains the friend requests, and
+removes the uid from each friend's list.
+
+Two orderings matter and are easy to get wrong:
+
+- **Re-authenticate first.** The password check used to run *after* the wipe, so
+  a typo destroyed the diary and then failed to delete the account it belonged
+  to. There is no way back from that.
+- **Erase before deleting the login.** Every one of these writes is authorised
+  against `request.auth`, so deleting the Firebase user first leaves the client
+  holding data it may no longer touch.
+
+Writes into other people's documents are best effort. They are the ones most
+likely to be refused — a friend may have removed the user already — and a
+refusal must not strand someone with an account they cannot close. Writes to the
+account's own data are not: if those fail the caller hears about it rather than
+going on to delete the login.
+
+What this does **not** reach is a friend request the account sent to someone who
+never answered. It sits under the recipient, keyed by the sender, and nothing
+records who was asked, so the client cannot find it without reading every user's
+collection. Closing that needs a Cloud Function running with admin credentials.
+
+The user-facing description of all this is
+[uractor.com/profile.html](https://uractor.com/profile.html), which is the URL
+declared in the Play Console Data safety form. If this behaviour changes, that
+page has to change with it — it lives in
+[larabail/uractor](https://github.com/larabail/uractor).
 
 ## Deploying the rules
 
