@@ -294,6 +294,12 @@ jobs:
   # The check exempts a pull request confined to the release workflow's
   # paths-ignore, reading that block rather than a list of its own, so it can
   # only ever ask for a version that some build will actually carry.
+  #
+  # It also checks what the branch's commit messages and authorship will do to
+  # master, which belongs here because the two questions are asked of the same
+  # thing -- the commits between the merge base and the head -- and because the
+  # job name is already required. See the hygiene step for why it is not a job
+  # of its own.
   version:
     name: Version
     # There is no version bump to check outside a pull request: the check reads
@@ -338,6 +344,40 @@ jobs:
             --base "$BASE" \
             --head "$HEAD_SHA" \
             --title "$PR_TITLE"
+
+      # A step in this job rather than a job of its own, deliberately. Branch
+      # protection on `master` matches required checks by name and requires
+      # exactly "Analyze, test and build", "Functions", "Version" and
+      # "Firestore rules". A new job would report, go red, and block nothing,
+      # because nothing would be waiting for it.
+      #
+      # Separate from the step above rather than appended to it so that a
+      # failure names itself. Both run `set -e`, so sharing a step would mean a
+      # version complaint hid every hygiene complaint until it was fixed, and
+      # the branch would be told about its problems one round trip at a time.
+      #
+      # Nothing from the pull request is interpolated into the script, for the
+      # reason the step above gives. Note what is NOT passed: the author login.
+      # `github.event.pull_request.user.login` is available and is not used,
+      # because a login is not a git identity -- resolving one to the other
+      # needs an API call, and an account that has not turned on its noreply
+      # address has an email with no login in it at all. The check compares each
+      # commit's author with its committer instead, which is already in the
+      # clone and needs nothing. `tool/check_commit_hygiene.py` argues it out.
+      - name: Check commit hygiene
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          # The raw base, not the merge base the step above computed: the check
+          # derives its own from these two, so running it by hand on a branch
+          # needs no ceremony and cannot be handed a base that means something
+          # different from the one CI uses.
+          python tool/check_commit_hygiene.py \
+            --base "$BASE_SHA" \
+            --head "$HEAD_SHA"
 
   # The iOS half of the pull request, and the reason this workflow has no
   # `paths-ignore`.

@@ -1,6 +1,7 @@
 #!/bin/sh
 #
-# Refuses a commit that does not analyze cleanly or does not pass the tests.
+# Refuses a commit made without a git identity, or one that does not analyze
+# cleanly or does not pass the tests.
 #
 # This is not enabled by cloning. Turn it on once per checkout with:
 #
@@ -14,6 +15,45 @@
 # middle of a conflict. Do not make a habit of it.
 
 set -e
+
+# An identity first, before anything else this hook does.
+#
+# Git does not require one. With `user.name` and `user.email` unset it invents
+# an author from the operating system -- the full name in the account record
+# plus `$USER@$(hostname)` -- and commits perfectly happily under an address
+# that belongs to no GitHub account. A squash merge then attributes that
+# stranger as a co-author of the commit that lands on master, and the repository
+# grows a `Co-authored-by:` trailer that AGENTS.md forbids outright. Two of them
+# reached master this way, both delivered by `bl`, whose worktrees inherit
+# whatever identity the shell that ran them had -- which for an agent is
+# routinely none.
+#
+# The exit status is the whole test. `git config user.email` fails when nothing
+# sets it, which is exactly the state that produces a synthesized author and no
+# other. Matching the invented address by shape -- a hostname, a missing dot in
+# the domain -- would refuse people whose real address happens to look like
+# that, and would be fooled the moment the machine is renamed.
+#
+# This runs before the flutter check and before the prose skip because a commit
+# with no identity is wrong whatever it contains: a typo fix carries the same
+# bad author into the same trailer as a rewrite of the app. It is also the
+# reason `bl close` cannot deliver one, which is the point.
+committer_name=$(git config user.name || true)
+committer_email=$(git config user.email || true)
+
+if [ -z "$committer_name" ] || [ -z "$committer_email" ]; then
+  echo "pre-commit: this repository has no git identity configured, so git" >&2
+  echo "would invent one from your account and hostname. GitHub does not" >&2
+  echo "recognise that address, and squash merging turns it into a" >&2
+  echo "Co-authored-by: trailer on master, which AGENTS.md forbids." >&2
+  echo "" >&2
+  echo "  git config user.name 'Your Name'" >&2
+  echo "  git config user.email 'ID+login@users.noreply.github.com'" >&2
+  echo "" >&2
+  echo "Your noreply address is on https://github.com/settings/emails." >&2
+  echo "Use --global to set it once for every checkout on this machine." >&2
+  exit 1
+fi
 
 if ! command -v flutter >/dev/null 2>&1; then
   echo "pre-commit: flutter is not on PATH, skipping analyze and tests." >&2
