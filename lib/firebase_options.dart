@@ -27,11 +27,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.macOS:
         return macos;
       case TargetPlatform.windows:
-        // The Windows SDK reads the same registration the web app uses -- the
-        // desktop build is not a separate app in the Firebase console. Running
-        // `flutterfire configure` again and choosing Windows will replace this
-        // with a generated `windows` entry.
-        return web;
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'Firebase has no Linux plugin, so the app is not built for Linux. '
@@ -43,6 +39,25 @@ class DefaultFirebaseOptions {
         );
     }
   }
+
+  /// The key the desktop builds authenticate with.
+  ///
+  /// Every other key here is restricted to the callers allowed to use it: the
+  /// web key by HTTP referrer, the Android key by package name and signing
+  /// certificate, the iOS key by bundle identifier. A desktop app sends none
+  /// of those three, so any of those restrictions refuses it with 403 before a
+  /// password is looked at — every account, every correct password, alike.
+  ///
+  /// This key carries no application restriction, because that is the only
+  /// setting a desktop caller can satisfy. It is restricted by API instead, to
+  /// the services the app calls, and what stands between it and the data is
+  /// `firestore.rules` rather than the question of who may hold the key.
+  ///
+  /// Do not point a desktop platform at one of the other keys to save adding
+  /// one. That is the defect this replaced, and it fails identically on both
+  /// desktop platforms while looking like a wrong password.
+  static const String _desktopApiKey =
+      'AIzaSyCpeLg1aoAJNTOWPTlPgGwR40JCA9047QM';
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyC8psrVT8D5JZ0CkOsd5sIk3KnUxew5Av4',
@@ -77,7 +92,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyAQ_BQjS5zbW24Pj5wbdjcjbfYboCa_feU',
+    apiKey: _desktopApiKey,
     appId: '1:805906181872:ios:a2dafa8584ed17dd0d9c35',
     messagingSenderId: '805906181872',
     projectId: 'actordb-cf981',
@@ -86,5 +101,19 @@ class DefaultFirebaseOptions {
     iosClientId:
         '805906181872-ai2a1k4rqe3n4ab5fr0pb5ujig4uad2k.apps.googleusercontent.com',
     iosBundleId: 'com.example.uractor',
+  );
+
+  /// Windows has no registration of its own in the Firebase console, so it
+  /// borrows the web app's id — that part was never the problem. What it
+  /// cannot borrow is the web key, which is restricted by HTTP referrer and
+  /// refuses a caller that sends none.
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: _desktopApiKey,
+    appId: '1:805906181872:web:27676dc74c0d40340d9c35',
+    messagingSenderId: '805906181872',
+    projectId: 'actordb-cf981',
+    authDomain: 'actordb-cf981.firebaseapp.com',
+    databaseURL: 'https://actordb-cf981-default-rtdb.firebaseio.com',
+    storageBucket: 'actordb-cf981.appspot.com',
   );
 }
