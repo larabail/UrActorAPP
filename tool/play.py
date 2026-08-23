@@ -24,19 +24,29 @@ import json
 import os
 import sys
 
-from google.oauth2 import service_account
-from google.auth.transport.requests import AuthorizedSession
-
 PACKAGE = "com.uractor.uractorapp"
 API = "https://androidpublisher.googleapis.com/androidpublisher/v3"
 UPLOAD = "https://androidpublisher.googleapis.com/upload/androidpublisher/v3"
 SCOPES = ["https://www.googleapis.com/auth/androidpublisher"]
 
 
-def session() -> AuthorizedSession:
+def session() -> "AuthorizedSession":
     raw = os.environ.get("PLAY_SERVICE_ACCOUNT_JSON")
     if not raw:
         sys.exit("PLAY_SERVICE_ACCOUNT_JSON is not set.")
+
+    # Imported here rather than at the top so the module can be imported --
+    # and its rollout arithmetic tested -- without google-auth installed. The
+    # pull request workflow runs those tests on a bare Python, and installing
+    # a Play API client to exercise a function that never speaks to Play would
+    # be a poor trade. After the credential check, so a run with neither the
+    # secret nor the dependency still says which one it wanted first.
+    try:
+        from google.oauth2 import service_account
+        from google.auth.transport.requests import AuthorizedSession
+    except ImportError as exc:
+        sys.exit(f"{exc}. Install it with: pip install google-auth requests")
+
     try:
         info = json.loads(raw)
     except json.JSONDecodeError as exc:
@@ -101,6 +111,72 @@ class Edit:
         return r.json()
 
 
+class PlayError(ValueError):
+    """A release that Play would refuse, caught before an edit is opened."""
+
+
+def rollout_plan(status: str, rollout: float) -> tuple[str, float | None]:
+    """Reconcile a requested status and rollout into what Play will accept.
+
+    Play has no such thing as a 100% staged rollout. `userFraction` is the
+    share a release is *held back* to, so the API takes it only alongside
+    `inProgress` or `halted`, and only in [0, 1). Asking for `inProgress` at
+    1.0 is not read as "everyone" — it fails the whole edit with
+
+        User fraction must be greater than or equal to 0 and lower than one.
+
+    which abandons the edit and publishes nothing. A rollout that reaches
+    everyone is `completed`, carrying no fraction at all, so that is what a
+    request for 100% is turned into here.
+
+    Only an exact 1.0 is treated that way. Anything above it is a caller that
+    passed a percentage where a fraction belongs, and quietly reading 20 as
+    "release to everyone" is the worst possible way to be wrong.
+    """
+    if status not in ("inProgress", "halted"):
+        return status, None
+
+    if not 0.0 <= rollout <= 1.0:
+        raise PlayError(
+            f"rollout must be a fraction between 0 and 1, not {rollout}. "
+            "20% is 0.2."
+        )
+
+    if rollout == 1.0:
+        if status == "halted":
+            # A halted release is one that was stopped part way. At 100% there
+            # is nothing left to stop, so this is a request that cannot be
+            # honoured rather than one to reinterpret.
+            raise PlayError(
+                "a halted release cannot be at 100%: halting stops a rollout "
+                "short of everyone. Halt at the fraction it reached, or use "
+                "--status completed to release to everyone."
+            )
+        return "completed", None
+
+    return status, rollout
+
+
+def describe(status: str, fraction: float | None) -> str:
+    """How a resolved release reads in a log line or a run summary."""
+    if fraction is None:
+        return status
+    return f"{status} at {fraction:.0%}"
+
+
+def write_outputs(code: int, rollout: str) -> None:
+    """Hand the version code and what it was released as back to the workflow.
+
+    The run summary reports what Play was actually told, not what the operator
+    typed into the form, because the two differ whenever a rollout is asked
+    for at 100%.
+    """
+    if out := os.environ.get("GITHUB_OUTPUT"):
+        with open(out, "a", encoding="utf-8") as fh:
+            fh.write(f"version-code={code}\n")
+            fh.write(f"rollout={rollout}\n")
+
+
 def load_notes(path: str | None, languages: set[str]) -> list[dict]:
     """Read release notes, keeping only languages the listing actually has.
 
@@ -131,6 +207,7 @@ def cmd_next_code(args) -> None:
 
 
 def cmd_upload(args) -> None:
+    status, fraction = rollout_plan(args.status, args.rollout)
     s = session()
     with Edit(s) as edit:
         languages = edit.listing_languages()
@@ -150,24 +227,24 @@ def cmd_upload(args) -> None:
         release = {
             "name": args.release_name or str(code),
             "versionCodes": [str(code)],
-            "status": args.status,
+            "status": status,
             "releaseNotes": load_notes(args.notes, languages),
         }
-        if args.status == "inProgress":
-            release["userFraction"] = args.rollout
+        if fraction is not None:
+            release["userFraction"] = fraction
 
         r = s.put(edit.url(f"/tracks/{args.track}"),
                   json={"track": args.track, "releases": [release]})
         edit.check(r, "tracks.update")
         edit.commit()
 
-    print(f"released version code {code} to '{args.track}' ({args.status})")
-    if out := os.environ.get("GITHUB_OUTPUT"):
-        with open(out, "a", encoding="utf-8") as fh:
-            fh.write(f"version-code={code}\n")
+    detail = describe(status, fraction)
+    print(f"released version code {code} to '{args.track}' ({detail})")
+    write_outputs(code, detail)
 
 
 def cmd_promote(args) -> None:
+    status, fraction = rollout_plan(args.status, args.rollout)
     s = session()
     with Edit(s) as edit:
         code = args.version_code
@@ -208,22 +285,20 @@ def cmd_promote(args) -> None:
         release = {
             "name": args.release_name or str(code),
             "versionCodes": [str(code)],
-            "status": args.status,
+            "status": status,
             "releaseNotes": load_notes(args.notes, languages),
         }
-        if args.status == "inProgress":
-            release["userFraction"] = args.rollout
+        if fraction is not None:
+            release["userFraction"] = fraction
 
         r = s.put(edit.url(f"/tracks/{args.target}"),
                   json={"track": args.target, "releases": [release]})
         edit.check(r, "tracks.update")
         edit.commit()
 
-    detail = f" at {args.rollout:.0%}" if args.status == "inProgress" else ""
-    print(f"promoted {code} to '{args.target}' ({args.status}{detail})")
-    if out := os.environ.get("GITHUB_OUTPUT"):
-        with open(out, "a", encoding="utf-8") as fh:
-            fh.write(f"version-code={code}\n")
+    detail = describe(status, fraction)
+    print(f"promoted {code} to '{args.target}' ({detail})")
+    write_outputs(code, detail)
 
 
 def main() -> None:
@@ -240,7 +315,8 @@ def main() -> None:
     up.add_argument("--status", default="completed",
                     choices=["completed", "draft", "inProgress", "halted"])
     up.add_argument("--rollout", type=float, default=1.0,
-                    help="user fraction for inProgress, e.g. 0.1")
+                    help="user fraction for inProgress, e.g. 0.1. 1.0 means "
+                         "everyone, which Play expresses as --status completed")
     up.add_argument("--release-name")
     up.add_argument("--notes", help="JSON file of {language: text}")
     up.set_defaults(func=cmd_upload)
@@ -252,13 +328,20 @@ def main() -> None:
                     help="defaults to the latest release on --source")
     pr.add_argument("--status", default="inProgress",
                     choices=["completed", "draft", "inProgress", "halted"])
-    pr.add_argument("--rollout", type=float, default=0.2)
+    pr.add_argument("--rollout", type=float, default=0.2,
+                    help="user fraction for inProgress, e.g. 0.2. 1.0 means "
+                         "everyone and is sent as a completed release")
     pr.add_argument("--release-name")
     pr.add_argument("--notes", help="JSON file of {language: text}")
     pr.set_defaults(func=cmd_promote)
 
     args = p.parse_args()
-    args.func(args)
+    try:
+        args.func(args)
+    except PlayError as exc:
+        # A release Play would refuse is reported here rather than costing a
+        # round trip and an abandoned edit to find out.
+        sys.exit(str(exc))
 
 
 if __name__ == "__main__":
