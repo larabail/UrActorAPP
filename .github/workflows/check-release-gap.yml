@@ -1,11 +1,11 @@
 name: Check master reached testers
 
-# The premise stated in AGENTS.md and README.md is that every merge to master
-# builds and ships to internal testers, and the version policy rests on it. That
-# premise has been broken at least once without anyone noticing: a merge
-# produced no workflow run at all -- not queued, not failed, not cancelled --
-# and nothing shipped. There was no red X to see, because there was no run to be
-# red.
+# The premise stated in AGENTS.md and README.md is that a merge to master which
+# changes anything a build can contain ships to internal testers, and the
+# version policy rests on it. That premise has been broken at least once without
+# anyone noticing: a merge produced no workflow run at all -- not queued, not
+# failed, not cancelled -- and nothing shipped. There was no red X to see,
+# because there was no run to be red.
 #
 # This is the watchdog. It asks once a day whether every commit on master that
 # should have produced a release actually did, and says so loudly when one did

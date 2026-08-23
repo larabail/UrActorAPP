@@ -14,9 +14,9 @@ sent back.
 
 ### Never commit to `master`
 
-`master` is the release branch: every merge to it builds and ships to internal
-testers automatically. All work happens on a branch and lands through a pull
-request.
+`master` is the release branch: a merge to it that changes anything a build can
+contain builds and ships to internal testers automatically. All work happens on
+a branch and lands through a pull request.
 
 Branch names are `kind/short-description`, using the same kinds as the commit
 convention below — `feat/playlist-reordering`, `fix/search-encoding`,
@@ -144,9 +144,9 @@ is never major, however large the diff. Mark it by putting `!` before the colon
 Bumping further than required is always allowed — nothing overrules a person who
 decides a release deserves more.
 
-Every merge to master builds and ships to internal testers, which is why this
-matters: without a bump, two different builds reach testers under the same name
-and a bug report cannot be tied to a revision.
+A merge to master that changes anything a build can contain ships to internal
+testers, which is why this matters: without a bump, two different builds reach
+testers under the same name and a bug report cannot be tied to a revision.
 
 `tool/check_version_bump.py` enforces this on every pull request, reading both
 the title and the commits and taking the larger requirement. The title counts
@@ -154,13 +154,22 @@ because pull requests are squash merged, so it is the only subject that reaches
 master.
 
 One exemption, by path rather than by kind: a pull request that changes nothing
-outside `web/downloads/` needs no bump at all. That directory is the downloads
-site, which is deployed to Firebase Hosting and never packaged into a build, so
-no version of the app differs because of it. The commit is still honestly a
-`feat` or a `fix` — it is a public web page — and bumping anyway is allowed. A
-change of that shape also skips the Flutter and iOS builds and does not reach
-internal testers; see
-[what a downloads-only change skips](README.md#what-a-downloads-only-change-skips).
+a build can contain needs no bump at all, whatever its title says. Workflows,
+composite actions, `tool/`, `tools/`, `.githooks/`, `firestore-tests/`, the
+downloads site under `web/downloads/`, prose and checkout configuration are all
+on that list. A change to any of them can be honestly a `feat` or a `fix` — the
+downloads site is a public web page, and a broken release script is a real bug —
+but the app it would rename is byte for byte the app testers already have.
+
+That list is not written down twice. It is the `paths-ignore:` block of
+`.github/workflows/release-internal.yml`, which is what GitHub itself consults
+when deciding whether the merge ships anything, and both the version check and
+the release watchdog read it from there through `tool/release_paths.py`. Add a
+path to that block and all three change together. Bumping anyway is always
+allowed.
+
+A change of that shape also skips the release entirely; see
+[what does not reach a tester](README.md#what-does-not-reach-a-tester).
 
 ## Pull requests
 
@@ -287,19 +296,31 @@ when you genuinely need to commit something that does not build.
 
   On `master` the consequence is worse than a pull request with no checks: the
   merge ships nothing, and the next release quietly carries two changes under
-  one build. **If you merge something and no release run appears, dispatch
-  "Release to internal testing" by hand from the Actions tab.**
+  one build. **If you merge something that changes what a build contains and no
+  release run appears, dispatch "Release to internal testing" by hand from the
+  Actions tab.** A merge confined to the release workflow's `paths-ignore` —
+  workflows, `tool/`, prose — correctly produces no run and needs nothing doing;
+  see [what does not reach a tester](README.md#what-does-not-reach-a-tester).
   `.github/workflows/check-release-gap.yml` also notices within a day and files
-  an issue, but it is a backstop, not a substitute for looking.
+  an issue, but it is a backstop, not a substitute for looking. It reads the
+  same filter, so it stays quiet about the merges that were never meant to ship.
 
   Note what the rule is *not*. This is about the commit message, and it can
   happen to any commit touching any file — a feature branch whose author was
   documenting the trap is the likeliest place for it. It is tempting to
   remember it as "changing a workflow file skips the release", because the one
-  commit it happened to did both. There is now a counterexample: the merge that
-  added `check-release-gap.yml` (`5612c18`) added a workflow file and produced
-  a release run normally. Touching `.github/workflows/` is therefore not
-  sufficient to suppress anything.
+  commit it happened to did both. That reading was already wrong on the
+  evidence: the merge that added `check-release-gap.yml` (`5612c18`) added a
+  workflow file and produced a release run normally.
+
+  It is now wrong in a second, more confusing way, so hold the two apart. A
+  merge whose files are *all* inside `paths-ignore` — which since this was
+  written includes `.github/` — produces no release run **by design**, and that
+  is not this bug. The tell is what else the merge touched: a merge of workflows
+  alone is silent on purpose, while a merge of workflows *and* a line of `lib/`
+  must ship, because GitHub skips a run only when every changed path matches.
+  A design that skips is fine and the watchdog knows about it; a message that
+  suppresses is the bug, and the watchdog reports it.
 
   That counterexample comes with one qualification, because the difference
   matters. `5612c18` was merged with a personal access token. GitHub's
@@ -309,6 +330,13 @@ when you genuinely need to commit something that does not build.
   only confirmed cause**, and if credential-based suppression exists it depends
   on how the push was made, not on what the diff contained.
 
+  There is a live example of the integration-token rule in a neighbouring
+  place, and it is worth knowing it is a different rule with a similar smell:
+  `GITHUB_TOKEN` cannot push *any* ref whose `.github/workflows/` content
+  differs from the default branch's, which is why the production release tags
+  through the REST API rather than `git push`. That one fails loudly. The
+  suppression above is the one that fails silently.
+
   And note *where* it bites. A pull request that touches only workflow files
   still gets its checks, and those checks run the edited definitions, because
   `pr.yml` has no path filter and a pull request is evaluated from its own merge
@@ -317,7 +345,8 @@ when you genuinely need to commit something that does not build.
   which is confirmed, or from integration-token suppression, which is
   documented in general but is not what the evidence here isolates. Green checks
   on the pull request tell you the workflow is correct; they tell you nothing
-  about whether merging it will produce a release.
+  about whether merging it will produce a release — and since a workflow-only
+  merge is now meant to produce none, they never will.
 - **Git exports `GIT_DIR` into every hook**, and it beats the repository a
   nested tool picks for itself. `flutter` asks git for its own version, so a
   hook that runs it without clearing `GIT_DIR`, `GIT_WORK_TREE` and their

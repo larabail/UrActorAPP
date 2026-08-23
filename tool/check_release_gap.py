@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Report when master has moved without reaching internal testers.
 
-Every merge to master is supposed to build and ship, and the version policy in
-AGENTS.md rests on that. There is more than one way it silently does not, and
-the failure looks identical from outside every time: the merge succeeds, no run
-is ever created -- not queued, not failed, not cancelled -- nothing goes red,
-nobody is notified, and the next release quietly carries two changes under one
-build.
+A merge to master that changes anything a build can contain is supposed to build
+and ship, and the version policy in AGENTS.md rests on that. There is more than
+one way it silently does not, and the failure looks identical from outside every
+time: the merge succeeds, no run is ever created -- not queued, not failed, not
+cancelled -- nothing goes red, nobody is notified, and the next release quietly
+carries two changes under one build.
 
 Two causes are known:
 
@@ -51,9 +51,11 @@ several commits produces one run, at the tip of the push, so the commits under
 it never had a run of their own and their absence means nothing.
 
 The ignore patterns are read out of `.github/workflows/release-internal.yml`
-rather than copied here, so the two cannot drift apart. When they cannot be read
-this refuses to answer instead of assuming everything is releasable, because the
-one thing worse than a silent hole is an alarm that fires every morning.
+rather than copied here, through `tool/release_paths.py`, so the two cannot
+drift apart -- and so this and `check_version_bump.py` cannot disagree about
+what reaches an app. When they cannot be read this refuses to answer instead of
+assuming everything is releasable, because the one thing worse than a silent
+hole is an alarm that fires every morning.
 
 Network access lives in the workflow, not here: the run SHAs arrive as a file so
 that all of this is testable without touching GitHub.
@@ -61,9 +63,21 @@ that all of this is testable without touching GitHub.
 
 import argparse
 import json
-import re
 import subprocess
 import sys
+
+from release_paths import (
+    CannotTell,
+    DEFAULT_WORKFLOW,
+    load_patterns,
+    reaches_the_app,
+)
+
+# Re-exported under the name this file has always used for it. "Would a run
+# have been created for this commit" and "can this change reach an app" are the
+# same question asked from two directions, and answering both with one function
+# is what keeps the watchdog honest about the trigger it measures against.
+would_release = reaches_the_app
 
 # GitHub honours these anywhere in a commit message, not merely in the subject,
 # which is the reason AGENTS.md forbids writing one even while explaining it. A
@@ -79,129 +93,12 @@ SKIP_MARKERS = tuple(
                    "skip " + "actions", "actions " + "skip")
 )
 
-# `paths-ignore:` followed by its `- pattern` entries, comments and blank lines
-# allowed between them.
-PATHS_IGNORE = re.compile(r"^(\s*)paths-ignore:\s*(?:#.*)?$")
-LIST_ENTRY = re.compile(r"^\s*-\s*(?P<quote>['\"]?)(?P<pattern>.*?)(?P=quote)\s*(?:#.*)?$")
-
 # How far back to look for a commit that shipped before giving up. The run list
 # handed in covers recent history only, so a tip far beyond it means this is
 # being asked a question it cannot answer -- a renamed workflow, a force push, a
 # repository that sat idle past the API's window. Reporting fifty gaps in that
 # case would be confidently wrong; saying so is not.
 DEFAULT_MAX_WALK = 50
-
-
-class CannotTell(Exception):
-    """The check could not establish what shipped, and will not guess."""
-
-
-def parse_paths_ignore(text):
-    """The `paths-ignore` patterns in a workflow file.
-
-    Deliberately a small reader rather than a YAML parse: PyYAML is not a
-    dependency of this repository and adding one to a check that exists to be
-    boringly reliable is a poor trade. The block it has to cope with is a flat
-    list of quoted strings with comments in it.
-
-    Raises rather than returning an empty list when the block is missing or
-    empty. An empty list would mean "nothing is ignored", under which every
-    documentation commit looks like a release that failed to happen, and the
-    watchdog would open an issue every day until someone turned it off.
-    """
-    lines = text.splitlines()
-    for index, line in enumerate(lines):
-        match = PATHS_IGNORE.match(line)
-        if not match:
-            continue
-
-        indent = len(match.group(1))
-        patterns = []
-        for following in lines[index + 1:]:
-            if not following.strip() or following.lstrip().startswith("#"):
-                continue
-            # A line no deeper than `paths-ignore:` itself has left the block.
-            if len(following) - len(following.lstrip()) <= indent:
-                break
-            entry = LIST_ENTRY.match(following)
-            if not entry:
-                break
-            pattern = entry.group("pattern").strip()
-            if pattern:
-                patterns.append(pattern)
-
-        if not patterns:
-            raise CannotTell(
-                "the paths-ignore block in the release workflow is empty; "
-                "refusing to treat every commit as releasable"
-            )
-        return patterns
-
-    raise CannotTell(
-        "no paths-ignore block found in the release workflow. If the filter was "
-        "removed on purpose, this check needs updating to match"
-    )
-
-
-def pattern_to_regex(pattern):
-    """A GitHub filter pattern as a compiled regular expression.
-
-    Supports the subset the release workflow uses, and refuses the rest. `**`
-    crosses directory separators, `*` and `?` do not, and a leading `**/` also
-    matches nothing at all so that `**/*.md` covers a Markdown file at the root.
-
-    Negations are refused rather than approximated. A `!pattern` entry inverts
-    an earlier one, and quietly treating it as a literal would silently change
-    which commits count.
-    """
-    if pattern.startswith("!"):
-        raise CannotTell(
-            f"the pattern {pattern!r} is a negation, which this cannot evaluate"
-        )
-
-    out = []
-    index = 0
-    while index < len(pattern):
-        char = pattern[index]
-        if pattern.startswith("**/", index):
-            out.append("(?:.*/)?")
-            index += 3
-        elif pattern.startswith("**", index):
-            out.append(".*")
-            index += 2
-        elif char == "*":
-            out.append("[^/]*")
-            index += 1
-        elif char == "?":
-            out.append("[^/]")
-            index += 1
-        else:
-            out.append(re.escape(char))
-            index += 1
-    return re.compile("".join(out) + r"\Z")
-
-
-def is_ignored(path, patterns):
-    """Whether one changed path is covered by the ignore list."""
-    return any(pattern_to_regex(pattern).match(path) for pattern in patterns)
-
-
-def would_release(paths, patterns):
-    """Whether a commit changing [paths] should have produced a release run.
-
-    GitHub skips a run only when EVERY changed path matches the ignore list, so
-    a single file outside it is enough to make the run expected.
-
-    A commit with no paths at all reads as releasable, which is the same
-    direction `check_version_bump.py` takes for the same reason: an empty list
-    means this could not work out what changed, and excusing a commit on the
-    strength of a question it failed to answer is how a build silently reaches
-    nobody. It is the loud direction, and a person can close the issue.
-    """
-    real = [path for path in paths or [] if path.strip()]
-    if not real:
-        return True
-    return any(not is_ignored(path, patterns) for path in real)
 
 
 def carries_skip_marker(text):
@@ -399,8 +296,7 @@ def main(argv=None):
     parser.add_argument("--runs-file", required=True,
                         help="file of release run head SHAs, one per line, "
                              "or - for standard input")
-    parser.add_argument("--workflow",
-                        default=".github/workflows/release-internal.yml",
+    parser.add_argument("--workflow", default=DEFAULT_WORKFLOW,
                         help="the release workflow to read paths-ignore from")
     parser.add_argument("--format", choices=("json", "markdown"), default="json")
     parser.add_argument("--max-walk", type=int, default=DEFAULT_MAX_WALK,
@@ -410,8 +306,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     try:
-        with open(args.workflow, encoding="utf-8") as handle:
-            patterns = parse_paths_ignore(handle.read())
+        patterns = load_patterns(args.workflow)
 
         if args.runs_file == "-":
             shipped = sys.stdin.read().split()

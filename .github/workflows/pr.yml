@@ -286,10 +286,14 @@ jobs:
       - name: Test
         run: node --test web/downloads/*.test.js
 
-  # Every merge to master ships to internal testers, so a pull request that
-  # changes what the app does has to say so in the version. Otherwise two
-  # different builds reach testers under the same name and a bug report cannot
-  # be tied back to a revision.
+  # A merge to master that changes anything a build can contain ships to
+  # internal testers, so a pull request that changes what the app does has to
+  # say so in the version. Otherwise two different builds reach testers under
+  # the same name and a bug report cannot be tied back to a revision.
+  #
+  # The check exempts a pull request confined to the release workflow's
+  # paths-ignore, reading that block rather than a list of its own, so it can
+  # only ever ask for a version that some build will actually carry.
   version:
     name: Version
     # There is no version bump to check outside a pull request: the check reads
