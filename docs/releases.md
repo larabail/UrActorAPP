@@ -875,9 +875,20 @@ names the real cause:
 | Releases API | `403 Resource not accessible by integration`, which reads like a missing `contents: write` |
 
 This is why every internal build tags itself `build-<code>` at the moment it is
-uploaded. That is the one instant the ref is permitted — the commit is the tip
-of `master` — and once any ref points at a commit the refusal no longer applies
-to it, which is what lets the promotion add its own tags later.
+uploaded, and why the run stakes an **anchor** tag on the commit seconds after
+the push, before it builds anything. The anchor has no meaning of its own. It
+exists because the build tag cannot be created until the upload succeeds twenty
+minutes later, by which time master has usually moved and one merge touching
+any workflow file is enough to make the tag impossible — which is exactly what
+happened on the first run after build tagging was introduced, to a merge that
+landed thirty-four seconds afterwards. Once any ref points at a commit the
+refusal stops applying to it, so the anchor keeps the commit taggable for the
+rest of the run and the Android stage drops it once the build tag is in place.
+
+Neither the anchor nor the build tag fails the run if it is refused. A build
+that reached testers should not be thrown away over a tag, and taking the job
+red would also discard the bundle artifact and the build-number write-back.
+They warn instead, and the promotion that needs the tag is what refuses.
 
 The `resolve` job checks for the case before anything is written to a store,
 because the alternative is worse than a failed run. On 2026-08-23 a promotion
