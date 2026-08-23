@@ -169,8 +169,8 @@ def select_version(payload: dict, version_string: str) -> dict:
     )
 
 
-def select_build_id(payload: dict, build_number: str) -> str:
-    """The id of one build, by the build number Apple shows.
+def select_build(payload: dict, build_number: str) -> dict:
+    """One build record, by the build number Apple shows.
 
     Compared as text after stripping, because the caller has usually just read
     the number off a workflow summary or typed it into a dispatch form.
@@ -178,11 +178,34 @@ def select_build_id(payload: dict, build_number: str) -> str:
     wanted = str(build_number).strip()
     for build in payload.get("data") or []:
         if str((build.get("attributes") or {}).get("version", "")).strip() == wanted:
-            return build["id"]
+            return build
     raise AppStoreError(
         f"no build {wanted!r} for this app. It has to be uploaded and finished "
         "processing before a version can be promoted with it."
     )
+
+
+def select_build_id(payload: dict, build_number: str) -> str:
+    """The id of one build. Most callers want only this."""
+    return select_build(payload, build_number)["id"]
+
+
+def needs_encryption_declaration(build: dict) -> bool:
+    """Whether Apple is still waiting for this build's export compliance answer.
+
+    Apple refuses a review submission for a build whose
+    `usesNonExemptEncryption` it has no value for, and says so only at the last
+    step — a 409 on `/reviewSubmissionItems` naming the build rather than the
+    version, after the version has already been edited and a submission record
+    created.
+
+    Absent and null are the same thing here: both mean unanswered. A build that
+    already carries an answer is left alone, `false` as much as `true`. The
+    declaration is a legal statement about what the binary does, so overwriting
+    one someone made deliberately is not this script's business — and a `true`
+    silently flipped to `false` would be the expensive direction to get wrong.
+    """
+    return (build.get("attributes") or {}).get("usesNonExemptEncryption") is None
 
 
 def check_submittable(state: str, version_string: str) -> None:
@@ -461,12 +484,43 @@ def app_versions(app: str) -> dict:
     )
 
 
-def find_build(app: str, build_number: str) -> str:
+def find_build(app: str, build_number: str) -> dict:
+    """The build record Apple holds for one build number.
+
+    `usesNonExemptEncryption` is asked for because a submission is refused
+    without it, and Apple omits fields that were not requested — asking for the
+    field is what makes the difference between "unanswered" and "not selected"
+    legible at all.
+    """
     payload = get(
         f"/apps/{app}/builds",
-        {"limit": 200, "fields[builds]": "version,processingState"},
+        {
+            "limit": 200,
+            "fields[builds]": "version,processingState,usesNonExemptEncryption",
+        },
     )
-    return select_build_id(payload, build_number)
+    return select_build(payload, build_number)
+
+
+def declare_no_non_exempt_encryption(build_id: str) -> None:
+    """Answer the export compliance question for a build, as `false`.
+
+    Only ever called for a build Apple has no answer for. It is the same
+    "does your app use encryption?" prompt App Store Connect shows beside a
+    build, and the answer for this app is no: everything it sends goes over
+    HTTPS through the system's own TLS, which Apple exempts.
+    """
+    send(
+        "PATCH",
+        f"/builds/{build_id}",
+        {
+            "data": {
+                "type": "builds",
+                "id": build_id,
+                "attributes": {"usesNonExemptEncryption": False},
+            }
+        },
+    )
 
 
 def cmd_status(args) -> None:
@@ -519,8 +573,15 @@ def cmd_check(args) -> None:
     # Only when the caller typed one. Left blank, the workflow attaches the
     # newest build Apple holds, which by definition exists.
     if args.build:
-        find_build(app, args.build)
+        build = find_build(app, args.build)
         print(f"build {args.build} is there")
+        if needs_encryption_declaration(build):
+            # Not a failure: `submit` answers it. Worth saying, because this
+            # is the one thing it will change about the build itself.
+            print(
+                f"build {args.build} has no export compliance answer; "
+                "'submit' will declare no non-exempt encryption"
+            )
 
     print(f"'{args.action}' would be allowed for {args.version}")
 
@@ -688,6 +749,9 @@ def cmd_submit(args) -> None:
 
     Set to MANUAL release, so approval leaves it waiting rather than putting it
     in front of users. `release` is the separate, deliberate second step.
+
+    Also answers the build's export compliance question when Apple has no
+    answer for it, because a submission is refused without one.
     """
     app = args.app_id or app_id()
     version = select_version(app_versions(app), args.version)
@@ -698,11 +762,15 @@ def cmd_submit(args) -> None:
     # rather than to half-modify a version that was already with Apple.
     check_submittable(state, args.version)
 
-    build_id = find_build(app, args.build)
+    build = find_build(app, args.build)
+    build_id = build["id"]
+    undeclared = needs_encryption_declaration(build)
     print(f"version {args.version} ({state}) id={version_id}")
     print(f"build {args.build} id={build_id}")
 
     if args.dry_run:
+        if undeclared:
+            print("dry run: would declare no non-exempt encryption for the build")
         print("dry run: nothing was sent to Apple")
         return
 
@@ -725,6 +793,16 @@ def cmd_submit(args) -> None:
         {"data": {"type": "builds", "id": build_id}},
     )
     print(f"build {args.build} attached")
+
+    # Before the submission is created rather than after, because Apple checks
+    # this at the moment an item is added to one and refuses the whole thing
+    # without it. A build uploaded before `ITSAppUsesNonExemptEncryption` was
+    # in Info.plist arrives unanswered and can only be fixed here or by hand.
+    if undeclared:
+        declare_no_non_exempt_encryption(build_id)
+        print("export compliance declared: no non-exempt encryption")
+    else:
+        print("export compliance already answered; left alone")
 
     submission = send(
         "POST",

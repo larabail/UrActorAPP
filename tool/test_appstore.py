@@ -26,10 +26,12 @@ from appstore import (
     editable_version,
     find_version,
     missing_credentials,
+    needs_encryption_declaration,
     next_build_number,
     plan_version,
     read_notes,
     select_app_id,
+    select_build,
     select_build_id,
     select_version,
     state_of,
@@ -395,6 +397,81 @@ class SelectBuildId(unittest.TestCase):
     def test_refuses_a_build_that_is_not_there(self):
         with self.assertRaises(AppStoreError):
             select_build_id(self.PAYLOAD, "99")
+
+    def test_select_build_hands_back_the_whole_record(self):
+        # The id alone is not enough to know whether the build can be
+        # submitted, which is why the record is what the lookup returns now.
+        build = select_build(self.PAYLOAD, "41")
+        self.assertEqual(build["id"], "b41")
+        self.assertEqual(build["attributes"]["version"], "41")
+
+
+class NeedsEncryptionDeclaration(unittest.TestCase):
+    """The export compliance answer Apple refuses a submission without.
+
+    A build uploaded without `ITSAppUsesNonExemptEncryption` in Info.plist
+    arrives with the attribute unset, and the submission fails at the last
+    step with a 409 naming the build rather than the version.
+    """
+
+    def test_an_unanswered_build_needs_one(self):
+        self.assertTrue(
+            needs_encryption_declaration({"id": "b1", "attributes": {"version": "67"}})
+        )
+
+    def test_an_explicit_null_is_unanswered_too(self):
+        self.assertTrue(
+            needs_encryption_declaration(
+                {"attributes": {"usesNonExemptEncryption": None}}
+            )
+        )
+
+    def test_a_build_with_no_attributes_at_all_needs_one(self):
+        self.assertTrue(needs_encryption_declaration({"id": "b1"}))
+
+    def test_a_null_attributes_key_is_not_a_crash(self):
+        self.assertTrue(needs_encryption_declaration({"attributes": None}))
+
+    def test_an_answered_build_is_left_alone(self):
+        self.assertFalse(
+            needs_encryption_declaration(
+                {"attributes": {"usesNonExemptEncryption": False}}
+            )
+        )
+
+    def test_a_deliberate_yes_is_never_overwritten(self):
+        # The expensive direction. Flipping someone's `true` to `false` would
+        # be a false legal statement made by a script.
+        self.assertFalse(
+            needs_encryption_declaration(
+                {"attributes": {"usesNonExemptEncryption": True}}
+            )
+        )
+
+
+class InfoPlistDeclaresEncryption(unittest.TestCase):
+    """The durable half of the fix, checked where it cannot rot unnoticed.
+
+    Declaring it in the plist is what stops a build needing the answer at all:
+    Apple reads the key at upload and TestFlight stops asking too. The API
+    patch in `submit` only rescues builds uploaded before it was there.
+    """
+
+    PLIST = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "ios", "Runner", "Info.plist",
+    )
+
+    def test_the_key_is_present_and_false(self):
+        with open(self.PLIST, encoding="utf-8") as handle:
+            text = handle.read()
+        self.assertIn("<key>ITSAppUsesNonExemptEncryption</key>", text)
+        after = text.split("<key>ITSAppUsesNonExemptEncryption</key>", 1)[1]
+        self.assertTrue(
+            after.lstrip().startswith("<false/>"),
+            "the key must be followed by <false/>; this app uses only the "
+            "system's TLS, which Apple exempts",
+        )
 
 
 class ReadNotes(unittest.TestCase):
