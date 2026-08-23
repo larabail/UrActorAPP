@@ -481,6 +481,10 @@
   "@blockedAppError": {
     "description": "Shown when Firebase refuses the app itself rather than the credentials, because this build is not on its API key's list of permitted callers. Says plainly that retrying is pointless, since every account and every correct password fails identically."
   },
+  "invalidCredentialError": "That email and password do not match an account.",
+  "@invalidCredentialError": {
+    "description": "Shown when a sign in is refused and the server will not say whether the email or the password was the wrong half. Firebase answers this way when email enumeration protection is on. The wording must stay neutral about whether an account exists for the address, since revealing that is what the protection prevents."
+  },
   "updateAvailable": "UrActor {version} is available",
   "@updateAvailable": {
     "description": "Shown in the desktop update bar when a newer version has been published. {version} is a version number like 3.16.0.",

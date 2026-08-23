@@ -251,9 +251,90 @@ running desktop copy polls for updates.
   here is network backed, so `com.apple.security.network.client` is set in
   both `macos/Runner/Release.entitlements` and `DebugProfile.entitlements`.
   Without it the app launches to a permanently empty window.
-- `lib/firebase_options.dart` points Windows at the same registration the web
-  app uses, which is what the desktop SDK reads. Re-running `flutterfire
-  configure` and choosing Windows will replace that with a generated entry.
+- `lib/firebase_options.dart` gives Windows and macOS their own entries, both
+  authenticating with a key that carries no application restriction. That is
+  not laziness about locking the key down; it is the only kind of key a
+  desktop build can use. See [Desktop needs a key it can actually
+  use](#desktop-needs-a-key-it-can-actually-use).
+
+### Desktop needs a key it can actually use
+
+A Google API key can be restricted to the callers allowed to use it, and every
+key this project had was: the web key by HTTP referrer, the Android key by
+package name and signing certificate, the iOS key by bundle identifier.
+
+A desktop app satisfies none of those. It sends no referrer, no package name
+and no bundle identifier, so Identity Toolkit answers 403 **before the password
+is looked at** — every account, every correct password, alike. Both desktop
+platforms were shipped pointing at a key of this kind, and neither could sign
+anybody in:
+
+| Build | Borrowed | Refused with |
+| --- | --- | --- |
+| Windows | the web key | `API_KEY_HTTP_REFERRER_BLOCKED` — "Requests from referer &lt;empty&gt; are blocked." |
+| macOS | the iOS key | `API_KEY_IOS_APP_BLOCKED` — "Requests from this iOS client application &lt;empty&gt; are blocked." |
+
+Both now use a single key created for desktop with **application restrictions
+set to none**, which is the only setting a caller that cannot identify itself
+can meet. It is restricted by API instead — Identity Toolkit, Token Service,
+Firestore, Installations and Storage — and what protects the data behind it is
+`firestore.rules`, not the question of who may hold the key. That is the
+ordinary arrangement for a Firebase client key, all of which ship inside the
+binary and none of which are secret.
+
+Two things follow, and `test/firebase_options_test.dart` holds both:
+
+- **Never point a desktop platform at another platform's key** to avoid adding
+  one. That is exactly the defect this replaced.
+- **Re-running `flutterfire configure` will undo it.** It writes back the
+  restricted keys it finds registered in the console, and the desktop key is
+  not one of them.
+
+### Why nothing in the app said so
+
+The interface reported this as "Something went wrong. Please try again." —
+advice that could not work, for a failure retrying can never clear.
+
+`classifyAuthError` in `lib/common/auth_error.dart` does recognise a refused
+caller, but only by the reason token, since the prose beside it is localized
+and rewordable. On macOS the token survives inside a wrapped `internal-error`
+and the interface names the failure properly. On Windows nothing survives:
+`firebase_auth` there is the Firebase **C++** SDK, whose default branch
+flattens anything it cannot classify into
+
+```
+code:    unknown-error
+message: An internal error has occurred.
+```
+
+The reason token, the status and the server's own message are all discarded
+before Dart sees them. No change to the classifier can recover what the SDK
+threw away, so on Windows a refused key is indistinguishable from any other
+fault — which is why the guard is a test on the configuration rather than a
+better message at the point of failure.
+
+### What an unrestricted key changes, and what answers for it
+
+Dropping the caller restriction does not expose the data. `firestore.rules` was
+always the thing guarding that, and a restriction on who may hold a key never
+was. It widens one specific gap instead, in sign in itself: anyone holding the
+key can put an address to Identity Toolkit and read the answer, and if that
+answer distinguishes "no such account" from "wrong password", the key is an
+oracle for whether a given person has an account here.
+
+**Email enumeration protection is turned on for this project**, which is what
+closes it. Firebase stops sending `user-not-found` and `wrong-password` and
+sends `invalid-credential` for both, so the two cases become one answer that
+says nothing about who is registered.
+
+The cost falls on the interface, which is why it belongs here rather than only
+in the console. A failed sign in genuinely cannot say which half was wrong, so
+its message — `invalidCredentialError`, "That email and password do not match
+an account." — is deliberately vaguer than the two it replaces. The vagueness
+is the point and not an oversight: rewording it to guess at the likelier half
+would hand back precisely what the setting withholds. `classifyAuthError` still
+maps the two older codes, since the setting is per project and one without it
+goes on sending them.
 
 ### Building macOS needs the Apple Developer team
 
@@ -278,34 +359,20 @@ the sandbox off, signing ad hoc with a team set, and matching the bundle
 identifier to the one in `FirebaseOptions`. All three were tried; the keychain
 access group is the actual requirement.
 
-### macOS sign in is also blocked by the API key restriction
+### macOS sign in has a second, separate blocker
 
-The keychain entitlement above is necessary but not sufficient, and it is no
-longer the first thing to suspect. A macOS build that is correctly signed and
-entitled still cannot sign anybody in, because `lib/firebase_options.dart`
-points macOS at the **iOS** registration and that key is restricted to a list
-of iOS bundle identifiers. `com.uractor.uractormacos` is not on it, so Identity
-Toolkit answers every attempt with
+The API key above was one of two reasons a macOS build could not sign anybody
+in, and fixing it does not clear the other. The keychain entitlement is still
+required, and the two are easy to confuse because both refuse every correct
+password. Tell them apart by the error rather than by guessing:
+`keychain-error` is the entitlement; a wrapped `internal-error` carrying
+`API_KEY_IOS_APP_BLOCKED` was the key.
 
-```
-403 PERMISSION_DENIED — API_KEY_IOS_APP_BLOCKED
-"Requests from this iOS client application com.uractor.uractormacos are blocked."
-```
-
-before the password is looked at. The two failures are easy to confuse, since
-both refuse every correct password, so tell them apart by the error rather than
-by guessing: `keychain-error` is the entitlement, a wrapped `internal-error`
-carrying `API_KEY_IOS_APP_BLOCKED` is the key. The app now names the second one
-in the interface instead of offering the generic "please try again", which was
-advice that could not work.
-
-Fixing it is a console change, not a repository one — no edit here can lift the
-restriction. Either add `com.uractor.uractormacos` to that key's iOS
-application restrictions, or register a macOS app in the Firebase project and
-regenerate `lib/firebase_options.dart` from it. The second is preferable: the
-macOS entry currently carries `iosBundleId: 'com.example.uractor'`, a template
-leftover matching neither platform, and sharing the iOS key means any future
-tightening of it breaks macOS again.
+One loose end this leaves: the macOS entry still carries
+`iosBundleId: 'com.example.uractor'`, a template leftover matching neither
+platform. It is untouched here because nothing observed depends on it, and
+changing a bundle identifier alongside a key change would make a failure
+impossible to attribute.
 
 ## Layout
 

@@ -126,15 +126,40 @@ void main() {
       );
     });
 
-    test('classifies a code it has never seen rather than giving up', () {
-      // Firebase returns this instead of user-not-found and wrong-password
-      // when email enumeration protection is on, which is the default for new
-      // projects. Neither of the two codes the app used to check for is ever
-      // sent in that configuration.
+    test('names the neutral refusal enumeration protection collapses to', () {
+      // With email enumeration protection on -- which is the default for new
+      // projects, and what keeps an unrestricted key from answering whether a
+      // given address has an account -- neither `user-not-found` nor
+      // `wrong-password` is ever sent. Both arrive as this one code.
+      //
+      // Before it was named, the commonest failure there is, a typo'd
+      // password, reached the user as "Something went wrong. Please try
+      // again." on a form where trying again is exactly the right advice and
+      // nothing said what to change.
       expect(
         classifyAuthError(FirebaseAuthException(code: 'invalid-credential')),
-        AuthFailure.unknown,
+        AuthFailure.invalidCredential,
       );
+      // The two it replaces are still answered for, because the setting is
+      // per project: a project without protection sends them, and this one
+      // would again if it were ever turned off. Collapsing all three into the
+      // neutral message would be a needless loss of advice for the projects
+      // that do say which half was wrong.
+      expect(
+        classifyAuthError(FirebaseAuthException(code: 'user-not-found')),
+        AuthFailure.noUser,
+      );
+      expect(
+        classifyAuthError(FirebaseAuthException(code: 'wrong-password')),
+        AuthFailure.wrongPassword,
+      );
+    });
+
+    test('classifies a code it has never seen rather than giving up', () {
+      // This used to be where `invalid-credential` was asserted, back when the
+      // mapping had no name for it. Firebase keeps adding codes, so something
+      // has to stand in for the next one nobody has met yet, and the answer
+      // has to be a message rather than silence.
       expect(
         classifyAuthError(FirebaseAuthException(code: 'not-a-real-code')),
         AuthFailure.unknown,
@@ -154,6 +179,7 @@ void main() {
       for (final code in <String>[
         'user-not-found',
         'wrong-password',
+        'invalid-credential',
         'invalid-email',
         'user-disabled',
         'too-many-requests',

@@ -264,6 +264,7 @@
   "tooManyRequestsError": "Demasiados intentos. Espera un momento y vuelve a intentarlo.",
   "networkError": "No se pudo conectar con el servidor. Comprueba tu conexión.",
   "blockedAppError": "Esta versión de la aplicación no tiene permiso para iniciar sesión. Volver a intentarlo no servirá de nada.",
+  "invalidCredentialError": "Ese correo electrónico y esa contraseña no coinciden con ninguna cuenta.",
   "updateAvailable": "UrActor {version} ya está disponible",
   "updateDownload": "Descargar",
   "updateDismiss": "Descartar"

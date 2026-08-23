@@ -50,7 +50,7 @@ void main() {
       expect(await backing.read('user-a'), 'account a data');
       expect(await backing.read('user-b'), 'account b data');
       expect(
-        directory.listSync().map((entry) => entry.path.split('/').last).toSet(),
+        directory.listSync().map((entry) => entry.uri.pathSegments.last).toSet(),
         {'media_sort_cache_user-a.json', 'media_sort_cache_user-b.json'},
       );
     });
