@@ -769,7 +769,7 @@ platforms.
 |---|---|
 | `version_code` | Play version code to promote. Blank promotes the latest internal build |
 | `commit` | The commit that produced it, from the internal run's summary |
-| `rollout` | Android: share of users; start small |
+| `rollout` | Android: share of users; start small. `100%` releases to everyone |
 | `status` | Android: `inProgress` goes live, `draft` stages it in Play for review |
 | `android` | `promote` or `skip` |
 | `ios_action` | `submit`, `release`, or `skip`. See [Releasing to the App Store](#releasing-to-the-app-store) |
@@ -787,6 +787,21 @@ halt an Android rollout afterwards, use the Play Console: a halted rollout stops
 new users receiving the update, but does not remove it from anyone who already
 has it. There is no equivalent for desktop, and Apple's phased release is a
 fixed seven-day ladder rather than a dial.
+
+A `rollout` of `100%` is sent to Play as a **completed** release rather than an
+`inProgress` one, whatever `status` says. This is not a nicety: Play's
+`userFraction` is the share a release is *held back* to, so it is only accepted
+below 1, and a literal 100% staged rollout is rejected with
+
+```
+User fraction must be greater than or equal to 0 and lower than one.
+Provided: 1.000000
+```
+
+which abandons the edit and publishes nothing. `tool/play.py` translates it, so
+the run summary reports what Play was told — `completed` — and not what the form
+said. `draft` still stages the release for manual review in the Console, at 100%
+as at any other share.
 
 Two jobs run before that prompt, and both only read:
 

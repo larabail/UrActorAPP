@@ -361,6 +361,7 @@ jobs:
 
     outputs:
       code: ${{ steps.promote.outputs.version-code }}
+      rollout: ${{ steps.promote.outputs.rollout }}
 
     steps:
       - uses: actions/checkout@v5
@@ -1034,6 +1035,9 @@ jobs:
           VERSION: ${{ needs.resolve.outputs.version }}
           REF: ${{ needs.resolve.outputs.ref }}
           CODE: ${{ needs.android.outputs.code }}
+          ROLLOUT: ${{ needs.android.outputs.rollout }}
+          REQUESTED_ROLLOUT: ${{ inputs.rollout }}
+          REQUESTED_STATUS: ${{ inputs.status }}
           ANDROID: ${{ needs.android.result }}
           IOS: ${{ needs.ios.result }}
           DESKTOP_MACOS: ${{ needs.desktop_macos.result }}
@@ -1064,6 +1068,13 @@ jobs:
             esac
           done
 
+          # What Play was actually told, which is not always what the form
+          # asked for: a rollout requested at 100% is sent as a completed
+          # release with no user fraction, so the summary would otherwise
+          # disagree with the Play Console. Falls back to the request when the
+          # promotion was skipped or failed and so never reported anything.
+          ANDROID_DETAIL="${ROLLOUT:-$REQUESTED_ROLLOUT, $REQUESTED_STATUS}"
+
           {
             echo "### Production — $VERSION"
             echo ''
@@ -1073,7 +1084,7 @@ jobs:
             fi
             echo '| # | Platform | Result | Detail |'
             echo '|---|---|---|---|'
-            echo "| 1 | Android · Play | $(mark "$ANDROID") | ${CODE:-—} at ${{ inputs.rollout }}, ${{ inputs.status }} |"
+            echo "| 1 | Android · Play | $(mark "$ANDROID") | ${CODE:-—} — $ANDROID_DETAIL |"
             echo "| 2 | iOS · App Store | $(mark "$IOS") | \`${{ inputs.ios_action }}\` |"
             echo "| 3 | Desktop | $(mark "$DESKTOP") | \`v$VERSION\` and downloads.uractor.com |"
             echo ''
