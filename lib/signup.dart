@@ -53,6 +53,7 @@ Future<void> writeInitialProfile(String uid) async {
   batch.set(users.doc("Settings"), const <String, dynamic>{
     "darkMode": true,
     "dontAskCalendar": false,
+    "fillEpisodesBefore": true,
     "providers": [],
     "profile_photo": "",
     "username": "",

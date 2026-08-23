@@ -108,6 +108,10 @@
       }
     }
   },
+  "caughtUp": "Caught up",
+  "@caughtUp": {
+    "description": "Shown under a show in Continue watching when nothing has been released after the last episode watched"
+  },
   "watchingTogether": "Watching together",
   "@watchingTogether": {
     "description": "Title of the friends section listing shows started with a friend and not finished"
@@ -358,6 +362,14 @@
   "invalidEmailError": "That email address is not valid.",
   "genericAuthError": "Something went wrong. Please try again.",
   "deleteAccount": "Delete Account",
+  "fillEarlierEpisodes": "Fill in earlier episodes",
+  "@fillEarlierEpisodes": {
+    "description": "Settings label for whether logging an episode also marks every episode before it as watched"
+  },
+  "fillEarlierEpisodesHint": "Logging an episode marks everything before it as watched too. Turn this off if you joined a show partway through.",
+  "@fillEarlierEpisodesHint": {
+    "description": "Explanation shown under the fill in earlier episodes setting"
+  },
   "deleteAccountConfirmation": "Are you sure you want to delete your account? This action will delete all your information.",
   "joinListFailed": "Wrong access code or list name",
   "joinListTooManyAttempts": "Too many incorrect attempts. Try again later.",

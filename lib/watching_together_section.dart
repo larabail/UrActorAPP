@@ -10,19 +10,13 @@ import 'common/item_container.dart';
 import 'common/layout/responsive.dart';
 import 'common/layout/two_pane.dart';
 import 'common/media_pair_membership.dart';
+import 'common/watch_progress_view.dart';
+import 'common/watch_progress_widgets.dart';
 import 'common/watching_together.dart';
 import 'l10n/l10n.dart';
 import 'main.dart';
 import 'objects/tv_show.dart';
 import 'tvshow_result.dart';
-
-/// The room a tile's caption is given under it.
-///
-/// Matches Continue watching, so the two rows line up when a screen shows
-/// both. Two lines is enough for the episode pointer at this size, and the
-/// caption is clipped rather than allowed to push the row taller than it was
-/// told to be.
-const double _kCaptionHeight = 38;
 
 /// One resolved tile: the shared show, what TMDB says about it, and where to
 /// pick it back up.
@@ -30,14 +24,14 @@ class WatchingTogetherTile {
   const WatchingTogetherTile({
     required this.show,
     required this.media,
-    this.nextEpisode,
+    this.resume = const ResumePoint.unknown(),
   });
 
   final WatchingTogetherShow show;
   final ContinueWatchingMedia media;
 
-  /// Null for a show whose seasons could not be read.
-  final WatchProgressEpisode? nextEpisode;
+  /// Always unknown for a show whose seasons could not be read.
+  final ResumePoint resume;
 }
 
 /// The Watching together row on a friend's profile.
@@ -105,25 +99,25 @@ class _WatchingTogetherSectionState extends State<WatchingTogetherSection> {
   Future<WatchingTogetherTile> _tileFor(WatchingTogetherShow show) {
     return _tiles.putIfAbsent(show.id, () async {
       final media = await _fetchShow(show.id);
-      WatchProgressEpisode? next;
+      var resume = const ResumePoint.unknown();
       if (media.seasons.isNotEmpty) {
         try {
-          next = await ProgressService.nextUnwatchedEpisode(
-            show.id,
-            media.seasons,
+          resume = WatchProgressView.resumeFrom(
+            seasons: media.seasons,
+            watched: await ProgressService.watchedEpisodesBySeason(show.id),
           );
         } catch (_) {
-          next = null;
+          resume = const ResumePoint.unknown();
         }
       }
-      return WatchingTogetherTile(show: show, media: media, nextEpisode: next);
+      return WatchingTogetherTile(show: show, media: media, resume: resume);
     });
   }
 
   /// Fetches the TMDB detail for one show, and never throws.
   ///
   /// The show payload carries its season list, so this single request covers
-  /// both the artwork and the season counts `nextUnwatchedEpisode` needs.
+  /// both the artwork and the season counts the resume point needs.
   Future<ContinueWatchingMedia> _fetchShow(String id) async {
     try {
       final response =
@@ -194,7 +188,7 @@ class _WatchingTogetherSectionState extends State<WatchingTogetherSection> {
           ),
           const SizedBox(height: 10),
           SizedBox(
-            height: posterRowHeight(context) + _kCaptionHeight,
+            height: posterRowHeight(context) + kResumeCaptionHeight,
             // Builds lazily, so the titles scrolled past never cost a request.
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
@@ -219,7 +213,6 @@ class _WatchingTogetherSectionState extends State<WatchingTogetherSection> {
         final media = tile.media;
         final title = media.title ?? S.of(context)!.unknown;
         final itemData = media.itemData(title);
-        final next = tile.nextEpisode;
 
         return GestureDetector(
           key: ValueKey('watchingTogether-${show.id}'),
@@ -242,20 +235,7 @@ class _WatchingTogetherSectionState extends State<WatchingTogetherSection> {
                   containerType: progressTVShowsKey,
                 ),
               ),
-              if (next != null)
-                SizedBox(
-                  height: _kCaptionHeight,
-                  child: Text(
-                    S.of(context)!.nextEpisode(
-                          next.seasonNumber,
-                          next.episodeNumber,
-                        ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.grey, fontSize: 13),
-                  ),
-                ),
+              ResumeCaption(tile.resume),
             ],
           ),
         );

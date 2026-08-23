@@ -181,6 +181,71 @@ void main() {
     expect(find.textContaining('Next:'), findsNothing);
   });
 
+  testWidgets('a viewer who joined late resumes where they are, not at S1 E1',
+      (tester) async {
+    // University Challenge, in effect: seasons 1 and 2 were never watched and
+    // are not going to be. Sending this viewer back to the first episode is
+    // the bug — the only useful answer is the one after where they stopped.
+    await seedProgress(
+      shows: {
+        '2316': {
+          'started': '2026-01-03',
+          'updated': '2026-01-04',
+          'episodes': {
+            '3': [1, 2],
+          },
+        },
+      },
+    );
+    http.on('/3/tv/2316', json: {
+      'id': 2316,
+      'name': 'University Challenge',
+      'seasons': [
+        {'season_number': 1, 'episode_count': 4},
+        {'season_number': 2, 'episode_count': 4},
+        {'season_number': 3, 'episode_count': 4},
+      ],
+    });
+
+    await pumpSection(tester);
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Next: S3 E3'), findsOneWidget);
+    expect(find.text('Next: S1 E1'), findsNothing);
+  });
+
+  testWidgets('a viewer with nothing left ahead is told they are caught up',
+      (tester) async {
+    // The final season is finished but earlier seasons never were, so the show
+    // is still in progress. There is no next episode to name, and naming one
+    // from the backlog would be the same lie in the other direction.
+    await seedProgress(
+      shows: {
+        '2316': {
+          'started': '2026-01-03',
+          'updated': '2026-01-04',
+          'episodes': {
+            '2': [1, 2],
+          },
+        },
+      },
+    );
+    http.on('/3/tv/2316', json: {
+      'id': 2316,
+      'name': 'University Challenge',
+      'seasons': [
+        {'season_number': 1, 'episode_count': 2},
+        {'season_number': 2, 'episode_count': 2},
+      ],
+    });
+
+    await pumpSection(tester);
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Caught up'), findsOneWidget);
+    expect(find.textContaining('Next:'), findsNothing);
+  });
+
   testWidgets('a long backlog is capped instead of storming TMDB',
       (tester) async {
     await seedProgress(

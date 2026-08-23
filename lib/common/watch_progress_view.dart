@@ -11,6 +11,50 @@ import 'firebase/progress_service.dart';
 /// How much of a season the user has ticked off.
 enum SeasonTickState { none, partial, all }
 
+/// Where a part-watched show should be picked back up.
+///
+/// A bare nullable episode cannot tell "play this next" apart from "there is
+/// nothing ahead of you", and a screen has to word those differently — so this
+/// carries both.
+class ResumePoint {
+  /// There is an episode to play.
+  const ResumePoint.at(WatchProgressEpisode this.episode) : caughtUp = false;
+
+  /// Nothing follows the furthest episode ticked. Earlier gaps may remain, but
+  /// none of them is the next episode from where the viewer actually is.
+  const ResumePoint.caughtUp()
+      : episode = null,
+        caughtUp = true;
+
+  /// Nothing is known about the show's episodes, so no claim can be made. This
+  /// is what a title TMDB would not resolve, or one whose seasons all report no
+  /// episodes, comes back as.
+  const ResumePoint.unknown()
+      : episode = null,
+        caughtUp = false;
+
+  /// The episode to play, or null when there is none to name.
+  final WatchProgressEpisode? episode;
+
+  /// Whether the viewer has reached the end of what has been released.
+  final bool caughtUp;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ResumePoint &&
+          runtimeType == other.runtimeType &&
+          episode == other.episode &&
+          caughtUp == other.caughtUp;
+
+  @override
+  int get hashCode => Object.hash(episode, caughtUp);
+
+  @override
+  String toString() =>
+      'ResumePoint(${episode ?? (caughtUp ? 'caught up' : 'unknown')})';
+}
+
 /// The progress transitions a title offers right now.
 class WatchProgressActions {
   const WatchProgressActions({
@@ -42,7 +86,7 @@ class WatchProgressView {
   /// `ProgressService` needs to decide when a show is complete.
   ///
   /// Entries without a usable season number are dropped rather than guessed at,
-  /// and the result is ordered so `nextUnwatchedEpisode` walks the show in
+  /// and the result is ordered so [resumeFrom] walks the show in
   /// broadcast order regardless of how TMDB happened to sort the payload.
   static List<SeasonEpisodeCount> seasonCounts(Iterable<dynamic>? rawSeasons) {
     if (rawSeasons == null) return const <SeasonEpisodeCount>[];
@@ -82,9 +126,15 @@ class WatchProgressView {
   /// Every episode up to and including season [season] episode [episode].
   ///
   /// Someone who says they finished S2E5 today has almost always watched what
-  /// came before it, and recording only E5 is worse in a way they see at once:
-  /// the next unwatched episode stays S1E1 and Continue watching points at
-  /// something they finished months ago. So the earlier seasons are filled in.
+  /// came before it, and recording only E5 leaves the record visibly wrong in
+  /// ways they will meet later: the season guide draws S2 as one episode deep,
+  /// the show never registers as complete, and the gap is theirs to go back and
+  /// tick by hand. So the earlier seasons are filled in.
+  ///
+  /// It is not always right — a viewer who joined a long-running series partway
+  /// never watched those seasons and does not want them claimed — which is why
+  /// it is a setting and this is only half of the pair. [episodesWithin] is the
+  /// other half.
   ///
   /// The result is a set to add, never one to replace with — a later season
   /// already ticked is not mentioned here and so cannot be undone by applying
@@ -121,6 +171,111 @@ class WatchProgressView {
 
   static List<int> _upTo(int count) =>
       List<int>.generate(count, (index) => index + 1);
+
+  /// The episodes a log entry names, with nothing before them filled in.
+  ///
+  /// The counterpart to [episodesThrough], for a viewer who has turned the
+  /// filling in off. [episode] is the single episode named, or null when the
+  /// entry named a whole season — which is still recorded in full, because
+  /// naming a season is a claim about all of it and not about its finale.
+  ///
+  /// A season TMDB has no count for still records the episode named, on the
+  /// same reasoning as [episodesThrough]: the calendar accepts shows TMDB knows
+  /// nothing about, and refusing to record those makes the entry a lie. It
+  /// cannot record a whole season of unknown length, so that comes back empty.
+  static Map<int, List<int>> episodesWithin({
+    required List<SeasonEpisodeCount> seasons,
+    required int season,
+    int? episode,
+  }) {
+    if (season <= 0) return const <int, List<int>>{};
+    final count = _episodeCountOf(seasons, season);
+    if (episode == null) {
+      if (count <= 0) return const <int, List<int>>{};
+      return <int, List<int>>{season: _upTo(count)};
+    }
+    if (episode <= 0) return const <int, List<int>>{};
+    // A season can shrink when TMDB corrects its data, so an episode number
+    // past the end of the season is clamped rather than recorded as watched.
+    final number = count > 0 && episode > count ? count : episode;
+    return <int, List<int>>{
+      season: <int>[number],
+    };
+  }
+
+  /// The episode to resume a show at, given what has been ticked.
+  ///
+  /// Answers from where the viewer actually is — the episode after the furthest
+  /// one ticked — rather than from the beginning of the show. Someone who joined
+  /// a long-running series at its latest run has every earlier episode unticked,
+  /// and being sent back to season 1 answers a question they did not ask.
+  ///
+  /// The gaps behind that point are deliberately left alone. Once the show runs
+  /// out ahead there is no single next episode to name, only a backlog, and
+  /// [ResumePoint.caughtUp] says that instead of picking one arbitrarily.
+  ///
+  /// Specials and seasons TMDB gives no episode count for are skipped, matching
+  /// what the rest of the progress model counts. A ticked episode outside its
+  /// season's range is ignored for the same reason [watchedInSeason] ignores it:
+  /// a season can shrink, and a stale record must not name an episode that no
+  /// longer exists.
+  /// @param seasons TMDB's season list for the show, in any order.
+  /// @param watched The ticked episodes, keyed by season number.
+  /// @return Where to pick the show back up.
+  static ResumePoint resumeFrom({
+    required List<SeasonEpisodeCount> seasons,
+    required Map<int, Iterable<int>> watched,
+  }) {
+    final ordered = seasons
+        .where((season) => season.seasonNumber > 0 && season.episodeCount > 0)
+        .toList()
+      ..sort((a, b) => a.seasonNumber.compareTo(b.seasonNumber));
+    if (ordered.isEmpty) return const ResumePoint.unknown();
+
+    // Walking backwards finds the furthest tick, and everything past it is
+    // unwatched by construction — so the first one found settles the answer
+    // and no second pass over the show is needed.
+    for (var index = ordered.length - 1; index >= 0; index--) {
+      final season = ordered[index];
+      final ticked = watched[season.seasonNumber]?.toSet() ?? const <int>{};
+      for (var episode = season.episodeCount; episode >= 1; episode--) {
+        if (!ticked.contains(episode)) continue;
+        if (episode < season.episodeCount) {
+          return ResumePoint.at(
+            WatchProgressEpisode(
+              seasonNumber: season.seasonNumber,
+              episodeNumber: episode + 1,
+            ),
+          );
+        }
+        if (index + 1 < ordered.length) {
+          return ResumePoint.at(
+            WatchProgressEpisode(
+              seasonNumber: ordered[index + 1].seasonNumber,
+              episodeNumber: 1,
+            ),
+          );
+        }
+        return const ResumePoint.caughtUp();
+      }
+    }
+
+    // Nothing ticked anywhere, so the show has not been started and begins at
+    // its first counted episode.
+    return ResumePoint.at(
+      WatchProgressEpisode(
+        seasonNumber: ordered.first.seasonNumber,
+        episodeNumber: 1,
+      ),
+    );
+  }
+
+  static int _episodeCountOf(List<SeasonEpisodeCount> seasons, int season) {
+    for (final entry in seasons) {
+      if (entry.seasonNumber == season) return entry.episodeCount;
+    }
+    return 0;
+  }
 
   static SeasonTickState seasonTickState({
     required int episodeCount,

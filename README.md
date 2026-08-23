@@ -28,11 +28,14 @@ window rather than the device it is on (see [Platforms](#platforms) and
 - Log what you watched on a calendar — a single date or a date range. A show
   entry can also record the last episode you finished that day, which drives
   tracking rather than just being written down: the show moves into progress
-  and every episode up to that point is ticked off. A show you have already
-  finished gets those ticks too but keeps its finished status, so the season
-  guide reflects the entry without the title leaving the Seen list. An entry
-  that names no season still means the whole title was watched, which is what
-  every entry meant before episodes were recordable (`lib/calendar.dart`,
+  and every episode up to that point is ticked off. That backfilling is a
+  setting — turn **Fill in earlier episodes** off in settings and an entry
+  records only what it names, which is what someone who joined a long-running
+  series partway through needs. A show you have already finished gets those
+  ticks too but keeps its finished status, so the season guide reflects the
+  entry without the title leaving the Seen list. An entry that names no season
+  still means the whole title was watched, which is what every entry meant
+  before episodes were recordable (`lib/calendar.dart`,
   `lib/friends_calendar.dart`, `lib/popups/add_to_calendar_pop_up.dart`,
   `lib/common/calendar_episode.dart`, `lib/common/calendar_progress.dart`).
 - Track what you are part way through. A movie or show is not started, being
@@ -58,9 +61,13 @@ window rather than the device it is on (see [Platforms](#platforms) and
   counted towards completion and offer no tick.
 - Pick up where you left off. The home page carries a Continue watching row of
   everything started but not finished, most recent activity first, naming the
-  next unwatched episode under each show. It is absent rather than empty when
-  there is nothing to resume (`lib/continue_watching_section.dart`,
-  `lib/common/continue_watching.dart`,
+  episode after the furthest one you have ticked. It counts from where you
+  actually are rather than from the start of the show, so joining a long-running
+  series at its current run does not send you back to season 1; when nothing has
+  been released past that point the row says **Caught up** instead of naming an
+  episode from the backlog. It is absent rather than empty when there is nothing
+  to resume (`lib/continue_watching_section.dart`,
+  `lib/common/continue_watching.dart`, `lib/common/watch_progress_view.dart`,
   `lib/common/firebase/progress_service.dart`).
 
 ### Lists
@@ -92,7 +99,7 @@ window rather than the device it is on (see [Platforms](#platforms) and
 - Keep track of the series you are part way through together. Each friend on the
   friends list carries a scrolling line of the shows that are started,
   unfinished, and recorded as watched with them, and their profile shows the
-  same thing as a row of posters naming the next unwatched episode. Films are
+  same thing as a row of posters naming the episode to resume at. Films are
   left out, and a friend with nothing running gets no line
   (`lib/friends.dart`, `lib/watching_together_section.dart`,
   `lib/common/watching_together.dart`).

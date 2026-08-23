@@ -1,6 +1,16 @@
 import '../../main.dart';
 import 'firestore_core.dart';
 
+/// Whether logging an episode also records every episode before it.
+///
+/// Stored rather than assumed because both answers are right for someone: a
+/// viewer working through a show from the start means "and everything before
+/// this", while one who joined a long-running series at its current run does
+/// not, and filling in seasons they never watched invents a history for them.
+/// Absent for every account created before the setting existed, so it reads as
+/// on — which is the behaviour those accounts already had.
+const String settingFillEpisodesBefore = 'fillEpisodesBefore';
+
 /// Reads and writes the signed-in user's Settings document.
 class SettingsService {
   /// Stores [value] under [key] and merges it into the settings document.

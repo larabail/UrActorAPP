@@ -232,7 +232,7 @@ void main() {
     });
 
     test(
-      'finds the next unwatched episode and rolls to the next season',
+      'records the ticks a resume point is worked out from',
       () async {
         await ProgressService.markSeasonWatched(
           's1',
@@ -241,11 +241,6 @@ void main() {
           seasons,
           date: DateTime(2026, 5, 1),
         );
-        expect(
-          await ProgressService.nextUnwatchedEpisode('s1', seasons),
-          const WatchProgressEpisode(seasonNumber: 2, episodeNumber: 1),
-        );
-
         await ProgressService.markEpisodeWatched(
           's1',
           2,
@@ -253,9 +248,13 @@ void main() {
           seasons,
           date: DateTime(2026, 5, 2),
         );
+
         expect(
-          await ProgressService.nextUnwatchedEpisode('s1', seasons),
-          const WatchProgressEpisode(seasonNumber: 2, episodeNumber: 2),
+          await ProgressService.watchedEpisodesBySeason('s1'),
+          <int, List<int>>{
+            1: [1, 2],
+            2: [1],
+          },
         );
       },
     );

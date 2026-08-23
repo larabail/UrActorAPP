@@ -39,7 +39,7 @@ List<WatchProgressListItem> continueWatchingEntries(
 }
 
 /// Reads the `seasons` array of a TMDB show payload into the shape
-/// `ProgressService.nextUnwatchedEpisode` expects.
+/// `WatchProgressView.resumeFrom` expects.
 ///
 /// The show detail response already carries this, so the section gets season
 /// counts out of the request it was making anyway rather than firing a second

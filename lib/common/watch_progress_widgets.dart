@@ -289,3 +289,56 @@ class _MediaProgressControlState extends State<MediaProgressControl> {
     );
   }
 }
+
+/// The room a poster's resume caption is given under it.
+///
+/// Fixed rather than measured, so a row's height can be worked out from the
+/// tile size alone. Two lines is enough for "Next: S10 E12" in either language
+/// at this size, and the caption is clipped rather than allowed to push the row
+/// taller than it was told to be.
+const double kResumeCaptionHeight = 38;
+
+/// The line under a poster saying where to pick a show back up.
+///
+/// Shared by Continue watching and Watching together, which sit on different
+/// pages and must not drift apart in what they claim about the same show.
+///
+/// Renders nothing at all when the show's episodes are unknown, rather than a
+/// blank line: a movie and a title TMDB would not resolve both arrive here, and
+/// neither has anything to say.
+class ResumeCaption extends StatelessWidget {
+  const ResumeCaption(
+    this.resume, {
+    this.height = kResumeCaptionHeight,
+    super.key,
+  });
+
+  final ResumePoint resume;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final episode = resume.episode;
+    final String label;
+    if (episode != null) {
+      label = S.of(context)!.nextEpisode(
+            episode.seasonNumber,
+            episode.episodeNumber,
+          );
+    } else if (resume.caughtUp) {
+      label = S.of(context)!.caughtUp;
+    } else {
+      return const SizedBox.shrink();
+    }
+    return SizedBox(
+      height: height,
+      child: Text(
+        label,
+        textAlign: TextAlign.center,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(color: Colors.grey, fontSize: 13),
+      ),
+    );
+  }
+}

@@ -13,6 +13,7 @@ import 'package:uractor/common/calendar_episode.dart';
 import 'package:uractor/common/calendar_progress.dart';
 import 'package:uractor/common/firebase/calendar_progress_service.dart';
 import 'package:uractor/common/firebase/progress_service.dart';
+import 'package:uractor/common/firebase/settings_service.dart';
 
 import '../support/harness.dart';
 
@@ -207,5 +208,67 @@ void main() {
     expect(await ProgressService.watchedEpisodes('1396', 2), [1, 2, 3, 4, 5]);
     final dates = await ProgressService.datesFor(progressTVShowsKey, '1396');
     expect(dates.started, '2026-05-01');
+  });
+
+  group('with the fill-in setting off', () {
+    setUp(() {
+      installTestUser(
+        uid: 'calendar-user',
+        settings: {'language': 'en', settingFillEpisodesBefore: false},
+      );
+    });
+
+    test('records only the episode named', () async {
+      // The case the setting exists for: someone who joined at season 2 has
+      // not watched season 1, and claiming they had is a history invented for
+      // them that they then have to go and untick.
+      await CalendarProgressService.apply(
+        type: 'series',
+        id: '1396',
+        episode: const CalendarEpisode(season: 2, episode: 5),
+        seasons: seasons,
+        date: DateTime(2026, 5, 1),
+      );
+
+      expect(await ProgressService.watchedEpisodes('1396', 1), isEmpty);
+      expect(await ProgressService.watchedEpisodes('1396', 2), [5]);
+      expect(
+        await ProgressService.showState('1396'),
+        WatchProgressState.inProgress,
+      );
+    });
+
+    test('still records a whole season when the entry named one', () async {
+      await CalendarProgressService.apply(
+        type: 'series',
+        id: '1396',
+        episode: const CalendarEpisode(season: 2),
+        seasons: seasons,
+      );
+
+      expect(await ProgressService.watchedEpisodes('1396', 1), isEmpty);
+      expect(await ProgressService.watchedEpisodes('1396', 2), [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+      ]);
+    });
+
+    test('leaves what was already ticked alone', () async {
+      await ProgressService.markEpisodeWatched('1396', 1, 1, seasons);
+
+      await CalendarProgressService.apply(
+        type: 'series',
+        id: '1396',
+        episode: const CalendarEpisode(season: 2, episode: 2),
+        seasons: seasons,
+      );
+
+      expect(await ProgressService.watchedEpisodes('1396', 1), [1]);
+      expect(await ProgressService.watchedEpisodes('1396', 2), [2]);
+    });
   });
 }

@@ -8,6 +8,8 @@ import 'common/continue_watching.dart';
 import 'common/firebase/progress_service.dart';
 import 'common/item_container.dart';
 import 'common/media_pair_membership.dart';
+import 'common/watch_progress_view.dart';
+import 'common/watch_progress_widgets.dart';
 import 'l10n/l10n.dart';
 import 'movie_result.dart';
 import 'objects/movie.dart';
@@ -16,28 +18,20 @@ import 'tvshow_result.dart';
 import 'common/layout/responsive.dart';
 import 'common/layout/two_pane.dart';
 
-/// The room a tile's caption is given under it.
-///
-/// Fixed rather than measured, so a row's height can be worked out from the
-/// tile size alone. Two lines is enough for "Season 10, Episode 12" in either
-/// language at this size, and the caption is clipped rather than allowed to
-/// push the row taller than it was told to be.
-const double _kCaptionHeight = 38;
-
 /// One resolved row: the progress entry, what TMDB says about it, and where to
 /// pick the show back up.
 class ContinueWatchingTile {
   const ContinueWatchingTile({
     required this.item,
     required this.media,
-    this.nextEpisode,
+    this.resume = const ResumePoint.unknown(),
   });
 
   final WatchProgressListItem item;
   final ContinueWatchingMedia media;
 
-  /// Null for movies, and for a show whose seasons could not be read.
-  final WatchProgressEpisode? nextEpisode;
+  /// Always unknown for movies, and for a show whose seasons could not be read.
+  final ResumePoint resume;
 }
 
 /// The home page's Continue watching row.
@@ -85,25 +79,25 @@ class _ContinueWatchingSectionState extends State<ContinueWatchingSection> {
   Future<ContinueWatchingTile> _tileFor(WatchProgressListItem item) {
     return _tiles.putIfAbsent('${item.type}:${item.id}', () async {
       final media = await _fetchMedia(item.type, item.id);
-      WatchProgressEpisode? next;
+      var resume = const ResumePoint.unknown();
       if (media.isShow && media.seasons.isNotEmpty) {
         try {
-          next = await ProgressService.nextUnwatchedEpisode(
-            item.id,
-            media.seasons,
+          resume = WatchProgressView.resumeFrom(
+            seasons: media.seasons,
+            watched: await ProgressService.watchedEpisodesBySeason(item.id),
           );
         } catch (_) {
-          next = null;
+          resume = const ResumePoint.unknown();
         }
       }
-      return ContinueWatchingTile(item: item, media: media, nextEpisode: next);
+      return ContinueWatchingTile(item: item, media: media, resume: resume);
     });
   }
 
   /// Fetches the TMDB detail for one title, and never throws.
   ///
   /// The show payload carries its season list, so this single request covers
-  /// both the artwork and the season counts `nextUnwatchedEpisode` needs.
+  /// both the artwork and the season counts the resume point needs.
   Future<ContinueWatchingMedia> _fetchMedia(String type, String id) async {
     final link = type == progressTVShowsKey ? TV_SHOW_LINK : MOVIE_LINK;
     try {
@@ -179,7 +173,7 @@ class _ContinueWatchingSectionState extends State<ContinueWatchingSection> {
             // the window height was only ever the height of a row of posters
             // on a phone held upright; on a short window it clipped the tiles
             // and on a tall one it left a band of dead space beneath them.
-            height: posterRowHeight(context) + _kCaptionHeight,
+            height: posterRowHeight(context) + kResumeCaptionHeight,
             // Builds lazily, so the titles scrolled past never cost a request.
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
@@ -202,7 +196,6 @@ class _ContinueWatchingSectionState extends State<ContinueWatchingSection> {
         final media = tile.media;
         final title = media.title ?? S.of(context)!.unknown;
         final itemData = media.itemData(title);
-        final next = tile.nextEpisode;
 
         return GestureDetector(
           key: ValueKey('continueWatching-${item.type}-${item.id}'),
@@ -226,20 +219,7 @@ class _ContinueWatchingSectionState extends State<ContinueWatchingSection> {
                   containerType: item.type,
                 ),
               ),
-              if (next != null)
-                SizedBox(
-                  height: _kCaptionHeight,
-                  child: Text(
-                    S.of(context)!.nextEpisode(
-                          next.seasonNumber,
-                          next.episodeNumber,
-                        ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.grey, fontSize: 13),
-                  ),
-                ),
+              ResumeCaption(tile.resume),
             ],
           ),
         );

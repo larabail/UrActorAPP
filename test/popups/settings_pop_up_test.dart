@@ -259,23 +259,67 @@ void main() {
   });
 
   group('the daily reminder', () {
+    const reminder = ValueKey('settings-dontAskCalendar');
+
     testWidgets('shows the stored preference', (tester) async {
       user.dontAskCalendar = true;
 
       await openDialog(tester);
 
-      expect(tester.widget<Switch>(find.byType(Switch)).value, isTrue);
+      expect(tester.widget<Switch>(find.byKey(reminder)).value, isTrue);
     });
 
     testWidgets('turning it off is remembered', (tester) async {
       user.dontAskCalendar = true;
 
       await openDialog(tester);
-      await tester.tap(find.byType(Switch));
+      await tester.tap(find.byKey(reminder));
       await tester.pumpAndSettle();
 
       expect(user.dontAskCalendar, isFalse);
       expect((await settingsDoc())!['dontAskCalendar'], isFalse);
+    });
+  });
+
+  group('filling in earlier episodes', () {
+    const toggle = ValueKey('settings-fillEpisodesBefore');
+
+    testWidgets('is on for an account that has never set it', (tester) async {
+      // Every account created before the setting existed backfilled, so an
+      // absent value has to read as on or the dialogue would report a change
+      // nobody made.
+      await openDialog(tester);
+
+      expect(tester.widget<Switch>(find.byKey(toggle)).value, isTrue);
+    });
+
+    testWidgets('shows the stored preference', (tester) async {
+      user.settings['fillEpisodesBefore'] = false;
+
+      await openDialog(tester);
+
+      expect(tester.widget<Switch>(find.byKey(toggle)).value, isFalse);
+    });
+
+    testWidgets('turning it off is remembered', (tester) async {
+      await openDialog(tester);
+      await tester.tap(find.byKey(toggle));
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<Switch>(find.byKey(toggle)).value, isFalse);
+      expect(user.settings['fillEpisodesBefore'], isFalse);
+      expect((await settingsDoc())!['fillEpisodesBefore'], isFalse);
+    });
+
+    testWidgets('turning it back on is remembered', (tester) async {
+      user.settings['fillEpisodesBefore'] = false;
+
+      await openDialog(tester);
+      await tester.tap(find.byKey(toggle));
+      await tester.pumpAndSettle();
+
+      expect(user.settings['fillEpisodesBefore'], isTrue);
+      expect((await settingsDoc())!['fillEpisodesBefore'], isTrue);
     });
   });
 

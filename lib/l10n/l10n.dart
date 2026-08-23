@@ -325,6 +325,12 @@ abstract class S {
   /// **'Next: S{season} E{episode}'**
   String nextEpisode(int season, int episode);
 
+  /// Shown under a show in Continue watching when nothing has been released after the last episode watched
+  ///
+  /// In en, this message translates to:
+  /// **'Caught up'**
+  String get caughtUp;
+
   /// Title of the friends section listing shows started with a friend and not finished
   ///
   /// In en, this message translates to:
@@ -1152,6 +1158,18 @@ abstract class S {
   /// In en, this message translates to:
   /// **'Delete Account'**
   String get deleteAccount;
+
+  /// Settings label for whether logging an episode also marks every episode before it as watched
+  ///
+  /// In en, this message translates to:
+  /// **'Fill in earlier episodes'**
+  String get fillEarlierEpisodes;
+
+  /// Explanation shown under the fill in earlier episodes setting
+  ///
+  /// In en, this message translates to:
+  /// **'Logging an episode marks everything before it as watched too. Turn this off if you joined a show partway through.'**
+  String get fillEarlierEpisodesHint;
 
   /// No description provided for @deleteAccountConfirmation.
   ///

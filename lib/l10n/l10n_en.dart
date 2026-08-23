@@ -153,6 +153,9 @@ class SEn extends S {
   }
 
   @override
+  String get caughtUp => 'Caught up';
+
+  @override
   String get watchingTogether => 'Watching together';
 
   @override
@@ -600,6 +603,13 @@ class SEn extends S {
 
   @override
   String get deleteAccount => 'Delete Account';
+
+  @override
+  String get fillEarlierEpisodes => 'Fill in earlier episodes';
+
+  @override
+  String get fillEarlierEpisodesHint =>
+      'Logging an episode marks everything before it as watched too. Turn this off if you joined a show partway through.';
 
   @override
   String get deleteAccountConfirmation =>
