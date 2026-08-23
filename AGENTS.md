@@ -185,10 +185,10 @@ release watchdog and the master-side verification all read it from there through
 Bumping anyway is always allowed.
 
 A change of that shape also skips the release entirely. It is still analyzed and
-tested: `verify-master.yml` runs the checks for exactly the pushes the release
-skips, which is what makes it safe to filter `test/` — see
-[what does not reach a tester](README.md#what-does-not-reach-a-tester) and
-[verifying a merge that ships nothing](README.md#verifying-a-merge-that-ships-nothing).
+tested, because `pr.yml` runs analyze and the suite against the **merge commit**
+— a bare checkout on a `pull_request` event resolves to `refs/pull/N/merge` —
+and those are required checks. That is what makes it safe to filter `test/`; see
+[what does not reach a tester](README.md#what-does-not-reach-a-tester).
 
 ## Pull requests
 
