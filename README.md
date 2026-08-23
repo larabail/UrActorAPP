@@ -313,6 +313,29 @@ threw away, so on Windows a refused key is indistinguishable from any other
 fault — which is why the guard is a test on the configuration rather than a
 better message at the point of failure.
 
+### What an unrestricted key changes, and what answers for it
+
+Dropping the caller restriction does not expose the data. `firestore.rules` was
+always the thing guarding that, and a restriction on who may hold a key never
+was. It widens one specific gap instead, in sign in itself: anyone holding the
+key can put an address to Identity Toolkit and read the answer, and if that
+answer distinguishes "no such account" from "wrong password", the key is an
+oracle for whether a given person has an account here.
+
+**Email enumeration protection is turned on for this project**, which is what
+closes it. Firebase stops sending `user-not-found` and `wrong-password` and
+sends `invalid-credential` for both, so the two cases become one answer that
+says nothing about who is registered.
+
+The cost falls on the interface, which is why it belongs here rather than only
+in the console. A failed sign in genuinely cannot say which half was wrong, so
+its message — `invalidCredentialError`, "That email and password do not match
+an account." — is deliberately vaguer than the two it replaces. The vagueness
+is the point and not an oversight: rewording it to guess at the likelier half
+would hand back precisely what the setting withholds. `classifyAuthError` still
+maps the two older codes, since the setting is per project and one without it
+goes on sending them.
+
 ### Building macOS needs the Apple Developer team
 
 Unlike Android and Windows, a macOS build is signed with a real identity

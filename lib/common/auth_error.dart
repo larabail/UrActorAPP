@@ -18,6 +18,28 @@ enum AuthFailure {
   /// The account exists and the password was wrong.
   wrongPassword,
 
+  /// The email and password did not match an account, and which of the two
+  /// was wrong is not something the app is allowed to know.
+  ///
+  /// This is [noUser] and [wrongPassword] collapsed into one answer, which is
+  /// what Firebase sends once email enumeration protection is turned on for
+  /// the project. It stops sending the two codes that tell them apart and
+  /// sends `invalid-credential` for both, deliberately: a client that can say
+  /// "no account exists for that address" is an oracle for whether a given
+  /// person has one, and anybody holding the API key can ask it. Every
+  /// Firebase client key ships inside a binary, so that is anybody who wants
+  /// to.
+  ///
+  /// Both of those are kept, because the setting is per project and either
+  /// answer is a valid thing for a server to send. This is the third case, not
+  /// their replacement.
+  ///
+  /// The message for it cannot be more specific than the code is, and must not
+  /// try. Naming the half that was wrong is exactly what the setting exists to
+  /// prevent, so a message that guessed would hand back what the server
+  /// withheld.
+  invalidCredential,
+
   /// The email was not a valid address.
   invalidEmail,
 
@@ -47,12 +69,9 @@ enum AuthFailure {
   /// Anything else.
   ///
   /// This is not a rare case to be ignored. Firebase adds error codes over
-  /// time, and returns codes that depend on how the project is configured —
-  /// with email enumeration protection turned on, a wrong password and an
-  /// unknown account both come back as `invalid-credential` rather than as
-  /// the two codes the app used to check for. A platform can produce its own
-  /// failures too: on macOS the keychain is unreachable unless the app is
-  /// signed and entitled for it, and Firebase reports that here.
+  /// time, and a platform can produce its own failures too: on macOS the
+  /// keychain is unreachable unless the app is signed and entitled for it, and
+  /// Firebase reports that here.
   ///
   /// Whatever the cause, the person in front of the app has to be told that
   /// something failed. Saying nothing is the one response that is always
@@ -100,6 +119,8 @@ AuthFailure classifyAuthError(Object error) {
       return AuthFailure.noUser;
     case 'wrong-password':
       return AuthFailure.wrongPassword;
+    case 'invalid-credential':
+      return AuthFailure.invalidCredential;
     case 'invalid-email':
       return AuthFailure.invalidEmail;
     case 'user-disabled':
@@ -123,6 +144,8 @@ String authFailureMessage(BuildContext context, AuthFailure failure) {
       return S.of(context)!.noUserFoundError;
     case AuthFailure.wrongPassword:
       return S.of(context)!.wrongPasswordError;
+    case AuthFailure.invalidCredential:
+      return S.of(context)!.invalidCredentialError;
     case AuthFailure.invalidEmail:
       return S.of(context)!.invalidEmailError;
     case AuthFailure.userDisabled:

@@ -778,6 +778,10 @@ class SEn extends S {
       'This build of the app is not allowed to sign in. Trying again will not help.';
 
   @override
+  String get invalidCredentialError =>
+      'That email and password do not match an account.';
+
+  @override
   String updateAvailable(String version) {
     return 'UrActor $version is available';
   }
