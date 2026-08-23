@@ -169,11 +169,15 @@ class TheRealFilter(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertShips(path)
 
-    def test_the_flutter_suite_still_ships(self):
-        # Deliberate: the release's `verify` job is the only place the suite
-        # runs against a merge commit, a combination neither branch tested on
-        # its own. The build that follows is redundant; the check is not.
-        self.assertShips("test/media_sort_test.dart")
+    def test_the_flutter_suite_no_longer_ships(self):
+        # Reversed deliberately. It was held out of the filter so that the
+        # release's `verify` job would run the suite against the merge commit,
+        # and the price was build 95: signed, uploaded to every internal tester
+        # and then stranded by a tag race, for one Dart test file. The
+        # verification now lives in `verify-master.yml`, which runs for exactly
+        # the pushes this filter skips, so the check survives without a build.
+        # `tool/test_needs_master_verify.py` is what holds up the other half.
+        self.assertDoesNotShip("test/media_sort_test.dart")
 
     def test_prose_does_not_ship(self):
         for path in ("README.md", "AGENTS.md", "SECURITY.md", "LICENSE",

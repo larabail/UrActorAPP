@@ -1450,7 +1450,7 @@ in its `paths-ignore:` block:
 .gitignore       .gitattributes       .vscode/**
 .githooks/**     .github/**
 tool/**          tools/**             firestore-tests/**
-web/downloads/**
+test/**          web/downloads/**
 ```
 
 **That block is the list, not a copy of it.** GitHub reads it to decide whether
@@ -1463,25 +1463,64 @@ can drift out of step with it.
 GitHub skips the run only when **every** changed path matches, so a pull request
 that touches a workflow and one line of `lib/` releases as usual.
 
-Two paths are deliberately absent:
+One path is deliberately absent. `firestore.rules` and `firestore.indexes.json`
+are not app code, but this workflow is what **deploys** them. Filtering them out
+would leave a committed rule undeployed and invisible until production broke,
+which has happened before and is why the `functions` job checks for them. Their
+test suite in `firestore-tests/` is deployed by nothing, so that is on the list.
 
-- `test/**` is not packaged either, but the release's `verify` job is the only
-  place `flutter test` runs against a merge commit — a combination neither
-  branch tested on its own — and a test-only merge is exactly when that is worth
-  doing. The build that follows is redundant; the check is not.
-- `firestore.rules` and `firestore.indexes.json` are not app code, but this
-  workflow is what **deploys** them. Filtering them out would leave a committed
-  rule undeployed and invisible until production broke, which has happened
-  before and is why the `functions` job checks for them. Their test suite in
-  `firestore-tests/` is deployed by nothing, so that is on the list.
+`test/**` used to be absent too, and the reason it no longer is, is the clearest
+illustration of what this filter is for. It was held out because the release's
+`verify` job runs `flutter analyze` and `flutter test` against the **merge
+commit** — a combination neither branch tested on its own, and the first moment
+two independently green branches can be shown to disagree. Nothing else on
+master looked at it, so filtering `test/**` would have bought a skipped build at
+the cost of an unverified merge.
 
-The cost, worth knowing before adding to the block: the release machinery no
-longer verifies changes to itself. That was already true of `release-internal.yml`
-— its own merge is the push that would test it — and now also of
-`.github/actions/`, which pins the Flutter and NDK versions the app is built
-with, and of `tool/`. A change there reaches testers with the next merge that
-ships. **When that is not soon enough, dispatch "Release to internal testing" by
-hand from the Actions tab.**
+Then the price came due. Build 95 was built, signed, uploaded to every internal
+tester, and then stranded when a tag race took its job red, losing the bundle
+artifact and the build-number write-back with it — all because one Dart test
+file changed. A build byte-for-byte identical to the one before it, under a
+version name already used.
+
+The mistake was treating the build and the verification as one thing. They were
+welded together only because `release-internal.yml` happened to be the only
+workflow triggered by a push to `master`.
+
+### Verifying a merge that ships nothing
+
+[`verify-master.yml`](.github/workflows/verify-master.yml) is the other half.
+It runs on every push to `master` and asks
+[`tool/needs_master_verify.py`](tool/needs_master_verify.py) whether the release
+is already doing this work:
+
+| The push | `release-internal.yml` | `verify-master.yml` |
+| --- | --- | --- |
+| changes something a build contains | builds, ships, and verifies | stands down |
+| changes nothing a build contains | does not run | analyze, test, tool tests |
+
+It is deliberately the cheap half — Linux, no signing material, no store
+credentials, no artifact — so it cannot release anything however wrong it goes.
+It also runs the Python tool tests, which the release workflow never did: those
+had been running against the branch in `pr.yml` and never against the merge
+commit.
+
+The decision reads the same `paths-ignore:` block, through the same
+`release_paths.py`, so the two workflows cannot both decide the other one is
+looking. One inversion is deliberate and tested: `reaches_the_app` answers
+"ships" when it cannot tell, because its other callers are asking questions
+where silence is dangerous. Here "ships" means "somebody else is checking this",
+so an unreadable filter resolves the other way and the checks run. Being wrong
+in that direction costs five minutes of a free Linux runner; being wrong in the
+other leaves a merge commit nobody ran the tests against.
+
+The cost of the block, worth knowing before adding to it: the release machinery
+no longer verifies changes to itself. That was already true of
+`release-internal.yml` — its own merge is the push that would test it — and now
+also of `.github/actions/`, which pins the Flutter and NDK versions the app is
+built with, and of `tool/`. A change there reaches testers with the next merge
+that ships. **When that is not soon enough, dispatch "Release to internal
+testing" by hand from the Actions tab.**
 
 #### What a pull request does with the same question
 
@@ -1599,9 +1638,17 @@ a tag would cost more than the tag does.
 - [`tool/release_paths.py`](tool/release_paths.py) — reads the `paths-ignore:`
   block out of `release-internal.yml` and answers whether a set of changed
   paths can alter an installed app. Not run on its own; it exists so that
-  `check_version_bump.py` and `check_release_gap.py` cannot answer that
-  question differently from each other or from the trigger itself. See
+  `check_version_bump.py`, `check_release_gap.py` and `needs_master_verify.py`
+  cannot answer that question differently from each other or from the trigger
+  itself. See
   [what does not reach a tester](#what-does-not-reach-a-tester).
+- [`tool/needs_master_verify.py`](tool/needs_master_verify.py) — answers whether
+  a push to `master` still owes `flutter analyze` and `flutter test`, which it
+  does exactly when the release workflow skipped it. Called by
+  `verify-master.yml`. It inverts `release_paths`' fail-safe on purpose: an
+  unreadable filter runs the checks here rather than assuming the release is
+  running them. See
+  [verifying a merge that ships nothing](#verifying-a-merge-that-ships-nothing).
 - [`tools/sync-oscars`](tools/sync-oscars/README.md) — a standalone Node 18+
   script (no npm dependencies) that populates the Firestore `Oscars`
   collection from the UrActor API, resolving winners to TMDB ids. It has its
