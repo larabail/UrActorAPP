@@ -1322,9 +1322,11 @@ building one over a large collection takes minutes. A `FAILED_PRECONDITION`
 naming a required index, in the first few minutes after a deploy that added
 one, is usually that index still building rather than a missing one.
 
-Internal builds are not tagged; that summary records the version code and the
-commit, which is what a production promotion is given. Production is a separate,
-manual pipeline. See [docs/releases.md](docs/releases.md).
+Once the Android upload succeeds the run tags the commit `build-<version code>`,
+so a version code can be turned back into the commit it was built from. That
+summary records the same pair, and a production promotion is given the commit.
+Production is a separate, manual pipeline. See
+[docs/releases.md](docs/releases.md).
 
 `.github/workflows/deploy-downloads.yml` publishes
 [the downloads site](#the-downloads-site) on any push to `master` touching

@@ -135,10 +135,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Internal builds are not tagged: tags mark production releases only. The
-      # internal run's summary prints the commit it built, and that commit is
-      # passed in here. Builds made before that change still have their build-*
-      # tag, so those are honoured too and historic promotions stay traceable.
+      # Internal builds are tagged `build-<code>` by the run that produces
+      # them, so a version code can be turned back into the commit it was
+      # built from. Builds made during the window when that tagging was absent
+      # have no tag, and for those the commit has to be passed in by hand.
       - name: Resolve the commit that produced the build
         id: source
         env:
@@ -158,6 +158,44 @@ jobs:
           fi
           echo "ref=$REF" >> "$GITHUB_OUTPUT"
           echo "promoting the build produced by $REF"
+
+      # Both writes this pipeline makes to the repository create a ref at the
+      # promoted commit: the `released-<code>` tag below, and the tag that
+      # comes with the desktop stage's GitHub release. GitHub refuses to let an
+      # Actions token create any ref -- tag or branch, by `git push` or through
+      # the API -- at a commit that no ref already points at and whose
+      # `.github/workflows/` differ from the tip of the default branch. The
+      # `workflows` permission that would lift the refusal is not one
+      # GITHUB_TOKEN can be granted, so raising `permissions:` cannot help.
+      #
+      # A commit built since internal releases started tagging themselves
+      # always carries its `build-<code>` tag and passes. What fails is an
+      # older commit, or one promoted while master has moved on past a merge
+      # that touched any workflow file.
+      #
+      # Asked here rather than left to fail where it bites, because those two
+      # writes happen after the approval gate and after the stores have been
+      # written: on 2026-08-23 Play was promoted to production and the tag was
+      # then refused, which shipped the release and lost the record of it. The
+      # next promotion's notes are cut from the last `released-*` tag, so a
+      # missing one silently repeats notes users have already read. A dry run
+      # checks it too -- knowing the real run would fail is the point of one.
+      - name: Check the promoted commit can be tagged
+        env:
+          REF: ${{ steps.source.outputs.ref }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin "$DEFAULT_BRANCH"
+          if git ls-remote --heads --tags origin |
+               awk -v r="$REF" '$1 == r { hit = 1 } END { exit !hit }'; then
+            echo "a ref already points at $REF, so it can be tagged"
+          elif git diff --quiet "$REF" FETCH_HEAD -- .github/workflows/; then
+            echo "workflows at $REF match $DEFAULT_BRANCH, so it can be tagged"
+          else
+            echo "::error::Nothing points at $REF and its .github/workflows/ differ from $DEFAULT_BRANCH, so GitHub will refuse both the released-* tag and the desktop release. Create a ref at it first, from a machine holding a token with the workflow scope: git push origin $REF:refs/tags/build-<version code>"
+            exit 1
+          fi
 
       # Read from the promoted commit rather than from HEAD. Promoting a build
       # from a fortnight ago while master has since moved to 3.17.0 would
@@ -416,17 +454,32 @@ jobs:
       # from here rather than repeating changes users have already seen. The
       # desktop stage's `v<version>` release tag is a different thing: it names
       # a version people download, while this names a point in the history.
+      #
+      # Written through the refs API rather than `git push`. The push path
+      # reports a refusal to touch `.github/workflows/` -- see the check in the
+      # `resolve` job -- which names a cause that has nothing to do with what
+      # this step is doing and sends the reader looking for a permission that
+      # does not exist. `resolve` has already established that the ref is
+      # allowed, so what is left here is a plain create-or-move, and `$TARGET`
+      # is resolved to a commit first because it may be a branch name.
       - name: Tag the production release
         if: ${{ !inputs.dry_run }}
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TARGET: ${{ needs.resolve.outputs.ref }}
           CODE: ${{ steps.promote.outputs.version-code }}
         run: |
           set -euo pipefail
           TAG="released-$CODE"
-          git tag -f "$TAG" "$TARGET"
-          git push -f origin "$TAG"
-          echo "tagged $TAG at $TARGET"
+          SHA=$(git rev-parse "$TARGET^{commit}")
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG" \
+              -f "sha=$SHA" -F force=true >/dev/null
+          else
+            gh api "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f "ref=refs/tags/$TAG" -f "sha=$SHA" >/dev/null
+          fi
+          echo "tagged $TAG at $SHA"
 
   # -------------------------------------------------------------------- 2. iOS
 
@@ -963,7 +1016,11 @@ jobs:
       #
       # `target_commitish` is stated rather than left to default, because the
       # tag has to land on the promoted commit and GITHUB_SHA is whatever
-      # master happened to be when the run started.
+      # master happened to be when the run started. That tag is a ref like any
+      # other, so this step is refused with a bare `403 Resource not accessible
+      # by integration` whenever the promoted commit could not be tagged -- a
+      # message that reads like a missing `contents: write` and is not one. The
+      # `resolve` job checks for that case before anything here runs.
       - name: Publish the GitHub release
         if: ${{ !inputs.dry_run }}
         uses: softprops/action-gh-release@v3
