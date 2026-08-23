@@ -722,6 +722,51 @@ default because that version may be someone's deliberate work in progress.
 screenshots, a new keyword list. This automates the copying-forward Apple was
 doing anyway; it does not write store copy.
 
+### Export compliance is answered for you
+
+Apple will not review a build it has no export compliance answer for. The
+attribute is `usesNonExemptEncryption`, it is the "does your app use
+encryption?" question App Store Connect shows beside a build, and until it is
+answered a submission is refused:
+
+```
+POST /reviewSubmissionItems failed: HTTP 409
+{ "code" : "STATE_ERROR.ENTITY_STATE_INVALID",
+  "title" : "appStoreVersions with id '...' is not in valid state.",
+  "meta" : { "associatedErrors" : { "/v1/builds/ff5192ff-..." : [ {
+    "code" : "ENTITY_ERROR.ATTRIBUTE.REQUIRED",
+    "detail" : "You must provide a value for the attribute
+                'usesNonExemptEncryption' with this request" } ] } } }
+```
+
+Read that error carefully, because it points at the wrong thing twice. It is
+reported against the *version*, and the version is fine; the real complaint is
+nested under `associatedErrors`, against a *build*. And it arrives at the last
+step, after the release type has been set and the build attached — so a run
+that fails here has already half-written the version it was refused for.
+
+The answer is `false`. Everything the app sends goes over HTTPS through the
+system's own TLS, and Apple exempts that.
+
+It is given in two places, and they are not redundant:
+
+- **`ios/Runner/Info.plist` declares it.** `ITSAppUsesNonExemptEncryption` set
+  to `<false/>` is read at upload, so the build arrives already answered. This
+  is the fix that matters — it also stops TestFlight asking, where an
+  unanswered build sits marked *Missing Compliance* and cannot go to external
+  testers.
+- **`submit` patches it when it is missing.** A build uploaded before the plist
+  key existed has no answer and never will, and rebuilding to change one
+  boolean is a poor trade. The tool reads the build first and `PATCH`es
+  `usesNonExemptEncryption` to `false` only when Apple has no value for it.
+
+A build that already carries an answer is left alone — `false` as much as
+`true`. The declaration is a legal statement about what the binary does, so a
+`true` someone set deliberately is not something a release script gets to flip.
+
+`check` reports an unanswered build before the approval gate as information
+rather than a failure, since `submit` is about to fix it.
+
 ### It refuses early, before anyone approves
 
 The remaining refusals are worth about four seconds each, and they used to
