@@ -116,7 +116,49 @@ jobs:
       macos: ${{ steps.macos.outputs.configured }}
       backend: ${{ steps.backend_changed.outputs.changed }}
 
+    # Anchoring the commit. See the first step.
+    permissions:
+      contents: write
+
     steps:
+      # First, before the checkout, because this is a race against the next
+      # merge and the only thing that shortens it is doing it sooner.
+      #
+      # An Actions token may only create a ref at a commit that already has one
+      # or whose `.github/workflows/` match the tip of the default branch --
+      # see [a promotion cannot tag a commit that has no
+      # ref](../../docs/releases.md#a-promotion-cannot-tag-a-commit-that-has-no-ref).
+      # The build tag that a promotion needs is not created until the upload
+      # succeeds, which is twenty minutes away, and by then one merge touching
+      # any workflow file is enough to make it impossible. That is not
+      # hypothetical: it happened on the first run after the tag was introduced,
+      # to a merge that landed thirty-four seconds later.
+      #
+      # So the ref is staked here instead, seconds after the push, when the
+      # commit is still master's tip. It carries no meaning of its own; it
+      # exists so that the build tag is still allowed twenty minutes from now,
+      # and the Android stage drops it once that tag is in place.
+      #
+      # A failure is a warning rather than an error. Losing the anchor costs a
+      # promotion that has to be unblocked by hand later, which the production
+      # run says how to do; failing here would instead stop a release that is
+      # otherwise fine from reaching testers at all.
+      - name: Anchor this commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -uo pipefail
+          if gh api "repos/$GITHUB_REPOSITORY/git/refs" \
+               -f "ref=refs/tags/anchor-$GITHUB_RUN_ID" -f "sha=$SHA" >/dev/null
+          then
+            echo "anchored $SHA"
+          else
+            echo "::warning::Could not anchor $SHA, so this build may not be" \
+                 "taggable and a promotion of it will have to be unblocked by" \
+                 "hand. Master has probably already moved past it."
+          fi
+
       - uses: actions/checkout@v5
         with:
           # Deep enough to diff against whatever master was before this push.
@@ -555,11 +597,9 @@ jobs:
       # the default branch. The `workflows` permission that would lift the
       # refusal cannot be granted to GITHUB_TOKEN; it is not one of the keys
       # `permissions:` accepts. So the promotion run cannot tag the commit it
-      # promotes: by then master has usually moved, and one merge touching any
-      # workflow file is enough. Here the commit is master's tip, which is the
-      # one moment the ref is allowed, and once a ref exists at a commit the
-      # refusal no longer applies to it -- which is what lets the production
-      # run add `released-<code>` and the `v<version>` release later.
+      # promotes, and once a ref exists at a commit the refusal no longer
+      # applies to it -- which is what lets the production run add
+      # `released-<code>` and the `v<version>` release later.
       #
       # It also gives `tool/release_notes.py` the baseline it looks for by
       # default, so an internal build's notes cover the commits since the
@@ -571,22 +611,39 @@ jobs:
       # range ending at the previous build tag. A build that fails before this
       # point burns no version code, so the next run is handed the same one and
       # moves the tag to where it belongs.
+      #
+      # What makes it allowed this late is the anchor staked in `preflight`,
+      # not the commit still being master's tip -- it usually is not by now.
+      # A warning rather than an error if it fails anyway: the build has
+      # already reached testers by this point, and taking the job red would
+      # throw away the bundle artifact and the build-number write-back over a
+      # tag. The promotion that needs it refuses on its own, and says what to
+      # do about it.
       - name: Tag the build
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SHA: ${{ github.sha }}
           CODE: ${{ steps.version.outputs.code }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           TAG="build-$CODE"
           if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
-            gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG" \
-              -f "sha=$SHA" -F force=true >/dev/null
+            CALL=(-X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG"
+                  -f "sha=$SHA" -F force=true)
           else
-            gh api "repos/$GITHUB_REPOSITORY/git/refs" \
-              -f "ref=refs/tags/$TAG" -f "sha=$SHA" >/dev/null
+            CALL=("repos/$GITHUB_REPOSITORY/git/refs"
+                  -f "ref=refs/tags/$TAG" -f "sha=$SHA")
           fi
-          echo "tagged $TAG at $SHA"
+          if gh api "${CALL[@]}" >/dev/null; then
+            echo "tagged $TAG at $SHA"
+            gh api -X DELETE \
+              "repos/$GITHUB_REPOSITORY/git/refs/tags/anchor-$GITHUB_RUN_ID" \
+              >/dev/null 2>&1 && echo "anchor released"
+          else
+            echo "::warning::Build $CODE shipped but could not be tagged" \
+                 "build-$CODE at $SHA. Promoting it needs a ref pushed by hand" \
+                 "first: git push origin $SHA:refs/tags/build-$CODE"
+          fi
 
       - name: Keep the bundle for inspection
         uses: actions/upload-artifact@v6
