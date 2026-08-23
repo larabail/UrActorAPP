@@ -324,29 +324,6 @@ class ProgressService {
     );
   }
 
-  static Future<WatchProgressEpisode?> nextUnwatchedEpisode(
-    String showId,
-    List<SeasonEpisodeCount> seasons,
-  ) async {
-    final entry = await _entry(progressTVShowsKey, showId.toString());
-    final episodes = entry == null ? <String, dynamic>{} : _episodesFrom(entry);
-    final ordered = seasons.where((season) => season.seasonNumber != 0).toList()
-      ..sort((a, b) => a.seasonNumber.compareTo(b.seasonNumber));
-
-    for (final season in ordered) {
-      final watched = _watchedSet(episodes, season.seasonNumber);
-      for (var episode = 1; episode <= season.episodeCount; episode++) {
-        if (!watched.contains(episode)) {
-          return WatchProgressEpisode(
-            seasonNumber: season.seasonNumber,
-            episodeNumber: episode,
-          );
-        }
-      }
-    }
-    return null;
-  }
-
   static Future<List<WatchProgressListItem>> inProgressItems() async {
     final progress = await _readProgress();
     final items = <WatchProgressListItem>[];

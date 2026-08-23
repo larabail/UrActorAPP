@@ -154,6 +154,9 @@ class SEs extends S {
   }
 
   @override
+  String get caughtUp => 'Al día';
+
+  @override
   String get watchingTogether => 'Viendo juntos';
 
   @override
@@ -608,6 +611,13 @@ class SEs extends S {
 
   @override
   String get deleteAccount => 'Eliminar Cuenta';
+
+  @override
+  String get fillEarlierEpisodes => 'Completar episodios anteriores';
+
+  @override
+  String get fillEarlierEpisodesHint =>
+      'Registrar un episodio también marca como vistos todos los anteriores. Desactívalo si empezaste una serie por la mitad.';
 
   @override
   String get deleteAccountConfirmation =>

@@ -348,4 +348,231 @@ void main() {
       );
     });
   });
+
+  group('episodesWithin', () {
+    const seasons = [
+      SeasonEpisodeCount(seasonNumber: 1, episodeCount: 3),
+      SeasonEpisodeCount(seasonNumber: 2, episodeCount: 4),
+    ];
+
+    test('records only the episode named, leaving earlier seasons alone', () {
+      final within = WatchProgressView.episodesWithin(
+        seasons: seasons,
+        season: 2,
+        episode: 3,
+      );
+
+      expect(within, {
+        2: [3],
+      });
+    });
+
+    test('records a whole season when the entry named no episode', () {
+      expect(
+        WatchProgressView.episodesWithin(seasons: seasons, season: 2),
+        {
+          2: [1, 2, 3, 4],
+        },
+      );
+    });
+
+    test('clamps an episode past the end of a season TMDB has shrunk', () {
+      expect(
+        WatchProgressView.episodesWithin(
+          seasons: seasons,
+          season: 1,
+          episode: 9,
+        ),
+        {
+          1: [3],
+        },
+      );
+    });
+
+    test('still records an episode of a season TMDB has no count for', () {
+      expect(
+        WatchProgressView.episodesWithin(
+          seasons: seasons,
+          season: 7,
+          episode: 2,
+        ),
+        {
+          7: [2],
+        },
+      );
+    });
+
+    test('records nothing for a season of unknown length', () {
+      expect(
+        WatchProgressView.episodesWithin(seasons: seasons, season: 7),
+        isEmpty,
+      );
+    });
+
+    test('records nothing for a nonsensical pointer', () {
+      expect(
+        WatchProgressView.episodesWithin(
+          seasons: seasons,
+          season: 0,
+          episode: 1,
+        ),
+        isEmpty,
+      );
+      expect(
+        WatchProgressView.episodesWithin(
+          seasons: seasons,
+          season: 1,
+          episode: 0,
+        ),
+        isEmpty,
+      );
+    });
+  });
+
+  group('resumeFrom', () {
+    const seasons = [
+      SeasonEpisodeCount(seasonNumber: 0, episodeCount: 5),
+      SeasonEpisodeCount(seasonNumber: 1, episodeCount: 3),
+      SeasonEpisodeCount(seasonNumber: 2, episodeCount: 2),
+      SeasonEpisodeCount(seasonNumber: 3, episodeCount: 4),
+    ];
+
+    ResumePoint resume(Map<int, List<int>> watched) =>
+        WatchProgressView.resumeFrom(seasons: seasons, watched: watched);
+
+    test('starts an untouched show at its first episode', () {
+      expect(
+        resume(const {}),
+        const ResumePoint.at(
+          WatchProgressEpisode(seasonNumber: 1, episodeNumber: 1),
+        ),
+      );
+    });
+
+    test('follows the furthest episode watched, not the first gap', () {
+      // The whole point of the change: someone who joined at season 3 is not
+      // sent back to season 1 for episodes they never intended to watch.
+      expect(
+        resume(const {
+          3: [1, 2],
+        }),
+        const ResumePoint.at(
+          WatchProgressEpisode(seasonNumber: 3, episodeNumber: 3),
+        ),
+      );
+    });
+
+    test('rolls into the next season at the end of one', () {
+      expect(
+        resume(const {
+          1: [1, 2, 3],
+        }),
+        const ResumePoint.at(
+          WatchProgressEpisode(seasonNumber: 2, episodeNumber: 1),
+        ),
+      );
+    });
+
+    test('skips a gap inside the season being watched', () {
+      // S3E1 is unwatched, but the viewer is at E2, and sending them back to
+      // E1 is exactly the behaviour this replaced.
+      expect(
+        resume(const {
+          3: [2],
+        }),
+        const ResumePoint.at(
+          WatchProgressEpisode(seasonNumber: 3, episodeNumber: 3),
+        ),
+      );
+    });
+
+    test('reports being caught up once the last season runs out', () {
+      expect(
+        resume(const {
+          3: [1, 2, 3, 4],
+        }),
+        const ResumePoint.caughtUp(),
+      );
+      expect(resume(const {
+        3: [1, 2, 3, 4],
+      }).episode, isNull);
+    });
+
+    test('ignores specials when deciding where the viewer is', () {
+      expect(
+        resume(const {
+          0: [1, 2, 3, 4, 5],
+        }),
+        const ResumePoint.at(
+          WatchProgressEpisode(seasonNumber: 1, episodeNumber: 1),
+        ),
+      );
+    });
+
+    test('ignores an episode number the season no longer has', () {
+      expect(
+        resume(const {
+          2: [9],
+        }),
+        const ResumePoint.at(
+          WatchProgressEpisode(seasonNumber: 1, episodeNumber: 1),
+        ),
+      );
+    });
+
+    test('steps over a season TMDB reports no episodes for', () {
+      expect(
+        WatchProgressView.resumeFrom(
+          seasons: const [
+            SeasonEpisodeCount(seasonNumber: 1, episodeCount: 2),
+            SeasonEpisodeCount(seasonNumber: 2, episodeCount: 0),
+            SeasonEpisodeCount(seasonNumber: 3, episodeCount: 2),
+          ],
+          watched: const {
+            1: [1, 2],
+          },
+        ),
+        const ResumePoint.at(
+          WatchProgressEpisode(seasonNumber: 3, episodeNumber: 1),
+        ),
+      );
+    });
+
+    test('reads an unordered season list in broadcast order', () {
+      expect(
+        WatchProgressView.resumeFrom(
+          seasons: const [
+            SeasonEpisodeCount(seasonNumber: 2, episodeCount: 2),
+            SeasonEpisodeCount(seasonNumber: 1, episodeCount: 2),
+          ],
+          watched: const {
+            1: [1, 2],
+          },
+        ),
+        const ResumePoint.at(
+          WatchProgressEpisode(seasonNumber: 2, episodeNumber: 1),
+        ),
+      );
+    });
+
+    test('claims nothing about a show with no countable episodes', () {
+      expect(
+        WatchProgressView.resumeFrom(
+          seasons: const [
+            SeasonEpisodeCount(seasonNumber: 0, episodeCount: 3),
+            SeasonEpisodeCount(seasonNumber: 1, episodeCount: 0),
+          ],
+          watched: const {},
+        ),
+        const ResumePoint.unknown(),
+      );
+      expect(
+        WatchProgressView.resumeFrom(
+          seasons: const [],
+          watched: const {},
+        ).caughtUp,
+        isFalse,
+      );
+    });
+  });
 }

@@ -68,6 +68,10 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
   List<Provider> allProviders = [];
   Locale _selectedLocale = const Locale('en');
   Country? selectedCountryObject;
+
+  /// Held in state rather than read on every build, so the switch follows the
+  /// tap immediately instead of waiting on the write that records it.
+  bool _fillEpisodesBefore = true;
   @override
   @override
   void initState() {
@@ -75,6 +79,8 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
     _selectedLocale = currentUser.settings["language"] != null
         ? Locale(currentUser.settings["language"])
         : const Locale('en');
+    _fillEpisodesBefore =
+        SettingsService.read<bool>(settingFillEpisodesBefore, true);
     fetchCountries();
     fetchProviders();
   }
@@ -225,6 +231,7 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
               const Icon(Icons.check_box, color: Colors.yellow),
               const SizedBox(width: 16),
               Switch(
+                key: const ValueKey('settings-dontAskCalendar'),
                 value: currentUser.dontAskCalendar,
                 onChanged: (value) {
                   setState(() {
@@ -232,6 +239,38 @@ class _InfoButtonDialogState extends State<InfoButtonDialog> {
                     updateSettings(
                         "dontAskCalendar", currentUser.dontAskCalendar);
                   });
+                },
+                activeThumbColor: Colors.green,
+              ),
+              const SizedBox(width: 16),
+              const Icon(Icons.disabled_by_default, color: Colors.redAccent),
+            ],
+          ),
+          Text(
+            S.of(context)!.fillEarlierEpisodes,
+            style: const TextStyle(fontSize: 18, color: Colors.white),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Text(
+              S.of(context)!.fillEarlierEpisodesHint,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, color: Colors.white70),
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.check_box, color: Colors.yellow),
+              const SizedBox(width: 16),
+              Switch(
+                key: const ValueKey('settings-fillEpisodesBefore'),
+                value: _fillEpisodesBefore,
+                onChanged: (value) {
+                  setState(() {
+                    _fillEpisodesBefore = value;
+                  });
+                  updateSettings(settingFillEpisodesBefore, value);
                 },
                 activeThumbColor: Colors.green,
               ),
