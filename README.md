@@ -1284,7 +1284,12 @@ only then starts the three platform stages:
 3. **Desktop** builds the macOS and Windows installers, signing and notarising
    the macOS one, and attaches them to the run. Nothing is published and
    `downloads.uractor.com` is untouched — desktop has no test track, so "not
-   published" is what internal testing means for it.
+   published" is what internal testing means for it. The macOS signature is
+   checked against the embedded provisioning profile by
+   `tool/check_macos_entitlements.py` before notarisation, because a mismatch
+   there signs, notarises and passes Gatekeeper and then refuses to launch on
+   the user's machine — which is how 3.18.9 shipped an app that could not be
+   opened. See [docs/releases.md](docs/releases.md).
 
 The numbering is the order they are reported in, not the order they run in: all
 three start together, so a release costs roughly twenty-five minutes rather than

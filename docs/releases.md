@@ -1025,6 +1025,72 @@ configuration signs manually with `Developer ID Application`; Debug and Profile
 keep automatic development signing, which is what someone building in Xcode
 locally needs.
 
+### macOS: never re-sign with the entitlements file on disk
+
+`macos/Runner/Release.entitlements` is an Xcode **template**, not a finished
+plist. It asks for the keychain group as
+
+```
+$(AppIdentifierPrefix)com.uractor.uractormacos
+```
+
+and `$(AppIdentifierPrefix)` is a build setting that **only Xcode expands**.
+`codesign` performs no substitution whatsoever: hand it that file and it seals a
+keychain group literally beginning with a dollar sign and a bracket, and drops
+the `com.apple.application-identifier` and `com.apple.developer.team-identifier`
+that Xcode had added. The profile grants `Q8XY8276AC.*`, which does not cover a
+literal `$(AppIdentifierPrefix)…`, so AMFI refuses the process the moment it is
+spawned.
+
+Both release workflows re-sign the built app to add the hardened runtime, and
+for several releases they passed that template to `codesign`. Version **3.18.9**
+shipped that way. The failure is worth describing precisely, because every
+signal a release job normally trusts was green:
+
+- `codesign --verify --strict` passed. Entitlements are part of what is sealed,
+  so a wrong one verifies exactly as well as a right one.
+- Notarisation succeeded and the ticket stapled. Notarisation looks for malware,
+  the hardened runtime and a valid Developer ID; it does not compare
+  entitlements against the profile.
+- `spctl -a -t exec` reported `accepted, source=Notarized Developer ID`.
+
+The first thing to disagree was the kernel, on the user's machine, after the
+download. Double-clicking gave only:
+
+```
+The application "UrActor" can't be opened.
+```
+
+and from a terminal, `open` gave `RBSRequestErrorDomain Code=5` with
+`NSPOSIXErrorDomain Code=163, Launchd job spawn failed`. Nothing in either
+message names entitlements, a profile, or a signature.
+
+The fix is to sign with the entitlements **read back off the bundle Xcode
+built**, which are the expanded ones:
+
+```bash
+codesign --display --entitlements - --xml "$APP" > "$RUNNER_TEMP/entitlements.plist"
+/usr/libexec/PlistBuddy -c "Delete :com.apple.security.get-task-allow" \
+  "$RUNNER_TEMP/entitlements.plist"
+```
+
+The second line matters as much as the first. Xcode injects
+`com.apple.security.get-task-allow` — a debugger attach permission — into the
+build, Developer ID release configuration and all, and **notarisation refuses
+any submission carrying it**. Signing with the template used to throw it away by
+accident along with everything else Xcode had added, so preserving Xcode's
+entitlements means it now has to go deliberately. Fixing one failure without the
+other swaps a release that will not start for a release that will not notarise.
+
+`tool/check_macos_entitlements.py` then compares what the app claims against
+what the embedded profile grants and fails the job before notarisation, so this
+cannot reach a user again. It is the only step in either release workflow that
+makes that comparison. Run it by hand against any bundle or mounted DMG:
+
+```bash
+python3 tool/check_macos_entitlements.py --app /Volumes/UrActor/UrActor.app
+```
+
 ### macOS: sign in has to be re-checked on the first notarised build
 
 `keychain-access-groups` is what lets Firebase Auth reach the keychain, and it
