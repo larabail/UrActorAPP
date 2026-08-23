@@ -2,9 +2,15 @@
 """Tests for the version bump check.
 
 Run with: python -m unittest discover -s tool -p "test_*.py"
+
+Which paths are exempt is not decided here. It is the release workflow's
+`paths-ignore` block, read through `release_paths.py` and tested in
+`test_release_paths.py`; what this file checks is that the exemption, once
+established, does the right thing to the requirement.
 """
 
 import unittest
+from pathlib import Path
 
 from check_version_bump import (
     MAJOR,
@@ -16,10 +22,10 @@ from check_version_bump import (
     check,
     level_for_subject,
     parse_version,
-    reaches_the_app,
     required_level,
     version_from_pubspec,
 )
+from release_paths import DEFAULT_WORKFLOW, load_patterns, reaches_the_app
 
 
 class ParseVersion(unittest.TestCase):
@@ -198,40 +204,67 @@ class Check(unittest.TestCase):
             check("3.5.4+47", "3.5.5", ["fix(x): fix a thing"])
 
 
-class ReachesTheApp(unittest.TestCase):
+class WhatCountsAsReachingTheApp(unittest.TestCase):
+    """The committed filter, asked the question this check actually asks.
+
+    Not a re-test of the matcher -- `test_release_paths.py` does that -- but of
+    the policy it produces: which pull requests are told they owe a version.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.patterns = load_patterns(
+            Path(__file__).resolve().parent.parent / DEFAULT_WORKFLOW
+        )
+
+    def test_source_owes_a_version(self):
+        self.assertTrue(reaches_the_app(["lib/search.dart"], self.patterns))
+        self.assertTrue(reaches_the_app(["pubspec.yaml"], self.patterns))
+
     def test_the_downloads_site_does_not(self):
         self.assertFalse(reaches_the_app([
             "web/downloads/index.html",
             "web/downloads/releases.js",
-        ]))
+        ], self.patterns))
 
-    def test_anything_else_does(self):
-        self.assertTrue(reaches_the_app(["lib/main.dart"]))
-        self.assertTrue(reaches_the_app(["pubspec.yaml"]))
+    def test_ci_and_tooling_do_not(self):
+        # The change this became true with. A pull request that only edits a
+        # workflow or a release script produces no build, so there is no build
+        # for a version name to distinguish.
+        self.assertFalse(reaches_the_app([
+            ".github/workflows/release-internal.yml",
+            "tool/play.py",
+            "README.md",
+        ], self.patterns))
+
+    def test_the_manifest_script_no_longer_counts(self):
+        # It used to, on the grounds that it writes the file desktop installs
+        # poll for updates. That file is served from Hosting: the script can
+        # break an update banner, but it cannot make one installed binary
+        # differ from another, and a version name is about builds.
+        self.assertFalse(
+            reaches_the_app(["tool/build_download_manifest.py"], self.patterns)
+        )
 
     def test_one_file_outside_is_enough(self):
         # A pull request that touches the app at all is a pull request that
-        # changes the app, however much of it was the web page.
+        # changes the app, however much of it was workflows.
         self.assertTrue(reaches_the_app([
-            "web/downloads/index.html",
+            ".github/workflows/pr.yml",
             "lib/search.dart",
-        ]))
-
-    def test_the_manifest_script_still_counts(self):
-        # It writes the file every desktop install polls for updates, so a
-        # mistake in it does reach an install.
-        self.assertTrue(reaches_the_app(["tool/build_download_manifest.py"]))
+        ], self.patterns))
 
     def test_a_lookalike_path_outside_the_directory_counts(self):
-        self.assertTrue(reaches_the_app(["web/downloads.dart"]))
-        self.assertTrue(reaches_the_app(["docs/web/downloads/notes.md"]))
+        # `web/downloads/**` is a subtree, not a substring: a Dart file whose
+        # name merely starts the same way is source and owes a version.
+        self.assertTrue(reaches_the_app(["web/downloads.dart"], self.patterns))
 
     def test_an_empty_list_counts_as_reaching_the_app(self):
         # An empty diff means this could not work out what changed. Exempting
         # a pull request on the strength of a question it failed to answer is
         # how an unversioned build reaches testers.
-        self.assertTrue(reaches_the_app([]))
-        self.assertTrue(reaches_the_app(["  "]))
+        self.assertTrue(reaches_the_app([], self.patterns))
+        self.assertTrue(reaches_the_app(["  "], self.patterns))
 
 
 class ExemptPaths(unittest.TestCase):
@@ -270,6 +303,17 @@ class ExemptPaths(unittest.TestCase):
         )
         self.assertEqual(len(problems), 1)
         self.assertIn("backwards", problems[0])
+
+    def test_a_fix_confined_to_ci_needs_no_bump(self):
+        # The case this exemption grew to cover. `fix` demands a patch on its
+        # kind alone, but a workflow fix produces no build to distinguish, and
+        # bumping for it spends a version name on a release nobody receives.
+        problems = check(
+            "3.5.4+47", "3.5.4+47",
+            ["fix(release): install the pinned NDK before building"],
+            reaches_app=False,
+        )
+        self.assertEqual(problems, [])
 
     def test_a_malformed_bump_is_still_refused(self):
         problems = check(

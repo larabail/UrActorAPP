@@ -1202,8 +1202,9 @@ jobs — one to work out what the change touches, and one per thing that can
 break:
 
 - **Scope** works out whether anything outside `web/downloads/` changed, and
-  the jobs below skip their real work when nothing did. See
-  [what a downloads-only change skips](#what-a-downloads-only-change-skips).
+  the jobs below skip their real work when nothing did. Deliberately a narrower
+  question than the release filter asks; see
+  [what does not reach a tester](#what-does-not-reach-a-tester).
 - **Analyze, test and build** installs Flutter 3.47.1 plus the pinned Android
   NDK through `.github/actions/setup-flutter-android`, then runs
   `flutter analyze`, `flutter test --coverage`, the coverage floor, and a
@@ -1393,8 +1394,10 @@ testing` run and walks `master` back from its tip to the first commit that has
 one. Anything in between should have shipped, unless it deliberately asked for
 no run — a marker in the **subject**, which is what the write-back uses every
 release — or changed nothing outside the release workflow's `paths-ignore`. It
-reads that filter out of `release-internal.yml` at run time so the two cannot
-drift apart.
+reads that filter out of `release-internal.yml` at run time, through
+`tool/release_paths.py`, so the two cannot drift apart. Widening the filter
+therefore quietens the watchdog about exactly the merges it was widened to skip,
+in the same edit and without anyone remembering to.
 
 It has three outcomes, and keeping them apart is the point:
 
@@ -1423,42 +1426,96 @@ python tool/check_release_gap.py --tip master --runs-file runs.txt \
   --format markdown --fail-on-gap
 ```
 
-### What a downloads-only change skips
+### What does not reach a tester
 
-`web/downloads/` is a static site served by Firebase Hosting. No Flutter build
-reads it and no release packages it, so a change confined to it cannot alter
-what any app does. Four things follow, and each is arranged differently for a
-reason worth knowing before changing any of them.
+A merge to `master` puts a build in front of every internal tester. Plenty of
+what lives in this repository cannot change that build: a workflow decides how
+one is made, `tool/` talks to Play and writes release notes, `.githooks/` runs
+on a laptop, `web/downloads/` is a static site on Firebase Hosting, and prose is
+prose. Merging one of those and releasing anyway asks a tester to install a
+version identical to the one they have — under the same name, since none of
+those commit kinds requires a bump, which is exactly the ambiguity the version
+policy exists to prevent.
 
-| | On a downloads-only change |
-| --- | --- |
-| `pr.yml` — Analyze, test and build | runs, skips its steps, reports |
-| `pr.yml` — Functions | runs, skips its steps, reports |
-| `pr.yml` — Build and launch on a simulator | skipped whole |
-| `release-internal.yml` | does not run: no build reaches testers |
-| `tool/check_version_bump.py` | requires no version bump |
+So `release-internal.yml` does not run for a merge whose every changed path is
+in its `paths-ignore:` block:
 
-The two required jobs are gated **step by step** rather than by a path filter
-on the workflow. This is not fussiness. A workflow skipped by `paths-ignore`
-reports nothing at all, and a required check that never reports leaves the
-pull request permanently unmergeable — the same trap that took the path filter
-off the iOS workflow. Gated by step, the job still runs and still reports; it
-just has nothing to do. The iOS job is skipped whole instead, by a condition on
-the job rather than on the workflow, because a skipped job does report a
-conclusion and because starting a macOS runner to skip everything on it wastes
-the scarcest runner there is.
+```
+**/*.md          docs/**              LICENSE
+.gitignore       .gitattributes       .vscode/**
+.githooks/**     .github/**
+tool/**          tools/**             firestore-tests/**
+web/downloads/**
+```
+
+**That block is the list, not a copy of it.** GitHub reads it to decide whether
+the release runs; `tool/release_paths.py` reads the same block, and both
+`tool/check_version_bump.py` and `tool/check_release_gap.py` go through that
+reader. Adding a path there changes what ships, what needs a version, and what
+the watchdog complains about, in one edit. Nothing restates the list, so nothing
+can drift out of step with it.
+
+GitHub skips the run only when **every** changed path matches, so a pull request
+that touches a workflow and one line of `lib/` releases as usual.
+
+Two paths are deliberately absent:
+
+- `test/**` is not packaged either, but the release's `verify` job is the only
+  place `flutter test` runs against a merge commit — a combination neither
+  branch tested on its own — and a test-only merge is exactly when that is worth
+  doing. The build that follows is redundant; the check is not.
+- `firestore.rules` and `firestore.indexes.json` are not app code, but this
+  workflow is what **deploys** them. Filtering them out would leave a committed
+  rule undeployed and invisible until production broke, which has happened
+  before and is why the `functions` job checks for them. Their test suite in
+  `firestore-tests/` is deployed by nothing, so that is on the list.
+
+The cost, worth knowing before adding to the block: the release machinery no
+longer verifies changes to itself. That was already true of `release-internal.yml`
+— its own merge is the push that would test it — and now also of
+`.github/actions/`, which pins the Flutter and NDK versions the app is built
+with, and of `tool/`. A change there reaches testers with the next merge that
+ships. **When that is not soon enough, dispatch "Release to internal testing" by
+hand from the Actions tab.**
+
+#### What a pull request does with the same question
+
+The pull request workflow asks a narrower question and must not reuse this
+answer. "Can this change what a tester's app does" is not "can this change what
+CI does": a change to `test/` or to a workflow changes what CI does, and those
+checks have to run. `.github/actions/changed-scope` therefore has its own,
+smaller notion of scope — anything outside `web/downloads/` — and `pr.yml` uses
+it to skip the Flutter work when only the static site changed.
+
+| | Downloads-only change | Workflow, tooling or prose change |
+| --- | --- | --- |
+| `pr.yml` — Analyze, test and build | runs, skips its steps, reports | runs in full |
+| `pr.yml` — Functions | runs, skips its steps, reports | runs in full |
+| `pr.yml` — Build and launch on a simulator | skipped whole | runs in full |
+| `release-internal.yml` | does not run | does not run |
+| `tool/check_version_bump.py` | requires no version bump | requires no version bump |
+
+The two required jobs are gated **step by step** rather than by a path filter on
+the workflow. This is not fussiness. A workflow skipped by `paths-ignore`
+reports nothing at all, and a required check that never reports leaves the pull
+request permanently unmergeable — the same trap that took the path filter off
+the iOS workflow. Gated by step, the job still runs and still reports; it just
+has nothing to do. The iOS job is skipped whole instead, by a condition on the
+job rather than on the workflow, because a skipped job does report a conclusion
+and because starting a macOS runner to skip everything on it wastes the scarcest
+runner there is.
 
 `release-internal.yml` is the one place a plain path filter is safe: it runs
-after the merge and is nobody's required check. Without it, editing a sentence
-on a web page would put a build in front of every internal tester under a new
-version number containing nothing they could find.
+after the merge and is nobody's required check.
 
-The version exemption is by path, not by kind. A change to a public web page is
-honestly a `feat` or a `fix`, so the kind alone would demand a minor bump the
-app has no reason to make. `tool/check_version_bump.py` therefore drops the
-requirement when nothing outside `web/downloads/` changed. Bumping anyway is
-still allowed; a version that moves backwards, or a minor bump that leaves the
-patch number behind, is still refused.
+The version exemption is by path, not by kind, and follows the same block. A
+change to a public web page or a fix to a release script is honestly a `feat` or
+a `fix`, so the kind alone would demand a version the app has no reason to move
+to. `tool/check_version_bump.py` drops the requirement when nothing outside the
+filter changed, and treats an unreadable filter as though everything reaches the
+app — the noisy direction, because being wrong that way only asks for a bump
+nobody needed. Bumping anyway is still allowed; a version that moves backwards,
+or a minor bump that leaves the patch number behind, is still refused.
 
 ## Repo tooling
 
@@ -1482,6 +1539,12 @@ patch number behind, is still refused.
   [a merge can ship nothing without saying so](#a-merge-can-ship-nothing-without-saying-so).
   It takes the run history as a file and shells out to git, so it is testable
   without touching the API.
+- [`tool/release_paths.py`](tool/release_paths.py) — reads the `paths-ignore:`
+  block out of `release-internal.yml` and answers whether a set of changed
+  paths can alter an installed app. Not run on its own; it exists so that
+  `check_version_bump.py` and `check_release_gap.py` cannot answer that
+  question differently from each other or from the trigger itself. See
+  [what does not reach a tester](#what-does-not-reach-a-tester).
 - [`tools/sync-oscars`](tools/sync-oscars/README.md) — a standalone Node 18+
   script (no npm dependencies) that populates the Firestore `Oscars`
   collection from the UrActor API, resolving winners to TMDB ids. It has its

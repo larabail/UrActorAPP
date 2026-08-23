@@ -23,16 +23,67 @@ name: Release to internal testing
 on:
   push:
     branches: [master]
+    # Everything that cannot change what an installed app does.
+    #
+    # This is the list, not a copy of it. `tool/release_paths.py` reads this
+    # block, and `check_version_bump.py` and `check_release_gap.py` both go
+    # through that reader, so the version policy and the watchdog can only ever
+    # agree with what actually triggers. Adding a line here changes all three.
+    #
+    # GitHub skips the run only when EVERY changed path matches, so one line of
+    # `lib/` in a merge that is otherwise all workflows releases as usual. The
+    # filter is safe here in a way it is not on the pull request workflow: this
+    # runs after the merge and is nobody's required check, so nothing can be
+    # left waiting forever on a status that never reports.
+    #
+    # The reason to skip is not runner minutes, which are free on a public
+    # repository. It is that every run puts a build in front of internal
+    # testers, and none of these paths can produce a build that differs from
+    # the last one. Shipping anyway asks a tester to install a new version
+    # containing nothing they can find -- or, since none of these changes
+    # requires a version bump, the same version twice, which is exactly the
+    # ambiguity the version policy exists to prevent.
+    #
+    # The cost, worth knowing before adding to this list: a change to the
+    # release machinery itself is no longer exercised by its own merge. That
+    # was already true of this file, which cannot verify a change to itself,
+    # and the same now goes for `.github/actions/`, which pins the Flutter and
+    # NDK versions the app is built with, and `tool/`, which talks to Play.
+    # A change there reaches testers with the next merge that ships. When that
+    # is not soon enough, dispatch this workflow by hand from the Actions tab.
     paths-ignore:
+      # Prose. `**/*.md` covers README.md at the root as well as docs/.
       - '**/*.md'
       - 'docs/**'
+      - 'LICENSE'
+      # Checkout and editor configuration, read by git and by an IDE.
       - '.gitignore'
+      - '.gitattributes'
+      - '.vscode/**'
+      # The pre-commit hook. It runs on a developer's machine or not at all.
+      - '.githooks/**'
+      # Workflows, composite actions and templates. They decide how a build is
+      # made, never what is in one.
+      - '.github/**'
+      # Python release and maintenance scripts, and the standalone Node tools
+      # beside them. Both run in CI or by hand; neither is packaged. `tool/`
+      # includes `build_download_manifest.py`, which writes the manifest a
+      # desktop install polls -- that file is served from Hosting, so a change
+      # to the script that writes it still does not alter any installed binary.
+      - 'tool/**'
+      - 'tools/**'
+      # The Firestore rules suite. `firestore.rules` itself is deliberately not
+      # here: it is deployed by the `functions` job below, so a rules change
+      # must still run this workflow. Its tests are not deployed by anything.
+      - 'firestore-tests/**'
+      # `test/` is deliberately absent, though nothing in it is packaged
+      # either. The `verify` job below is the only place the Flutter suite runs
+      # against a merge commit -- a combination neither branch tested on its
+      # own -- and a test-only merge is precisely when it is worth running.
+      # The build that follows is redundant; the check is not.
+      #
       # The downloads site is deployed by deploy-downloads.yml, on this same
-      # push. Nothing in it reaches an app, so putting a build in front of
-      # every internal tester because a web page changed would ask them to
-      # install a new version number containing nothing they can find. A path
-      # filter is safe here in a way it is not on the pull request workflow:
-      # this runs after the merge and is nobody's required check.
+      # push. Nothing in it reaches an app.
       - 'web/downloads/**'
   workflow_dispatch:
 

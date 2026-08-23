@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Fail a pull request that ships user-visible change without bumping the version.
 
-Every merge to master builds and uploads to internal testing, so the version in
-pubspec.yaml is what a tester sees next to the build they are reporting against.
-When it does not move, two different builds carry the same name and a bug report
-cannot be tied to a revision.
+A merge to master that changes anything a build can contain builds and uploads
+to internal testing, so the version in pubspec.yaml is what a tester sees next to
+the build they are reporting against. When it does not move, two different builds
+carry the same name and a bug report cannot be tied to a revision.
 
 The version to bump is the NAME, `MAJOR.MINOR.PATCH`, not the `+BUILD` suffix.
 The build number belongs to CI: the release workflow builds with a code derived
@@ -27,12 +27,22 @@ merged, so the title is the only subject that reaches master; the commits matter
 because a feature does not stop being a feature when the title undersells it.
 
 One exception, by path rather than by kind: a pull request that changes nothing
-outside `web/downloads/` requires no bump at all. That directory is the
-downloads site, which is deployed to Firebase Hosting and never packaged into a
-build, so no version of the app differs because of it. The commit is still
-honestly a `feat` or a `fix` -- it is a public web page -- but making the app
-move a minor version for it ships a rename to every internal tester with
-nothing in it they can find.
+a build could contain requires no bump at all, whatever its title says. A change
+to the downloads site, to a workflow, or to the release tooling is honestly a
+`feat` or a `fix` -- these are real things that really changed -- but the app
+they would rename is byte for byte the app testers already have.
+
+That list is not written here. It is the `paths-ignore:` block of
+`.github/workflows/release-internal.yml`, read through `tool/release_paths.py`,
+because that block is what GitHub actually consults when deciding whether the
+merge ships anything. Demanding a version for a build that will never be made,
+or excusing one that will, are both failures nothing else would report -- so the
+two are made to be the same list rather than trusted to stay in step.
+
+When that block cannot be read, everything counts as reaching the app. The
+consequence of being wrong that way is a pull request told to bump a version it
+did not need; the consequence of being wrong the other way is two builds
+reaching testers under one name.
 
 A larger bump than required always passes. Judgement about what deserves MAJOR
 belongs to a person, and this refuses to overrule it.
@@ -43,6 +53,13 @@ import re
 import subprocess
 import sys
 
+from release_paths import (
+    CannotTell,
+    DEFAULT_WORKFLOW,
+    load_patterns,
+    reaches_the_app,
+)
+
 VERSION_LINE = re.compile(r"^version:\s*(\S+)\s*$", re.MULTILINE)
 
 # kind(optional scope) optionally followed by ! for a breaking change.
@@ -50,21 +67,6 @@ SUBJECT = re.compile(r"^\s*(?P<kind>[a-z]+)(?:\([^)]*\))?(?P<bang>!)?:", re.IGNO
 
 NONE, PATCH, MINOR, MAJOR = 0, 1, 2, 3
 LEVEL_NAMES = {NONE: "none", PATCH: "patch", MINOR: "minor", MAJOR: "major"}
-
-# Directories whose contents cannot reach a user's app.
-#
-# `web/downloads/` is the downloads site: three static files deployed to
-# Firebase Hosting, which the Flutter build never reads and no release ever
-# packages. A change confined to it is user-visible -- it is a public web page
-# -- so the commit kind is honestly `feat` or `fix`, and without this the kind
-# alone would demand a version the app has no reason to move to. Bumping to
-# 3.17.0 to reword a sentence on a web page then ships a build to every
-# internal tester under a new name containing no change they can find.
-#
-# Deliberately narrow. `tool/build_download_manifest.py` is not on this list
-# even though it also serves the site, because it writes the manifest the app
-# polls, and a mistake in it does reach an install.
-APP_IRRELEVANT_PREFIXES = ("web/downloads/",)
 
 KIND_LEVELS = {
     "feat": MINOR,
@@ -160,22 +162,6 @@ def bump_level(base, head):
     return PATCH
 
 
-def reaches_the_app(paths):
-    """Whether any of [paths] could change what a user's app does.
-
-    True when there is nothing to look at, which is the safe direction: an
-    empty list means this could not work out what changed, and exempting a
-    pull request on the strength of a question it failed to answer is how an
-    unversioned build reaches testers. Blank entries are dropped before that
-    decision rather than after, or a list of nothing but whitespace would
-    reach the `any()` below, find no path that counts, and read as exempt.
-    """
-    real = [path for path in paths or [] if path.strip()]
-    if not real:
-        return True
-    return any(not path.startswith(APP_IRRELEVANT_PREFIXES) for path in real)
-
-
 def check(base_version, head_version, messages, reaches_app=True):
     """The reasons this pull request's version is wrong, or an empty list.
 
@@ -256,6 +242,8 @@ def main(argv=None):
     parser.add_argument("--base", required=True, help="SHA of the base commit")
     parser.add_argument("--head", required=True, help="SHA of the pull request head")
     parser.add_argument("--title", default="", help="Pull request title")
+    parser.add_argument("--workflow", default=DEFAULT_WORKFLOW,
+                        help="the release workflow to read paths-ignore from")
     args = parser.parse_args(argv)
 
     base_pubspec = git("show", f"{args.base}:pubspec.yaml")
@@ -269,18 +257,38 @@ def main(argv=None):
         messages.append(args.title)
 
     paths = files_between(args.base, args.head)
-    reaches_app = reaches_the_app(paths)
+
+    # Read from the head of the pull request, which is the checkout this runs
+    # against, so a pull request that widens the filter is judged by the filter
+    # it is proposing rather than by the one on master. That is the same thing
+    # GitHub will do when it merges.
+    #
+    # A block that cannot be read counts as reaching the app. It is the noisy
+    # direction on purpose: the worst it can do is ask for a bump that was not
+    # needed, which a person can see is harmless, while the quiet direction
+    # sends two builds to testers under one name.
+    try:
+        patterns = load_patterns(args.workflow)
+        unreadable = None
+    except CannotTell as problem:
+        patterns, unreadable = [], str(problem)
+
+    reaches_app = True if unreadable else reaches_the_app(paths, patterns)
 
     needed = required_level(messages) if reaches_app else NONE
     print(f"base version:     {base_version}")
     print(f"this version:     {head_version}")
     print(f"required bump:    {LEVEL_NAMES[needed]}")
-    if not reaches_app:
+    if unreadable:
         print(
-            "\nNothing outside "
-            + ", ".join(APP_IRRELEVANT_PREFIXES)
-            + " changed, so no bump is required whatever the commit kind says."
-            "\nBumping anyway is still fine."
+            f"\nThe release filter could not be read ({unreadable}), so every\n"
+            "path is treated as reaching the app."
+        )
+    elif not reaches_app:
+        print(
+            "\nNothing outside the release workflow's paths-ignore changed, so\n"
+            "this merge ships no build and no bump is required whatever the\n"
+            "commit kind says. Bumping anyway is still fine."
         )
 
     problems = check(base_version, head_version, messages, reaches_app)

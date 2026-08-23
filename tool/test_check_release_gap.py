@@ -8,108 +8,30 @@ Two of these are fixtures of real states, and they are the point of the file.
 and `TheMergeThatShippedNothing` is the incident from issue #58 -- the only
 known true positive that exists. Both are recorded as data rather than read
 from git or the API, so they keep testing the logic after history moves on.
+
+Reading and matching the workflow's `paths-ignore` block is not tested here any
+more: it moved to `release_paths.py` when `check_version_bump.py` came to need
+the same answer, and `test_release_paths.py` covers it. What is left here is the
+part that is only about releases -- skip markers, and walking master back to the
+last commit that shipped.
 """
 
 import unittest
-from pathlib import Path
 
 from check_release_gap import (
     CannotTell,
     carries_skip_marker,
     classify,
-    is_ignored,
-    parse_paths_ignore,
     unshipped_commits,
     verdict,
     would_release,
 )
 
-# The release workflow's filter as it stands. Copied here ONLY so the reader can
-# be tested against the real file below; the check itself never uses this.
-RELEASE_WORKFLOW = (
-    Path(__file__).resolve().parent.parent
-    / ".github" / "workflows" / "release-internal.yml"
-)
-
+# A filter to classify commits against. Deliberately a fixture rather than the
+# real one: these tests are about what the watchdog does with an answer, not
+# about which paths are in the block this week. `test_release_paths.py` is where
+# the committed filter is checked.
 IGNORED = ["**/*.md", "docs/**", ".gitignore", "web/downloads/**"]
-
-
-class ReadingTheFilter(unittest.TestCase):
-    def test_reads_the_real_release_workflow(self):
-        # The whole design rests on this: the patterns are read from the
-        # workflow at run time so the two cannot drift apart. If the block is
-        # ever reshaped, this fails here rather than at seven in the morning in
-        # a scheduled run nobody is watching.
-        patterns = parse_paths_ignore(RELEASE_WORKFLOW.read_text(encoding="utf-8"))
-        for expected in IGNORED:
-            self.assertIn(expected, patterns)
-
-    def test_skips_comments_inside_the_block(self):
-        patterns = parse_paths_ignore(
-            "on:\n"
-            "  push:\n"
-            "    paths-ignore:\n"
-            "      - '**/*.md'\n"
-            "      # the downloads site has its own workflow\n"
-            "\n"
-            "      - 'web/downloads/**'\n"
-            "  workflow_dispatch:\n"
-        )
-        self.assertEqual(patterns, ["**/*.md", "web/downloads/**"])
-
-    def test_stops_at_the_end_of_the_block(self):
-        patterns = parse_paths_ignore(
-            "    paths-ignore:\n"
-            "      - 'docs/**'\n"
-            "  workflow_dispatch:\n"
-            "    inputs:\n"
-            "      - 'not a path'\n"
-        )
-        self.assertEqual(patterns, ["docs/**"])
-
-    def test_refuses_a_missing_block(self):
-        # Not an empty list. An empty list means nothing is ignored, under
-        # which every documentation commit reads as a release that failed to
-        # happen and the watchdog files an issue every morning until someone
-        # switches it off.
-        with self.assertRaises(CannotTell):
-            parse_paths_ignore("on:\n  push:\n    branches: [master]\n")
-
-    def test_refuses_an_empty_block(self):
-        with self.assertRaises(CannotTell):
-            parse_paths_ignore("    paths-ignore:\n  workflow_dispatch:\n")
-
-
-class MatchingPaths(unittest.TestCase):
-    def test_double_star_slash_matches_at_the_root(self):
-        # `**/*.md` is meant to cover every Markdown file, and README.md at the
-        # repository root is the one that matters most here.
-        self.assertTrue(is_ignored("README.md", IGNORED))
-
-    def test_double_star_slash_matches_deeper(self):
-        self.assertTrue(is_ignored("docs/releases.md", IGNORED))
-        self.assertTrue(is_ignored("android/app/src/notes.md", IGNORED))
-
-    def test_a_trailing_double_star_matches_a_subtree(self):
-        self.assertTrue(is_ignored("web/downloads/index.html", IGNORED))
-        self.assertTrue(is_ignored("web/downloads/js/app.js", IGNORED))
-
-    def test_an_exact_path_matches_only_itself(self):
-        self.assertTrue(is_ignored(".gitignore", IGNORED))
-        self.assertFalse(is_ignored("android/.gitignore", IGNORED))
-
-    def test_a_single_star_does_not_cross_a_directory(self):
-        self.assertFalse(is_ignored("web/downloads.html", IGNORED))
-
-    def test_source_is_not_ignored(self):
-        self.assertFalse(is_ignored("lib/main.dart", IGNORED))
-        self.assertFalse(is_ignored(".github/workflows/pr.yml", IGNORED))
-
-    def test_refuses_a_negation(self):
-        # `!pattern` inverts an earlier one. Treating it as a literal would
-        # quietly change which commits count, so it is refused instead.
-        with self.assertRaises(CannotTell):
-            is_ignored("docs/x.md", ["!docs/**"])
 
 
 class DecidingWhetherARunWasDue(unittest.TestCase):
