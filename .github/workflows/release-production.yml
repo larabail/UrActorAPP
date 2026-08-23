@@ -159,44 +159,6 @@ jobs:
           echo "ref=$REF" >> "$GITHUB_OUTPUT"
           echo "promoting the build produced by $REF"
 
-      # Both writes this pipeline makes to the repository create a ref at the
-      # promoted commit: the `released-<code>` tag below, and the tag that
-      # comes with the desktop stage's GitHub release. GitHub refuses to let an
-      # Actions token create any ref -- tag or branch, by `git push` or through
-      # the API -- at a commit that no ref already points at and whose
-      # `.github/workflows/` differ from the tip of the default branch. The
-      # `workflows` permission that would lift the refusal is not one
-      # GITHUB_TOKEN can be granted, so raising `permissions:` cannot help.
-      #
-      # A commit built since internal releases started tagging themselves
-      # always carries its `build-<code>` tag and passes. What fails is an
-      # older commit, or one promoted while master has moved on past a merge
-      # that touched any workflow file.
-      #
-      # Asked here rather than left to fail where it bites, because those two
-      # writes happen after the approval gate and after the stores have been
-      # written: on 2026-08-23 Play was promoted to production and the tag was
-      # then refused, which shipped the release and lost the record of it. The
-      # next promotion's notes are cut from the last `released-*` tag, so a
-      # missing one silently repeats notes users have already read. A dry run
-      # checks it too -- knowing the real run would fail is the point of one.
-      - name: Check the promoted commit can be tagged
-        env:
-          REF: ${{ steps.source.outputs.ref }}
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-        run: |
-          set -euo pipefail
-          git fetch --quiet origin "$DEFAULT_BRANCH"
-          if git ls-remote --heads --tags origin |
-               awk -v r="$REF" '$1 == r { hit = 1 } END { exit !hit }'; then
-            echo "a ref already points at $REF, so it can be tagged"
-          elif git diff --quiet "$REF" FETCH_HEAD -- .github/workflows/; then
-            echo "workflows at $REF match $DEFAULT_BRANCH, so it can be tagged"
-          else
-            echo "::error::Nothing points at $REF and its .github/workflows/ differ from $DEFAULT_BRANCH, so GitHub will refuse both the released-* tag and the desktop release. Create a ref at it first, from a machine holding a token with the workflow scope: git push origin $REF:refs/tags/build-<version code>"
-            exit 1
-          fi
-
       # Read from the promoted commit rather than from HEAD. Promoting a build
       # from a fortnight ago while master has since moved to 3.17.0 would
       # otherwise publish a desktop installer and an App Store version named
@@ -219,6 +181,49 @@ jobs:
           fi
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "Releasing $NAME"
+
+      # Both writes this pipeline makes to the repository create a ref at the
+      # promoted commit: the `released-<code>` tag the Android stage leaves
+      # behind, and the `v<version>` tag the desktop release hangs off. GitHub
+      # refuses to let an Actions token create a ref -- tag or branch, by
+      # `git push` or through the API -- at a commit whose `.github/workflows/`
+      # differ from the tip of the default branch. The `workflows` permission
+      # that would lift the refusal is not one GITHUB_TOKEN can be granted, so
+      # raising `permissions:` cannot help.
+      #
+      # A ref already pointing at the commit does not lift it either, however
+      # much it reads as though it should. That belief is why this check first
+      # shipped with an exemption for it, and the exemption is what let the
+      # 3.19.0 promotion through: on 2026-08-23 the `v3.19.0` tag was refused at
+      # a commit `build-96` and `released-96` both already pointed at. Only the
+      # workflow files count, so only they are compared.
+      #
+      # Asked here rather than left to fail where it bites, because those writes
+      # happen after the approval gate and after the stores have been written:
+      # earlier that same day Play was promoted to production and the tag was
+      # then refused, which shipped the release and lost the record of it. The
+      # next promotion's notes are cut from the last `released-*` tag, so a
+      # missing one silently repeats notes users have already read. A dry run
+      # checks it too -- knowing the real run would fail is the point of one.
+      - name: Check the promoted commit can be tagged
+        env:
+          REF: ${{ steps.source.outputs.ref }}
+          VERSION: ${{ steps.version.outputs.name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin "$DEFAULT_BRANCH"
+          TAG="v$VERSION"
+          AT=$(git ls-remote origin "refs/tags/$TAG" "refs/tags/$TAG^{}" |
+                 awk 'END { print $1 }')
+          if git diff --quiet "$REF" FETCH_HEAD -- .github/workflows/; then
+            echo "workflows at $REF match $DEFAULT_BRANCH, so it can be tagged"
+          elif [ "$AT" = "$REF" ]; then
+            echo "::warning::$TAG already points at $REF, so the desktop release can be published without creating a ref. No other ref can be created at this commit, so if Android is promoting, its released-* tag will be refused and has to be made by hand."
+          else
+            echo "::error::The .github/workflows/ at $REF differ from $DEFAULT_BRANCH, so an Actions token cannot create a ref there and the release cannot be tagged. A ref already pointing at the commit does not help. Create the tag yourself, from a machine holding a token with the workflow scope, then re-run: git push origin $REF:refs/tags/$TAG"
+            exit 1
+          fi
 
       # Production notes cover everything since the last production release,
       # not since the last internal build, so a user who skipped several test
@@ -376,6 +381,68 @@ jobs:
           echo "Desktop: ${{ inputs.desktop }}"
           echo "Dry run: ${{ inputs.dry_run }}"
 
+  # ------------------------------------------------------------ 0. Release tag
+
+  # The `v<version>` tag, staked the moment the release is approved rather than
+  # left to the desktop stage half an hour later.
+  #
+  # `softprops/action-gh-release` creates the tag itself as it publishes, and
+  # that is the step that failed on 2026-08-23. The run began while the promoted
+  # commit's workflows still matched master; a pull request touching a workflow
+  # file merged six minutes before the desktop stage reached its release; the
+  # tag it then tried to create was refused with `403 Resource not accessible by
+  # integration`, by which time Play had been written to. The check in `resolve`
+  # cannot prevent that, because it is true when it runs and stops being true
+  # while the installers build.
+  #
+  # Creating the ref here shrinks that window from the length of a desktop build
+  # to a few seconds, and puts what is left of it before any store is written. A
+  # release attached to a tag that already exists needs no ref at all, so once
+  # this job is green the publish cannot be refused however far master moves --
+  # provided it does not send `target_commitish`, which is vetted as though a
+  # ref were being created even when the tag is already there.
+  #
+  # No job-level `if`. A skipped job skips everything that needs it, which would
+  # take all three store stages with it on any run that is not publishing
+  # desktop. The step opts out instead, and the job still reports green.
+  reserve:
+    name: Reserve the release tag
+    needs: [approve, resolve]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Stake the tag at the promoted commit
+        if: ${{ inputs.desktop == 'publish' && !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REF: ${{ needs.resolve.outputs.ref }}
+          VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          set -euo pipefail
+          TAG="v$VERSION"
+          R="repos/$GITHUB_REPOSITORY"
+          # An annotated tag -- which is what a tag made by hand to unblock a
+          # promotion will be -- points at a tag object rather than at a commit,
+          # so it has to be dereferenced before the comparison means anything.
+          if REFDATA=$(gh api "$R/git/ref/tags/$TAG" 2>/dev/null); then
+            AT=$(jq -r .object.sha <<<"$REFDATA")
+            if [ "$(jq -r .object.type <<<"$REFDATA")" = tag ]; then
+              AT=$(gh api "$R/git/tags/$AT" --jq .object.sha)
+            fi
+            if [ "$AT" = "$REF" ]; then
+              echo "$TAG is already at $REF, so there is nothing to stake"
+              exit 0
+            fi
+            echo "::error::$TAG already points at $AT, which is not the commit being promoted ($REF). Delete the tag, or promote $AT."
+            exit 1
+          fi
+          gh api "$R/git/refs" -f "ref=refs/tags/$TAG" -f "sha=$REF" >/dev/null
+          echo "reserved $TAG at $REF"
+
   # ---------------------------------------------------------------- 1. Android
 
   # Every stage can be skipped independently, and that is load bearing rather
@@ -387,7 +454,7 @@ jobs:
   # built from a `master` nobody asked to ship.
   android:
     name: '1 · Android → Play production'
-    needs: [approve, resolve]
+    needs: [approve, resolve, reserve]
     if: inputs.android == 'promote'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -490,7 +557,7 @@ jobs:
   # minutes.
   ios:
     name: '2 · iOS → App Store'
-    needs: [approve, resolve]
+    needs: [approve, resolve, reserve]
     if: inputs.ios_action != 'skip'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -963,7 +1030,7 @@ jobs:
 
   desktop_publish:
     name: '3 · Desktop → publish'
-    needs: [approve, resolve, desktop_macos, desktop_windows]
+    needs: [approve, resolve, reserve, desktop_macos, desktop_windows]
     if: inputs.desktop == 'publish'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -1014,19 +1081,21 @@ jobs:
       # over a hundred megabytes each, so a modest month of downloads would
       # start costing money; GitHub serves release assets over a CDN for free.
       #
-      # `target_commitish` is stated rather than left to default, because the
-      # tag has to land on the promoted commit and GITHUB_SHA is whatever
-      # master happened to be when the run started. That tag is a ref like any
-      # other, so this step is refused with a bare `403 Resource not accessible
-      # by integration` whenever the promoted commit could not be tagged -- a
-      # message that reads like a missing `contents: write` and is not one. The
-      # `resolve` job checks for that case before anything here runs.
+      # No `target_commitish`. It used to be stated, because the tag has to land
+      # on the promoted commit and GITHUB_SHA is whatever master happened to be
+      # when the run started -- but the `reserve` job has already put the tag
+      # exactly there, so it would say nothing this release does not already
+      # know, and saying it is what breaks the step. A release named after a tag
+      # that exists creates no ref and is allowed at any commit; supplying
+      # `target_commitish` as well is vetted as though a ref were being created,
+      # and is refused with a bare `403 Resource not accessible by integration`
+      # -- a message that reads like a missing `contents: write` and is not one
+      # -- once master's workflow files have moved past the promoted commit.
       - name: Publish the GitHub release
         if: ${{ !inputs.dry_run }}
         uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ env.VERSION }}
-          target_commitish: ${{ needs.resolve.outputs.ref }}
           name: UrActor ${{ env.VERSION }}
           body: |
             ${{ needs.resolve.outputs.notes }}
