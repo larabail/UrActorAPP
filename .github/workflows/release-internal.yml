@@ -976,6 +976,34 @@ jobs:
           set -euo pipefail
           APP="build/macos/Build/Products/Release/UrActor.app"
 
+          # The entitlements Xcode expanded and signed the app with, read back
+          # off the bundle. NOT macos/Runner/Release.entitlements, which is a
+          # template: it asks for the keychain group as
+          # `$(AppIdentifierPrefix)com.uractor.uractormacos`, and that variable
+          # is an Xcode build setting. codesign substitutes nothing, so signing
+          # with the file on disk puts the dollar sign and the bracket into the
+          # signature verbatim and drops the application-identifier and
+          # team-identifier Xcode had added. The profile grants `TEAM.*`, a
+          # literal `$(AppIdentifierPrefix)...` is not within it, and AMFI
+          # refuses the process at spawn.
+          #
+          # That is what shipped as 3.18.9. It signed, notarised, stapled and
+          # passed Gatekeeper, and then every copy died on launch with "The
+          # application "UrActor" can't be opened." -- none of the checks in
+          # this job disagree with a wrong entitlement, only the kernel does,
+          # and only on the machine that downloaded it.
+          codesign --display --entitlements - --xml "$APP" \
+            > "$RUNNER_TEMP/entitlements.plist"
+
+          # Xcode injects `get-task-allow` -- a debugger attach permission --
+          # into the build, Developer ID release configuration and all, and
+          # notarisation refuses any submission carrying it. Signing with the
+          # template used to drop it by accident along with everything else, so
+          # preserving Xcode's entitlements means it now has to go deliberately.
+          /usr/libexec/PlistBuddy \
+            -c "Delete :com.apple.security.get-task-allow" \
+            "$RUNNER_TEMP/entitlements.plist" 2>/dev/null || true
+
           # Notarisation refuses anything without the hardened runtime, and
           # every nested framework has to be signed before the bundle that
           # contains them -- signing outside-in leaves the inner ones unsigned
@@ -987,10 +1015,17 @@ jobs:
               done || true
 
           codesign --force --deep --timestamp --options runtime \
-            --entitlements macos/Runner/Release.entitlements \
+            --entitlements "$RUNNER_TEMP/entitlements.plist" \
             --sign "$SIGNING_IDENTITY" "$APP"
 
           codesign --verify --strict --verbose=2 "$APP"
+
+          # Verify goes no further than "the signature is intact", and a wrong
+          # entitlement is sealed as faithfully as a right one. This is the
+          # only step in the job that compares what the app claims against what
+          # the provisioning profile grants, which is the comparison the kernel
+          # will make when a user double-clicks it.
+          python3 tool/check_macos_entitlements.py --app "$APP"
 
       - name: Package as a DMG
         run: |

@@ -26,7 +26,19 @@
 	     than the ad hoc signature the Flutter template ships with. Building
 	     macOS therefore needs that Apple Developer team available locally.
 	     $(AppIdentifierPrefix) expands to the team prefix, so this stays
-	     correct if the team ever changes. -->
+	     correct if the team ever changes.
+
+	     That expansion is done by XCODE, and only by Xcode. `codesign` does
+	     no substitution at all: hand it this file and it signs a keychain
+	     group literally named `$(AppIdentifierPrefix)com.uractor...`, which
+	     the provisioning profile's `TEAM.*` does not cover, and the app is
+	     refused at spawn with "The application "UrActor" can't be opened."
+	     It still signs, notarises and passes Gatekeeper, so nothing before
+	     the user's own machine notices. That shipped as 3.18.9. Anything
+	     re-signing a built app must read the entitlements back off the
+	     bundle with `codesign --display --entitlements - --xml` instead of
+	     passing this file, and `tool/check_macos_entitlements.py` fails the
+	     release if it ever happens again. -->
 	<key>keychain-access-groups</key>
 	<array>
 		<string>$(AppIdentifierPrefix)com.uractor.uractormacos</string>
