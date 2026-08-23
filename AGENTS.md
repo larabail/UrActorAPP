@@ -170,21 +170,25 @@ master.
 
 One exemption, by path rather than by kind: a pull request that changes nothing
 a build can contain needs no bump at all, whatever its title says. Workflows,
-composite actions, `tool/`, `tools/`, `.githooks/`, `firestore-tests/`, the
-downloads site under `web/downloads/`, prose and checkout configuration are all
-on that list. A change to any of them can be honestly a `feat` or a `fix` — the
-downloads site is a public web page, and a broken release script is a real bug —
-but the app it would rename is byte for byte the app testers already have.
+composite actions, `tool/`, `tools/`, `.githooks/`, `test/`,
+`firestore-tests/`, the downloads site under `web/downloads/`, prose and
+checkout configuration are all on that list. A change to any of them can be
+honestly a `feat` or a `fix` — the downloads site is a public web page, and a
+broken release script is a real bug — but the app it would rename is byte for
+byte the app testers already have.
 
 That list is not written down twice. It is the `paths-ignore:` block of
 `.github/workflows/release-internal.yml`, which is what GitHub itself consults
-when deciding whether the merge ships anything, and both the version check and
-the release watchdog read it from there through `tool/release_paths.py`. Add a
-path to that block and all three change together. Bumping anyway is always
-allowed.
+when deciding whether the merge ships anything, and the version check, the
+release watchdog and the master-side verification all read it from there through
+`tool/release_paths.py`. Add a path to that block and all four change together.
+Bumping anyway is always allowed.
 
-A change of that shape also skips the release entirely; see
-[what does not reach a tester](README.md#what-does-not-reach-a-tester).
+A change of that shape also skips the release entirely. It is still analyzed and
+tested: `verify-master.yml` runs the checks for exactly the pushes the release
+skips, which is what makes it safe to filter `test/` — see
+[what does not reach a tester](README.md#what-does-not-reach-a-tester) and
+[verifying a merge that ships nothing](README.md#verifying-a-merge-that-ships-nothing).
 
 ## Pull requests
 

@@ -76,12 +76,19 @@ on:
       # here: it is deployed by the `functions` job below, so a rules change
       # must still run this workflow. Its tests are not deployed by anything.
       - 'firestore-tests/**'
-      # `test/` is deliberately absent, though nothing in it is packaged
-      # either. The `verify` job below is the only place the Flutter suite runs
-      # against a merge commit -- a combination neither branch tested on its
-      # own -- and a test-only merge is precisely when it is worth running.
-      # The build that follows is redundant; the check is not.
+      # The Flutter suite. Held out of this list at first, on the grounds that
+      # the `verify` job below is the only place it runs against a merge commit
+      # -- a combination neither branch tested on its own. That was true, and
+      # the price turned out to be worse than the check was worth: build 95 was
+      # built, signed, uploaded to every internal tester and then lost its tag
+      # to a race, entirely because one Dart test file changed. A build
+      # identical to the one before it, under a version name already used.
       #
+      # `verify-master.yml` now runs analyze and test for the pushes this
+      # workflow skips, so the verification survives without the build. It asks
+      # `tool/release_paths.py` about this same block to decide, which is why
+      # adding a line here cannot quietly leave a merge commit untested.
+      - 'test/**'
       # The downloads site is deployed by deploy-downloads.yml, on this same
       # push. Nothing in it reaches an app.
       - 'web/downloads/**'
