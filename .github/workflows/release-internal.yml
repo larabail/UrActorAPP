@@ -76,18 +76,18 @@ on:
       # here: it is deployed by the `functions` job below, so a rules change
       # must still run this workflow. Its tests are not deployed by anything.
       - 'firestore-tests/**'
-      # The Flutter suite. Held out of this list at first, on the grounds that
-      # the `verify` job below is the only place it runs against a merge commit
-      # -- a combination neither branch tested on its own. That was true, and
-      # the price turned out to be worse than the check was worth: build 95 was
-      # built, signed, uploaded to every internal tester and then lost its tag
-      # to a race, entirely because one Dart test file changed. A build
-      # identical to the one before it, under a version name already used.
+      # The Flutter suite. Held out of this list at first, on the stated
+      # grounds that the `verify` job below was the only place it ran against a
+      # merge commit. That was simply wrong: `pr.yml` uses a bare checkout, so
+      # a pull_request event checks out `refs/pull/N/merge` -- the merge commit
+      # -- and runs analyze and test there, as a required check, with
+      # `strict` up-to-date enforcement on top. The combination was already
+      # tested before the merge button was available.
       #
-      # `verify-master.yml` now runs analyze and test for the pushes this
-      # workflow skips, so the verification survives without the build. It asks
-      # `tool/release_paths.py` about this same block to decide, which is why
-      # adding a line here cannot quietly leave a merge commit untested.
+      # The price of the mistake was build 95: built, signed, uploaded to every
+      # internal tester and then stranded by a tag race, for one Dart test
+      # file. A build identical to the one before it, under a version name
+      # already used, which is what this whole block exists to prevent.
       - 'test/**'
       # The downloads site is deployed by deploy-downloads.yml, on this same
       # push. Nothing in it reaches an app.
@@ -315,9 +315,17 @@ jobs:
 
   # Analyze and test once for the whole release rather than once per platform.
   # These checks are platform independent and already ran on the pull request,
-  # but a merge commit is a combination neither branch tested on its own, so
-  # they are repeated here -- on Linux, where they cost five minutes rather
-  # than being paid three times over on two macOS runners and a Windows one.
+  # against the merge commit -- `pr.yml` uses a bare checkout, so a
+  # pull_request event resolves to `refs/pull/N/merge` -- and branch protection
+  # requires them with `strict` up-to-date enforcement, so for anyone who
+  # cannot bypass it the combination that lands here has been tested.
+  #
+  # They are repeated anyway, for the one case that escapes: `enforce_admins`
+  # is off, and an admin merging two pull requests seconds apart lands a
+  # combination nothing evaluated. That is not hypothetical -- #150 and #151
+  # merged fourteen seconds apart, the second with a merge base that predated
+  # the first. Five minutes on Linux is a cheap backstop for it, and cheaper
+  # than paying it three times over on two macOS runners and a Windows one.
   verify:
     name: Analyze and test
     runs-on: ubuntu-latest
