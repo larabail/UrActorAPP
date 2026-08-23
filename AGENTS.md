@@ -28,6 +28,21 @@ Commits must not carry `Co-authored-by:` lines, and in particular must not
 attribute anything to Copilot. If your tooling adds one by default, strip it
 before committing. This applies to squash-merge commit bodies too.
 
+The trap is that you can break this rule without typing anything. GitHub writes
+the trailer itself when a squash merge finds a commit author it does not
+recognise as the pull request's own, and the usual way to produce one of those
+is to commit with no `user.name` and `user.email` configured — git invents an
+author from your account and hostname rather than refusing. Set them once:
+
+```bash
+git config --global user.name 'Your Name'
+git config --global user.email 'ID+login@users.noreply.github.com'
+```
+
+The address is on <https://github.com/settings/emails>. `.githooks/pre-commit`
+refuses a commit made without one, and `tool/check_commit_hygiene.py` refuses
+the pull request.
+
 ### New code comes with tests
 
 Any new behaviour needs a test, and any bug fix needs a test that fails before
@@ -242,7 +257,27 @@ Things that catch people out:
   diff; an edit made anywhere else is invisible to it, and the task closes
   clean while your change stays behind.
 - **`bl close` is gated by the repo's `pre-commit` hook**, so analyze and the
-  test suite have to pass before anything lands.
+  test suite have to pass before anything lands — and so does a configured git
+  identity, for the reason below.
+- **Configure `user.name` and `user.email` before you claim anything.** A bl
+  worktree inherits whatever identity the shell that made it had, and with none
+  git does not complain: it invents an author from your account's full name and
+  the machine's hostname and commits under it. GitHub has never heard of that
+  address, so squash merging credits it as a *co-author* of the commit that
+  lands on `master` — a `Co-authored-by:` trailer nobody typed, breaking the
+  rule above. It has happened twice, both times through bl. The hook now refuses
+  such a commit and `tool/check_commit_hygiene.py` refuses the pull request, but
+  neither is as cheap as setting it once with `git config --global`.
+- **Reword the `[bl-xxxx]` tag out before you open the pull request.** `bl close`
+  appends it to the delivery commit and reads it back to recognise a delivery it
+  has already made, so it is doing a job on the branch and stripping it while bl
+  still owns the task breaks that retry. It is only wrong once it reaches
+  `master`, and it does: the repository squash merges with
+  `squash_merge_commit_message: COMMIT_MESSAGES`, which copies every branch
+  commit message verbatim into master's, where the tag names a task nothing on
+  master can resolve. Close and deliver first, then `git rebase -i` the tag out
+  of the delivered commit. Two are on `master` already and are staying there;
+  rewriting published history to tidy them would cost more than they do.
 - **You reconcile, close validates.** If the target branch moved, close refuses
   rather than merging for you. Merge it into your worktree, re-run the tests
   there, then close again.

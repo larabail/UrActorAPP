@@ -1224,7 +1224,10 @@ break:
 - **Version** runs the unit tests under `tool/` and then enforces the version
   policy from [AGENTS.md](AGENTS.md#versioning) against the pull request title
   and commits. Do not edit the `+BUILD` suffix: the release pipeline builds
-  with a code derived from Play and opens a pull request recording it.
+  with a code derived from Play and opens a pull request recording it. It also
+  runs `tool/check_commit_hygiene.py`, which refuses commits that would put a
+  `Co-authored-by:` trailer or a `[bl-xxxx]` tag on `master`; see
+  [what a branch writes, master keeps](#what-a-branch-writes-master-keeps).
 - **Build and launch on a simulator** builds for the iOS simulator on a macOS
   runner, then installs and launches the app and checks it is still running
   fifteen seconds later — because the iOS failure that matters most, Firebase
@@ -1519,6 +1522,50 @@ app — the noisy direction, because being wrong that way only asks for a bump
 nobody needed. Bumping anyway is still allowed; a version that moves backwards,
 or a minor bump that leaves the patch number behind, is still refused.
 
+### What a branch writes, master keeps
+
+The repository squash merges with `squash_merge_commit_message: COMMIT_MESSAGES`,
+so the messages of the commits on a branch are copied verbatim into the single
+commit that lands on `master`. A branch is not a scratch space whose wording
+stops mattering once it is merged, and two things have reached `master` that way
+which [AGENTS.md](AGENTS.md) forbids.
+
+The first is a `Co-authored-by:` trailer nobody typed. Git does not require an
+identity: with `user.name` and `user.email` unset it invents an author from the
+account record and the machine's hostname and commits under it without
+complaint. GitHub has never heard of that address, so a squash merge treats the
+real account as the author and the invention as a collaborator, and writes the
+trailer itself. Both occurrences came through `bl`, whose worktrees inherit
+whatever identity the shell that made them had — which for an agent is routinely
+none.
+
+That one was not cheap to undo. `0ff0cb44`, which GitHub still records as the
+merge commit of `#147`, carried the trailer onto `master`; the commit `master`
+holds today is `3a39c88`, same tree and same parent, with the trailer gone. In
+other words the only remedy available after the fact was rewriting a branch that
+is configured to refuse force pushes, and the superseded commit is still what
+the API reports for that pull request. Catching it a minute earlier, on the
+branch, costs nothing by comparison.
+
+The second is the `[bl-xxxx]` tag `bl close` appends to a delivery commit. On
+the branch it is doing a job: bl reads it back to recognise a delivery it has
+already made, so stripping it while bl still owns the task breaks that retry.
+It is wrong only on `master`, where it names a task nothing on master can
+resolve. Reword it out once the task is closed and delivered.
+
+Two layers catch this, because neither is enough alone.
+[`.githooks/pre-commit`](.githooks/pre-commit) refuses to create a commit with no
+configured identity, which is the real fix for the bl workflow since `bl close`
+is gated by that hook — but hooks are opt-in, so it cannot be relied on.
+[`tool/check_commit_hygiene.py`](tool/check_commit_hygiene.py) runs in the
+**Version** job on every pull request, which cannot be opted out of.
+
+Changing the merge setting to `PR_BODY` was considered and rejected: the pull
+request template is a checklist, and landing it in every commit message on
+`master` is worse than the tag. The two commits that already carry one are
+staying — `master` refuses force pushes, and rewriting published history to tidy
+a tag would cost more than the tag does.
+
 ## Repo tooling
 
 - [`tool/play.py`](tool/play.py) — Google Play release helper used by the
@@ -1541,6 +1588,14 @@ or a minor bump that leaves the patch number behind, is still refused.
   [a merge can ship nothing without saying so](#a-merge-can-ship-nothing-without-saying-so).
   It takes the run history as a file and shells out to git, so it is testable
   without touching the API.
+- [`tool/check_commit_hygiene.py`](tool/check_commit_hygiene.py) — refuses a
+  pull request whose commits would put a `Co-authored-by:` trailer or a
+  `[bl-xxxx]` task tag on `master`, and refuses an author the squash merge would
+  turn into a trailer of its own. Run in the **Version** job; see
+  [what a branch writes, master keeps](#what-a-branch-writes-master-keeps). It
+  compares each commit's author with its committer rather than asking GitHub who
+  opened the pull request, so it needs no network and can be run by hand:
+  `python tool/check_commit_hygiene.py --base master --head HEAD`.
 - [`tool/release_paths.py`](tool/release_paths.py) — reads the `paths-ignore:`
   block out of `release-internal.yml` and answers whether a set of changed
   paths can alter an installed app. Not run on its own; it exists so that
@@ -1557,11 +1612,14 @@ or a minor bump that leaves the patch number behind, is still refused.
   rules' own KNOWN GAPS section before treating them as complete. The matching
   tests live in [`firestore-tests/`](firestore-tests/README.md) and run against
   the local emulator, on every pull request.
-- [`.githooks/pre-commit`](.githooks/pre-commit) — runs analyze and the tests
-  before a commit. Enable it with `git config core.hooksPath .githooks`. It
-  clears git's own environment variables before invoking flutter, for the
-  reason [`test/pre_commit_hook_test.dart`](test/pre_commit_hook_test.dart)
-  spells out.
+- [`.githooks/pre-commit`](.githooks/pre-commit) — refuses a commit made with no
+  git identity configured, then runs analyze and the tests. Enable it with
+  `git config core.hooksPath .githooks`. It clears git's own environment
+  variables before invoking flutter, for the reason
+  [`test/pre_commit_hook_test.dart`](test/pre_commit_hook_test.dart) spells out;
+  the identity check sits above that, because an unconfigured identity spoils a
+  documentation commit as thoroughly as any other. See
+  [what a branch writes, master keeps](#what-a-branch-writes-master-keeps).
 
 ## Licence
 

@@ -77,7 +77,14 @@ exit 0
 
   /// What git hands a hook: the repository spelled out, and the index the
   /// commit is being assembled in.
-  Map<String, String> hookEnvironment(String indexFile) => {
+  ///
+  /// [isolated] cuts the global and system configuration out with git's own
+  /// override variables, so the identity the hook reads is the one this test
+  /// set and not whatever the machine running it happens to have. Without it a
+  /// developer's `--global user.email` would satisfy the check and the test
+  /// would pass everywhere except on a fresh machine, which is the one place
+  /// the bug lives.
+  Map<String, String> hookEnvironment(String indexFile, {bool isolated = false}) => {
         'PATH': '$stubBin:${Platform.environment['PATH']}',
         'FLUTTER_STUB_LOG': log,
         'GIT_DIR': '$repo/.git',
@@ -86,13 +93,28 @@ exit 0
         'GIT_OBJECT_DIRECTORY': '$repo/.git/objects',
         'GIT_ALTERNATE_OBJECT_DIRECTORIES': '$repo/.git/objects',
         'GIT_COMMON_DIR': '$repo/.git',
+        if (isolated) ...{
+          'GIT_CONFIG_GLOBAL': '/dev/null',
+          'GIT_CONFIG_SYSTEM': '/dev/null',
+        },
       };
 
-  ProcessResult runHook({String? indexFile}) => run(
+  ProcessResult runHook({String? indexFile, bool isolated = false}) => run(
         'sh',
         [hook],
-        environment: hookEnvironment(indexFile ?? '$repo/.git/index'),
+        environment: hookEnvironment(
+          indexFile ?? '$repo/.git/index',
+          isolated: isolated,
+        ),
       );
+
+  /// Leaves the repository in the state the bug is made of: no `user.name` and
+  /// no `user.email` anywhere git will look, which is what makes it invent an
+  /// author from the account record and the hostname.
+  void forgetTheIdentity() {
+    run('git', ['config', '--unset', 'user.email']);
+    run('git', ['config', '--unset', 'user.name']);
+  }
 
   List<String> stubLog() {
     final file = File(log);
@@ -176,6 +198,79 @@ exit 0
         final result = runHook();
 
         expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect(stubLog(), isEmpty);
+      });
+
+      test('refuses a commit made with no git identity configured', () {
+        // The defect this gate exists for. Git does not require an identity:
+        // with neither set it invents an author from the account's full name
+        // and the hostname, commits under it happily, and a squash merge then
+        // credits that invention as a co-author on master -- a trailer
+        // AGENTS.md forbids outright. Two reached master this way, both
+        // delivered by `bl`, whose worktrees inherit whatever identity the
+        // shell that ran them had.
+        stage('lib/thing.dart', 'void main() {}\n');
+        forgetTheIdentity();
+
+        final result = runHook(isolated: true);
+
+        expect(result.exitCode, isNot(0),
+            reason: 'the hook let an authorless commit through');
+        expect('${result.stdout}${result.stderr}',
+            contains('git config user.email'),
+            reason: 'a refusal that does not say how to fix it is a puzzle');
+      });
+
+      test('refuses before spending a test run on it', () {
+        // The identity check is the first thing the hook does, ahead of the
+        // flutter lookup and the prose skip. Analyze and the tests take
+        // minutes, and finding out afterwards that the commit was never going
+        // to be acceptable is how a hook gets disabled.
+        stage('lib/thing.dart', 'void main() {}\n');
+        forgetTheIdentity();
+
+        runHook(isolated: true);
+
+        expect(stubLog(), isEmpty);
+      });
+
+      test('refuses an authorless prose-only commit too', () {
+        // The prose skip exists because a typo fix cannot break the build. It
+        // can still carry a bad author into the same trailer, so the identity
+        // gate has to sit above the skip rather than inside it.
+        stage('docs/notes.md', 'prose\n');
+        forgetTheIdentity();
+
+        final result = runHook(isolated: true);
+
+        expect(result.exitCode, isNot(0),
+            reason: 'a docs commit carries an author like any other');
+      });
+
+      test('says nothing about identity when one is configured', () {
+        // The other half of the gate: it must be invisible in the ordinary
+        // case. A hook that lectures on every commit is a hook people turn off.
+        stage('lib/thing.dart', 'void main() {}\n');
+
+        final result = runHook(isolated: true);
+
+        expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+        expect('${result.stdout}${result.stderr}',
+            isNot(contains('git config user.email')));
+        expect(stubLog(), contains('ran: flutter analyze'));
+      });
+
+      test('refuses an identity configured as an empty string', () {
+        // `git config user.email ''` sets the key, so asking whether it is set
+        // says yes. Git itself refuses to commit with it -- "empty ident name"
+        // -- so accepting it here would only move the failure to a worse place,
+        // after analyze and the tests have run.
+        stage('lib/thing.dart', 'void main() {}\n');
+        git(['config', 'user.email', '']);
+
+        final result = runHook(isolated: true);
+
+        expect(result.exitCode, isNot(0));
         expect(stubLog(), isEmpty);
       });
     },
