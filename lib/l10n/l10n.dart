@@ -1453,6 +1453,12 @@ abstract class S {
   /// **'This build of the app is not allowed to sign in. Trying again will not help.'**
   String get blockedAppError;
 
+  /// Shown when a sign in is refused and the server will not say whether the email or the password was the wrong half. Firebase answers this way when email enumeration protection is on. The wording must stay neutral about whether an account exists for the address, since revealing that is what the protection prevents.
+  ///
+  /// In en, this message translates to:
+  /// **'That email and password do not match an account.'**
+  String get invalidCredentialError;
+
   /// Shown in the desktop update bar when a newer version has been published. {version} is a version number like 3.16.0.
   ///
   /// In en, this message translates to:

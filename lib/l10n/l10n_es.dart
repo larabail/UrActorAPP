@@ -786,6 +786,10 @@ class SEs extends S {
       'Esta versión de la aplicación no tiene permiso para iniciar sesión. Volver a intentarlo no servirá de nada.';
 
   @override
+  String get invalidCredentialError =>
+      'Ese correo electrónico y esa contraseña no coinciden con ninguna cuenta.';
+
+  @override
   String updateAvailable(String version) {
     return 'UrActor $version ya está disponible';
   }
