@@ -21,6 +21,13 @@ as a collaborator. `.githooks/pre-commit` refuses to create such a commit, but a
 hook only runs where somebody ran `git config core.hooksPath .githooks`, so this
 is the half that cannot be opted out of.
 
+It is worth knowing what the alternative costs. One of these reached master as
+`0ff0cb44`, still the merge commit GitHub reports for `#147`, and the only
+remedy available by then was rewriting a branch configured to refuse force
+pushes: `3a39c88` is what master holds now, same tree and parent, trailer gone,
+while the API still answers with the superseded commit. Nothing about that is
+repeatable, which is the argument for failing the pull request instead.
+
 **A `Co-authored-by:` trailer written by hand.** Same rule, arriving directly
 rather than through GitHub's composition.
 

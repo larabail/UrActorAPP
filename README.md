@@ -1539,6 +1539,14 @@ trailer itself. Both occurrences came through `bl`, whose worktrees inherit
 whatever identity the shell that made them had — which for an agent is routinely
 none.
 
+That one was not cheap to undo. `0ff0cb44`, which GitHub still records as the
+merge commit of `#147`, carried the trailer onto `master`; the commit `master`
+holds today is `3a39c88`, same tree and same parent, with the trailer gone. In
+other words the only remedy available after the fact was rewriting a branch that
+is configured to refuse force pushes, and the superseded commit is still what
+the API reports for that pull request. Catching it a minute earlier, on the
+branch, costs nothing by comparison.
+
 The second is the `[bl-xxxx]` tag `bl close` appends to a delivery commit. On
 the branch it is doing a job: bl reads it back to recognise a delivery it has
 already made, so stripping it while bl still owns the task breaks that retry.

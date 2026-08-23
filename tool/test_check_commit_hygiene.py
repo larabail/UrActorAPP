@@ -223,6 +223,14 @@ class TheDeliveryThatSynthesizedACoAuthor(unittest.TestCase):
     second author on the branch to disagree with, so a check that only compared
     the commits with each other would have passed this branch and the trailer
     would have reached master anyway. The committer is what makes it visible.
+
+    It did reach master. GitHub still records `0ff0cb44` as the merge commit of
+    `#147`, and it is no longer an ancestor of `master`: what master holds is
+    `3a39c88`, same tree, same parent, same committer second, trailer gone. The
+    only remedy left by then was rewriting a branch configured to refuse force
+    pushes, and the API still answers with the superseded commit. That is the
+    cost this check exists to avoid, and it is why the rule is enforced on the
+    branch rather than reported afterwards.
     """
 
     SHA = "ab224cc4d1b1e0a37fe1de7c8ecb0d0a5ff1a19c"
