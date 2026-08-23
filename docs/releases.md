@@ -84,7 +84,7 @@ That write-back is a separate job in `release-internal.yml`, and the only place
 in either pipeline that a token writes to a *file* in the repository. The
 pipelines also write refs — the `build-*`, `released-*` and `v*` tags — which
 is a different permission and comes with a restriction of its own, described in
-[a promotion cannot tag a commit that has no ref](#a-promotion-cannot-tag-a-commit-that-has-no-ref).
+[a promotion cannot tag a commit whose workflows have been left behind](#a-promotion-cannot-tag-a-commit-whose-workflows-have-been-left-behind).
 
 **It arrives as a pull request rather than a push, and that is not a style
 choice.** `master` requires a pull request, and `github-actions[bot]` cannot be
@@ -853,15 +853,21 @@ as at any other share.
 Two jobs run before that prompt, and both only read:
 
 ```
-authorize → resolve → preflight → approve → ┬ 1. Android
-                                            ├ 2. iOS
-                                            └ 3. Desktop
+authorize → resolve → preflight → approve → reserve → ┬ 1. Android
+                                                      ├ 2. iOS
+                                                      └ 3. Desktop
 ```
 
 `resolve` works out the commit and the version, so the prompt can name what is
 being shipped. `preflight` asks Apple whether the iOS half could happen at all
 — see [It refuses early](#it-refuses-early-before-anyone-approves). Nothing is
 written to any store until the gate has been passed.
+
+`reserve` is the one write that happens between the gate and the stores, and it
+takes seconds: it stakes the `v<version>` tag on the promoted commit while that
+is still permitted, so the desktop release cannot be refused it half an hour
+later. See [a promotion cannot tag a commit whose workflows have been left
+behind](#a-promotion-cannot-tag-a-commit-whose-workflows-have-been-left-behind).
 
 The commit and the version are resolved once, in a `resolve` job, and handed to
 all three stages. Three stages working that out for themselves would be three
@@ -891,19 +897,18 @@ Not the same thing on each platform, and worth knowing before relying on it.
 - **Desktop** builds both installers, which is most of the value, and skips the
   GitHub release, the tag and the hosting deploy.
 
-### A promotion cannot tag a commit that has no ref
+### A promotion cannot tag a commit whose workflows have been left behind
 
 Both writes this pipeline makes to the repository create a git ref at the
 commit being promoted: the `released-<code>` tag that marks where production
-reached, and the `v<version>` tag that comes with the desktop stage's GitHub
-release.
+reached, and the `v<version>` tag that the desktop stage's GitHub release hangs
+off.
 
 GitHub refuses to let an Actions token create **any** ref — tag or branch, by
-`git push` or through the REST API — pointing at a commit that no ref already
-points at and whose `.github/workflows/` differ from the tip of the default
-branch. It does not matter that the commit is already on `master` and that
-nothing is being uploaded; the refusal is about what the new ref would make
-visible.
+`git push` or through the REST API — pointing at a commit whose
+`.github/workflows/` differ from the tip of the default branch. It does not
+matter that the commit is already on `master` and that nothing is being
+uploaded; the refusal is about what the new ref would make visible.
 
 The permission that lifts it is `workflows`, and **`GITHUB_TOKEN` cannot be
 granted it** — it is not one of the keys the `permissions:` block accepts, so
@@ -919,33 +924,52 @@ names the real cause:
 | `git push` of a tag | `refusing to allow a GitHub App to create or update workflow ... without workflows permission` |
 | Releases API | `403 Resource not accessible by integration`, which reads like a missing `contents: write` |
 
-This is why every internal build tags itself `build-<code>` at the moment it is
-uploaded, and why the run stakes an **anchor** tag on the commit seconds after
-the push, before it builds anything. The anchor has no meaning of its own. It
-exists because the build tag cannot be created until the upload succeeds twenty
-minutes later, by which time master has usually moved and one merge touching
-any workflow file is enough to make the tag impossible — which is exactly what
-happened on the first run after build tagging was introduced, to a merge that
-landed thirty-four seconds afterwards. Once any ref points at a commit the
-refusal stops applying to it, so the anchor keeps the commit taggable for the
-rest of the run and the Android stage drops it once the build tag is in place.
+**A ref already pointing at the commit does not lift the refusal.** This is the
+part that is easy to get wrong, and getting it wrong cost the 3.19.0 promotion:
+the `v3.19.0` tag was refused at a commit that `build-96` and `released-96` both
+already pointed at. Probing it directly, with the same token the pipeline uses,
+gives the rule in one line — only the workflow files count:
 
-Neither the anchor nor the build tag fails the run if it is refused. A build
-that reached testers should not be thrown away over a tag, and taking the job
-red would also discard the bundle artifact and the build-number write-back.
-They warn instead, and the promotion that needs the tag is what refuses.
+| At a commit whose workflows | Result |
+|---|---|
+| match the default branch tip | ref created |
+| differ, and no ref points at it | `403` |
+| differ, and two tags point at it | `403` |
 
-The `resolve` job checks for the case before anything is written to a store,
-because the alternative is worse than a failed run. On 2026-08-23 a promotion
-reached Play production and was then refused its tag, so the release shipped
-with no record of it, and the next promotion's notes would have repeated
-everything users had already read. A commit built before internal tagging
-existed still has no `build-*` tag; to promote one, push a ref at it yourself
-first:
+One thing is allowed at any commit, however far behind it has fallen: creating a
+release whose tag **already exists**, as long as the call does not also send
+`target_commitish`. No ref is created, so there is nothing to refuse. Supplying
+`target_commitish` anyway is vetted as though a ref were being created, and is
+refused — which is why the desktop stage no longer sends it.
+
+That is also why the `v<version>` tag is staked by its own `reserve` job the
+moment the release is approved, instead of being left to
+`softprops/action-gh-release` to create half an hour later. On 2026-08-23 the
+run began while the promoted commit's workflows still matched master, a pull
+request touching a workflow file merged six minutes before the desktop stage
+reached its release, and the tag was refused — after Play had been written to.
+Reserving the ref up front shrinks that window from the length of a desktop
+build to a few seconds and puts what is left of it before any store is written.
+
+The `resolve` job checks the commit is taggable before anything is written to a
+store, because the alternative is worse than a failed run: earlier the same day
+a promotion reached Play production and was then refused its tag, so the release
+shipped with no record of it, and the next promotion's notes would have repeated
+everything users had already read. To promote a commit master's workflows have
+moved past, create the tag yourself first, from a machine holding a token with
+the `workflow` scope:
 
 ```bash
-git push origin <commit>:refs/tags/build-<version code>
+git push origin <commit>:refs/tags/v<version>
 ```
+
+> **The `anchor` tag in the internal release does not work.** It was added on the
+> belief that any ref keeps a commit taggable for the rest of a run, and the
+> table above is that belief being tested and failing. A build whose `build-*`
+> tag is refused twenty minutes after the anchor was staked is refused for the
+> same reason with the anchor in place. It warns rather than failing, so nothing
+> breaks, but it buys nothing either.
+
 
 ## Releasing the desktop apps
 
